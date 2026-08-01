@@ -89,6 +89,17 @@ test("anonymous session checks tolerate missing Clerk middleware context", async
   assert.match(auth, /catch\s*\{\s*clerkUser = null/);
 });
 
+test("missing Clerk configuration preserves public shells and route-level authorization", async () => {
+  const proxy = await readFile(
+    new URL("../proxy.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(proxy, /if \(!process\.env\.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY\) \{\s*return NextResponse\.next\(\);\s*\}/);
+  assert.doesNotMatch(proxy, /PRIVATE_PAGE|IDENTITY_API|Identity service is not configured|temporarily unavailable/);
+  assert.match(proxy, /return withClerk\(request, event as never\)/);
+});
+
 test("custom Clerk login supports Safari ITP and Client Trust", async () => {
   const form = await readFile(
     new URL("../components/ClerkAuthForm.tsx", import.meta.url),
