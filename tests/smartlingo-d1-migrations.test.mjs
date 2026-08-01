@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 20);
-  assert.equal(result.firstRunApplied, 20);
+  assert.equal(result.migrationCount, 21);
+  assert.equal(result.firstRunApplied, 21);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0019_smartlingo_language_communities");
+  assert.equal(result.newestMigration, "0020_restore_german_community");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -26,7 +26,7 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     classOrderId: "d1-smoke-language-class-order",
     subscriptionPaymentId: "d1-smoke-platform-subscription",
     rewardLedgerId: "d1-smoke-introducer-reward",
-    officialCommunityCount: 9,
+    officialCommunityCount: 10,
     sameLanguageMembershipId: "d1-smoke-same-language-membership",
   });
 });
@@ -54,6 +54,25 @@ test("0019 seeds nine official language communities and keeps same-language enro
     assert.match(catalog, new RegExp(`code: "${code}"`));
   }
   assert.match(journal, /"tag": "0019_smartlingo_language_communities"/);
+});
+
+test("0020 restores German as a public, free official language community", async () => {
+  const [migration, catalog, journal] = await Promise.all([
+    read("../drizzle/0020_restore_german_community.sql"),
+    read("../lib/smartlingo-language-communities.ts"),
+    read("../drizzle/meta/_journal.json"),
+  ]);
+
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  assert.match(migration, /'path_de_a1'/);
+  assert.match(migration, /'class_official_de'/);
+  assert.match(migration, /'official_language'/);
+  assert.match(migration, /'open','public',0/);
+  assert.match(migration, /owner_class_official_de/);
+  assert.match(catalog, /code: "de"/);
+  assert.match(catalog, /nameZh: "德语"/);
+  assert.match(catalog, /nameEn: "German"/);
+  assert.match(journal, /"tag": "0020_restore_german_community"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

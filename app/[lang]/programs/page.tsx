@@ -7,13 +7,13 @@ import { SiteHeader } from "../../../components/SiteHeader";
 const copy = {
   en: {
     title: "Build real ability across listening, speaking, reading, and writing.",
-    intro: "Choose one of seven target languages, complete compact daily work, practice authentic situations with the AI Guru, and keep improving at your own pace or with a class.",
+    intro: "Choose one of ten target languages, complete compact daily work, practice authentic situations with the AI Guru, and keep improving at your own pace or with a class.",
     start: "Choose a language",
     guide: "Ask Guru for guidance",
     catalog: "FOUNDATION PATH",
     course: "Speak from day one",
     courseBody: "A level-aware foundation path that joins practical vocabulary, comprehension, writing, pronunciation, and real conversation instead of treating them as separate products.",
-    facts: [["Languages", "7"], ["Skills", "Listening · Speaking · Reading · Writing"], ["Format", "Self-paced or class-led"], ["Feedback", "Transparent, practice-only AI guidance"]],
+    facts: [["Languages", "10"], ["Skills", "Listening · Speaking · Reading · Writing"], ["Format", "Self-paced or class-led"], ["Feedback", "Transparent, practice-only AI guidance"]],
     pathKicker: "LEARNING PATH",
     pathTitle: "Progress by mastery, not by an arbitrary deadline.",
     stages: [
@@ -47,13 +47,13 @@ const copy = {
   },
   zh: {
     title: "同时建立真正可用的听、说、读、写能力。",
-    intro: "从七种目标语言中选择一门，完成每日短任务，在真实场景中和人工智能导师练习；可以按自己的速度学习，也可以加入老师带领的班级。",
+    intro: "从十种目标语言中选择一门，完成每日短任务，在真实场景中和人工智能导师练习；可以按自己的速度学习，也可以加入老师带领的班级。",
     start: "选择学习语言",
     guide: "向智能导师咨询",
     catalog: "基础学习路径",
     course: "从第一天开始开口",
     courseBody: "根据水平调整的基础路径，把实用词汇、理解、写作、发音和真实对话连接起来，不把它们割裂成互不相关的产品。",
-    facts: [["目标语言", "7 种"], ["核心技能", "听力 · 口语 · 阅读 · 写作"], ["学习方式", "自主学习或班级带领"], ["反馈性质", "透明标注、只用于练习的人工智能建议"]],
+    facts: [["目标语言", "10 种"], ["核心技能", "听力 · 口语 · 阅读 · 写作"], ["学习方式", "自主学习或班级带领"], ["反馈性质", "透明标注、只用于练习的人工智能建议"]],
     pathKicker: "学习路径",
     pathTitle: "按掌握程度进步，不受任意期限限制。",
     stages: [

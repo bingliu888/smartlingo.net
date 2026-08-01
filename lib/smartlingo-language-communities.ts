@@ -5,6 +5,7 @@ export const SMARTLINGO_LANGUAGE_COMMUNITIES = [
   { code: "ja", pathId: "path_ja_a1", classId: "class_official_ja", nameZh: "日语", nameEn: "Japanese" },
   { code: "ko", pathId: "path_ko_a1", classId: "class_official_ko", nameZh: "韩语", nameEn: "Korean" },
   { code: "fr", pathId: "path_fr_a1", classId: "class_official_fr", nameZh: "法语", nameEn: "French" },
+  { code: "de", pathId: "path_de_a1", classId: "class_official_de", nameZh: "德语", nameEn: "German" },
   { code: "ru", pathId: "path_ru_a1", classId: "class_official_ru", nameZh: "俄语", nameEn: "Russian" },
   { code: "it", pathId: "path_it_a1", classId: "class_official_it", nameZh: "意大利语", nameEn: "Italian" },
   { code: "pt", pathId: "path_pt_a1", classId: "class_official_pt", nameZh: "葡萄牙语", nameEn: "Portuguese" },

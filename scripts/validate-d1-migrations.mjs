@@ -370,10 +370,10 @@ function runD1Smoke(database) {
     WHERE status = 'published'
     ORDER BY CASE target_language
       WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
-      WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'ru' THEN 6 WHEN 'it' THEN 7
-      WHEN 'pt' THEN 8 ELSE 9 END
+      WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7
+      WHEN 'it' THEN 8 WHEN 'pt' THEN 9 ELSE 10 END
   `).all().map(row => row.code);
-  assert.deepEqual(publishedLanguages, ["zh", "en", "es", "ja", "ko", "fr", "ru", "it", "pt"]);
+  assert.deepEqual(publishedLanguages, ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt"]);
   const officialCommunities = database.prepare(`
     SELECT c.id, c.target_language AS targetLanguage, c.class_kind AS classKind,
       c.status, c.visibility, c.price_cents AS priceCents
@@ -381,10 +381,10 @@ function runD1Smoke(database) {
     WHERE c.class_kind = 'official_language'
     ORDER BY CASE c.target_language
       WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
-      WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'ru' THEN 6 WHEN 'it' THEN 7
-      WHEN 'pt' THEN 8 ELSE 9 END
+      WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7
+      WHEN 'it' THEN 8 WHEN 'pt' THEN 9 ELSE 10 END
   `).all().map(row => ({ ...row }));
-  assert.equal(officialCommunities.length, 9);
+  assert.equal(officialCommunities.length, 10);
   assert.deepEqual(
     officialCommunities.map(community => community.targetLanguage),
     publishedLanguages,
@@ -851,7 +851,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0019_smartlingo_language_communities");
+  assert.equal(migrations.at(-1)?.tag, "0020_restore_german_community");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(

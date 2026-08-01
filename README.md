@@ -4,12 +4,12 @@ SmartLingo is a Chinese-default, bilingual AI-native language-learning platform 
 
 ## Product foundation
 
-The migration preserves the browser-visible identity of the prior SmartLingo.net site:
+The migration preserves the browser-visible identity of the prior SmartLingo.net site and extends it with the current language-community catalog:
 
 - “开口说，才会说” / “Speak from day one”
 - real-world AI conversation practice
 - pronunciation feedback, immersive reading, daily listening, and structured progression
-- Chinese, English, Spanish, Japanese, Korean, French, Russian, Italian, and Portuguese
+- a current ten-language catalog: Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, and Portuguese
 - Community, social motivation, and class learning
 
 The preserved HTML and image evidence is documented in [`legacy-reference/README.md`](legacy-reference/README.md). The new application does not depend on the old deployment or import hidden source content.

@@ -11,16 +11,17 @@ type Lang = "en" | "zh";
 const TARGET_LANGUAGE_KEY = "smartlingo-target-language";
 const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
 
-const languagePresentation: Record<SmartLingoCommunityLanguage, { flag: string; nativeName: string }> = {
-  zh: { flag: "🇨🇳", nativeName: "中文" },
-  en: { flag: "🇺🇸", nativeName: "English" },
-  es: { flag: "🇪🇸", nativeName: "Español" },
-  ja: { flag: "🇯🇵", nativeName: "日本語" },
-  ko: { flag: "🇰🇷", nativeName: "한국어" },
-  fr: { flag: "🇫🇷", nativeName: "Français" },
-  ru: { flag: "🇷🇺", nativeName: "Русский" },
-  it: { flag: "🇮🇹", nativeName: "Italiano" },
-  pt: { flag: "🇵🇹", nativeName: "Português" },
+const languagePresentation: Record<SmartLingoCommunityLanguage, { nativeName: string }> = {
+  zh: { nativeName: "中文" },
+  en: { nativeName: "English" },
+  es: { nativeName: "Español" },
+  ja: { nativeName: "日本語" },
+  ko: { nativeName: "한국어" },
+  fr: { nativeName: "Français" },
+  de: { nativeName: "Deutsch" },
+  ru: { nativeName: "Русский" },
+  it: { nativeName: "Italiano" },
+  pt: { nativeName: "Português" },
 };
 
 export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
@@ -99,7 +100,6 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
   return (
     <details ref={menu} className="interface-language-menu">
       <summary aria-label={zh ? `当前语言：${current.nativeName}。打开语言选择` : `Current language: ${current.nativeName}. Open language selection`}>
-        <span className="interface-language-flag" aria-hidden="true">{current.flag}</span>
         <span className="interface-language-current">{current.nativeName}</span>
         <span className="interface-language-chevron" aria-hidden="true">⌄</span>
       </summary>
@@ -120,8 +120,7 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
                 aria-checked={selected === language.code}
                 onClick={() => choose(language.code)}
               >
-                <span className="interface-language-flag" aria-hidden="true">{presentation.flag}</span>
-                <span>
+                <span className="interface-language-option">
                   <b>{presentation.nativeName}</b>
                   <small>{changesInterface
                     ? (zh ? "界面与目标语言" : "Interface and target")

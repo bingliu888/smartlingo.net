@@ -40,6 +40,7 @@ Each language has a stable ID, versioned stages, prerequisites, original or lice
 - Japanese / 日语
 - Korean / 韩语
 - French / 法语
+- German / 德语
 - Russian / 俄语
 - Italian / 意大利语
 - Portuguese / 葡萄牙语

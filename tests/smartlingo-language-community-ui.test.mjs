@@ -15,27 +15,33 @@ function chooserMetrics(viewport) {
   return { container, inner, columns, card, popover };
 }
 
-test("the shared header uses one accessible nine-language dropdown without an I-speak selector", async () => {
-  const [header, menu, catalog] = await Promise.all([
+test("the shared header uses one accessible ten-language text dropdown without flags or an I-speak selector", async () => {
+  const [header, menu, chooser, home, catalog, css] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../components/InterfaceLanguageMenu.tsx"),
+    read("../components/LanguageCommunityChooser.tsx"),
+    read("../app/[lang]/page.tsx"),
     read("../lib/smartlingo-language-communities.ts"),
+    read("../app/globals.css"),
   ]);
 
   assert.match(header, /<InterfaceLanguageMenu lang=\{lang\}/);
   assert.doesNotMatch(header, /<LanguageLink/);
-  for (const name of ["中文", "English", "Español", "日本語", "한국어", "Français", "Русский", "Italiano", "Português"]) {
+  for (const name of ["中文", "English", "Español", "日本語", "한국어", "Français", "Deutsch", "Русский", "Italiano", "Português"]) {
     assert.match(menu, new RegExp(name));
   }
-  for (const code of ["zh", "en", "es", "ja", "ko", "fr", "ru", "it", "pt"]) {
+  for (const code of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt"]) {
     assert.match(catalog, new RegExp(`code: "${code}"`));
   }
   assert.match(menu, /中文与英文切换界面；其他选项设置目标学习语言/);
   assert.match(menu, /window\.location\.assign\(`\/\$\{lang\}#\$\{anchor\}`\)/);
   assert.doesNotMatch(`${header}\n${menu}`, /I speak|我会说|母语选择/iu);
+  assert.doesNotMatch(`${menu}\n${chooser}\n${home}`, /[\u{1F1E6}-\u{1F1FF}]{2}/u);
+  assert.doesNotMatch(`${menu}\n${chooser}\n${css}`, /interface-language-flag|lingo-community-flag/);
+  assert.doesNotMatch(css, /\.interface-language-current\{display:none\}/);
 });
 
-test("the homepage language chooser gives all nine communities a working join or enter path", async () => {
+test("the homepage language chooser gives all ten communities a working join or enter path", async () => {
   const [home, chooser, css] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/LanguageCommunityChooser.tsx"),

@@ -30,18 +30,6 @@ type ClassContext = {
   availableClasses?: CommunityClass[];
 };
 
-const flags: Record<SmartLingoCommunityLanguage, string> = {
-  zh: "🇨🇳",
-  en: "🇺🇸",
-  es: "🇪🇸",
-  ja: "🇯🇵",
-  ko: "🇰🇷",
-  fr: "🇫🇷",
-  ru: "🇷🇺",
-  it: "🇮🇹",
-  pt: "🇵🇹",
-};
-
 export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
   const zh = lang === "zh";
   const [context, setContext] = useState<ClassContext | null>(null);
@@ -136,7 +124,6 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
               onClick={() => openCommunity(language.code)}
               aria-busy={isBusy}
             >
-              <span className="lingo-community-flag" aria-hidden="true">{flags[language.code]}</span>
               <span className="lingo-community-name">
                 <b>{zh ? language.nameZh : language.nameEn}</b>
                 <small>{classCount > 0
@@ -158,4 +145,3 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
     </section>
   );
 }
-

@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
   const origin = new URL(`${protocol}://${host}`);
   const title = "SmartLingo — 从第一天开口，与班级一起进步";
-  const description = "人工智能原生语言学习：九种语言、听说读写、实时语音导师、会员自主开班、班级社区与透明分账。";
+  const description = "人工智能原生语言学习：十种语言、听说读写、实时语音导师、会员自主开班、班级社区与透明分账。";
   return {
     metadataBase: origin,
     title: { default: title, template: "%s | SmartLingo" },

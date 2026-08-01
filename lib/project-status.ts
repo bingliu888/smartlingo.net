@@ -173,8 +173,8 @@ export const projectReports: ProjectReport[] = [
       en: "The production domain now serves Sites; if the current build fails, it can return to the prior successful Sites version and matching source revision. Live charging, Stripe Connect, refunds, disputes, and payment webhooks remain off.",
     },
     next: {
-      zh: "推进 8 月 2 日五项：七语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
-      en: "Continue with the five August 2 tasks: the seven-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
+      zh: "推进 8 月 2 日五项：十语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
+      en: "Continue with the five August 2 tasks: the ten-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
     },
   },
 ];

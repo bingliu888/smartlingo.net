@@ -51,11 +51,11 @@ const smartLingoRoadmapJson = String.raw`[
   {
     "date": "2026-08-02",
     "status": "planned",
-    "category": { "zh": "七种语言与学习路径", "en": "Seven languages and learning paths" },
+    "category": { "zh": "十种语言与学习路径", "en": "Ten languages and learning paths" },
     "owner": { "zh": "SmartLingo 课程团队", "en": "SmartLingo curriculum team" },
-    "acceptance": { "zh": "学习者可从西班牙语、英语、法语、日语、德语、意大利语和韩语选择清晰、版本化的学习路径。", "en": "Learners can choose clear, versioned paths for Spanish, English, French, Japanese, German, Italian, and Korean." },
+    "acceptance": { "zh": "学习者可从中文、英语、西班牙语、日语、韩语、法语、德语、俄语、意大利语和葡萄牙语选择清晰、版本化的学习路径。", "en": "Learners can choose clear, versioned paths for Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, and Portuguese." },
     "tasks": [
-      { "id": "sl-d03-language-catalog", "status": "planned", "progress": 0, "title": { "zh": "发布七种语言目录", "en": "Publish the seven-language catalog" }, "summary": { "zh": "为每种语言提供稳定编号、名称、文字方向、语音能力、阶段和当前内容状态。", "en": "Give each language a stable ID, name, writing direction, speech capabilities, stages, and current content status." } },
+      { "id": "sl-d03-language-catalog", "status": "planned", "progress": 0, "title": { "zh": "发布十种语言目录", "en": "Publish the ten-language catalog" }, "summary": { "zh": "为每种语言提供稳定编号、名称、文字方向、语音能力、阶段和当前内容状态。", "en": "Give each language a stable ID, name, writing direction, speech capabilities, stages, and current content status." } },
       { "id": "sl-d03-goal-onboarding", "status": "planned", "progress": 0, "title": { "zh": "建立目标与水平引导", "en": "Build goal and level onboarding" }, "summary": { "zh": "让学习者选择语言、使用场景、每日时长和自报水平，并可跳过定位测试从基础开始。", "en": "Let learners choose language, use case, daily time, and self-reported level, or skip placement and begin with fundamentals." } },
       { "id": "sl-d03-placement-check", "status": "planned", "progress": 0, "title": { "zh": "建立可选定位测评", "en": "Build optional placement checks" }, "summary": { "zh": "使用版本化原创题和服务端判定推荐起点，明确定位结果不是正式语言证书。", "en": "Use versioned original items and server-trusted scoring to recommend a start point, clearly not a formal language certificate." } },
       { "id": "sl-d03-unit-map", "status": "planned", "progress": 0, "title": { "zh": "建立阶段与单元地图", "en": "Build the stage and unit map" }, "summary": { "zh": "将词汇、听力、口语、阅读、写作和真实场景按先决条件组织成可视进度路径。", "en": "Organize vocabulary, listening, speaking, reading, writing, and real scenarios into a visible prerequisite path." } },
