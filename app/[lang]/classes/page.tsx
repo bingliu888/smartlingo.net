@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ClassStudio } from "../../../components/ClassStudio";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
+import { requestUser } from "../../../lib/request-user";
 
 export async function generateMetadata({
   params,
@@ -23,15 +24,23 @@ export default async function ClassesPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ invite?: string }>;
+  searchParams: Promise<{ invite?: string; target?: string }>;
 }) {
   const { lang } = await params;
   if (lang !== "en" && lang !== "zh") notFound();
   const query = await searchParams;
+  const user = await requestUser();
+  if (!user) {
+    const returnParams = new URLSearchParams();
+    if (query.invite) returnParams.set("invite", query.invite);
+    if (query.target) returnParams.set("target", query.target);
+    const returnTo = `/${lang}/classes${returnParams.size ? `?${returnParams.toString()}` : ""}`;
+    redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }
   return (
     <main className="classes-page">
       <SiteHeader lang={lang} />
-      <ClassStudio lang={lang} initialInviteCode={query.invite} />
+      <ClassStudio lang={lang} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
       <SiteFooter lang={lang} />
     </main>
   );

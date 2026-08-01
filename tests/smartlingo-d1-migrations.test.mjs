@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 19);
-  assert.equal(result.firstRunApplied, 19);
+  assert.equal(result.migrationCount, 20);
+  assert.equal(result.firstRunApplied, 20);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0018_smartlingo_core_integrity");
+  assert.equal(result.newestMigration, "0019_smartlingo_language_communities");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -26,7 +26,34 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     classOrderId: "d1-smoke-language-class-order",
     subscriptionPaymentId: "d1-smoke-platform-subscription",
     rewardLedgerId: "d1-smoke-introducer-reward",
+    officialCommunityCount: 9,
+    sameLanguageMembershipId: "d1-smoke-same-language-membership",
   });
+});
+
+test("0019 seeds nine official language communities and keeps same-language enrollment valid", async () => {
+  const [schema, migration, catalog, journal] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0019_smartlingo_language_communities.sql"),
+    read("../lib/smartlingo-language-communities.ts"),
+    read("../drizzle/meta/_journal.json"),
+  ]);
+
+  assert.match(schema, /classKind: text\("class_kind"\)\.notNull\(\)\.default\("member_language"\)/);
+  assert.match(migration, /ALTER TABLE `smartlingo_language_classes` ADD `class_kind`/);
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  assert.match(migration, /smartlingo_language_class_kind_insert_trg/);
+  assert.match(migration, /smartlingo_language_class_path_insert_trg/);
+  assert.match(migration, /smartlingo_official_language_class_insert_trg/);
+  assert.match(migration, /'class_official_zh'/);
+  assert.match(migration, /'class_official_pt'/);
+  assert.match(migration, /'official_language'/);
+  assert.match(migration, /'open','public',0/);
+  assert.match(migration, /WHERE `target_language` = 'de'/);
+  for (const code of ["zh", "en", "es", "ja", "ko", "fr", "ru", "it", "pt"]) {
+    assert.match(catalog, new RegExp(`code: "${code}"`));
+  }
+  assert.match(journal, /"tag": "0019_smartlingo_language_communities"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

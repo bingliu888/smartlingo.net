@@ -96,6 +96,21 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.scoring.failureMode, "deny");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.failureMode, "quarantine");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.maxInputUnits, 600);
+  for (const feature of [
+    "public_guru",
+    "message_polish",
+    "chat_guru",
+    "content_help",
+    "listening_feedback",
+    "speaking_feedback",
+    "writing_feedback",
+    "scoring",
+  ]) {
+    assert.equal(gateway.SMARTAI_FEATURE_POLICIES[feature].model, "gpt-5.6-luna");
+  }
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.model, "omni-moderation-latest");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-1-mini");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
 });
 
 test("OpenAI origin and secret name exist only in the unified gateway across runtime and client artifacts", async () => {
@@ -375,6 +390,8 @@ test("learning feedback calls share one explicit AI-not-teacher safety boundary"
   assert.match(providerRequest.body.instructions, /not a human teacher or official examiner/);
   assert.match(providerRequest.body.instructions, /State uncertainty/);
   assert.match(providerRequest.body.instructions, /Simplified Chinese/);
+  assert.equal(providerRequest.body.model, "gpt-5.6-luna");
+  assert.deepEqual(providerRequest.body.reasoning, { effort: "low" });
   assert.match(providerRequest.safetyIdentifier, /^[a-f0-9]{64}$/);
   assert.doesNotMatch(providerRequest.safetyIdentifier, /speaker/);
 });

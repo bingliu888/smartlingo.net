@@ -32,15 +32,19 @@ The original pages and images are preserved only as migration evidence under `le
 
 ### Language paths
 
-Each language has a stable ID, versioned stages, prerequisites, original or licensed content provenance, speech capability flags, and a published-content state. The initial catalog includes:
+Each language has a stable ID, versioned stages, prerequisites, original or licensed content provenance, speech capability flags, and a published-content state. The current community catalog includes:
 
-- Spanish / 西班牙语
+- Chinese / 中文
 - English / 英语
-- French / 法语
+- Spanish / 西班牙语
 - Japanese / 日语
-- German / 德语
-- Italian / 意大利语
 - Korean / 韩语
+- French / 法语
+- Russian / 俄语
+- Italian / 意大利语
+- Portuguese / 葡萄牙语
+
+Every language has a free official community class, while member-created classes provide additional schedules and teaching approaches. A learner may join the community for their own primary language; the data model does not treat primary and target language as mutually exclusive.
 
 Onboarding asks for the learner's target language, real-world purpose, daily time, and self-reported level. Placement is optional. Its result recommends a starting point; it is not a formal test score or credential.
 

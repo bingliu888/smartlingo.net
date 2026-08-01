@@ -49,7 +49,10 @@ test("renders the SmartLingo language-learning foundation", async () => {
   const html = await response.text();
   assert.match(html, /SmartLingo/);
   assert.match(html, /从第一天开始，开口说一门新语言/);
-  for (const language of ["西班牙语", "英语", "法语", "日语", "德语", "意大利语", "韩语"]) assert.match(html, new RegExp(language));
+  for (const language of ["中文", "英语", "西班牙语", "日语", "韩语", "法语", "俄语", "意大利语", "葡萄牙语"]) {
+    assert.match(html, new RegExp(language));
+  }
+  assert.doesNotMatch(html, /德语/);
   for (const skill of ["听力", "口语", "阅读", "写作"]) assert.match(html, new RegExp(skill));
   assert.match(html, /创建语言班/);
   assert.match(html, /班主获得 70%/);

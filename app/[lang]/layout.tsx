@@ -10,8 +10,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
       template: "%s | SmartLingo",
     },
     description: zh
-      ? "人工智能原生语言学习：七种语言、听说读写、实时语音导师、会员自主开班与学习社区。"
-      : "AI-native language learning across seven languages with four-skill practice, live voice, member-led classes, and learning communities.",
+      ? "人工智能原生语言学习：九种语言、听说读写、实时语音导师、会员自主开班与学习社区。"
+      : "AI-native language learning across nine languages with four-skill practice, live voice, member-led classes, and learning communities.",
   };
 }
 

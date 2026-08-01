@@ -134,6 +134,13 @@
       "when": 1785586916104,
       "tag": "0018_smartlingo_core_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1785601966359,
+      "tag": "0019_smartlingo_language_communities",
+      "breakpoints": true
     }
   ]
 }

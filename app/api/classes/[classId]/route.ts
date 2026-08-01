@@ -10,6 +10,7 @@ type ClassDetail = {
   pathId: string;
   pathTitleEn: string;
   pathTitleZh: string;
+  classKind: "official_language" | "member_language" | "subject";
   ownerRole: "teacher" | "coordinator";
   title: string;
   summary: string;
@@ -36,7 +37,7 @@ async function classDetail(classId: string) {
   return getDatabase().prepare(`SELECT c.id, c.owner_user_id AS ownerUserId,
     u.display_name AS ownerName, c.path_id AS pathId,
     p.title_en AS pathTitleEn, p.title_zh AS pathTitleZh,
-    c.owner_role AS ownerRole, c.title, c.summary,
+    c.class_kind AS classKind, c.owner_role AS ownerRole, c.title, c.summary,
     c.target_language AS targetLanguage, c.level, c.schedule,
     c.status, c.visibility, c.price_cents AS priceCents, c.currency,
     c.capacity,

@@ -10,7 +10,7 @@ The migration may use only browser-visible legacy-site facts recorded in `legacy
 
 SmartLingo is an AI-native language-learning and social-learning platform. Its public promise is practical progress through short daily sessions, listening, speaking, reading, writing, vocabulary review, text Ask Guru, and signed-in Live Audio AI Chat.
 
-The first supported paths are Spanish, English, French, Japanese, German, Italian, and Korean. Course content must be original or properly licensed, versioned, attributable by source type, and reviewed before public release. A placement result or platform completion record is not a government, academic, immigration, or third-party language credential.
+The first supported community paths are Chinese, English, Spanish, Japanese, Korean, French, Russian, Italian, and Portuguese. A learner may join a community for any target language, including their own language, and each language may contain multiple official or member-created classes. Course content must be original or properly licensed, versioned, attributable by source type, and reviewed before public release. A placement result or platform completion record is not a government, academic, immigration, or third-party language credential.
 
 ## Member-created class rules
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LanguageCommunityChooser } from "../../components/LanguageCommunityChooser";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
 
@@ -13,23 +14,25 @@ const copy = {
     start: "Start learning free",
     classes: "Explore classes",
     voice: "Try Ask Guru",
-    trust: ["7 target languages", "Four-skill practice", "Class communities"],
+    trust: ["9 target languages", "Four-skill practice", "Class communities"],
     coachLabel: "TODAY · SPEAKING PRACTICE",
     coachTitle: "Order lunch with confidence",
     coachPrompt: "Tell the server what you would like, ask about an ingredient, then confirm the order.",
     coachStatus: "AI Guru is ready to listen",
     skills: [["Listening", "84"], ["Speaking", "72"], ["Reading", "91"], ["Writing", "76"]],
     languagesKicker: "CHOOSE YOUR PATH",
-    languagesTitle: "Seven languages, one connected learning loop.",
-    languagesBody: "The original SmartLingo language choices remain the starting catalog. Every path combines short lessons, practical vocabulary, comprehension, writing, and live conversation.",
+    languagesTitle: "Nine languages, one connected learning loop.",
+    languagesBody: "Each community supports learners starting a new language and members continuing to develop a language they already speak. Every path combines short lessons, practical vocabulary, comprehension, writing, and live conversation.",
     languages: [
-      ["🇪🇸", "Spanish", "Travel, community, and everyday work"],
+      ["🇨🇳", "Chinese", "Literacy, culture, school, and everyday communication"],
       ["🇬🇧", "English", "Global study, work, and communication"],
-      ["🇫🇷", "French", "Travel, culture, and international communication"],
+      ["🇪🇸", "Spanish", "Travel, community, and everyday work"],
       ["🇯🇵", "Japanese", "Travel, media, and neighboring cultures"],
-      ["🇩🇪", "German", "Engineering, study, and business"],
-      ["🇮🇹", "Italian", "Art, food, travel, and culture"],
       ["🇰🇷", "Korean", "Travel, entertainment, and conversation"],
+      ["🇫🇷", "French", "Travel, culture, and international communication"],
+      ["🇷🇺", "Russian", "Literature, travel, study, and communication"],
+      ["🇮🇹", "Italian", "Art, food, travel, and culture"],
+      ["🇵🇹", "Portuguese", "Travel, community, culture, and work"],
     ],
     loopKicker: "NOT JUST WORD LISTS",
     loopTitle: "Listen, speak, read, write—and return to what needs work.",
@@ -86,23 +89,25 @@ const copy = {
     start: "免费开始学习",
     classes: "浏览语言班",
     voice: "试用智能导师",
-    trust: ["七种目标语言", "听说读写训练", "班级学习社区"],
+    trust: ["九种目标语言", "听说读写训练", "班级学习社区"],
     coachLabel: "今日任务 · 口语练习",
     coachTitle: "自信地完成一次点餐",
     coachPrompt: "告诉服务员您想点什么，询问一种配料，然后确认订单。",
     coachStatus: "人工智能导师已准备聆听",
     skills: [["听力", "84"], ["口语", "72"], ["阅读", "91"], ["写作", "76"]],
     languagesKicker: "选择学习路径",
-    languagesTitle: "七种语言，同一套完整学习闭环。",
-    languagesBody: "原 SmartLingo 的七种语言选择继续作为首批目录。每条路径都把短课、实用词汇、理解、写作和实时对话连接起来。",
+    languagesTitle: "九种语言，同一套完整学习闭环。",
+    languagesBody: "每个社区既欢迎开始学习新语言的人，也欢迎继续提高自己已会语言的会员。每条路径都把短课、实用词汇、理解、写作和实时对话连接起来。",
     languages: [
-      ["🇪🇸", "西班牙语", "旅行、社区与日常工作"],
+      ["🇨🇳", "中文", "读写、文化、学校与日常沟通"],
       ["🇬🇧", "英语", "全球学习、工作与沟通"],
-      ["🇫🇷", "法语", "旅行、文化与国际交流"],
+      ["🇪🇸", "西班牙语", "旅行、社区与日常工作"],
       ["🇯🇵", "日语", "旅行、媒体与邻国文化"],
-      ["🇩🇪", "德语", "工程、留学与商务"],
-      ["🇮🇹", "意大利语", "艺术、美食、旅行与文化"],
       ["🇰🇷", "韩语", "旅行、娱乐与日常会话"],
+      ["🇫🇷", "法语", "旅行、文化与国际交流"],
+      ["🇷🇺", "俄语", "文学、旅行、学习与沟通"],
+      ["🇮🇹", "意大利语", "艺术、美食、旅行与文化"],
+      ["🇵🇹", "葡萄牙语", "旅行、社区、文化与工作"],
     ],
     loopKicker: "不只是背单词",
     loopTitle: "听、说、读、写，再回到真正需要加强的地方。",
@@ -167,10 +172,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     <main className="lingo-home">
       <div className="lingo-hero-shell">
         <SiteHeader lang={lang}/>
+        <LanguageCommunityChooser lang={lang}/>
         <section className="lingo-hero">
           <div className="lingo-hero-copy">
             <p className="section-kicker">{t.eyebrow}</p>
-            <h1>{t.title}</h1>
+            <h2>{t.title}</h2>
             <p>{t.intro}</p>
             <div className="lingo-actions">
               <Link className="primary-button" href={`/${lang}/auth/sign-up`}>{t.start} →</Link>
@@ -198,11 +204,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </section>
       </div>
-
-      <section className="lingo-section lingo-language-section">
-        <div className="lingo-heading"><p className="section-kicker">{t.languagesKicker}</p><h2>{t.languagesTitle}</h2><p>{t.languagesBody}</p></div>
-        <div className="lingo-language-grid">{t.languages.map(([flag, name, note]) => <article key={name}><span>{flag}</span><div><h3>{name}</h3><p>{note}</p></div><b aria-hidden="true">→</b></article>)}</div>
-      </section>
 
       <section className="lingo-section lingo-loop-section">
         <div className="lingo-heading"><p className="section-kicker">{t.loopKicker}</p><h2>{t.loopTitle}</h2><p>{t.loopBody}</p></div>

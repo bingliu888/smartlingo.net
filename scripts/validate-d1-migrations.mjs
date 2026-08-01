@@ -364,6 +364,61 @@ function runD1Smoke(database) {
       version: "2026.07.31",
     },
   );
+  const publishedLanguages = database.prepare(`
+    SELECT target_language AS code
+    FROM smartlingo_language_paths
+    WHERE status = 'published'
+    ORDER BY CASE target_language
+      WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
+      WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'ru' THEN 6 WHEN 'it' THEN 7
+      WHEN 'pt' THEN 8 ELSE 9 END
+  `).all().map(row => row.code);
+  assert.deepEqual(publishedLanguages, ["zh", "en", "es", "ja", "ko", "fr", "ru", "it", "pt"]);
+  const officialCommunities = database.prepare(`
+    SELECT c.id, c.target_language AS targetLanguage, c.class_kind AS classKind,
+      c.status, c.visibility, c.price_cents AS priceCents
+    FROM smartlingo_language_classes c
+    WHERE c.class_kind = 'official_language'
+    ORDER BY CASE c.target_language
+      WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
+      WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'ru' THEN 6 WHEN 'it' THEN 7
+      WHEN 'pt' THEN 8 ELSE 9 END
+  `).all().map(row => ({ ...row }));
+  assert.equal(officialCommunities.length, 9);
+  assert.deepEqual(
+    officialCommunities.map(community => community.targetLanguage),
+    publishedLanguages,
+  );
+  for (const community of officialCommunities) {
+    assert.equal(community.classKind, "official_language");
+    assert.equal(community.status, "open");
+    assert.equal(community.visibility, "public");
+    assert.equal(community.priceCents, 0);
+  }
+  database.prepare(`
+    INSERT INTO smartlingo_language_class_members
+      (id, class_id, user_id, role, status, joined_at, updated_at)
+    VALUES ('d1-smoke-same-language-membership', 'class_official_zh',
+      'd1-smoke-user', 'student', 'active', ?, ?)
+  `).run(now, now);
+  const sameLanguageMembership = database.prepare(`
+    SELECT member.id, member.status, path.target_language AS targetLanguage,
+      user.preferred_language AS preferredLanguage
+    FROM smartlingo_language_class_members member
+    JOIN smartlingo_language_classes class ON class.id = member.class_id
+    JOIN smartlingo_language_paths path ON path.id = class.path_id
+    JOIN users user ON user.id = member.user_id
+    WHERE member.id = 'd1-smoke-same-language-membership'
+  `).get();
+  assert.deepEqual(
+    { ...sameLanguageMembership },
+    {
+      id: "d1-smoke-same-language-membership",
+      status: "active",
+      targetLanguage: "zh",
+      preferredLanguage: "zh",
+    },
+  );
   database.prepare(`
     INSERT INTO smartlingo_exercises
       (id, path_id, stable_key, version, skill, title_zh, title_en,
@@ -789,12 +844,14 @@ function runD1Smoke(database) {
     classOrderId: "d1-smoke-language-class-order",
     subscriptionPaymentId: "d1-smoke-platform-subscription",
     rewardLedgerId: "d1-smoke-introducer-reward",
+    officialCommunityCount: officialCommunities.length,
+    sameLanguageMembershipId: sameLanguageMembership.id,
   };
 }
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0018_smartlingo_core_integrity");
+  assert.equal(migrations.at(-1)?.tag, "0019_smartlingo_language_communities");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(

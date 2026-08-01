@@ -14,9 +14,11 @@ test("SmartLingo class screens do not charge before verified Stripe Connect chec
   assert.match(classes, /paymentMode: "stripe_connect_not_enabled"/);
   assert.match(classes, /charged: false/);
   assert.match(enrollment, /charged: false/);
-  assert.match(enrollment, /status: 410/);
+  assert.match(enrollment, /SMARTLINGO_CLASS_PAYMENT_NOT_ENABLED/);
+  assert.match(enrollment, /status: 409/);
+  assert.match(enrollment, /price_cents = 0/);
   assert.match(component, /本基础页面不会发起班级收费/);
-  assert.doesNotMatch(classes, /stripe\.checkout|PaymentIntent|destination_charge/i);
+  assert.doesNotMatch(`${classes}\n${enrollment}`, /stripe\.checkout|PaymentIntent|destination_charge/i);
 });
 
 test("member-created class orders cannot produce introducer points", async () => {

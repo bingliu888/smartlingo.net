@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { LanguageLink } from "./LanguageMemory";
 import { HeaderAccount } from "./HeaderAccount";
+import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
 
 function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
   const zh = lang === "zh";
@@ -43,7 +43,7 @@ export function SiteHeader({ lang }: { lang: "en" | "zh" }) {
           <HeaderAccount lang={lang}/>
         </div>
       </details>
-      <LanguageLink lang={lang} compact />
+      <InterfaceLanguageMenu lang={lang} />
     </header>
   );
 }

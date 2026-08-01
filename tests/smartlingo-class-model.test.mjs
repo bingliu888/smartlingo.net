@@ -43,12 +43,43 @@ test("class API keeps class commerce separate from subscription referral rewards
   assert.match(migration, /smartlingo_language_class_order_split_ck/);
   assert.match(migration, /smartlingo_introducer_reward_ledger_subscription_payment_id_unique/);
   assert.doesNotMatch(migration, /(?:^|\n)\s*(?:DROP|DELETE)\b/i);
-  for (const legacyRoute of [claim, enrollment, referrals, licenses, deepLink]) {
+  for (const legacyRoute of [claim, referrals, licenses, deepLink]) {
     assert.match(legacyRoute, /status: 410/);
     assert.doesNotMatch(legacyRoute, /INSERT|UPDATE|smartlingo_bacc_ledger/i);
   }
+  assert.match(enrollment, /getSessionUser/);
+  assert.match(enrollment, /status: 401/);
+  assert.match(enrollment, /visibility !== "public"/);
+  assert.match(enrollment, /priceCents > 0/);
+  assert.match(enrollment, /SMARTLINGO_CLASS_PAYMENT_NOT_ENABLED/);
+  assert.match(enrollment, /smartlingo_language_class_members/);
+  assert.match(enrollment, /ON CONFLICT\(class_id, user_id\) DO UPDATE/);
+  assert.match(enrollment, /charged: false/);
+  assert.doesNotMatch(enrollment, /preferredLanguage|reward_ledger|introducer/i);
   assert.match(claim, /points: 0/);
   assert.match(referrals, /rewardPoints: 0/);
+});
+
+test("class catalog returns official, available, joined, and created classes with persistent state", async () => {
+  const [route, detail, enrollment, catalog] = await Promise.all([
+    read("../app/api/classes/route.ts"),
+    read("../app/api/classes/[classId]/route.ts"),
+    read("../app/api/classes/[classId]/enroll/route.ts"),
+    read("../lib/smartlingo-language-communities.ts"),
+  ]);
+
+  for (const field of ["classKind", "membershipRole", "membershipStatus", "isJoined", "isOwner", "canJoin"]) {
+    assert.match(route, new RegExp(field));
+  }
+  for (const group of ["availableClasses", "joinedClasses", "createdClasses"]) {
+    assert.match(route, new RegExp(group));
+  }
+  assert.match(route, /c\.class_kind AS classKind/);
+  assert.match(route, /'member_language'/);
+  assert.match(detail, /c\.class_kind AS classKind/);
+  assert.match(enrollment, /role = 'student', status = 'active'/);
+  assert.match(enrollment, /status IN \('invited', 'paused', 'left'\)/);
+  assert.match(catalog, /SMARTLINGO_LANGUAGE_COMMUNITIES/);
 });
 
 test("Class Studio is bilingual and exposes the approved class economics without tier gates", async () => {

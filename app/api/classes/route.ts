@@ -21,6 +21,7 @@ type LanguageClassRow = {
   pathId: string;
   pathTitleEn: string;
   pathTitleZh: string;
+  classKind: "official_language" | "member_language" | "subject";
   ownerRole: "teacher" | "coordinator";
   title: string;
   summary: string;
@@ -33,7 +34,15 @@ type LanguageClassRow = {
   currency: string;
   capacity: number;
   enrollmentCount: number;
+  membershipRole: "owner" | "teacher" | "coordinator" | "student" | null;
+  membershipStatus: "invited" | "active" | "paused" | "left" | "removed" | null;
   createdAt: number;
+};
+
+type LanguageClassView = LanguageClassRow & {
+  isOwner: boolean;
+  isJoined: boolean;
+  canJoin: boolean;
 };
 
 type ConnectedAccountRow = {
@@ -68,6 +77,23 @@ function parseRequirements(value: string) {
   }
 }
 
+function classView(row: LanguageClassRow, userId: string): LanguageClassView {
+  const isOwner = row.ownerUserId === userId || row.membershipRole === "owner";
+  const isJoined = !isOwner && ["active", "invited", "paused"].includes(row.membershipStatus || "");
+  return {
+    ...row,
+    enrollmentCount: Number(row.enrollmentCount || 0),
+    isOwner,
+    isJoined,
+    canJoin: !isOwner
+      && !isJoined
+      && row.visibility === "public"
+      && row.status === "open"
+      && row.priceCents === 0
+      && Number(row.enrollmentCount || 0) < row.capacity,
+  };
+}
+
 export async function GET(request: Request) {
   const user = await getSessionUser(request);
   if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
@@ -79,30 +105,39 @@ export async function GET(request: Request) {
       FROM smartlingo_language_paths
       WHERE status = 'published'
       ORDER BY CASE target_language
-        WHEN 'en' THEN 0 WHEN 'es' THEN 1 WHEN 'fr' THEN 2 WHEN 'ja' THEN 3
-        WHEN 'de' THEN 4 WHEN 'it' THEN 5 WHEN 'ko' THEN 6 ELSE 7 END, level`)
+        WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
+        WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'ru' THEN 6 WHEN 'it' THEN 7
+        WHEN 'pt' THEN 8 ELSE 9 END, level`)
       .run<LanguagePathRow>(),
     database.prepare(`SELECT c.id, c.owner_user_id AS ownerUserId,
       u.display_name AS ownerName, c.path_id AS pathId,
       p.title_en AS pathTitleEn, p.title_zh AS pathTitleZh,
-      c.owner_role AS ownerRole, c.title, c.summary,
+      c.class_kind AS classKind, c.owner_role AS ownerRole, c.title, c.summary,
       c.target_language AS targetLanguage, c.level, c.schedule,
       c.status, c.visibility, c.price_cents AS priceCents, c.currency,
       c.capacity, c.created_at AS createdAt,
+      mine.role AS membershipRole, mine.status AS membershipStatus,
       COALESCE(SUM(CASE WHEN members.role = 'student' AND members.status = 'active' THEN 1 ELSE 0 END), 0) AS enrollmentCount
       FROM smartlingo_language_classes c
       JOIN users u ON u.id = c.owner_user_id
       JOIN smartlingo_language_paths p ON p.id = c.path_id
+      LEFT JOIN smartlingo_language_class_members mine ON mine.class_id = c.id AND mine.user_id = ?
       LEFT JOIN smartlingo_language_class_members members ON members.class_id = c.id
       WHERE c.owner_user_id = ?
          OR (c.visibility = 'public' AND c.status = 'open')
-         OR EXISTS (
-           SELECT 1 FROM smartlingo_language_class_members mine
-           WHERE mine.class_id = c.id AND mine.user_id = ? AND mine.status IN ('active', 'invited', 'paused')
-         )
+         OR mine.status IN ('active', 'invited', 'paused')
       GROUP BY c.id
-      ORDER BY CASE WHEN c.owner_user_id = ? THEN 0 ELSE 1 END, c.updated_at DESC
-      LIMIT 120`).bind(user.id, user.id, user.id).run<LanguageClassRow>(),
+      ORDER BY CASE
+        WHEN c.owner_user_id = ? THEN 0
+        WHEN mine.status IN ('active', 'invited', 'paused') THEN 1
+        WHEN c.class_kind = 'official_language' THEN 2
+        ELSE 3 END,
+        CASE c.target_language
+          WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
+          WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'ru' THEN 6 WHEN 'it' THEN 7
+          WHEN 'pt' THEN 8 ELSE 9 END,
+        c.updated_at DESC
+      LIMIT 240`).bind(user.id, user.id, user.id).run<LanguageClassRow>(),
     database.prepare(`SELECT onboarding_status AS onboardingStatus,
       charges_enabled AS chargesEnabled, payouts_enabled AS payoutsEnabled,
       requirements_due AS requirementsDue
@@ -110,11 +145,19 @@ export async function GET(request: Request) {
       .bind(user.id).first<ConnectedAccountRow>(),
   ]);
 
+  const classes = (classResult.results || []).map(row => classView(row, user.id));
+  const createdClasses = classes.filter(item => item.isOwner);
+  const joinedClasses = classes.filter(item => item.isJoined);
+  const availableClasses = classes.filter(item => !item.isOwner && !item.isJoined && item.visibility === "public" && item.status === "open");
+
   return Response.json({
     currentUser: { id: user.id, displayName: user.displayName },
     member: { canCreatePrivateClass: true, allowedOwnerRoles: ["teacher", "coordinator"] },
     paths: pathResult.results || [],
-    classes: classResult.results || [],
+    classes,
+    availableClasses,
+    joinedClasses,
+    createdClasses,
     connectedAccount: connectedAccount ? {
       onboardingStatus: connectedAccount.onboardingStatus,
       chargesEnabled: Boolean(connectedAccount.chargesEnabled),
@@ -178,9 +221,9 @@ export async function POST(request: Request) {
     VALUES (?, 'stripe_connect', 'not_started', 0, 0, '[]', ?)`)
     .bind(user.id, now).run();
   await database.prepare(`INSERT INTO smartlingo_language_classes
-    (id, owner_user_id, path_id, owner_role, title, summary, target_language, level,
+    (id, owner_user_id, path_id, class_kind, owner_role, title, summary, target_language, level,
      schedule, status, visibility, price_cents, currency, capacity, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', 'private', ?, 'USD', ?, ?, ?)`)
+    VALUES (?, ?, ?, 'member_language', ?, ?, ?, ?, ?, ?, 'open', 'private', ?, 'USD', ?, ?, ?)`)
     .bind(
       classId,
       user.id,

@@ -9,7 +9,7 @@ The migration preserves the browser-visible identity of the prior SmartLingo.net
 - “开口说，才会说” / “Speak from day one”
 - real-world AI conversation practice
 - pronunciation feedback, immersive reading, daily listening, and structured progression
-- Spanish, English, French, Japanese, German, Italian, and Korean
+- Chinese, English, Spanish, Japanese, Korean, French, Russian, Italian, and Portuguese
 - Community, social motivation, and class learning
 
 The preserved HTML and image evidence is documented in [`legacy-reference/README.md`](legacy-reference/README.md). The new application does not depend on the old deployment or import hidden source content.

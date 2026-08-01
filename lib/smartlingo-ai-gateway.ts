@@ -41,7 +41,7 @@ export type SmartAiFeaturePolicy = {
  */
 export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFeaturePolicy>> = {
   public_guru: {
-    model: "gpt-5-nano",
+    model: "gpt-5.6-luna",
     maxInputUnits: 24_000,
     maxOutputUnits: 1_200,
     windowSeconds: 60,
@@ -51,7 +51,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "local_fallback",
   },
   message_polish: {
-    model: "gpt-5-nano",
+    model: "gpt-5.6-luna",
     maxInputUnits: 4_000,
     maxOutputUnits: 2_000,
     windowSeconds: 60,
@@ -61,7 +61,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "preserve_input",
   },
   chat_guru: {
-    model: "gpt-5-nano",
+    model: "gpt-5.6-luna",
     maxInputUnits: 16_000,
     maxOutputUnits: 1_200,
     windowSeconds: 60,
@@ -71,7 +71,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "local_fallback",
   },
   content_help: {
-    model: "gpt-5-mini",
+    model: "gpt-5.6-luna",
     maxInputUnits: 32_000,
     maxOutputUnits: 4_000,
     windowSeconds: 300,
@@ -81,7 +81,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "preserve_content",
   },
   listening_feedback: {
-    model: "gpt-5-mini",
+    model: "gpt-5.6-luna",
     maxInputUnits: 16_000,
     maxOutputUnits: 1_600,
     windowSeconds: 60,
@@ -91,7 +91,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "preserve_content",
   },
   speaking_feedback: {
-    model: "gpt-5-mini",
+    model: "gpt-5.6-luna",
     maxInputUnits: 16_000,
     maxOutputUnits: 1_600,
     windowSeconds: 60,
@@ -101,7 +101,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "preserve_content",
   },
   writing_feedback: {
-    model: "gpt-5-mini",
+    model: "gpt-5.6-luna",
     maxInputUnits: 16_000,
     maxOutputUnits: 2_000,
     windowSeconds: 60,
@@ -111,7 +111,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "preserve_content",
   },
   scoring: {
-    model: "gpt-5-mini",
+    model: "gpt-5.6-luna",
     maxInputUnits: 16_000,
     maxOutputUnits: 2_000,
     windowSeconds: 60,
@@ -618,7 +618,7 @@ export async function askSmartAi(input: {
           model,
           instructions: input.instructions,
           input: input.content,
-          reasoning: { effort: "minimal" },
+          reasoning: { effort: "low" },
           text: { verbosity: "low" },
           max_output_tokens: policyFor(input.feature, input.deps ?? {}).maxOutputUnits,
         }),

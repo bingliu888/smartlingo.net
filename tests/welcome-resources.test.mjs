@@ -7,7 +7,7 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("homepage exposes the complete SmartLingo learning, class, and social flow", async () => {
   const source = await read("../app/[lang]/page.tsx");
 
-  assert.match(source, /七种语言，同一套完整学习闭环/);
+  assert.match(source, /九种语言，同一套完整学习闭环/);
   assert.match(source, /听、说、读、写/);
   assert.match(source, /每日短任务、间隔复习/);
   assert.match(source, /登录会员可以作为老师或协调员创建私有班级/);
@@ -29,7 +29,7 @@ test("SmartLingo brand and original social preview assets are locally hosted", a
   const layout = await read("../app/layout.tsx");
   assert.match(layout, /images: \[\{ url: "\/smartlingo-language-community-1600\.png"/);
   assert.match(layout, /SmartLingo — 从第一天开口，与班级一起进步/);
-  assert.match(layout, /七种语言、听说读写、实时语音导师、会员自主开班、班级社区与透明分账/);
+  assert.match(layout, /九种语言、听说读写、实时语音导师、会员自主开班、班级社区与透明分账/);
 });
 
 test("Guru, live audio, class commerce, and reward boundaries are explicit", async () => {

@@ -33,11 +33,10 @@ test("390/430/834/1194/1440 hero panels use their available width without horizo
     css,
     /@media\(max-width:1080px\)\{\.lingo-hero\{grid-template-columns:1fr\}\.lingo-hero-visual\{width:min\(800px,100%\);margin:0 auto 66px\}/,
   );
-  assert.match(
-    css,
-    /@media\(max-width:820px\)\{\.lingo-hero-shell \.mobile-menu>div\{[^}]+\}\.lingo-hero\{padding:48px 28px 76px\}/,
-  );
-  assert.match(css, /@media\(max-width:560px\)\{\.lingo-brand-mark\{[^}]+\}\.lingo-hero\{padding:38px 20px 66px\}/);
+  assert.match(css, /@media\(max-width:820px\)\{\.lingo-hero-shell \.mobile-menu>div\{[^}]+\}/);
+  assert.match(css, /\.lingo-hero\{padding:48px 28px 76px\}/);
+  assert.match(css, /@media\(max-width:560px\)\{\.lingo-brand-mark\{[^}]+\}/);
+  assert.match(css, /\.lingo-hero\{padding:38px 20px 66px\}/);
 
   const layouts = new Map([390, 430, 834, 1194, 1440].map((width) => [width, heroMetrics(width)]));
   assert.equal(layouts.get(390).columns, 1);
@@ -78,9 +77,9 @@ test("hero text containment is source-stable and headings remain free to wrap na
   assert.match(css, /html,body\{max-width:100%;overflow-x:hidden;overflow-x:clip\}/);
   assert.match(css, /:where\(main,section,article,header,footer,nav,aside,form,fieldset,div,ul,ol,li,dl,dt,dd\)\{min-width:0\}/);
   assert.match(css, /overflow-wrap:anywhere/);
-  assert.match(css, /\.lingo-hero-copy h1\{[^}]*text-wrap:wrap;overflow-wrap:anywhere;word-break:normal\}/);
+  assert.match(css, /\.lingo-hero-copy h2\{[^}]*text-wrap:wrap;overflow-wrap:anywhere;word-break:normal\}/);
   assert.match(css, /\.lingo-heading h2,[^}]*text-wrap:wrap;overflow-wrap:anywhere;word-break:normal/);
-  assert.doesNotMatch(css, /\.lingo-hero-copy h1\{[^}]*white-space:nowrap/);
+  assert.doesNotMatch(css, /\.lingo-hero-copy h2\{[^}]*white-space:nowrap/);
   assert.match(home, /title: "从第一天开始，开口说一门新语言。"/);
-  assert.match(home, /<h1>\{t\.title\}<\/h1>/);
+  assert.match(home, /<h2>\{t\.title\}<\/h2>/);
 });

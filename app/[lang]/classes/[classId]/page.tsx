@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ClassStudio } from "../../../../components/ClassStudio";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
+import { requestUser } from "../../../../lib/request-user";
 
 export async function generateMetadata({
   params,
@@ -23,6 +24,11 @@ export default async function ClassPage({
   const { lang, classId } = await params;
   if (lang !== "en" && lang !== "zh") notFound();
   const query = await searchParams;
+  const user = await requestUser();
+  if (!user) {
+    const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}${query.invite ? `?invite=${encodeURIComponent(query.invite)}` : ""}`;
+    redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }
   return (
     <main className="classes-page">
       <SiteHeader lang={lang} />

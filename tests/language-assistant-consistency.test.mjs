@@ -6,8 +6,8 @@ test("English and Chinese routes use matching content", async () => {
   const home = await readFile(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
   assert.match(home, /en:\s*\{/);
   assert.match(home, /zh:\s*\{/);
-  assert.match(home, /Seven languages, one connected learning loop/);
-  assert.match(home, /七种语言，同一套完整学习闭环/);
+  assert.match(home, /Nine languages, one connected learning loop/);
+  assert.match(home, /九种语言，同一套完整学习闭环/);
   assert.match(home, /Create a class\. Coordinate learners\. Build a real community/);
   assert.match(home, /会员自主开班/);
   assert.match(home, /Introducer rewards apply only to platform subscriptions/);

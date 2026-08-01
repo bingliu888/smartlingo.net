@@ -26,19 +26,26 @@ test("the old Admin page resolves through Next notFound without a second managem
   await assert.rejects(read("../lib/smartlingo-admin.ts"), error => error?.code === "ENOENT");
 });
 
-test("legacy license and class-referral endpoints are retired without writes or rewards", async () => {
-  const routes = await Promise.all([
+test("legacy license and class-referral endpoints stay retired while free official-community enrollment is isolated", async () => {
+  const retiredRoutes = await Promise.all([
     read("../app/api/classes/licenses/route.ts"),
     read("../app/api/classes/referrals/claim/route.ts"),
     read("../app/api/classes/[classId]/referrals/route.ts"),
-    read("../app/api/classes/[classId]/enroll/route.ts"),
     read("../app/r/class/[code]/route.ts"),
   ]);
 
-  for (const route of routes) {
+  for (const route of retiredRoutes) {
     assert.match(route, /status: 410/);
     assert.doesNotMatch(route, /INSERT|UPDATE|DELETE|smartlingo_bacc_ledger/i);
   }
+
+  const enrollment = await read("../app/api/classes/[classId]/enroll/route.ts");
+  assert.match(enrollment, /Authentication required/);
+  assert.match(enrollment, /charged: false/);
+  assert.match(enrollment, /SMARTLINGO_CLASS_PAYMENT_NOT_ENABLED/);
+  assert.match(enrollment, /price_cents = 0/);
+  assert.match(enrollment, /smartlingo_language_class_members/);
+  assert.doesNotMatch(enrollment, /smartlingo_bacc_ledger|introducer_reward|stripe\.checkout|PaymentIntent/i);
 });
 
 test("all tracked migrations apply in order and 0017 remains additive", async () => {
