@@ -9,6 +9,7 @@ const platformSource = await read("../app/api/platform/route.ts");
 const logoutSource = await read("../app/api/auth/logout/route.ts");
 const referralRouteSource = await read("../app/r/[code]/route.ts");
 const bridgeSource = await read("../app/api/auth/clerk-session/route.ts");
+const bridgeHandlerSource = await read("../lib/clerk-session-bridge.ts");
 
 test("a validated platform referral survives sign-up in one secure cookie", () => {
   assert.match(referralRouteSource, /SELECT id FROM referral_codes WHERE code = \? LIMIT 1/);
@@ -17,8 +18,10 @@ test("a validated platform referral survives sign-up in one secure cookie", () =
   assert.match(referralRouteSource, /auth\/sign-up\?referral=invalid/);
   assert.match(authSource, /REFERRAL_COOKIE_NAME = "smartlingo_referral_code"/);
   assert.match(authSource, /HttpOnly; Secure; SameSite=Lax/);
-  assert.match(bridgeSource, /referralCodeFromRequest\(request\)/);
-  assert.match(bridgeSource, /clearReferralCookie\(\)/);
+  assert.match(bridgeSource, /referralCodeFromRequest,/);
+  assert.match(bridgeSource, /clearReferralCookie,/);
+  assert.match(bridgeHandlerSource, /dependencies\.referralCodeFromRequest\(request\)/);
+  assert.match(bridgeHandlerSource, /dependencies\.clearReferralCookie\(\)/);
   assert.match(logoutSource, /clearReferralCookie\(\)/);
 });
 

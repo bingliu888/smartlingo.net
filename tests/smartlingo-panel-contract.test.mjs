@@ -22,7 +22,7 @@ function heroMetrics(viewport) {
   return { columns: 2, container, inner, copy, panel, gap };
 }
 
-test("390/834/1194/1440 hero panels use their available width without horizontal spill", async () => {
+test("390/430/834/1194/1440 hero panels use their available width without horizontal spill", async () => {
   const css = await read("../app/globals.css");
 
   assert.match(
@@ -39,8 +39,9 @@ test("390/834/1194/1440 hero panels use their available width without horizontal
   );
   assert.match(css, /@media\(max-width:560px\)\{\.lingo-brand-mark\{[^}]+\}\.lingo-hero\{padding:38px 20px 66px\}/);
 
-  const layouts = new Map([390, 834, 1194, 1440].map((width) => [width, heroMetrics(width)]));
+  const layouts = new Map([390, 430, 834, 1194, 1440].map((width) => [width, heroMetrics(width)]));
   assert.equal(layouts.get(390).columns, 1);
+  assert.equal(layouts.get(430).columns, 1);
   assert.equal(layouts.get(834).columns, 1);
   assert.equal(layouts.get(1194).columns, 2);
   assert.equal(layouts.get(1440).columns, 2);
@@ -60,6 +61,7 @@ test("390/834/1194/1440 hero panels use their available width without horizontal
   }
 
   assert.ok(layouts.get(390).panel >= 350, "phone preview panel should fill the 350px content area");
+  assert.ok(layouts.get(430).panel >= 390, "large-phone preview panel should fill the 390px content area");
   assert.ok(layouts.get(834).panel >= 720, "iPad portrait preview panel should use essentially all content width");
   assert.ok(layouts.get(1194).copy >= 500, "iPad landscape copy needs enough width to avoid a one-character H1 line");
   assert.ok(layouts.get(1194).panel >= 360, "iPad landscape preview must retain a readable panel");

@@ -44,6 +44,15 @@ function fakeDatabase(options = {}) {
           return null;
         },
         async run() {
+          if (query.includes("UPDATE smartlingo_ai_usage_windows SET output_units") && options.failOutputAccumulation) {
+            return { success: false, results: [] };
+          }
+          if (query.includes("UPDATE smartlingo_ai_requests") && options.failCompletion) {
+            return { success: false, results: [] };
+          }
+          if (query.includes("UPDATE live_voice_usage SET used_seconds = 0") && options.failAllowanceRelease) {
+            return { success: false, results: [] };
+          }
           return { success: true, results: [] };
         },
       };
@@ -54,11 +63,12 @@ function fakeDatabase(options = {}) {
 
 async function sourceFiles(directory) {
   const result = [];
-  for (const name of await readdir(directory)) {
+  const entries = await readdir(directory).catch(error => error.code === "ENOENT" ? [] : Promise.reject(error));
+  for (const name of entries) {
     const file = path.join(directory, name);
     const info = await stat(file);
     if (info.isDirectory()) result.push(...await sourceFiles(file));
-    else if (/\.(?:ts|tsx)$/.test(name)) result.push(file);
+    else if (/\.(?:cjs|js|jsx|mjs|ts|tsx)$/.test(name)) result.push(file);
   }
   return result;
 }
@@ -69,24 +79,28 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
     "chat_guru",
     "content_help",
     "image",
+    "listening_feedback",
     "live_voice",
     "message_polish",
     "moderation",
     "public_guru",
     "scoring",
+    "speaking_feedback",
+    "writing_feedback",
   ]);
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.public_guru.failureMode, "local_fallback");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.message_polish.failureMode, "preserve_input");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.listening_feedback.failureMode, "preserve_content");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.speaking_feedback.failureMode, "preserve_content");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.writing_feedback.failureMode, "preserve_content");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.scoring.failureMode, "deny");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.failureMode, "quarantine");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.maxInputUnits, 600);
 });
 
-test("OpenAI origin and secret name exist only in the unified gateway under app and lib", async () => {
-  const files = [
-    ...await sourceFiles(path.join(root, "app")),
-    ...await sourceFiles(path.join(root, "lib")),
-  ];
+test("OpenAI origin and secret name exist only in the unified gateway across runtime and client artifacts", async () => {
+  const runtimeRoots = ["app", "build", "components", "db", "lib", "worker"];
+  const files = (await Promise.all(runtimeRoots.map(directory => sourceFiles(path.join(root, directory))))).flat();
   const offenders = [];
   for (const file of files) {
     const source = await readFile(file, "utf8");
@@ -94,6 +108,18 @@ test("OpenAI origin and secret name exist only in the unified gateway under app 
     if (/api\.openai\.com|OPENAI_API_KEY/.test(source)) offenders.push(path.relative(root, file));
   }
   assert.deepEqual(offenders, []);
+
+  const clientFiles = await sourceFiles(path.join(root, "dist", "client"));
+  const clientOffenders = [];
+  for (const file of clientFiles) {
+    const source = await readFile(file, "utf8");
+    if (/api\.openai\.com|OPENAI_API_KEY/.test(source)) clientOffenders.push(path.relative(root, file));
+  }
+  assert.deepEqual(clientOffenders, []);
+  const scanner = await read("scripts/scan-sensitive-data.mjs");
+  assert.match(scanner, /forbiddenClientMarkers/);
+  assert.match(scanner, /OpenAI server environment name/);
+  assert.match(scanner, /direct OpenAI provider origin/);
 });
 
 test("missing key returns an original localized Guru fallback without auditing raw text", async () => {
@@ -108,6 +134,7 @@ test("missing key returns an original localized Guru fallback without auditing r
     content: raw,
     deps: {
       apiKey: null,
+      subjectHashKey: "test-audit-hash-key",
       database,
       now: () => 1_700_000_000_000,
       randomUUID: (() => {
@@ -123,6 +150,74 @@ test("missing key returns an original localized Guru fallback without auditing r
   assert.equal(database.queries.some(item => item.query.includes(raw)), false);
   assert.equal(database.queries.flatMap(item => item.values).some(value => value === raw), false);
   assert.ok(database.queries.some(item => item.query.includes("fallback_used")));
+});
+
+test("audit subjects use keyed deterministic HMACs and never expose a low-entropy subject", async () => {
+  const gateway = await importGateway();
+  const subject = "visitor:127.0.0.1";
+  const first = await gateway.smartAiSubjectHash("public_guru", subject, "server-key-one");
+  const same = await gateway.smartAiSubjectHash("public_guru", subject, "server-key-one");
+  const rotated = await gateway.smartAiSubjectHash("public_guru", subject, "server-key-two");
+  assert.equal(first, same);
+  assert.notEqual(first, rotated);
+  assert.match(first, /^[a-f0-9]{64}$/);
+  assert.doesNotMatch(first, /127\.0\.0\.1|visitor/);
+  await assert.rejects(
+    gateway.smartAiSubjectHash("public_guru", subject, ""),
+    error => error.code === "audit_unavailable" && error.status === 503,
+  );
+});
+
+test("missing provider and subject-hash keys fail safely without provider or audit writes", async () => {
+  const gateway = await importGateway();
+  const database = fakeDatabase();
+  let providerCalled = false;
+  const result = await gateway.askSmartAi({
+    feature: "public_guru",
+    subject: "visitor:anonymous",
+    language: "en",
+    instructions: "safe",
+    content: "question",
+    deps: {
+      apiKey: null,
+      database,
+      fetch: async () => {
+        providerCalled = true;
+        return new Response();
+      },
+    },
+  });
+  assert.equal(result.fallback, true);
+  assert.equal(providerCalled, false);
+  assert.equal(database.queries.length, 0);
+});
+
+test("bounded request readers reject declared and streamed oversized payloads with 413", async () => {
+  const gateway = await importGateway();
+  const declared = new Request("https://smartlingo.net/api/assistant", {
+    method: "POST",
+    headers: { "content-length": "11" },
+    body: "{}",
+  });
+  await assert.rejects(
+    gateway.readSmartAiRequestText(declared, 10),
+    error => error.code === "request_too_large" && error.status === 413,
+  );
+
+  const streamed = new Request("https://smartlingo.net/api/assistant", {
+    method: "POST",
+    body: "12345678901",
+  });
+  await assert.rejects(
+    gateway.readSmartAiRequestText(streamed, 10),
+    error => error.code === "request_too_large" && error.status === 413,
+  );
+
+  const valid = new Request("https://smartlingo.net/api/assistant", {
+    method: "POST",
+    body: JSON.stringify({ language: "zh", messages: [] }),
+  });
+  assert.deepEqual(await gateway.readSmartAiJsonRequest(valid, 128), { language: "zh", messages: [] });
 });
 
 test("atomic D1 window rejection produces a sanitized 429 before any provider call", async () => {
@@ -186,6 +281,133 @@ test("AbortController timeout and upstream 5xx both use the public bilingual fal
   assert.doesNotMatch(upstream.value, /provider-internal-secret/);
 });
 
+test("the timeout covers a stalled response body, not only response headers", async () => {
+  const gateway = await importGateway();
+  const started = Date.now();
+  let bodyCancelled = false;
+  const result = await gateway.askSmartAi({
+    feature: "public_guru",
+    subject: "visitor:slow-body",
+    language: "en",
+    instructions: "safe",
+    content: "question",
+    deps: {
+      apiKey: "test-only",
+      database: fakeDatabase(),
+      policyOverrides: { public_guru: { timeoutMs: 10 } },
+      fetch: async () => new Response(new ReadableStream({
+        start() {},
+        cancel() { bodyCancelled = true; },
+      }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    },
+  });
+  assert.equal(result.fallback, true);
+  assert.equal(bodyCancelled, true, "gateway timeout must cancel the active provider response body");
+  assert.ok(Date.now() - started < 500, "stalled response body must be bounded by the gateway timeout");
+});
+
+test("an unsuccessful D1 audit completion never releases an upstream answer", async () => {
+  const gateway = await importGateway();
+  const database = fakeDatabase({ failCompletion: true });
+  const result = await gateway.askSmartAi({
+    feature: "public_guru",
+    subject: "visitor:audit-failure",
+    language: "en",
+    instructions: "safe",
+    content: "question",
+    deps: {
+      apiKey: "test-only",
+      database,
+      fetch: async () => Response.json({ output_text: "provider answer that must not escape" }),
+    },
+  });
+  assert.equal(result.fallback, true);
+  assert.doesNotMatch(result.value, /provider answer/);
+  assert.ok(database.queries.some(item => item.query.includes("UPDATE smartlingo_ai_requests")));
+  assert.ok(database.queries.some(item => item.values.includes("audit_unavailable")));
+});
+
+test("listening, speaking, and writing feedback preserve learner content on service failure", async () => {
+  const gateway = await importGateway();
+  for (const feature of ["listening_feedback", "speaking_feedback", "writing_feedback"]) {
+    const content = `learner-owned-${feature}`;
+    const result = await gateway.reviewSmartAiLearningContent({
+      feature,
+      subject: "user:learner",
+      language: "en",
+      content,
+      deps: {
+        apiKey: null,
+        subjectHashKey: "test-audit-hash-key",
+        database: fakeDatabase(),
+      },
+    });
+    assert.deepEqual(result, { value: content, fallback: true });
+  }
+});
+
+test("learning feedback calls share one explicit AI-not-teacher safety boundary", async () => {
+  const gateway = await importGateway();
+  let providerRequest;
+  const result = await gateway.reviewSmartAiLearningContent({
+    feature: "speaking_feedback",
+    subject: "user:speaker",
+    language: "zh",
+    content: "A supplied transcript only",
+    instructions: "Focus on one declared target sound.",
+    deps: {
+      apiKey: "test-only",
+      database: fakeDatabase(),
+      fetch: async (_url, init) => {
+        providerRequest = {
+          body: JSON.parse(init.body),
+          safetyIdentifier: new Headers(init.headers).get("OpenAI-Safety-Identifier"),
+        };
+        return Response.json({ output_text: "练习建议" });
+      },
+    },
+  });
+  assert.deepEqual(result, { value: "练习建议", fallback: false });
+  assert.match(providerRequest.body.instructions, /artificial intelligence practice assistant/);
+  assert.match(providerRequest.body.instructions, /not a human teacher or official examiner/);
+  assert.match(providerRequest.body.instructions, /State uncertainty/);
+  assert.match(providerRequest.body.instructions, /Simplified Chinese/);
+  assert.match(providerRequest.safetyIdentifier, /^[a-f0-9]{64}$/);
+  assert.doesNotMatch(providerRequest.safetyIdentifier, /speaker/);
+});
+
+test("safety review is fail-closed and returns a structured quarantine fallback", async () => {
+  const gateway = await importGateway();
+  const accepted = await gateway.reviewSmartAiSafety({
+    subject: "user:moderated",
+    content: "ordinary practice content",
+    deps: {
+      apiKey: "test-only",
+      database: fakeDatabase(),
+      fetch: async () => Response.json({
+        results: [{ flagged: false, categories: { harassment: false, violence: false } }],
+      }),
+    },
+  });
+  assert.deepEqual(accepted, {
+    value: { allowed: true, flagged: false, categories: [], humanReviewRequired: false },
+    fallback: false,
+  });
+
+  const unavailable = await gateway.reviewSmartAiSafety({
+    subject: "user:moderated",
+    content: "content requiring a decision",
+    deps: { apiKey: null, database: fakeDatabase() },
+  });
+  assert.deepEqual(unavailable, {
+    value: { allowed: false, flagged: true, categories: ["review_required"], humanReviewRequired: true },
+    fallback: true,
+  });
+});
+
 test("image failure is fail-safe and never returns an upstream error body", async () => {
   const gateway = await importGateway();
   let error;
@@ -225,6 +447,50 @@ test("free live voice atomically reserves all 600 seconds and blocks a concurren
   const reservations = database.queries.filter(item => item.query.includes("live_voice_usage"));
   assert.equal(reservations.length, 2);
   assert.ok(reservations.every(item => item.query.includes("used_seconds = 600")));
+});
+
+test("a failed free live voice connection releases the reserved daily allowance", async () => {
+  const gateway = await importGateway();
+  const database = fakeDatabase();
+  await assert.rejects(
+    gateway.openSmartAiLiveVoice({
+      userId: "user-release",
+      subject: "user:user-release",
+      paid: false,
+      sdp: "v=0\r\n",
+      instructions: "safe",
+      deps: {
+        apiKey: null,
+        subjectHashKey: "test-audit-hash-key",
+        database,
+        now: () => Date.parse("2026-08-01T12:00:00.000Z"),
+      },
+    }),
+    error => error.code === "missing_key",
+  );
+  const release = database.queries.find(item => item.query.includes("UPDATE live_voice_usage SET used_seconds = 0"));
+  assert.ok(release);
+  assert.deepEqual(release.values.slice(1), ["user-release:2026-08-01", "user-release", "2026-08-01"]);
+});
+
+test("assistant routes expose bounded public, authenticated polish, chat, and live capabilities", async () => {
+  const route = await read("app/api/assistant/route.ts");
+  assert.match(route, /readSmartAiJsonRequest/);
+  assert.match(route, /"public_guru" \| "message_polish" \| "chat_guru"/);
+  assert.match(route, /feature === "public_guru" \? null : await requestUser\(\)/);
+  assert.match(route, /feature !== "public_guru" && !user/);
+  assert.doesNotMatch(route, /request\.json\(/);
+
+  const live = await read("app/api/assistant/live/route.ts");
+  assert.match(live, /readSmartAiRequestText\(request, 100_000\)/);
+  assert.doesNotMatch(live, /request\.text\(/);
+
+  const publicClient = await read("components/AssistantClient.tsx");
+  const messageClient = await read("components/MessageCenter.tsx");
+  const chatClient = await read("components/LiveChatRoom.tsx");
+  assert.match(publicClient, /feature: "public_guru"/);
+  assert.match(messageClient, /feature: "message_polish"/);
+  assert.match(chatClient, /feature: "chat_guru"/);
 });
 
 test("client voice usage POST can no longer influence the allowance", async () => {

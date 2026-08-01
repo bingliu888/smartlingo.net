@@ -13,22 +13,23 @@ test("the application shell always mounts inside ClerkProvider", async () => {
 });
 
 test("the Clerk session bridge can verify with the production secret key", async () => {
-  const bridge = await readFile(
-    new URL("../app/api/auth/clerk-session/route.ts", import.meta.url),
-    "utf8",
-  );
+  const [route, bridge] = await Promise.all([
+    readFile(new URL("../app/api/auth/clerk-session/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/clerk-session-bridge.ts", import.meta.url), "utf8"),
+  ]);
 
-  assert.match(bridge, /jwtKey\s*\?\s*\{\s*jwtKey,\s*authorizedParties:\s*parties\s*\}\s*:\s*\{\s*secretKey,\s*authorizedParties:\s*parties\s*\}/);
+  assert.match(route, /options\.jwtKey[\s\S]*?secretKey:\s*options\.secretKey/);
+  assert.match(bridge, /jwtKey\s*\?\s*\{\s*jwtKey,\s*authorizedParties\s*\}\s*:\s*\{\s*secretKey,\s*authorizedParties\s*\}/);
   assert.doesNotMatch(bridge, /!jwtKey\)\s*return Response\.json/);
 });
 
 test("the Clerk session bridge trusts only verified Clerk identity claims and safe request metadata", async () => {
-  const bridge = await readFile(
-    new URL("../app/api/auth/clerk-session/route.ts", import.meta.url),
-    "utf8",
-  );
+  const [route, bridge] = await Promise.all([
+    readFile(new URL("../app/api/auth/clerk-session/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/clerk-session-bridge.ts", import.meta.url), "utf8"),
+  ]);
 
-  assert.match(bridge, /createClerkClient\(\{\s*secretKey,\s*publishableKey\s*\}\)\.users\.getUser\(userId\)/);
+  assert.match(route, /createClerkClient\(keys\)\.users\.getUser\(userId\)/);
   assert.match(bridge, /primaryEmail\?\.verification\?\.status === "verified"/);
   assert.match(bridge, /clerkUser\.banned \|\| clerkUser\.locked/);
   assert.doesNotMatch(bridge, /payload\.email|payload\.name/);
@@ -39,7 +40,7 @@ test("the Clerk session bridge trusts only verified Clerk identity claims and sa
 
 test("the Clerk session bridge restricts authorized parties to production and safe local development", async () => {
   const bridge = await readFile(
-    new URL("../app/api/auth/clerk-session/route.ts", import.meta.url),
+    new URL("../lib/clerk-session-bridge.ts", import.meta.url),
     "utf8",
   );
 
@@ -47,7 +48,7 @@ test("the Clerk session bridge restricts authorized parties to production and sa
   assert.match(bridge, /"https:\/\/www\.smartlingo\.net"/);
   assert.match(bridge, /publishableKey\.startsWith\("pk_test_"\)/);
   assert.match(bridge, /requestUrl\.hostname === "localhost"/);
-  assert.match(bridge, /authorizedParties: parties/);
+  assert.match(bridge, /authorizedParties = clerkAuthorizedParties/);
 });
 
 test("parallel Clerk session initialization creates users idempotently", async () => {

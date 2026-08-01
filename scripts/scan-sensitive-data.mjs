@@ -71,6 +71,10 @@ const serverOnlyEnvironmentNames = [
   ...activeServerOnlyEnvironmentNames,
   ...futureServerOnlyEnvironmentNames,
 ];
+const forbiddenClientMarkers = [
+  { label: "OpenAI server environment name", pattern: /\bOPENAI_API_KEY\b/g },
+  { label: "direct OpenAI provider origin", pattern: /\bapi\.openai\.com\b/g },
+];
 
 async function filesBelow(directory) {
   const details = await stat(directory).catch(() => null);
@@ -111,6 +115,12 @@ for (const path of clientFiles) {
   const content = await text(path);
   if (content === null) continue;
   for (const check of secretValuePatterns) {
+    check.pattern.lastIndex = 0;
+    if (check.pattern.test(content)) {
+      failures.push(`${relative(root, path)} contains a ${check.label}`);
+    }
+  }
+  for (const check of forbiddenClientMarkers) {
     check.pattern.lastIndex = 0;
     if (check.pattern.test(content)) {
       failures.push(`${relative(root, path)} contains a ${check.label}`);

@@ -41,7 +41,7 @@ test("legacy license and class-referral endpoints are retired without writes or 
   }
 });
 
-test("all additive migrations, including the language marketplace, apply in order", async () => {
+test("all tracked migrations apply in order and 0017 remains additive", async () => {
   const names = (await readdir(new URL("../drizzle", import.meta.url)))
     .filter(name => /^\d{4}_.+\.sql$/.test(name))
     .sort();

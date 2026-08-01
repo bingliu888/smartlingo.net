@@ -213,6 +213,66 @@ function runD1Smoke(database) {
       status: "ready",
     },
   );
+  const insertMedia = database.prepare(`
+    INSERT INTO smartlingo_media_assets
+      (id, owner_user_id, kind, scope_type, scope_id, object_key, mime_type,
+       size_bytes, sha256, visibility, status, created_at, updated_at)
+    VALUES (?, 'd1-smoke-user', ?, ?, ?, ?, 'application/octet-stream',
+      ?, ?, 'private', 'ready', ?, ?)
+  `);
+  assert.throws(
+    () => insertMedia.run(
+      "d1-smoke-media-zero",
+      "avatar",
+      "user",
+      "d1-smoke-user",
+      "smoke/users/d1-smoke/zero.bin",
+      0,
+      "0".repeat(64),
+      now,
+      now,
+    ),
+    /CHECK constraint failed: smartlingo_media_size_ck/,
+  );
+  assert.throws(
+    () => insertMedia.run(
+      "d1-smoke-media-uppercase-sha",
+      "avatar",
+      "user",
+      "d1-smoke-user",
+      "smoke/users/d1-smoke/uppercase.bin",
+      1,
+      "A".repeat(64),
+      now,
+      now,
+    ),
+    /CHECK constraint failed: smartlingo_media_sha256_ck/,
+  );
+  assert.throws(
+    () => insertMedia.run(
+      "d1-smoke-media-wrong-scope",
+      "avatar",
+      "language_class",
+      "not-the-owner",
+      "smoke/users/d1-smoke/wrong-scope.bin",
+      1,
+      "a".repeat(64),
+      now,
+      now,
+    ),
+    /CHECK constraint failed: smartlingo_media_scope_ck/,
+  );
+  insertMedia.run(
+    "d1-smoke-voice-practice",
+    "voice_practice",
+    "user",
+    "d1-smoke-user",
+    "smoke/users/d1-smoke/voice-practice.webm",
+    256,
+    "b".repeat(64),
+    now,
+    now,
+  );
 
   const incrementWindow = database.prepare(`
     INSERT INTO smartlingo_ai_usage_windows
@@ -304,6 +364,65 @@ function runD1Smoke(database) {
       version: "2026.07.31",
     },
   );
+  database.prepare(`
+    INSERT INTO smartlingo_exercises
+      (id, path_id, stable_key, version, skill, title_zh, title_en,
+       instruction_zh, instruction_en, target_content, answer_content,
+       source_type, review_status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 'listening', ?, ?, ?, ?, ?, ?,
+      'smartlingo_original', 'approved', ?, ?)
+  `).run(
+    "d1-smoke-exercise",
+    "path_en_a1",
+    "greeting-listen-001",
+    "2026.08.01.1",
+    "听辨初次问候",
+    "Hear a first greeting",
+    "先听问候，再用中文写出说话人的意图。",
+    "Listen first, then describe the speaker's intent in English.",
+    "Hello, it is good to meet you.",
+    '{"accepted":["初次见面问候","a first-time greeting"]}',
+    now,
+    now,
+  );
+  database.prepare(`
+    INSERT INTO smartlingo_language_progress
+      (id, user_id, path_id, exercise_id, exercise_version, status,
+       best_score, attempt_count, due_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'in_progress', 82, 1, ?, ?)
+  `).run(
+    "d1-smoke-progress",
+    "d1-smoke-learner",
+    "path_en_a1",
+    "d1-smoke-exercise",
+    "2026.08.01.1",
+    now + 86_400,
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_language_progress
+        (id, user_id, path_id, exercise_id, exercise_version, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      "d1-smoke-progress-wrong-version",
+      "d1-smoke-learner",
+      "path_en_a1",
+      "d1-smoke-exercise",
+      "2026.08.01.2",
+      now,
+    ),
+    /smartlingo progress must reference the exact exercise path and version/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_language_paths
+        (id, slug, target_language, level, title_en, title_zh, status, version,
+         created_at, updated_at)
+      VALUES (?, ?, 'xx', 'A1', 'Invalid', '无效', 'draft', '', ?, ?)
+    `).run("d1-smoke-invalid-path", "invalid-path", now, now),
+    /smartlingo language path requires a supported language and version/,
+  );
 
   database.prepare(`
     INSERT INTO smartlingo_connected_accounts
@@ -359,8 +478,8 @@ function runD1Smoke(database) {
        discount_basis_points, discounted_pre_tax_cents, tax_cents,
        owner_share_cents, platform_fee_cents, currency, first_class_payment,
        status, webhook_event_id, paid_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, 'stripe_connect', ?, ?, 10000, 1500, 8500, 0,
-      5950, 2550, 'USD', 1, 'paid', ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, 'stripe_connect', ?, ?, 101, 1500, 86, 0,
+      60, 26, 'USD', 1, 'paid', ?, ?, ?, ?)
   `).run(
     "d1-smoke-language-class-order",
     "d1-smoke-language-class",
@@ -387,9 +506,9 @@ function runD1Smoke(database) {
     { ...classOrder },
     {
       discountBasisPoints: 1500,
-      discountedPreTaxCents: 8500,
-      ownerShareCents: 5950,
-      platformFeeCents: 2550,
+      discountedPreTaxCents: 86,
+      ownerShareCents: 60,
+      platformFeeCents: 26,
       firstClassPayment: 1,
       status: "paid",
     },
@@ -401,23 +520,188 @@ function runD1Smoke(database) {
          discount_basis_points, discounted_pre_tax_cents, owner_share_cents,
          platform_fee_cents, created_at, updated_at)
       VALUES ('d1-smoke-invalid-split', 'd1-smoke-language-class',
-        'd1-smoke-learner', 'd1-smoke-user', 10000, 1500, 8500, 6000, 2550, ?, ?)
+        'd1-smoke-learner', 'd1-smoke-user', 10000, 0, 9999, 6999, 3000, ?, ?)
     `).run(now, now),
-    /CHECK constraint failed: smartlingo_language_class_order_split_ck/,
+    /CHECK constraint failed: smartlingo_language_class_order_discount_math_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_language_class_orders
+        (id, class_id, learner_user_id, owner_user_id, subtotal_cents,
+         discount_basis_points, discounted_pre_tax_cents, owner_share_cents,
+         platform_fee_cents, first_class_payment, status, paid_at,
+         created_at, updated_at)
+      VALUES ('d1-smoke-refunded-bypass', 'd1-smoke-language-class',
+        'd1-smoke-introducer', 'd1-smoke-user', 101, 0, 101, 70, 31,
+        0, 'refunded', ?, ?, ?)
+    `).run(now, now, now),
+    /smartlingo first successful class payment discount is single-use/,
+  );
+  database.prepare(`
+    UPDATE smartlingo_language_class_orders
+    SET status = 'refunded', refunded_at = ?, updated_at = ?
+    WHERE id = 'd1-smoke-language-class-order'
+  `).run(now + 1, now + 1);
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_language_class_orders
+        (id, class_id, learner_user_id, owner_user_id, subtotal_cents,
+         discount_basis_points, discounted_pre_tax_cents, owner_share_cents,
+         platform_fee_cents, first_class_payment, status, paid_at,
+         created_at, updated_at)
+      VALUES ('d1-smoke-repeat-first-discount', 'd1-smoke-language-class',
+        'd1-smoke-learner', 'd1-smoke-user', 101, 1500, 86, 60, 26,
+        1, 'paid', ?, ?, ?)
+    `).run(now + 2, now + 2, now + 2),
+    /(?:smartlingo first successful class payment discount is single-use|UNIQUE constraint failed)/,
+  );
+  database.prepare(`
+    INSERT INTO smartlingo_language_class_orders
+      (id, class_id, learner_user_id, owner_user_id, subtotal_cents,
+       discount_basis_points, discounted_pre_tax_cents, owner_share_cents,
+       platform_fee_cents, first_class_payment, status, paid_at,
+       created_at, updated_at)
+    VALUES ('d1-smoke-repeat-full-price', 'd1-smoke-language-class',
+      'd1-smoke-learner', 'd1-smoke-user', 101, 0, 101, 70, 31,
+      0, 'paid', ?, ?, ?)
+  `).run(now + 2, now + 2, now + 2);
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_language_class_orders
+        (id, class_id, learner_user_id, owner_user_id, subtotal_cents,
+         discount_basis_points, discounted_pre_tax_cents, owner_share_cents,
+         platform_fee_cents, status, created_at, updated_at)
+      VALUES ('d1-smoke-wrong-owner', 'd1-smoke-language-class',
+        'd1-smoke-learner', 'd1-smoke-introducer', 101, 0, 101, 70, 31,
+        'pending', ?, ?)
+    `).run(now, now),
+    /smartlingo class order owner must match the class owner/,
   );
 
   database.prepare(`
+    INSERT INTO referral_codes (id, user_id, code, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run("d1-smoke-referral-code", "d1-smoke-introducer", "D1SMOKE", now);
+  database.prepare(`
+    INSERT INTO referrals
+      (id, referral_code_id, referred_user_id, status, discount_percent,
+       created_at, updated_at)
+    VALUES (?, ?, ?, 'attributed', 0, ?, ?)
+  `).run(
+    "d1-smoke-direct-referral",
+    "d1-smoke-referral-code",
+    "d1-smoke-learner",
+    now,
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO referrals
+        (id, referral_code_id, referred_user_id, status, discount_percent,
+         created_at, updated_at)
+      VALUES (?, ?, ?, 'attributed', 0, ?, ?)
+    `).run(
+      "d1-smoke-self-referral",
+      "d1-smoke-referral-code",
+      "d1-smoke-introducer",
+      now,
+      now,
+    ),
+    /smartlingo direct referral cannot be self-attributed/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_platform_subscription_payments
+        (id, provider_invoice_id, subscriber_user_id, introducer_user_id,
+         amount_cents, currency, status, paid_at, created_at)
+      VALUES (?, ?, ?, ?, 699, 'USD', 'paid', ?, ?)
+    `).run(
+      "d1-smoke-platform-missing-referral",
+      "in_d1_smoke_missing_referral",
+      "d1-smoke-learner",
+      "d1-smoke-introducer",
+      now,
+      now,
+    ),
+    /smartlingo platform payment must match one direct referral/,
+  );
+  const insertPlatformPayment = database.prepare(`
     INSERT INTO smartlingo_platform_subscription_payments
       (id, provider_invoice_id, subscriber_user_id, introducer_user_id,
-       amount_cents, currency, status, paid_at, created_at)
-    VALUES (?, ?, ?, ?, 699, 'USD', 'paid', ?, ?)
-  `).run(
+       direct_referral_id, amount_cents, currency, status, paid_at, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?, ?)
+  `);
+  insertPlatformPayment.run(
     "d1-smoke-platform-subscription",
     "in_d1_smoke",
     "d1-smoke-learner",
     "d1-smoke-introducer",
+    "d1-smoke-direct-referral",
+    699,
+    "paid",
     now,
     now,
+  );
+  insertPlatformPayment.run(
+    "d1-smoke-platform-zero",
+    "in_d1_smoke_zero",
+    "d1-smoke-learner",
+    "d1-smoke-introducer",
+    "d1-smoke-direct-referral",
+    0,
+    "paid",
+    now,
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_introducer_reward_ledger
+        (id, introducer_user_id, subscription_payment_id, points, status, created_at)
+      VALUES (?, ?, ?, 100, 'earned', ?)
+    `).run(
+      "d1-smoke-zero-reward",
+      "d1-smoke-introducer",
+      "d1-smoke-platform-zero",
+      now,
+    ),
+    /smartlingo reward requires a paid positive platform subscription and matching direct referral/,
+  );
+  insertPlatformPayment.run(
+    "d1-smoke-platform-refunded",
+    "in_d1_smoke_refunded",
+    "d1-smoke-learner",
+    "d1-smoke-introducer",
+    "d1-smoke-direct-referral",
+    699,
+    "refunded",
+    now,
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_introducer_reward_ledger
+        (id, introducer_user_id, subscription_payment_id, points, status, created_at)
+      VALUES (?, ?, ?, 100, 'earned', ?)
+    `).run(
+      "d1-smoke-refunded-reward",
+      "d1-smoke-introducer",
+      "d1-smoke-platform-refunded",
+      now,
+    ),
+    /smartlingo reward requires a paid positive platform subscription and matching direct referral/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_introducer_reward_ledger
+        (id, introducer_user_id, subscription_payment_id, points, status, created_at)
+      VALUES (?, ?, ?, 100, 'earned', ?)
+    `).run(
+      "d1-smoke-mismatched-introducer-reward",
+      "d1-smoke-user",
+      "d1-smoke-platform-subscription",
+      now,
+    ),
+    /smartlingo reward requires a paid positive platform subscription and matching direct referral/,
   );
   database.prepare(`
     INSERT INTO smartlingo_introducer_reward_ledger
@@ -428,6 +712,14 @@ function runD1Smoke(database) {
     "d1-smoke-introducer",
     "d1-smoke-platform-subscription",
     now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      UPDATE smartlingo_platform_subscription_payments
+      SET status = 'refunded', refunded_at = ?
+      WHERE id = 'd1-smoke-platform-subscription'
+    `).run(now + 1),
+    /smartlingo earned reward must be reversed before payment reversal/,
   );
   const subscriptionReward = database.prepare(`
     SELECT p.provider_invoice_id AS providerInvoiceId,
@@ -490,6 +782,8 @@ function runD1Smoke(database) {
     mediaId: "d1-smoke-media",
     aiRequestId: "d1-smoke-ai-request",
     languagePathId: languagePath.id,
+    exerciseId: "d1-smoke-exercise",
+    progressId: "d1-smoke-progress",
     connectedAccountUserId: "d1-smoke-user",
     languageClassId: "d1-smoke-language-class",
     classOrderId: "d1-smoke-language-class-order",
@@ -500,9 +794,11 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0017_smartlingo_language_marketplace");
+  assert.equal(migrations.at(-1)?.tag, "0018_smartlingo_core_integrity");
+  const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
+  assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
-    migrations.at(-1).sql,
+    marketplaceMigration.sql,
     /\b(?:DROP\s+(?:TABLE|INDEX)|DELETE\s+FROM|ALTER\s+TABLE\b[\s\S]*?\bDROP\b)/i,
     "0017 must remain additive",
   );

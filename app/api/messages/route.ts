@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createId, getDatabase, getSessionUser } from "../../../lib/auth";
 import { avatarsById } from "../../../lib/member-avatars";
+import { tombstoneSmartLingoMedia } from "../../../lib/smartlingo-media";
 
 export const dynamic = "force-dynamic";
 type Row = Record<string, string | number | null>;
@@ -8,6 +9,7 @@ const nowSeconds = () => Math.floor(Date.now() / 1000);
 const isAdmin = (email: string) => (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(value => value.trim()).includes(email.toLowerCase());
 async function touchPresence(userId: string) { const db = getDatabase(); const now = nowSeconds(); await db.prepare("INSERT INTO user_presence (user_id, last_seen_at) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET last_seen_at = excluded.last_seen_at").bind(userId, now).run(); return now; }
 async function participant(threadId: string, userId: string) { return getDatabase().prepare("SELECT id FROM message_participants WHERE thread_id = ? AND user_id = ? AND deleted_at IS NULL").bind(threadId, userId).first(); }
+function messageBucket() { const value = (globalThis as unknown as { __SMARTLINGO_BUCKET__?: R2Bucket }).__SMARTLINGO_BUCKET__; if (!value) throw new Error("Message storage unavailable"); return value; }
 const attachmentFromBody = (body: string) => { if (!body.startsWith("__ATTACHMENT__|")) return null; try { return JSON.parse(body.slice(15)) as { id: string; name: string; mimeType: string; size: number; url: string }; } catch { return null; } };
 const visibleBody = (body: string) => { if (body.startsWith("__GURU__|")) return body.slice(9); if (body.startsWith("__EDITED__|")) return body.slice(11); const attachment = attachmentFromBody(body); return attachment ? `[Attachment] ${attachment.name}` : body; };
 
@@ -90,7 +92,42 @@ export async function POST(request: Request) {
   if (input.action === "reply" || input.action === "guru_reply") { const body = input.body?.trim() || ""; if (!input.threadId || !body || body.length > 2000 || !await participant(input.threadId, user.id)) return NextResponse.json({ error: "Invalid message" }, { status: 400 }); const id = createId(); const stored = input.action === "guru_reply" ? `__GURU__|${body}` : body; await db.prepare("INSERT INTO messages (id, thread_id, sender_id, body, created_at) VALUES (?, ?, ?, ?, ?)").bind(id, input.threadId, user.id, stored, now).run(); await db.prepare("UPDATE message_threads SET updated_at = ? WHERE id = ?").bind(now, input.threadId).run(); await db.prepare("UPDATE message_participants SET deleted_at = NULL, last_read_at = CASE WHEN user_id = ? THEN ? ELSE last_read_at END WHERE thread_id = ?").bind(user.id, now, input.threadId).run(); return NextResponse.json({ id }); }
   if (input.action === "edit_message") { const body = input.body?.trim() || ""; if (!input.threadId || !input.messageId || !body || body.length > 2000 || !await participant(input.threadId, user.id)) return NextResponse.json({ error: "Invalid edit" }, { status: 400 }); const editable = await db.prepare("SELECT id FROM messages WHERE id = ? AND thread_id = ? AND sender_id = ? AND deleted_at IS NULL AND body NOT LIKE '__ATTACHMENT__|%' AND body NOT LIKE '__GURU__|%' AND body NOT LIKE '__LIVE_REQUEST__|%' AND body NOT LIKE '__NOTICE_RESPONSE__|%'").bind(input.messageId, input.threadId, user.id).first(); if (!editable) return NextResponse.json({ error: "Message cannot be edited" }, { status: 403 }); await db.prepare("UPDATE messages SET body = ? WHERE id = ?").bind(`__EDITED__|${body}`, input.messageId).run(); await db.prepare("UPDATE message_threads SET updated_at = ? WHERE id = ?").bind(now, input.threadId).run(); return NextResponse.json({ ok: true }); }
   if (input.action === "add_member") { const memberId = String(input.memberId || ""); if (!input.threadId || !memberId || memberId === user.id || !await participant(input.threadId, user.id) || !await db.prepare("SELECT id FROM users WHERE id = ?").bind(memberId).first()) return NextResponse.json({ error: "Choose a valid member" }, { status: 400 }); const existing = await db.prepare("SELECT id FROM message_participants WHERE thread_id = ? AND user_id = ?").bind(input.threadId, memberId).first<{ id: string }>(); if (existing) await db.prepare("UPDATE message_participants SET deleted_at = NULL, last_read_at = 0 WHERE id = ?").bind(existing.id).run(); else await db.prepare("INSERT INTO message_participants (id, thread_id, user_id, last_read_at) VALUES (?, ?, ?, 0)").bind(createId(), input.threadId, memberId).run(); await db.prepare("INSERT INTO messages (id, thread_id, sender_id, body, created_at) VALUES (?, ?, ?, ?, ?)").bind(createId(), input.threadId, user.id, `__MEMBER_JOINED__|${memberId}`, now).run(); await db.prepare("UPDATE message_threads SET kind = 'group', updated_at = ? WHERE id = ?").bind(now, input.threadId).run(); return NextResponse.json({ ok: true }); }
-  if (input.action === "delete_message") { if (!input.messageId) return NextResponse.json({ error: "Message required" }, { status: 400 }); await db.prepare("UPDATE messages SET deleted_at = ? WHERE id = ? AND sender_id = ?").bind(now, input.messageId, user.id).run(); return NextResponse.json({ ok: true }); }
+  if (input.action === "delete_message") {
+    if (!input.messageId) return NextResponse.json({ error: "Message required" }, { status: 400 });
+    const target = await db.prepare(
+      "SELECT thread_id AS threadId, body FROM messages WHERE id = ? AND sender_id = ? AND deleted_at IS NULL LIMIT 1",
+    ).bind(input.messageId, user.id).first<{ threadId: string; body: string }>();
+    if (!target) return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    const attachment = attachmentFromBody(target.body);
+    let attachmentDeleted = false;
+    if (attachment?.id) {
+      const asset = await db.prepare(`SELECT id, object_key AS objectKey
+        FROM smartlingo_media_assets
+        WHERE id = ? AND owner_user_id = ? AND kind = 'chat_attachment'
+          AND scope_type = 'message_thread' AND scope_id = ?
+          AND status IN ('ready', 'tombstone') LIMIT 1`)
+        .bind(attachment.id, user.id, target.threadId)
+        .first<{ id: string; objectKey: string }>();
+      if (asset) {
+        try {
+          await tombstoneSmartLingoMedia({
+            database: db,
+            bucket: messageBucket(),
+            assetId: asset.id,
+            objectKey: asset.objectKey,
+            now,
+          });
+          attachmentDeleted = true;
+        } catch {
+          return NextResponse.json({ error: "Attachment deletion is pending; retry safely." }, { status: 503 });
+        }
+      }
+    }
+    const deleted = await db.prepare("UPDATE messages SET deleted_at = ? WHERE id = ? AND sender_id = ? AND deleted_at IS NULL")
+      .bind(now, input.messageId, user.id).run();
+    if (!deleted.success) return NextResponse.json({ error: "Message deletion failed" }, { status: 503 });
+    return NextResponse.json({ ok: true, attachmentDeleted });
+  }
   if (input.action === "delete_thread") { if (!input.threadId || !await participant(input.threadId, user.id)) return NextResponse.json({ error: "Conversation not found" }, { status: 404 }); await db.prepare("UPDATE message_participants SET deleted_at = ? WHERE thread_id = ? AND user_id = ?").bind(now, input.threadId, user.id).run(); return NextResponse.json({ ok: true }); }
   if (input.action !== "create") return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   const kind = input.kind === "team" ? "team" : input.kind === "global" ? "global" : "direct"; const body = input.body?.trim() || ""; const subject = (input.subject?.trim() || "").slice(0, 80); if (!body || body.length > 2000) return NextResponse.json({ error: "Message is required" }, { status: 400 }); let recipients: string[] = [];

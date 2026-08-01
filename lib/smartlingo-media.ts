@@ -8,6 +8,7 @@ const VIDEO_MIME_TYPES = ["video/mp4", "video/webm"] as const;
 export type SmartLingoMediaKind =
   | "avatar"
   | "course_cover"
+  | "voice_practice"
   | "courseware"
   | "assignment_attachment"
   | "chat_attachment"
@@ -21,6 +22,7 @@ type MediaPolicy = {
 export const SMARTLINGO_MEDIA_POLICIES: Readonly<Record<SmartLingoMediaKind, MediaPolicy>> = {
   avatar: { mimeTypes: IMAGE_MIME_TYPES, serverOnly: false },
   course_cover: { mimeTypes: IMAGE_MIME_TYPES, serverOnly: false },
+  voice_practice: { mimeTypes: AUDIO_MIME_TYPES, serverOnly: false },
   courseware: { mimeTypes: [...IMAGE_MIME_TYPES, ...DOCUMENT_MIME_TYPES, ...AUDIO_MIME_TYPES, ...VIDEO_MIME_TYPES], serverOnly: false },
   assignment_attachment: { mimeTypes: [...IMAGE_MIME_TYPES, ...DOCUMENT_MIME_TYPES, ...AUDIO_MIME_TYPES, ...VIDEO_MIME_TYPES], serverOnly: false },
   chat_attachment: { mimeTypes: [...IMAGE_MIME_TYPES, ...DOCUMENT_MIME_TYPES, ...AUDIO_MIME_TYPES, ...VIDEO_MIME_TYPES], serverOnly: false },
@@ -46,9 +48,39 @@ export type ValidatedMediaUpload = {
 };
 
 export class SmartLingoMediaError extends Error {
-  constructor(public readonly code: "MEDIA_SIZE_INVALID" | "MEDIA_TYPE_INVALID" | "MEDIA_CONTENT_INVALID" | "MEDIA_SERVER_ONLY") {
+  constructor(public readonly code: "MEDIA_SIZE_INVALID" | "MEDIA_TYPE_INVALID" | "MEDIA_CONTENT_INVALID" | "MEDIA_SERVER_ONLY" | "MEDIA_SCOPE_INVALID") {
     super(code);
     this.name = "SmartLingoMediaError";
+  }
+}
+
+const SAFE_SCOPE_ID = /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/;
+
+const SMARTLINGO_MEDIA_SCOPE_TYPES: Readonly<Record<SmartLingoMediaKind, readonly string[]>> = {
+  avatar: ["user"],
+  course_cover: ["language_class"],
+  voice_practice: ["user"],
+  courseware: ["language_class"],
+  assignment_attachment: ["language_class"],
+  chat_attachment: ["message_thread"],
+  certificate_asset: ["user"],
+};
+
+export function validateSmartLingoMediaScope(input: {
+  kind: SmartLingoMediaKind;
+  ownerUserId: string;
+  scopeType: string;
+  scopeId: string;
+}) {
+  const scopeTypes = SMARTLINGO_MEDIA_SCOPE_TYPES[input.kind];
+  const ownerScoped = input.kind === "avatar" || input.kind === "voice_practice";
+  if (
+    !scopeTypes.includes(input.scopeType)
+    || !SAFE_SCOPE_ID.test(input.scopeId)
+    || !SAFE_SCOPE_ID.test(input.ownerUserId)
+    || (ownerScoped && input.scopeId !== input.ownerUserId)
+  ) {
+    throw new SmartLingoMediaError("MEDIA_SCOPE_INVALID");
   }
 }
 
@@ -291,6 +323,7 @@ export async function storeSmartLingoMedia(input: {
   serverInitiated?: boolean;
   now?: number;
 }) {
+  validateSmartLingoMediaScope(input);
   const validated = await validateSmartLingoMedia(input.file, input.kind, { serverInitiated: input.serverInitiated });
   const id = crypto.randomUUID();
   const objectKey = createSmartLingoMediaObjectKey(input.kind, id);

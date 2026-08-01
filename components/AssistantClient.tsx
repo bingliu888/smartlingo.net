@@ -223,7 +223,7 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
     const next = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages(next); setDraft(""); setComposerFocused(false); composer.current?.blur(); setBusy(true); setError("");
     try {
-      const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ language: lang, messages: next }) });
+      const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ feature: "public_guru", language: lang, messages: next }) });
       const data = await response.json() as { reply?: string; error?: string };
       if (!response.ok || !data.reply) throw new Error(zh ? "助手暂时不可用，请稍后重试。" : data.error || "The assistant is temporarily unavailable.");
       setMessages(current => [...current, { role: "assistant", content: data.reply! }]);

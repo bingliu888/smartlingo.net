@@ -94,6 +94,29 @@ test("renders localized, non-duplicated titles across public routes", async () =
   }
 });
 
+test("renders the bilingual Clerk login shell with inert bindings", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `clerk-login-shell-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const expected = new Map([
+    ["/zh/auth/login", ["登录或加入", "电子邮箱", "发送安全验证码", "改用密码"]],
+    ["/en/auth/login", ["Sign in or join", "Email address", "Send secure code", "Use password instead"]],
+  ]);
+
+  for (const [pathname, copy] of expected) {
+    const response = await worker.fetch(
+      new Request(`http://localhost${pathname}`, { headers: { accept: "*/*" } }),
+      testEnv,
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+    for (const text of copy) assert.match(html, new RegExp(text), `${pathname}: ${text}`);
+    assert.match(html, /id="clerk-captcha"/);
+    assert.doesNotMatch(html, /Internal Server Error|Application error/i);
+  }
+});
+
 test("renders Ask Guru when a stale legacy session cookie is present", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `assistant-stale-cookie-${process.pid}-${Date.now()}`);

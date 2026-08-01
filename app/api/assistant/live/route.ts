@@ -3,6 +3,7 @@ import { getDb } from "../../../../db";
 import { subscriptions } from "../../../../db/schema";
 import {
   openSmartAiLiveVoice,
+  readSmartAiRequestText,
   safeSmartAiError,
 } from "../../../../lib/smartlingo-ai-gateway";
 import { requestUser } from "../../../../lib/request-user";
@@ -12,8 +13,14 @@ const LIVE_INSTRUCTIONS = "You are the bilingual live voice language coach for S
 export async function POST(request: Request) {
   const user = await requestUser();
   if (!user) return Response.json({ error: "Sign in is required." }, { status: 401 });
-  const sdp = await request.text();
-  if (!sdp || sdp.length > 100_000) return Response.json({ error: "Invalid voice connection request." }, { status: 400 });
+  let sdp: string;
+  try {
+    sdp = await readSmartAiRequestText(request, 100_000);
+  } catch (error) {
+    const safe = safeSmartAiError(error, user.preferredLanguage === "zh" ? "zh" : "en", "live");
+    return Response.json({ error: safe.message, code: safe.code }, { status: safe.status });
+  }
+  if (!sdp) return Response.json({ error: "Invalid voice connection request." }, { status: 400 });
 
   const db = getDb();
   const [subscription] = await db.select({ status: subscriptions.status })

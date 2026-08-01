@@ -3,10 +3,18 @@ export type SmartAiFeature =
   | "message_polish"
   | "chat_guru"
   | "content_help"
+  | "listening_feedback"
+  | "speaking_feedback"
+  | "writing_feedback"
   | "scoring"
   | "moderation"
   | "image"
   | "live_voice";
+
+export type SmartAiLearningFeature =
+  | "listening_feedback"
+  | "speaking_feedback"
+  | "writing_feedback";
 
 export type SmartAiFailureMode =
   | "local_fallback"
@@ -60,7 +68,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     requestsPerWindow: 10,
     maxWindowInputUnits: 60_000,
     timeoutMs: 15_000,
-    failureMode: "unavailable",
+    failureMode: "local_fallback",
   },
   content_help: {
     model: "gpt-5-mini",
@@ -70,6 +78,36 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     requestsPerWindow: 8,
     maxWindowInputUnits: 100_000,
     timeoutMs: 25_000,
+    failureMode: "preserve_content",
+  },
+  listening_feedback: {
+    model: "gpt-5-mini",
+    maxInputUnits: 16_000,
+    maxOutputUnits: 1_600,
+    windowSeconds: 60,
+    requestsPerWindow: 10,
+    maxWindowInputUnits: 64_000,
+    timeoutMs: 20_000,
+    failureMode: "preserve_content",
+  },
+  speaking_feedback: {
+    model: "gpt-5-mini",
+    maxInputUnits: 16_000,
+    maxOutputUnits: 1_600,
+    windowSeconds: 60,
+    requestsPerWindow: 10,
+    maxWindowInputUnits: 64_000,
+    timeoutMs: 20_000,
+    failureMode: "preserve_content",
+  },
+  writing_feedback: {
+    model: "gpt-5-mini",
+    maxInputUnits: 16_000,
+    maxOutputUnits: 2_000,
+    windowSeconds: 60,
+    requestsPerWindow: 10,
+    maxWindowInputUnits: 64_000,
+    timeoutMs: 20_000,
     failureMode: "preserve_content",
   },
   scoring: {
@@ -124,6 +162,7 @@ export type SmartAiDatabase = { prepare(query: string): SmartAiStatement };
 
 export type SmartAiGatewayDependencies = {
   apiKey?: string | null;
+  subjectHashKey?: string | null;
   database?: SmartAiDatabase | null;
   fetch?: typeof fetch;
   now?: () => number;
@@ -133,6 +172,7 @@ export type SmartAiGatewayDependencies = {
 
 export type SmartAiGatewayErrorCode =
   | "invalid_request"
+  | "request_too_large"
   | "rate_limited"
   | "missing_key"
   | "audit_unavailable"
@@ -145,6 +185,7 @@ export type SmartAiGatewayErrorCode =
 
 const ERROR_STATUS: Record<SmartAiGatewayErrorCode, number> = {
   invalid_request: 400,
+  request_too_large: 413,
   rate_limited: 429,
   missing_key: 503,
   audit_unavailable: 503,
@@ -182,8 +223,13 @@ function globalDatabase() {
 }
 
 function dependencies(input: SmartAiGatewayDependencies = {}) {
+  const apiKey = input.apiKey === undefined ? process.env.OPENAI_API_KEY || "" : input.apiKey || "";
   return {
-    apiKey: input.apiKey === undefined ? process.env.OPENAI_API_KEY || "" : input.apiKey || "",
+    apiKey,
+    // The provider credential is already server-only and gives the audit hash
+    // a keyed, non-enumerable identity without adding another hosted secret.
+    // Tests may inject an independent key while deliberately omitting apiKey.
+    subjectHashKey: input.subjectHashKey === undefined ? apiKey : input.subjectHashKey || "",
     database: input.database === undefined ? globalDatabase() : input.database,
     fetch: input.fetch ?? fetch,
     now: input.now ?? Date.now,
@@ -199,10 +245,67 @@ function policyFor(feature: SmartAiFeature, input: SmartAiGatewayDependencies) {
   };
 }
 
-export async function smartAiSubjectHash(feature: SmartAiFeature, subject: string) {
-  const bytes = new TextEncoder().encode(`smartlingo:${feature}:${subject}`);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+export async function smartAiSubjectHash(feature: SmartAiFeature, subject: string, secret: string) {
+  if (!secret) throw new SmartAiGatewayError("audit_unavailable");
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign("HMAC", key, encoder.encode(`smartlingo:${feature}:${subject}`));
   return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
+}
+
+export const SMARTAI_ASSISTANT_REQUEST_MAX_BYTES = 96 * 1024;
+
+export async function readSmartAiRequestText(request: Request, maxBytes: number) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new SmartAiGatewayError("invalid_request");
+  const declaredValue = request.headers.get("content-length");
+  if (declaredValue !== null) {
+    const declared = Number(declaredValue);
+    if (!Number.isSafeInteger(declared) || declared < 0) throw new SmartAiGatewayError("invalid_request");
+    if (declared > maxBytes) throw new SmartAiGatewayError("request_too_large");
+  }
+  if (!request.body) return "";
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        void reader.cancel().catch(() => undefined);
+        throw new SmartAiGatewayError("request_too_large");
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    if (isSmartAiGatewayError(error)) throw error;
+    throw new SmartAiGatewayError("invalid_request");
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+export async function readSmartAiJsonRequest<T>(request: Request, maxBytes = SMARTAI_ASSISTANT_REQUEST_MAX_BYTES) {
+  const text = await readSmartAiRequestText(request, maxBytes);
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new SmartAiGatewayError("invalid_request");
+  }
 }
 
 type AuditReservation = {
@@ -223,10 +326,10 @@ async function beginAudit(input: {
   if (!Number.isSafeInteger(input.inputUnits) || input.inputUnits < 0 || input.inputUnits > policy.maxInputUnits) {
     throw new SmartAiGatewayError("invalid_request");
   }
-  if (!deps.database) throw new SmartAiGatewayError("audit_unavailable");
+  if (!deps.database || !deps.subjectHashKey) throw new SmartAiGatewayError("audit_unavailable");
   const now = Math.floor(deps.now() / 1000);
   const windowStart = Math.floor(now / policy.windowSeconds) * policy.windowSeconds;
-  const subjectHash = await smartAiSubjectHash(input.feature, input.subject);
+  const subjectHash = await smartAiSubjectHash(input.feature, input.subject, deps.subjectHashKey);
   const proposedWindowId = deps.randomUUID();
   const window = await deps.database.prepare(
     `INSERT INTO smartlingo_ai_usage_windows
@@ -284,7 +387,13 @@ async function completeAudit(input: {
   if (!deps.database) return;
   const now = Math.floor(deps.now() / 1000);
   const outputUnits = Math.max(0, Math.floor(input.outputUnits));
-  await deps.database.prepare(
+  if (outputUnits) {
+    const accumulated = await deps.database.prepare(
+      "UPDATE smartlingo_ai_usage_windows SET output_units = output_units + ?, updated_at = ? WHERE id = ?",
+    ).bind(outputUnits, now, input.reservation.usageWindowId).run();
+    if (accumulated.success === false) throw new SmartAiGatewayError("audit_unavailable");
+  }
+  const completed = await deps.database.prepare(
     `UPDATE smartlingo_ai_requests
      SET status = ?, output_units = ?, fallback_used = ?, error_code = ?, completed_at = ?
      WHERE id = ? AND status = 'started'`,
@@ -296,11 +405,7 @@ async function completeAudit(input: {
     now,
     input.reservation.requestId,
   ).run();
-  if (outputUnits) {
-    await deps.database.prepare(
-      "UPDATE smartlingo_ai_usage_windows SET output_units = output_units + ?, updated_at = ? WHERE id = ?",
-    ).bind(outputUnits, now, input.reservation.usageWindowId).run();
-  }
+  if (completed.success === false) throw new SmartAiGatewayError("audit_unavailable");
 }
 
 const canUseLocalFallback = (error: SmartAiGatewayError) =>
@@ -308,10 +413,52 @@ const canUseLocalFallback = (error: SmartAiGatewayError) =>
   || error.code === "audit_unavailable"
   || error.code === "timeout"
   || error.code === "network_error"
+  || error.code === "upstream_rate_limited"
+  || error.code === "upstream_rejected"
   || error.code === "upstream_unavailable"
   || error.code === "invalid_response";
 
 type GatewayValue<T> = { value: T; outputUnits: number };
+const SMARTAI_PROVIDER_RESPONSE_MAX_BYTES = 12 * 1024 * 1024;
+
+async function bufferedSmartAiResponse(
+  response: Response,
+  signal: AbortSignal,
+  setCancel: (cancel: (() => void) | null) => void,
+) {
+  if (!response.body) return response;
+  const reader = response.body.getReader();
+  setCancel(() => { void reader.cancel().catch(() => undefined); });
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > SMARTAI_PROVIDER_RESPONSE_MAX_BYTES) {
+        void reader.cancel().catch(() => undefined);
+        throw new SmartAiGatewayError("invalid_response");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    setCancel(null);
+  }
+  if (signal.aborted) throw new SmartAiGatewayError("timeout");
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new Response(total ? bytes : undefined, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
 
 async function executeGateway<T>(input: {
   feature: SmartAiFeature;
@@ -335,20 +482,40 @@ async function executeGateway<T>(input: {
     });
     if (!deps.apiKey) throw new SmartAiGatewayError("missing_key");
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), policy.timeoutMs);
-    let response: Response;
+    let cancelResponseBody: (() => void) | null = null;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const timedOut = new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort();
+        cancelResponseBody?.();
+        reject(new SmartAiGatewayError("timeout"));
+      }, policy.timeoutMs);
+    });
+    let result: GatewayValue<T>;
     try {
-      response = await input.request(deps.apiKey, reservation.subjectHash, controller.signal, policy.model);
+      result = await Promise.race([
+        (async () => {
+          const response = await input.request(deps.apiKey, reservation.subjectHash, controller.signal, policy.model);
+          if (response.status === 429) throw new SmartAiGatewayError("upstream_rate_limited");
+          if (response.status >= 500) throw new SmartAiGatewayError("upstream_unavailable");
+          if (!response.ok) throw new SmartAiGatewayError("upstream_rejected");
+          const buffered = await bufferedSmartAiResponse(
+            response,
+            controller.signal,
+            cancel => { cancelResponseBody = cancel; },
+          );
+          const value = await input.read(buffered);
+          if (controller.signal.aborted) throw new SmartAiGatewayError("timeout");
+          return value;
+        })(),
+        timedOut,
+      ]);
     } catch (error) {
       if (controller.signal.aborted) throw new SmartAiGatewayError("timeout");
-      throw gatewayError(error);
+      throw error;
     } finally {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
     }
-    if (response.status === 429) throw new SmartAiGatewayError("upstream_rate_limited");
-    if (response.status >= 500) throw new SmartAiGatewayError("upstream_unavailable");
-    if (!response.ok) throw new SmartAiGatewayError("upstream_rejected");
-    const result = await input.read(response);
     await completeAudit({
       reservation,
       status: "succeeded",
@@ -395,8 +562,36 @@ const PUBLIC_GURU_FALLBACK = {
   en: "Guru is temporarily unable to connect. You can still review Language Paths, continue daily practice, open Classes to create or join a private language class, or use Community and Messages. Please do not submit sensitive personal information, and try again later.",
 } as const;
 
+const CHAT_GURU_FALLBACK = {
+  zh: "人工智能导师暂时无法加入这段对话。原消息保持不变；请稍后重试，或继续与班级成员交流。人工智能反馈不是教师评价或正式考试结果。",
+  en: "The AI Guru cannot join this conversation right now. The original messages remain unchanged; try again later or continue with class members. AI feedback is not a teacher evaluation or an official exam result.",
+} as const;
+
+type SmartAiTextFeature =
+  | "public_guru"
+  | "message_polish"
+  | "chat_guru"
+  | "content_help"
+  | SmartAiLearningFeature;
+
+function preservedTextFallback(input: {
+  feature: SmartAiTextFeature;
+  language: "zh" | "en";
+  content: string;
+  preserveOnFailure?: string;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  if (input.feature === "public_guru") return PUBLIC_GURU_FALLBACK[input.language];
+  if (input.feature === "chat_guru") return CHAT_GURU_FALLBACK[input.language];
+  const mode = policyFor(input.feature, input.deps ?? {}).failureMode;
+  if (mode === "preserve_input" || mode === "preserve_content") {
+    return input.preserveOnFailure ?? input.content;
+  }
+  return "";
+}
+
 export async function askSmartAi(input: {
-  feature: "public_guru" | "message_polish" | "chat_guru" | "content_help";
+  feature: SmartAiTextFeature;
   subject: string;
   language: "zh" | "en";
   instructions: string;
@@ -404,11 +599,7 @@ export async function askSmartAi(input: {
   preserveOnFailure?: string;
   deps?: SmartAiGatewayDependencies;
 }) {
-  const fallbackText = input.feature === "public_guru"
-    ? PUBLIC_GURU_FALLBACK[input.language]
-    : input.feature === "message_polish"
-      ? input.preserveOnFailure ?? ""
-      : "";
+  const fallbackText = preservedTextFallback(input);
   return executeGateway({
     feature: input.feature,
     subject: input.subject,
@@ -441,6 +632,99 @@ export async function askSmartAi(input: {
       return { value, outputUnits: value.length };
     },
     fallback: fallbackText ? () => ({ value: fallbackText, outputUnits: fallbackText.length }) : undefined,
+  });
+}
+
+const LEARNING_FEEDBACK_INSTRUCTIONS: Readonly<Record<SmartAiLearningFeature, string>> = {
+  listening_feedback: "Use only the supplied transcript, answer, and declared listening context. Explain likely comprehension gaps and suggest one small retry. Never claim to have heard audio that was not supplied.",
+  speaking_feedback: "Give cautious practice feedback about intelligibility, the declared target sounds, wording, and rhythm. State uncertainty. Never infer nationality, ethnicity, disability, identity, intelligence, or personal worth from speech.",
+  writing_feedback: "Give rubric-based suggestions for task completion, clarity, grammar, and vocabulary while preserving the learner's authorship. Do not complete an assignment, examination, or credential submission for the learner.",
+};
+
+const LEARNING_FEEDBACK_BOUNDARY = "You are an artificial intelligence practice assistant, not a human teacher or official examiner. Your feedback is provisional learning support, not a credential, score guarantee, admission decision, employment decision, or immigration result. Protect personal data, identify uncertainty, and never invent progress or completion.";
+
+export async function reviewSmartAiLearningContent(input: {
+  feature: SmartAiLearningFeature;
+  subject: string;
+  language: "zh" | "en";
+  content: string;
+  instructions?: string;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  return askSmartAi({
+    feature: input.feature,
+    subject: input.subject,
+    language: input.language,
+    instructions: [
+      LEARNING_FEEDBACK_BOUNDARY,
+      LEARNING_FEEDBACK_INSTRUCTIONS[input.feature],
+      `Respond in ${input.language === "zh" ? "Simplified Chinese" : "English"}.`,
+      input.instructions?.trim() ?? "",
+    ].filter(Boolean).join("\n"),
+    content: input.content,
+    preserveOnFailure: input.content,
+    deps: input.deps,
+  });
+}
+
+export type SmartAiSafetyReview = {
+  allowed: boolean;
+  flagged: boolean;
+  categories: string[];
+  humanReviewRequired: boolean;
+};
+
+const QUARANTINE_REVIEW: SmartAiSafetyReview = {
+  allowed: false,
+  flagged: true,
+  categories: ["review_required"],
+  humanReviewRequired: true,
+};
+
+export async function reviewSmartAiSafety(input: {
+  subject: string;
+  content: string;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  return executeGateway({
+    feature: "moderation",
+    subject: input.subject,
+    inputUnits: input.content.length,
+    deps: input.deps,
+    request: (apiKey, subjectHash, signal, model) => dependencies(input.deps).fetch(
+      "https://api.openai.com/v1/moderations",
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+          "OpenAI-Safety-Identifier": subjectHash,
+        },
+        body: JSON.stringify({ model, input: input.content }),
+        signal,
+      },
+    ),
+    read: async response => {
+      const data = await response.json().catch(() => null) as {
+        results?: Array<{ flagged?: unknown; categories?: Record<string, unknown> }>;
+      } | null;
+      const result = data?.results?.[0];
+      if (!result || typeof result.flagged !== "boolean" || !result.categories || typeof result.categories !== "object") {
+        throw new SmartAiGatewayError("invalid_response");
+      }
+      const categories = Object.entries(result.categories)
+        .filter(([, value]) => value === true)
+        .map(([name]) => name)
+        .sort();
+      const value: SmartAiSafetyReview = {
+        allowed: !result.flagged,
+        flagged: result.flagged,
+        categories,
+        humanReviewRequired: result.flagged,
+      };
+      return { value, outputUnits: 1 };
+    },
+    fallback: () => ({ value: { ...QUARANTINE_REVIEW, categories: [...QUARANTINE_REVIEW.categories] }, outputUnits: 0 }),
   });
 }
 
@@ -506,6 +790,21 @@ export async function reserveLiveVoiceAllowance(input: {
   }
 }
 
+async function releaseLiveVoiceAllowance(input: {
+  userId: string;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  const deps = dependencies(input.deps);
+  if (!deps.database) return;
+  const now = Math.floor(deps.now() / 1000);
+  const day = new Date(deps.now()).toISOString().slice(0, 10);
+  const released = await deps.database.prepare(
+    `UPDATE live_voice_usage SET used_seconds = 0, updated_at = ?
+     WHERE id = ? AND user_id = ? AND usage_date = ? AND used_seconds = 600`,
+  ).bind(now, `${input.userId}:${day}`, input.userId, day).run();
+  if (released.success === false) throw new SmartAiGatewayError("audit_unavailable");
+}
+
 export async function openSmartAiLiveVoice(input: {
   userId: string;
   subject: string;
@@ -516,39 +815,46 @@ export async function openSmartAiLiveVoice(input: {
 }) {
   if (!input.sdp || input.sdp.length > 100_000) throw new SmartAiGatewayError("invalid_request");
   await reserveLiveVoiceAllowance({ userId: input.userId, paid: input.paid, deps: input.deps });
-  return executeGateway({
-    feature: "live_voice",
-    subject: input.subject,
-    inputUnits: 600,
-    deps: input.deps,
-    request: (apiKey, subjectHash, signal, model) => {
-      const form = new FormData();
-      form.set("sdp", new Blob([input.sdp], { type: "application/sdp" }), "offer.sdp");
-      form.set("session", new Blob([JSON.stringify({
-        type: "realtime",
-        model,
-        instructions: input.instructions,
-        audio: { output: { voice: "marin" } },
-      })], { type: "application/json" }), "session.json");
-      return dependencies(input.deps).fetch(
-        "https://api.openai.com/v1/realtime/calls",
-        {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${apiKey}`,
-            "OpenAI-Safety-Identifier": subjectHash,
+  try {
+    return await executeGateway({
+      feature: "live_voice",
+      subject: input.subject,
+      inputUnits: 600,
+      deps: input.deps,
+      request: (apiKey, subjectHash, signal, model) => {
+        const form = new FormData();
+        form.set("sdp", new Blob([input.sdp], { type: "application/sdp" }), "offer.sdp");
+        form.set("session", new Blob([JSON.stringify({
+          type: "realtime",
+          model,
+          instructions: input.instructions,
+          audio: { output: { voice: "marin" } },
+        })], { type: "application/json" }), "session.json");
+        return dependencies(input.deps).fetch(
+          "https://api.openai.com/v1/realtime/calls",
+          {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${apiKey}`,
+              "OpenAI-Safety-Identifier": subjectHash,
+            },
+            body: form,
+            signal,
           },
-          body: form,
-          signal,
-        },
-      );
-    },
-    read: async response => {
-      const value = await response.text();
-      if (!value.startsWith("v=") || value.length > 200_000) throw new SmartAiGatewayError("invalid_response");
-      return { value, outputUnits: 0 };
-    },
-  });
+        );
+      },
+      read: async response => {
+        const value = await response.text();
+        if (!value.startsWith("v=") || value.length > 200_000) throw new SmartAiGatewayError("invalid_response");
+        return { value, outputUnits: 0 };
+      },
+    });
+  } catch (error) {
+    if (!input.paid) {
+      await releaseLiveVoiceAllowance({ userId: input.userId, deps: input.deps }).catch(() => undefined);
+    }
+    throw error;
+  }
 }
 
 export function safeSmartAiError(
@@ -560,6 +866,7 @@ export function safeSmartAiError(
   const messages = {
     zh: {
       invalid_request: "请求内容无效。",
+      request_too_large: "请求内容过大。",
       rate_limited: "请求过于频繁，请稍后再试。",
       guru: "智能导师暂时不可用，请稍后再试。",
       image: "邀请图片暂时无法生成，请稍后再试。",
@@ -567,6 +874,7 @@ export function safeSmartAiError(
     },
     en: {
       invalid_request: "The request is invalid.",
+      request_too_large: "The request is too large.",
       rate_limited: "Too many requests. Please try again later.",
       guru: "Guru is temporarily unavailable. Please try again later.",
       image: "The invitation image cannot be generated right now. Please try again later.",
@@ -574,8 +882,8 @@ export function safeSmartAiError(
     },
   } as const;
   const copy = messages[language];
-  const message = known.code === "invalid_request"
-    ? copy.invalid_request
+  const message = known.code === "invalid_request" || known.code === "request_too_large"
+    ? copy[known.code]
     : known.status === 429
       ? copy.rate_limited
       : copy[service];

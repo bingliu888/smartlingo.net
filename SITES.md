@@ -55,7 +55,7 @@ The first supported paths are Spanish, English, French, Japanese, German, Italia
 ## Responsive and quality contract
 
 - Responsive layout quality is release-blocking and has higher priority than daily feature work.
-- Validate changed and representative pages in Chinese and English at 390×844, 430×932, 820×1180, 1180×820, and 1440×900.
+- Validate changed and representative pages in Chinese and English at 390×844, 430×932, 834×1112, 1194×834, and 1440×1000.
 - Text must fit its panel naturally; row-level surfaces fill the usable parent width; semantic kicker-heading-description groups stay in one vertical column; no meaningful content is clipped or hidden by horizontal overflow.
 - Browser measurements must verify final computed layout, parent/child fill, and `scrollWidth <= clientWidth`. Source-code-only CSS assertions are insufficient.
 - Before release run all D1 migrations, the full test suite, lint, production build, artifact validation, sensitive-information scanning, and runtime layout checks. Any failure blocks that site's release.

@@ -35,17 +35,27 @@ test("SmartLingo roadmap covers 20 consecutive delivery days", () => {
 });
 
 test("every day has exactly five bilingual tasks with evidence-based status", () => {
-  for (const [index, day] of days.entries()) {
+  for (const day of days) {
     assert.match(day.date, /^\d{4}-\d{2}-\d{2}$/);
-    assert.equal(day.status, index === 0 ? "done" : "planned");
+    const expectedDayStatus = day.date === "2026-07-31" ? "done" : day.date === "2026-08-01" ? "blocked" : "planned";
+    assert.equal(day.status, expectedDayStatus);
     assert.equal(day.tasks.length, 5, `${day.date} must contain exactly five tasks`);
     assert.ok(copyIsBilingual(day.category), `${day.date} category must be bilingual`);
     assert.ok(copyIsBilingual(day.owner), `${day.date} owner must be bilingual`);
     assert.ok(copyIsBilingual(day.acceptance), `${day.date} acceptance must be bilingual`);
 
     for (const task of day.tasks) {
-      assert.equal(task.status, index === 0 ? "done" : "planned");
-      assert.equal(task.progress, index === 0 ? 100 : 0);
+      if (day.date === "2026-07-31") {
+        assert.equal(task.status, "done");
+        assert.equal(task.progress, 100);
+      } else if (day.date === "2026-08-01") {
+        const blocked = task.id === "sl-d02-clerk-auth";
+        assert.equal(task.status, blocked ? "blocked" : "done");
+        assert.equal(task.progress, blocked ? 90 : 100);
+      } else {
+        assert.equal(task.status, "planned");
+        assert.equal(task.progress, 0);
+      }
       assert.ok(copyIsBilingual(task.title), `${task.id} title must be bilingual`);
       assert.ok(copyIsBilingual(task.summary), `${task.id} summary must be bilingual`);
     }
@@ -106,18 +116,22 @@ test("production release remains planned rather than reported as completed", () 
   }
 });
 
-test("Project status is truthful before any verified external release", () => {
+test("Project status records the second-day evidence without inventing a verified release", () => {
   const projectStatus = fs.readFileSync(path.join(root, "lib", "project-status.ts"), "utf8");
   const runtime = fs.readFileSync(path.join(root, "lib", "project-runtime.ts"), "utf8");
   const dashboard = fs.readFileSync(path.join(root, "components", "ProjectDashboard.tsx"), "utf8");
 
   assert.match(projectStatus, /import \{ smartLingoRoadmapTasks \} from "\.\/smartlingo-roadmap";/);
   assert.match(projectStatus, /projectTasks: ProjectTask\[\] = smartLingoRoadmapTasks/);
-  assert.match(projectStatus, /editionDate: "2026-07-31"/);
-  assert.match(projectStatus, /today: 5/);
+  assert.match(projectStatus, /editionDate: "2026-08-01"/);
+  assert.match(projectStatus, /today: 9/);
   assert.match(projectStatus, /total: 100/);
   assert.match(projectStatus, /projectBuilds: ProjectBuild\[\] = \[\]/);
   assert.match(projectStatus, /does not represent a completed Sites, GitHub, or production-domain release/);
+  assert.match(projectStatus, /date: "2026-08-01"/);
+  assert.match(projectStatus, /completed: 4/);
+  assert.match(projectStatus, /Sites has no Clerk production configuration/);
+  assert.match(projectStatus, /production domain has not passed Sites custom-domain acceptance/);
   assert.doesNotMatch(projectStatus, /Sites version \d+ (?:is|was) saved|deployment (?:is|was) successful|production (?:is|was) live/i);
   assert.match(runtime, /PROJECT_RUNTIME_KEY = "smartlingo-project-status"/);
 

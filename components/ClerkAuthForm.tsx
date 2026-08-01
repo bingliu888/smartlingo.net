@@ -4,13 +4,12 @@ import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { useAuth } from "@clerk/nextjs";
 import { useSignIn, useSignUp } from "@clerk/nextjs/legacy";
 import { FormEvent, useEffect, useState } from "react";
-import { resolveSignUpRequirements } from "../lib/clerk-auth-requirements";
-
-type SignUpResult = {
-  status: string | null;
-  createdSessionId: string | null;
-  missingFields?: readonly string[];
-};
+import {
+  clerkAuthStepView,
+  completeSignUpAttempt,
+  prepareEmailCodeFlow,
+  type ClerkSignUpAttemptResult,
+} from "../lib/clerk-auth-requirements";
 
 export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang: "en" | "zh"; returnTo?: string }) {
   const zh = lang === "zh";
@@ -27,6 +26,7 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
   const { isLoaded, userId } = useAuth();
   const { isLoaded: signInLoaded, signIn, setActive: setActiveSignIn } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
+  const authView = clerkAuthStepView(step, method, lang);
   const completePath = `/${lang}/auth/complete?returnTo=${encodeURIComponent(returnTo)}`;
   type SignInResult = Awaited<ReturnType<NonNullable<typeof signIn>["create"]>>;
 
@@ -60,28 +60,22 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
     return zh ? "请求失败。" : "Request failed.";
   }
 
-  async function finishSignUp(result: SignUpResult) {
-    if (result.status === "complete" && result.createdSessionId) {
-      await activateSession(setActiveSignUp, result.createdSessionId);
+  async function finishSignUp(result: ClerkSignUpAttemptResult) {
+    const resolution = await completeSignUpAttempt(
+      result,
+      lang,
+      sessionId => activateSession(setActiveSignUp, sessionId),
+    );
+    if (resolution.kind === "activated") return;
+    if (resolution.kind === "password") {
+      setStep("password-required");
+      setCode("");
+      setPassword("");
+      setPasswordConfirmation("");
+      setMessage(resolution.message);
       return;
     }
-
-    if (result.status === "missing_requirements") {
-      const resolution = resolveSignUpRequirements(result.missingFields, lang);
-      if (resolution.kind === "password") {
-        setStep("password-required");
-        setCode("");
-        setPassword("");
-        setPasswordConfirmation("");
-        setMessage(resolution.message);
-        return;
-      }
-      throw new Error(resolution.message);
-    }
-
-    throw new Error(zh
-      ? `无法完成账户创建（${result.status || "未知状态"}），请重新开始。`
-      : `Account creation could not finish (${result.status || "unknown status"}). Please start again.`);
+    throw new Error(resolution.message);
   }
 
   async function finishSignIn(result: SignInResult, identifier: string) {
@@ -115,20 +109,15 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
       if (!signInLoaded || !signUpLoaded || !signIn || !signUp) throw new Error(zh ? "登录功能仍在加载。" : "Sign-in is still loading.");
       const identifier = email.trim().toLowerCase();
       if (step === "credentials" && method === "code") {
-        try {
-          const attempt = await signIn.create({ identifier });
-          const factor = attempt.supportedFirstFactors?.find(item => item.strategy === "email_code");
-          if (!factor || factor.strategy !== "email_code") throw new Error(zh ? "邮箱验证码不可用。" : "Email-code sign-in is unavailable.");
-          await attempt.prepareFirstFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
-          setFlow("sign-in");
-        } catch (issue) {
-          const missing = isClerkAPIResponseError(issue) && issue.errors.some(item => item.code === "form_identifier_not_found");
-          if (!missing) throw issue;
-          const attempt = await signUp.create({ emailAddress: identifier });
-          await attempt.prepareEmailAddressVerification({ strategy: "email_code" });
-          setFlow("sign-up");
-        }
-        setStep("code"); setMessage(zh ? `验证码已发送至 ${identifier}` : `Code sent to ${identifier}`);
+        const prepared = await prepareEmailCodeFlow(identifier, lang, {
+          createSignIn: value => signIn.create({ identifier: value }),
+          createSignUp: value => signUp.create({ emailAddress: value }),
+          isIdentifierNotFound: issue => isClerkAPIResponseError(issue)
+            && issue.errors.some(item => item.code === "form_identifier_not_found"),
+        });
+        setFlow(prepared.flow);
+        setStep("code");
+        setMessage(prepared.message);
       } else if (step === "credentials") {
         try {
           const result = await signIn.create({ identifier, password });
@@ -170,10 +159,10 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
     <label>{zh ? "电子邮箱" : "Email address"}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} disabled={step !== "credentials"} required /></label>
     {((method === "password" && step === "credentials") || step === "password-required") && <label>{step === "password-required" ? (zh ? "创建密码" : "Create password") : (zh ? "密码" : "Password")}<input type="password" autoComplete={step === "password-required" ? "new-password" : "current-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required /></label>}
     {step === "password-required" && <label>{zh ? "确认密码" : "Confirm password"}<input type="password" autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={event => setPasswordConfirmation(event.target.value)} required /></label>}
-    {step === "code" && <label>{zh ? "一次性验证码" : "One-time code"}<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ""))} required /></label>}
+    {authView.showCodeField && <label>{zh ? "一次性验证码" : "One-time code"}<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ""))} required /></label>}
     {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message success" role="status">{message}</p>}
-    <div id="clerk-captcha" />
-    <button className="primary-button full" disabled={loading || !signInLoaded || !signUpLoaded}>{loading ? (zh ? "请稍候…" : "Please wait…") : step === "code" ? (zh ? "验证并继续" : "Verify & continue") : step === "password-required" ? (zh ? "设置密码并登录" : "Create password & sign in") : method === "code" ? (zh ? "发送安全验证码" : "Send secure code") : (zh ? "使用密码继续" : "Continue with password")}</button>
-    {step === "code" ? <button className="form-link" type="button" onClick={() => reset()}>{zh ? "更换邮箱" : "Use another email"}</button> : step === "password-required" ? <button className="form-link" type="button" onClick={() => reset()}>{zh ? "更换邮箱" : "Use another email"}</button> : <button className="form-link" type="button" onClick={() => reset(method === "code" ? "password" : "code")}>{method === "code" ? (zh ? "改用密码" : "Use password instead") : (zh ? "改用邮箱验证码" : "Use an email code instead")}</button>}
+    <div id={authView.captchaElementId} />
+    <button className="primary-button full" disabled={loading || !signInLoaded || !signUpLoaded}>{loading ? (zh ? "请稍候…" : "Please wait…") : authView.primaryAction}</button>
+    {step === "code" || step === "password-required" ? <button className="form-link" type="button" onClick={() => reset()}>{authView.secondaryAction}</button> : <button className="form-link" type="button" onClick={() => reset(method === "code" ? "password" : "code")}>{authView.secondaryAction}</button>}
   </form>;
 }

@@ -118,9 +118,14 @@ export const smartAiMediaAssets = sqliteTable("smartlingo_media_assets", {
   updatedAt: integer("updated_at").notNull(),
   deletedAt: integer("deleted_at"),
 }, (table) => [
-  check("smartlingo_media_kind_ck", sql`${table.kind} IN ('avatar', 'course_cover', 'courseware', 'assignment_attachment', 'chat_attachment', 'certificate_asset')`),
-  check("smartlingo_media_scope_ck", sql`length(${table.scopeType}) > 0 AND length(${table.scopeId}) > 0`),
-  check("smartlingo_media_size_ck", sql`${table.sizeBytes} >= 0`),
+  check("smartlingo_media_kind_ck", sql`${table.kind} IN ('avatar', 'voice_practice', 'course_cover', 'courseware', 'assignment_attachment', 'chat_attachment', 'certificate_asset')`),
+  check("smartlingo_media_scope_ck", sql`(
+    (${table.kind} IN ('avatar', 'voice_practice', 'certificate_asset') AND ${table.scopeType} = 'user' AND ${table.scopeId} = ${table.ownerUserId})
+    OR (${table.kind} IN ('course_cover', 'courseware', 'assignment_attachment') AND ${table.scopeType} = 'language_class')
+    OR (${table.kind} = 'chat_attachment' AND ${table.scopeType} = 'message_thread')
+  )`),
+  check("smartlingo_media_size_ck", sql`${table.sizeBytes} > 0`),
+  check("smartlingo_media_sha256_ck", sql`length(${table.sha256}) = 64 AND ${table.sha256} NOT GLOB '*[^0-9a-f]*'`),
   check("smartlingo_media_visibility_ck", sql`${table.visibility} = 'private'`),
   check("smartlingo_media_status_ck", sql`${table.status} IN ('uploading', 'ready', 'quarantined', 'failed', 'tombstone')`),
   index("smartlingo_media_owner_status_idx").on(table.ownerUserId, table.status, table.createdAt),
@@ -777,6 +782,65 @@ export const lingoLanguagePaths = sqliteTable("smartlingo_language_paths", {
   index("smartlingo_language_path_language_level_idx").on(table.targetLanguage, table.level),
 ]);
 
+/**
+ * A row is one immutable, versioned SmartLingo-authored exercise. Publishing a
+ * revision creates a new version instead of rewriting evidence referenced by
+ * learner progress.
+ */
+export const lingoExercises = sqliteTable("smartlingo_exercises", {
+  id: text("id").primaryKey(),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  stableKey: text("stable_key").notNull(),
+  version: text("version").notNull(),
+  skill: text("skill").notNull(),
+  titleZh: text("title_zh").notNull(),
+  titleEn: text("title_en").notNull(),
+  instructionZh: text("instruction_zh").notNull(),
+  instructionEn: text("instruction_en").notNull(),
+  targetContent: text("target_content").notNull(),
+  answerContent: text("answer_content").notNull().default("{}"),
+  sourceType: text("source_type").notNull().default("smartlingo_original"),
+  reviewStatus: text("review_status").notNull().default("draft"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_exercise_identity_ck", sql`length(trim(${table.stableKey})) > 0 AND length(trim(${table.version})) > 0`),
+  check("smartlingo_exercise_skill_ck", sql`${table.skill} IN ('listening', 'speaking', 'reading', 'writing', 'vocabulary', 'review')`),
+  check("smartlingo_exercise_bilingual_ck", sql`length(trim(${table.titleZh})) > 0 AND length(trim(${table.titleEn})) > 0 AND length(trim(${table.instructionZh})) > 0 AND length(trim(${table.instructionEn})) > 0`),
+  check("smartlingo_exercise_content_ck", sql`length(trim(${table.targetContent})) > 0 AND length(trim(${table.answerContent})) > 0`),
+  check("smartlingo_exercise_source_ck", sql`${table.sourceType} = 'smartlingo_original'`),
+  check("smartlingo_exercise_review_ck", sql`${table.reviewStatus} IN ('draft', 'review', 'approved', 'retired')`),
+  uniqueIndex("smartlingo_exercise_path_key_version_uq").on(table.pathId, table.stableKey, table.version),
+  index("smartlingo_exercise_path_review_skill_idx").on(table.pathId, table.reviewStatus, table.skill),
+]);
+
+/**
+ * Server-authoritative progress links one member and one language path to the
+ * exact immutable exercise version that produced the recorded evidence.
+ */
+export const lingoLearningProgress = sqliteTable("smartlingo_language_progress", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  exerciseId: text("exercise_id").notNull().references(() => lingoExercises.id, { onDelete: "restrict" }),
+  exerciseVersion: text("exercise_version").notNull(),
+  status: text("status").notNull().default("not_started"),
+  bestScore: integer("best_score"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  dueAt: integer("due_at"),
+  startedAt: integer("started_at"),
+  completedAt: integer("completed_at"),
+  lastAttemptAt: integer("last_attempt_at"),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_language_progress_status_ck", sql`${table.status} IN ('not_started', 'in_progress', 'completed', 'needs_review')`),
+  check("smartlingo_language_progress_score_ck", sql`${table.bestScore} IS NULL OR ${table.bestScore} BETWEEN 0 AND 100`),
+  check("smartlingo_language_progress_attempt_ck", sql`${table.attemptCount} >= 0`),
+  uniqueIndex("smartlingo_language_progress_user_exercise_uq").on(table.userId, table.exerciseId),
+  index("smartlingo_language_progress_user_path_status_idx").on(table.userId, table.pathId, table.status),
+  index("smartlingo_language_progress_user_due_idx").on(table.userId, table.dueAt),
+]);
+
 export const lingoConnectedAccounts = sqliteTable("smartlingo_connected_accounts", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   provider: text("provider").notNull().default("stripe_connect"),
@@ -873,9 +937,24 @@ export const lingoClassOrders = sqliteTable("smartlingo_language_class_orders", 
 }, (table) => [
   check("smartlingo_language_class_order_provider_ck", sql`${table.provider} = 'stripe_connect'`),
   check("smartlingo_language_class_order_discount_ck", sql`${table.discountBasisPoints} IN (0, 1500)`),
+  check("smartlingo_language_class_order_first_flag_ck", sql`${table.firstClassPayment} IN (0, 1)`),
+  check("smartlingo_language_class_order_first_discount_ck", sql`(
+    (${table.firstClassPayment} = 1 AND ${table.discountBasisPoints} = 1500)
+    OR (${table.firstClassPayment} = 0 AND ${table.discountBasisPoints} = 0)
+  )`),
+  check("smartlingo_language_class_order_discount_math_ck", sql`${table.discountedPreTaxCents} = ${table.subtotalCents} - ((${table.subtotalCents} * ${table.discountBasisPoints}) / 10000)`),
+  check("smartlingo_language_class_order_owner_share_ck", sql`${table.ownerShareCents} = ((${table.discountedPreTaxCents} * 7000) / 10000)`),
+  check("smartlingo_language_class_order_platform_share_ck", sql`${table.platformFeeCents} = ${table.discountedPreTaxCents} - ${table.ownerShareCents}`),
   check("smartlingo_language_class_order_split_ck", sql`${table.ownerShareCents} + ${table.platformFeeCents} = ${table.discountedPreTaxCents}`),
-  check("smartlingo_language_class_order_amount_ck", sql`${table.subtotalCents} >= 0 AND ${table.discountedPreTaxCents} >= 0 AND ${table.taxCents} >= 0`),
+  check("smartlingo_language_class_order_amount_ck", sql`${table.subtotalCents} >= 0 AND ${table.discountedPreTaxCents} >= 0 AND ${table.taxCents} >= 0 AND ${table.ownerShareCents} >= 0 AND ${table.platformFeeCents} >= 0`),
+  check("smartlingo_language_class_order_paid_at_ck", sql`(
+    (${table.status} IN ('paid', 'refunded', 'partially_refunded', 'disputed') AND ${table.paidAt} IS NOT NULL)
+    OR (${table.status} IN ('pending', 'failed', 'cancelled') AND ${table.paidAt} IS NULL)
+  )`),
   check("smartlingo_language_class_order_status_ck", sql`${table.status} IN ('pending', 'paid', 'refunded', 'partially_refunded', 'disputed', 'failed', 'cancelled')`),
+  uniqueIndex("smartlingo_language_class_order_first_paid_uq")
+    .on(table.learnerUserId, table.classId)
+    .where(sql`${table.firstClassPayment} = 1 AND ${table.paidAt} IS NOT NULL`),
   index("smartlingo_language_class_order_learner_class_idx").on(table.learnerUserId, table.classId, table.status),
   index("smartlingo_language_class_order_owner_idx").on(table.ownerUserId, table.status, table.createdAt),
 ]);
@@ -885,6 +964,7 @@ export const lingoPlatformSubscriptionPayments = sqliteTable("smartlingo_platfor
   providerInvoiceId: text("provider_invoice_id").notNull().unique(),
   subscriberUserId: text("subscriber_user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   introducerUserId: text("introducer_user_id").references(() => users.id, { onDelete: "set null" }),
+  directReferralId: text("direct_referral_id").references(() => referrals.id, { onDelete: "restrict" }),
   amountCents: integer("amount_cents").notNull(),
   currency: text("currency").notNull().default("USD"),
   status: text("status").notNull().default("paid"),
@@ -896,6 +976,7 @@ export const lingoPlatformSubscriptionPayments = sqliteTable("smartlingo_platfor
   check("smartlingo_platform_subscription_payment_amount_ck", sql`${table.amountCents} >= 0`),
   index("smartlingo_platform_subscription_subscriber_idx").on(table.subscriberUserId, table.paidAt),
   index("smartlingo_platform_subscription_introducer_idx").on(table.introducerUserId, table.paidAt),
+  index("smartlingo_platform_subscription_direct_referral_idx").on(table.directReferralId, table.paidAt),
 ]);
 
 export const lingoIntroducerRewardLedger = sqliteTable("smartlingo_introducer_reward_ledger", {

@@ -40,9 +40,12 @@ test("compose and reply both provide the exact bilingual Guru polish action", as
 });
 
 test("email code state shows the destination and switches both actions", async () => {
-  const form = await read("../components/ClerkAuthForm.tsx");
-  assert.match(form, /Code sent to \$\{identifier\}/);
-  assert.match(form, /验证码已发送至 \$\{identifier\}/);
+  const [form, requirements] = await Promise.all([
+    read("../components/ClerkAuthForm.tsx"),
+    read("../lib/clerk-auth-requirements.ts"),
+  ]);
+  assert.match(requirements, /Code sent to \$\{identifier\}/);
+  assert.match(requirements, /验证码已发送至 \$\{identifier\}/);
   assert.match(
     form,
     /needs_second_factor[\s\S]*?prepareSecondFactor[\s\S]*?A new security code was sent to \$\{identifier\}/,
@@ -51,8 +54,11 @@ test("email code state shows the destination and switches both actions", async (
     form,
     /needs_second_factor[\s\S]*?prepareSecondFactor[\s\S]*?新的安全码已发送至 \$\{identifier\}/,
   );
-  assert.match(form, /step === "code" \? \(zh \? "验证并继续" : "Verify & continue"\)/);
-  assert.match(form, /step === "code" \? <button[\s\S]*?"更换邮箱" : "Use another email"/);
+  assert.match(requirements, /step === "code"[\s\S]*?"验证并继续" : "Verify & continue"/);
+  assert.match(requirements, /step === "code" \|\| step === "password-required"[\s\S]*?"更换邮箱" : "Use another email"/);
+  assert.match(form, /clerkAuthStepView\(step, method, lang\)/);
+  assert.match(form, /authView\.primaryAction/);
+  assert.match(form, /authView\.secondaryAction/);
 });
 
 test("icon-only message controls and the reply editor have bilingual accessible names", async () => {

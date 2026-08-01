@@ -8,23 +8,53 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 18);
-  assert.equal(result.firstRunApplied, 18);
+  assert.equal(result.migrationCount, 19);
+  assert.equal(result.firstRunApplied, 19);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0017_smartlingo_language_marketplace");
+  assert.equal(result.newestMigration, "0018_smartlingo_core_integrity");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
     mediaId: "d1-smoke-media",
     aiRequestId: "d1-smoke-ai-request",
     languagePathId: "path_en_a1",
+    exerciseId: "d1-smoke-exercise",
+    progressId: "d1-smoke-progress",
     connectedAccountUserId: "d1-smoke-user",
     languageClassId: "d1-smoke-language-class",
     classOrderId: "d1-smoke-language-class-order",
     subscriptionPaymentId: "d1-smoke-platform-subscription",
     rewardLedgerId: "d1-smoke-introducer-reward",
   });
+});
+
+test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {
+  const [schema, migration, journal] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0018_smartlingo_core_integrity.sql"),
+    read("../drizzle/meta/_journal.json"),
+  ]);
+
+  for (const tableName of ["smartlingo_exercises", "smartlingo_language_progress"]) {
+    assert.ok(migration.includes(`CREATE TABLE \`${tableName}\``));
+    assert.ok(schema.includes(`sqliteTable("${tableName}"`));
+  }
+  assert.match(migration, /smartlingo_exercise_bilingual_ck/);
+  assert.match(migration, /smartlingo_exercise_source_ck/);
+  assert.match(migration, /source_type[^\n]+smartlingo_original/);
+  assert.match(migration, /smartlingo_language_progress_link_insert_trg/);
+  assert.match(migration, /smartlingo_media_kind_ck[\s\S]*voice_practice/);
+  assert.match(migration, /smartlingo_media_scope_ck/);
+  assert.match(migration, /smartlingo_media_sha256_ck/);
+  assert.match(migration, /smartlingo_language_class_order_discount_math_ck/);
+  assert.match(migration, /smartlingo_language_class_order_owner_share_ck/);
+  assert.match(migration, /smartlingo_language_class_order_first_paid_uq[\s\S]*paid_at/);
+  assert.match(migration, /smartlingo_class_order_first_success_insert_trg/);
+  assert.match(migration, /smartlingo_platform_payment_referral_insert_trg/);
+  assert.match(migration, /smartlingo_reward_earned_payment_insert_trg/);
+  assert.match(migration, /payment\.status`?\s*=\s*'paid'|payment`\.\`status\` = 'paid'/);
+  assert.match(journal, /"tag": "0018_smartlingo_core_integrity"/);
 });
 
 test("0016 is additive and stores only private media metadata and content-free AI usage", async () => {

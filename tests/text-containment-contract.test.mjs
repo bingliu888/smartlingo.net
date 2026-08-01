@@ -23,8 +23,11 @@ test("meaningful headings, copy, controls, identifiers, and tables wrap without 
   assert.match(css, /\.site-notification-bar\{height:auto;min-height:52px/);
 });
 
-test("the contract covers phone, iPad, and desktop layouts across primary routes", () => {
-  assert.deepEqual([375, 768, 1024, 1180, 1366, 1440], [375, 768, 1024, 1180, 1366, 1440]);
+test("the contract covers the release-blocking phone, iPad, and desktop matrix across primary routes", () => {
+  assert.deepEqual(
+    [[390, 844], [430, 932], [834, 1112], [1194, 834], [1440, 1000]],
+    [[390, 844], [430, 932], [834, 1112], [1194, 834], [1440, 1000]],
+  );
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /font-size:clamp\(2rem,10vw,3\.5rem\)/);
   for (const route of [
