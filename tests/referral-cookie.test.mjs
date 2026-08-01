@@ -25,6 +25,59 @@ test("a validated platform referral survives sign-up in one secure cookie", () =
   assert.match(logoutSource, /clearReferralCookie\(\)/);
 });
 
+test("a valid referral returns a cookie-bearing redirect without mutating immutable redirect headers", async () => {
+  const inertClerkDomain = Buffer.from("test.clerk.accounts.invalid$").toString("base64");
+  const clerkPublishableKey = ["pk", "test", inertClerkDomain].join("_");
+  const clerkSecretKey = ["sk", "test", inertClerkDomain].join("_");
+  const previousPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const previousSecretKey = process.env.CLERK_SECRET_KEY;
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = clerkPublishableKey;
+  process.env.CLERK_SECRET_KEY = clerkSecretKey;
+
+  try {
+    const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+    workerUrl.searchParams.set("referral-cookie", `${process.pid}-${Date.now()}`);
+    const { default: worker } = await import(workerUrl.href);
+    let boundCode = "";
+    const statement = {
+      bind(code) {
+        boundCode = code;
+        return this;
+      },
+      async first() {
+        return { id: "referral-code-row" };
+      },
+      async run() {
+        return { success: true };
+      },
+    };
+
+    const response = await worker.fetch(
+      new Request("http://localhost/r/SL5512862D0D?lang=en", { headers: { accept: "*/*" } }),
+      {
+        ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+        DB: { prepare: () => statement },
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: clerkPublishableKey,
+        CLERK_SECRET_KEY: clerkSecretKey,
+      },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+
+    assert.equal(boundCode, "SL5512862D0D");
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get("location"), "http://localhost/en/auth/sign-up?referral=recorded");
+    assert.match(
+      response.headers.get("set-cookie") ?? "",
+      /^smartlingo_referral_code=SL5512862D0D; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=/,
+    );
+  } finally {
+    if (previousPublishableKey === undefined) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = previousPublishableKey;
+    if (previousSecretKey === undefined) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = previousSecretKey;
+  }
+});
+
 test("first registration stores at most one direct introducer without awarding points", () => {
   assert.match(authSource, /claimPlatformReferral/);
   assert.match(authSource, /SELECT id, user_id AS userId FROM referral_codes WHERE code = \? LIMIT 1/);

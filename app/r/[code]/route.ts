@@ -16,9 +16,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   } catch {
     return Response.redirect(new URL(`/${lang}/auth/sign-up?referral=unavailable`, request.url), 302);
   }
-  const response = Response.redirect(new URL(`/${lang}/auth/sign-up?referral=recorded`, request.url), 302);
-  response.headers.append("Set-Cookie", setReferralCookie(normalized));
-  return response;
+  const location = new URL(`/${lang}/auth/sign-up?referral=recorded`, request.url);
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: location.toString(),
+      "Set-Cookie": setReferralCookie(normalized),
+    },
+  });
 }
 
 export const HEAD = GET;
