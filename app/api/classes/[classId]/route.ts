@@ -68,11 +68,22 @@ export async function GET(
     return Response.json({ error: "This private class is available by invitation only." }, { status: 403 });
   }
 
+  const placement = detail.classKind === "official_language" && membership?.status === "active"
+    ? await getDatabase().prepare(`SELECT id, status, entry_mode AS entryMode,
+        overall_score AS overallScore, recommended_level AS recommendedLevel,
+        updated_at AS updatedAt
+        FROM smartlingo_placement_attempts
+        WHERE class_id = ? AND user_id = ?
+        ORDER BY CASE status WHEN 'in_progress' THEN 0 WHEN 'paused' THEN 1 WHEN 'completed' THEN 2 ELSE 3 END,
+          updated_at DESC, rowid DESC LIMIT 1`).bind(classId, user.id).first()
+    : null;
+
   return Response.json({
     class: detail,
     currentUserId: user.id,
     isOwner,
     membership,
+    placement,
     paymentPolicy: {
       firstPaymentDiscountPercent: 15,
       ownerSharePercent: 70,

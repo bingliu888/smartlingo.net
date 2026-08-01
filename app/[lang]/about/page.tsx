@@ -7,7 +7,7 @@ const copy = {
   en: {
     eyebrow: "ABOUT SMARTLINGO",
     title: "Language learning that connects daily practice, teachers, and community.",
-    intro: "SmartLingo is an independent AI-native language-learning platform built around four skills, member-led classes, social learning, and transparent commerce.",
+    intro: "SmartLingo is an independent AI-native language-learning platform built around vocabulary, reading, writing, listening, dialogue, member-led classes, social learning, and transparent commerce.",
     sections: [
       ["Our starting point", "The prior SmartLingo public experience centered on speaking from day one with an AI tutor, pronunciation feedback, structured A1-to-A2 learning, daily radio, reading, vocabulary, seven languages, and social progress."],
       ["Four skills, one daily loop", "Listening, speaking, reading, and writing connect to short lessons, spaced review, vocabulary cards, mistake practice, and progress that a learner can understand."],
@@ -20,7 +20,7 @@ const copy = {
   zh: {
     eyebrow: "关于 SMARTLINGO",
     title: "把每日语言训练、老师和学习社区真正连接起来。",
-    intro: "SmartLingo 是独立的人工智能原生语言学习平台，围绕听说读写、会员自主开班、社交学习与透明商务规则建设。",
+    intro: "SmartLingo 是独立的人工智能原生语言学习平台，围绕词汇、阅读、写作、听力、对话五项技能、会员自主开班、社交学习与透明商务规则建设。",
     sections: [
       ["我们的起点", "原 SmartLingo 公开体验以从第一天开口为中心，提供人工智能导师、发音反馈、A1 至 A2 结构化学习、每日广播、阅读、词汇、七种语言与社交进度。"],
       ["四项能力，一个每日闭环", "听力、口语、阅读和写作与短课、间隔复习、词汇卡、错题训练及清楚易懂的学习进度连接起来。"],

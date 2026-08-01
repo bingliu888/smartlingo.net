@@ -1,0 +1,179 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import {
+  SMARTLINGO_LEARNING_CONTENT_VERSION,
+  SMARTLINGO_LEARNING_LANGUAGE_CODES,
+  SMARTLINGO_PLACEMENT_ESTIMATED_MINUTES,
+  SMARTLINGO_SKILLS,
+  SMARTLINGO_VOCABULARY_SAMPLES,
+  buildDailyPracticeItem,
+  createVocabularyReviewState,
+  evaluatePlacement,
+  generateAdaptivePlacementQuestions,
+  gradeDailyPracticeItem,
+  scheduleVocabularyReview,
+  scorePlacementAnswer,
+  toClientPlacementQuestions,
+} from "../lib/smartlingo-learning.ts";
+
+const read = path => readFile(new URL(path, import.meta.url), "utf8");
+
+test("the learning catalog covers twelve languages, five skills, and three original versioned levels", () => {
+  assert.deepEqual(
+    SMARTLINGO_LEARNING_LANGUAGE_CODES,
+    ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"],
+  );
+  assert.deepEqual(SMARTLINGO_SKILLS, ["vocabulary", "reading", "writing", "listening", "dialogue"]);
+
+  for (const code of SMARTLINGO_LEARNING_LANGUAGE_CODES) {
+    const samples = SMARTLINGO_VOCABULARY_SAMPLES[code];
+    assert.equal(samples.length, 3, `${code} must have one seed sample for each level`);
+    assert.deepEqual(samples.map(sample => sample.level), ["beginner", "intermediate", "advanced"]);
+    assert.equal(new Set(samples.map(sample => sample.stableId)).size, samples.length);
+    for (const sample of samples) {
+      assert.equal(sample.version, SMARTLINGO_LEARNING_CONTENT_VERSION);
+      assert.equal(sample.sourceType, "smartlingo_original");
+      assert.ok(sample.form && sample.example && sample.meaning.zh && sample.meaning.en);
+    }
+  }
+});
+
+test("placement creates fifteen client-safe questions and adapts each skill from intermediate", () => {
+  const initial = generateAdaptivePlacementQuestions("en", [], "placement-test");
+  assert.equal(initial.length, 15);
+  assert.equal(initial.reduce((minutes, question) => minutes + question.estimatedMinutes, 0), SMARTLINGO_PLACEMENT_ESTIMATED_MINUTES);
+  for (const skill of SMARTLINGO_SKILLS) {
+    const questions = initial.filter(question => question.skill === skill);
+    assert.equal(questions.length, 3);
+    assert.deepEqual(questions.map(question => question.round), [1, 2, 3]);
+    assert.equal(questions[0].level, "intermediate");
+  }
+
+  const observations = SMARTLINGO_SKILLS.flatMap(skill => [
+    { skill, round: 1, score: skill === "reading" ? 20 : 90 },
+    { skill, round: 2, score: 60 },
+  ]);
+  const adapted = generateAdaptivePlacementQuestions("en", observations, "placement-test");
+  assert.equal(adapted.find(question => question.skill === "reading" && question.round === 2)?.level, "beginner");
+  assert.equal(adapted.find(question => question.skill === "vocabulary" && question.round === 2)?.level, "advanced");
+  assert.equal(adapted.find(question => question.skill === "vocabulary" && question.round === 3)?.level, "advanced");
+
+  const safe = toClientPlacementQuestions(initial);
+  assert.equal(safe.length, 15);
+  assert.ok(safe.every(question => !("answerSpec" in question)));
+  assert.ok(safe.every(question => question.contentVersion === SMARTLINGO_LEARNING_CONTENT_VERSION));
+});
+
+test("placement scoring is deterministic, balanced across five skills, and produces a recommendation", () => {
+  const questions = generateAdaptivePlacementQuestions("en", [], "scoring-test");
+  const scores = questions.map(question => {
+    const answer = question.answerSpec.kind === "choice"
+      ? question.answerSpec.correctOptionId
+      : `${question.answerSpec.requiredTerms[0]} is useful in today's language practice.`;
+    return scorePlacementAnswer(question, answer);
+  });
+  const evaluation = evaluatePlacement(scores);
+
+  assert.equal(evaluation.answeredQuestions, 15);
+  assert.equal(evaluation.isComplete, true);
+  assert.equal(evaluation.overallScore, 100);
+  assert.equal(evaluation.recommendedLevel, "advanced");
+  assert.equal(evaluation.confidence, "high");
+  assert.deepEqual(evaluation.skills.map(skill => skill.skill), SMARTLINGO_SKILLS);
+  assert.ok(evaluation.skills.every(skill => skill.score === 100 && skill.roundsCompleted === 3));
+
+  const skipped = scorePlacementAnswer(questions[0], null, true);
+  assert.deepEqual({ score: skipped.score, skipped: skipped.skipped }, { score: 0, skipped: true });
+});
+
+test("vocabulary mastery requires three consecutive correct answers in three different modes", () => {
+  let repeated = createVocabularyReviewState("sl-vocab-en-schedule-001", 0);
+  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recognition", reviewedAt: 1_000 });
+  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recognition", reviewedAt: 2_000 });
+  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recall", reviewedAt: 3_000 });
+  assert.equal(repeated.consecutiveCorrect, 3);
+  assert.equal(repeated.status, "review", "repeating one mode must not count as three-mode mastery");
+
+  let varied = scheduleVocabularyReview(repeated, { grade: "again", mode: "cloze", reviewedAt: 4_000 });
+  assert.equal(varied.consecutiveCorrect, 0);
+  assert.deepEqual(varied.recentCorrectModes, []);
+  varied = scheduleVocabularyReview(varied, { grade: "good", mode: "recognition", reviewedAt: 5_000 });
+  varied = scheduleVocabularyReview(varied, { grade: "hard", mode: "recall", reviewedAt: 6_000 });
+  varied = scheduleVocabularyReview(varied, { grade: "easy", mode: "listening", reviewedAt: 7_000 });
+  assert.equal(varied.status, "mastered");
+  assert.equal(varied.consecutiveCorrect, 3);
+  assert.deepEqual(varied.recentCorrectModes, ["recognition", "recall", "listening"]);
+  assert.ok(varied.dueAt > 7_000);
+
+  const suspended = scheduleVocabularyReview(varied, { grade: "suspend", mode: "cloze", reviewedAt: 8_000 });
+  assert.equal(suspended.status, "suspended");
+  assert.equal(suspended.dueAt, null);
+});
+
+test("daily five-skill tasks are stable, localized, client-safe, and graded from server reconstruction", () => {
+  for (const skill of SMARTLINGO_SKILLS) {
+    const first = buildDailyPracticeItem("ar", skill, "2026-08-01", "zh");
+    const second = buildDailyPracticeItem("ar", skill, "2026-08-01", "zh");
+    assert.deepEqual(first, second);
+    assert.match(first.taskId, new RegExp(`^daily:2026-08-01:ar:${skill}:`));
+    assert.equal(first.direction, "rtl");
+    assert.ok(first.prompt);
+    assert.equal("answerSpec" in first, false);
+    const skipped = gradeDailyPracticeItem("ar", skill, "2026-08-01", null, true);
+    assert.deepEqual({ score: skipped.score, skipped: skipped.skipped }, { score: 0, skipped: true });
+  }
+  const recommended = buildDailyPracticeItem("en", "reading", "2026-08-01", "en", "advanced");
+  assert.equal(recommended.level, "advanced", "placement recommendation must drive later daily learning");
+  const recommendedGrade = gradeDailyPracticeItem("en", "reading", "2026-08-01", null, true, "advanced");
+  assert.equal(recommendedGrade.level, "advanced");
+  assert.throws(
+    () => buildDailyPracticeItem("hi", "reading", "2026-02-30", "en"),
+    /valid calendar date/,
+  );
+});
+
+test("the learning calendar is a single-column five-skill log with community activity and no flags", async () => {
+  const [calendar, workspace, placement, chooser, menu, catalog, page] = await Promise.all([
+    read("../components/LearningLogCalendar.tsx"),
+    read("../components/LearningWorkspace.tsx"),
+    read("../components/PlacementAssessment.tsx"),
+    read("../components/LanguageCommunityChooser.tsx"),
+    read("../components/InterfaceLanguageMenu.tsx"),
+    read("../lib/smartlingo-language-communities.ts"),
+    read("../app/[lang]/learning-log/page.tsx"),
+  ]);
+
+  for (const [key, zh, en] of [
+    ["vocabulary", "词汇", "Vocabulary"],
+    ["reading", "阅读", "Reading"],
+    ["writing", "写作", "Writing"],
+    ["listening", "听力", "Listening"],
+    ["dialogue", "对话", "Dialogue"],
+  ]) {
+    assert.match(calendar, new RegExp(`key: "${key}", zh: "${zh}", en: "${en}"`));
+  }
+  assert.match(calendar, /const COMMUNITY = \{ zh: "社区", en: "Community"/);
+  assert.match(calendar, /grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/);
+  assert.equal((calendar.match(/className="sl-log-calendar"/g) || []).length, 1);
+  assert.ok(calendar.indexOf('className="sl-log-calendar"') < calendar.indexOf('className="sl-log-detail"'));
+  const shellRule = calendar.match(/\.sl-learning-log\s*\{\s*width:\s*100%;[\s\S]*?\}/)?.[0] ?? "";
+  assert.match(shellRule, /display:\s*grid/);
+  assert.doesNotMatch(shellRule, /grid-template-columns/);
+  assert.match(page, /<LearningWorkspace[^>]*calendarOnly/);
+  assert.match(workspace, /<LearningLogCalendar/);
+  assert.match(placement, /约 30 分钟的自适应分级/);
+  assert.match(placement, /Beginner/);
+  assert.match(placement, /Intermediate/);
+  assert.match(placement, /Advanced/);
+  assert.match(placement, /pause: "暂停"/);
+  assert.match(placement, /pause: "Pause"/);
+  assert.match(placement, /skip: "跳过本题"/);
+  assert.match(placement, /skip: "Skip this item"/);
+  assert.match(placement, /\.placement-shell\{width:100%;max-width:none;min-width:0;/);
+  assert.doesNotMatch(placement, /\.placement-shell\{width:min\(/);
+
+  const publicSources = [calendar, placement, chooser, menu, catalog].join("\n");
+  assert.doesNotMatch(publicSources, /[\u{1F1E6}-\u{1F1FF}]{2}/u);
+  assert.doesNotMatch(publicSources, /(?:language|community)[-_ ]flag/i);
+});

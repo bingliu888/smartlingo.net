@@ -11,19 +11,6 @@ type Lang = "en" | "zh";
 const TARGET_LANGUAGE_KEY = "smartlingo-target-language";
 const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
 
-const languagePresentation: Record<SmartLingoCommunityLanguage, { nativeName: string }> = {
-  zh: { nativeName: "中文" },
-  en: { nativeName: "English" },
-  es: { nativeName: "Español" },
-  ja: { nativeName: "日本語" },
-  ko: { nativeName: "한국어" },
-  fr: { nativeName: "Français" },
-  de: { nativeName: "Deutsch" },
-  ru: { nativeName: "Русский" },
-  it: { nativeName: "Italiano" },
-  pt: { nativeName: "Português" },
-};
-
 export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
   window.localStorage.setItem(TARGET_LANGUAGE_KEY, code);
   window.dispatchEvent(new CustomEvent(TARGET_LANGUAGE_EVENT, { detail: code }));
@@ -76,7 +63,8 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
     };
   }, []);
 
-  const current = languagePresentation[selected];
+  const current = SMARTLINGO_LANGUAGE_COMMUNITIES.find(language => language.code === selected)
+    ?? SMARTLINGO_LANGUAGE_COMMUNITIES[0];
 
   function choose(code: SmartLingoCommunityLanguage) {
     rememberTargetLanguage(code);
@@ -110,7 +98,6 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
         </header>
         <div>
           {SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
-            const presentation = languagePresentation[language.code];
             const changesInterface = language.code === "zh" || language.code === "en";
             return (
               <button
@@ -121,7 +108,7 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
                 onClick={() => choose(language.code)}
               >
                 <span className="interface-language-option">
-                  <b>{presentation.nativeName}</b>
+                  <b dir={language.direction}>{language.nativeName}</b>
                   <small>{changesInterface
                     ? (zh ? "界面与目标语言" : "Interface and target")
                     : (zh ? `${language.nameZh}目标社区` : `${language.nameEn} target community`)}</small>

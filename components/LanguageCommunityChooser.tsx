@@ -89,7 +89,7 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
       try {
         const response = await fetch(`/api/classes/${encodeURIComponent(available.id)}/enroll`, { method: "POST" });
         if (!response.ok) throw new Error("join_failed");
-        window.location.assign(`/${lang}/classes/${encodeURIComponent(available.id)}`);
+        window.location.assign(`/${lang}/classes/${encodeURIComponent(available.id)}/placement`);
       } catch {
         setNotice(zh ? "暂时无法加入此社区，请进入班级目录后重试。" : "This community could not be joined yet. Please retry from the class directory.");
         setJoining(null);

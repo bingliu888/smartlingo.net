@@ -371,9 +371,10 @@ function runD1Smoke(database) {
     ORDER BY CASE target_language
       WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
       WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7
-      WHEN 'it' THEN 8 WHEN 'pt' THEN 9 ELSE 10 END
+      WHEN 'it' THEN 8 WHEN 'pt' THEN 9 WHEN 'ar' THEN 10 WHEN 'hi' THEN 11
+      ELSE 12 END
   `).all().map(row => row.code);
-  assert.deepEqual(publishedLanguages, ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt"]);
+  assert.deepEqual(publishedLanguages, ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]);
   const officialCommunities = database.prepare(`
     SELECT c.id, c.target_language AS targetLanguage, c.class_kind AS classKind,
       c.status, c.visibility, c.price_cents AS priceCents
@@ -382,9 +383,10 @@ function runD1Smoke(database) {
     ORDER BY CASE c.target_language
       WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
       WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7
-      WHEN 'it' THEN 8 WHEN 'pt' THEN 9 ELSE 10 END
+      WHEN 'it' THEN 8 WHEN 'pt' THEN 9 WHEN 'ar' THEN 10 WHEN 'hi' THEN 11
+      ELSE 12 END
   `).all().map(row => ({ ...row }));
-  assert.equal(officialCommunities.length, 10);
+  assert.equal(officialCommunities.length, 12);
   assert.deepEqual(
     officialCommunities.map(community => community.targetLanguage),
     publishedLanguages,
@@ -395,6 +397,35 @@ function runD1Smoke(database) {
     assert.equal(community.visibility, "public");
     assert.equal(community.priceCents, 0);
   }
+  const newestOfficialCommunities = database.prepare(`
+    SELECT language_class.id, language_class.path_id AS pathId,
+      language_class.target_language AS targetLanguage,
+      membership.user_id AS ownerUserId, membership.role, membership.status
+    FROM smartlingo_language_classes AS language_class
+    JOIN smartlingo_language_class_members AS membership
+      ON membership.class_id = language_class.id
+    WHERE language_class.id IN ('class_official_ar', 'class_official_hi')
+      AND membership.user_id = 'smartlingo-official-community'
+    ORDER BY language_class.id
+  `).all().map(row => ({ ...row }));
+  assert.deepEqual(newestOfficialCommunities, [
+    {
+      id: "class_official_ar",
+      pathId: "path_ar_a1",
+      targetLanguage: "ar",
+      ownerUserId: "smartlingo-official-community",
+      role: "owner",
+      status: "active",
+    },
+    {
+      id: "class_official_hi",
+      pathId: "path_hi_a1",
+      targetLanguage: "hi",
+      ownerUserId: "smartlingo-official-community",
+      role: "owner",
+      status: "active",
+    },
+  ]);
   database.prepare(`
     INSERT INTO smartlingo_language_class_members
       (id, class_id, user_id, role, status, joined_at, updated_at)
@@ -417,6 +448,165 @@ function runD1Smoke(database) {
       status: "active",
       targetLanguage: "zh",
       preferredLanguage: "zh",
+    },
+  );
+
+  const insertPlacementAttempt = database.prepare(`
+    INSERT INTO smartlingo_placement_attempts
+      (id, user_id, class_id, path_id, entry_mode, status, current_difficulty,
+       active_seconds, last_resumed_at, started_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 'adaptive', 'in_progress', 3, 0, ?, ?, ?, ?)
+  `);
+  assert.throws(
+    () => insertPlacementAttempt.run(
+      "d1-smoke-placement-without-membership",
+      "d1-smoke-learner",
+      "class_official_ar",
+      "path_ar_a1",
+      now,
+      now,
+      now,
+      now,
+    ),
+    /smartlingo placement requires an active official language class membership/,
+  );
+  database.prepare(`
+    INSERT INTO smartlingo_language_class_members
+      (id, class_id, user_id, role, status, joined_at, updated_at)
+    VALUES ('d1-smoke-ar-membership', 'class_official_ar',
+      'd1-smoke-learner', 'student', 'active', ?, ?)
+  `).run(now, now);
+  assert.throws(
+    () => insertPlacementAttempt.run(
+      "d1-smoke-placement-wrong-path",
+      "d1-smoke-learner",
+      "class_official_ar",
+      "path_hi_a1",
+      now,
+      now,
+      now,
+      now,
+    ),
+    /smartlingo placement requires an active official language class membership/,
+  );
+  insertPlacementAttempt.run(
+    "d1-smoke-placement",
+    "d1-smoke-learner",
+    "class_official_ar",
+    "path_ar_a1",
+    now,
+    now,
+    now,
+    now,
+  );
+  database.prepare(`
+    INSERT INTO smartlingo_placement_responses
+      (id, attempt_id, item_key, item_version, skill, difficulty, answer_text,
+       skipped, score, ai_feedback, duration_seconds, answered_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, 'vocabulary', 3, ?, 0, 88, '', 42, ?, ?, ?)
+  `).run(
+    "d1-smoke-placement-response",
+    "d1-smoke-placement",
+    "sl-vocab-ar-schedule-001",
+    "2026-08-01.1",
+    "جدول",
+    now,
+    now,
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_placement_responses
+        (id, attempt_id, item_key, item_version, skill, difficulty,
+         answered_at, created_at, updated_at)
+      VALUES ('d1-smoke-placement-response-missing-parent', 'missing-attempt',
+        'missing-parent', '2026-08-01.1', 'reading', 3, ?, ?, ?)
+    `).run(now, now, now),
+    /FOREIGN KEY constraint failed/,
+  );
+  database.prepare(`
+    INSERT INTO smartlingo_learning_activity_events
+      (id, user_id, class_id, attempt_id, domain, activity_type,
+       duration_seconds, units, score, source_type, source_id, created_at)
+    VALUES (?, ?, ?, ?, 'vocabulary', 'placement', 42, 1, 88,
+      'placement_response', ?, ?)
+  `).run(
+    "d1-smoke-learning-activity",
+    "d1-smoke-learner",
+    "class_official_ar",
+    "d1-smoke-placement",
+    "d1-smoke-placement-response",
+    now,
+  );
+  database.prepare(`
+    INSERT INTO smartlingo_vocabulary_progress
+      (id, user_id, path_id, class_id, word_key, word_version, status,
+       modes_seen, review_box, interval_days, review_count, correct_count,
+       lapse_count, last_score, due_at, last_reviewed_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'mastered', ?, 3, 7, 3, 3, 0, 88, ?, ?, ?, ?)
+  `).run(
+    "d1-smoke-vocabulary-progress",
+    "d1-smoke-learner",
+    "path_ar_a1",
+    "class_official_ar",
+    "sl-vocab-ar-schedule-001",
+    "2026-08-01.1",
+    '["recognition","recall","listening"]',
+    now + 7 * 86_400,
+    now,
+    now,
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_vocabulary_progress
+        (id, user_id, path_id, word_key, word_version, modes_seen,
+         created_at, updated_at)
+      VALUES ('d1-smoke-vocabulary-invalid-json', 'd1-smoke-learner',
+        'path_ar_a1', 'invalid-json', '2026-08-01.1', 'not-json', ?, ?)
+    `).run(now, now),
+    /CHECK constraint failed: smartlingo_vocabulary_progress_modes_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_learning_activity_events
+        (id, user_id, attempt_id, domain, activity_type, source_type,
+         source_id, created_at)
+      VALUES ('d1-smoke-activity-missing-attempt', 'd1-smoke-learner',
+        'missing-attempt', 'dialogue', 'placement', 'placement_response',
+        'missing-response', ?)
+    `).run(now),
+    /FOREIGN KEY constraint failed/,
+  );
+  const placementSmoke = database.prepare(`
+    SELECT placement.id, placement.entry_mode AS entryMode,
+      placement.current_difficulty AS currentDifficulty,
+      response.id AS responseId, response.skill, response.score,
+      activity.id AS activityId, activity.domain,
+      vocabulary.id AS vocabularyProgressId, vocabulary.modes_seen AS modesSeen
+    FROM smartlingo_placement_attempts AS placement
+    JOIN smartlingo_placement_responses AS response
+      ON response.attempt_id = placement.id
+    JOIN smartlingo_learning_activity_events AS activity
+      ON activity.attempt_id = placement.id
+    JOIN smartlingo_vocabulary_progress AS vocabulary
+      ON vocabulary.user_id = placement.user_id
+      AND vocabulary.path_id = placement.path_id
+    WHERE placement.id = 'd1-smoke-placement'
+  `).get();
+  assert.deepEqual(
+    { ...placementSmoke, modesSeen: JSON.parse(placementSmoke.modesSeen) },
+    {
+      id: "d1-smoke-placement",
+      entryMode: "adaptive",
+      currentDifficulty: 3,
+      responseId: "d1-smoke-placement-response",
+      skill: "vocabulary",
+      score: 88,
+      activityId: "d1-smoke-learning-activity",
+      domain: "vocabulary",
+      vocabularyProgressId: "d1-smoke-vocabulary-progress",
+      modesSeen: ["recognition", "recall", "listening"],
     },
   );
   database.prepare(`
@@ -846,12 +1036,18 @@ function runD1Smoke(database) {
     rewardLedgerId: "d1-smoke-introducer-reward",
     officialCommunityCount: officialCommunities.length,
     sameLanguageMembershipId: sameLanguageMembership.id,
+    officialArabicClassId: newestOfficialCommunities[0].id,
+    officialHindiClassId: newestOfficialCommunities[1].id,
+    placementAttemptId: placementSmoke.id,
+    placementResponseId: placementSmoke.responseId,
+    learningActivityEventId: placementSmoke.activityId,
+    vocabularyProgressId: placementSmoke.vocabularyProgressId,
   };
 }
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0020_restore_german_community");
+  assert.equal(migrations.at(-1)?.tag, "0021_smartlingo_placement_learning");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -892,6 +1088,10 @@ export function validateD1Migrations() {
       "smartlingo_language_class_orders_webhook_event_id_unique",
       "smartlingo_platform_subscription_payments_provider_invoice_id_unique",
       "smartlingo_introducer_reward_ledger_subscription_payment_id_unique",
+      "smartlingo_placement_attempt_active_uq",
+      "smartlingo_placement_response_item_uq",
+      "smartlingo_learning_activity_source_uq",
+      "smartlingo_vocabulary_progress_word_uq",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -907,6 +1107,10 @@ export function validateD1Migrations() {
       "smartlingo_language_class_orders",
       "smartlingo_platform_subscription_payments",
       "smartlingo_introducer_reward_ledger",
+      "smartlingo_placement_attempts",
+      "smartlingo_placement_responses",
+      "smartlingo_learning_activity_events",
+      "smartlingo_vocabulary_progress",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     const smoke = runD1Smoke(database);

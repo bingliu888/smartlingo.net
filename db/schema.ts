@@ -995,3 +995,150 @@ export const lingoIntroducerRewardLedger = sqliteTable("smartlingo_introducer_re
   check("smartlingo_introducer_reward_status_ck", sql`${table.status} IN ('earned', 'reversed')`),
   index("smartlingo_introducer_reward_user_idx").on(table.introducerUserId, table.createdAt),
 ]);
+
+/**
+ * A placement attempt belongs to one active member of one platform-provided
+ * language community. Self-selected entry levels intentionally keep the five
+ * skill scores nullable; adaptive attempts add evidence as each skill is
+ * completed. Results guide practice and are not official language scores.
+ */
+export const lingoPlacementAttempts = sqliteTable("smartlingo_placement_attempts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  entryMode: text("entry_mode").notNull(),
+  status: text("status").notNull().default("in_progress"),
+  currentDifficulty: integer("current_difficulty").notNull().default(3),
+  activeSeconds: integer("active_seconds").notNull().default(0),
+  lastResumedAt: integer("last_resumed_at"),
+  vocabularyScore: integer("vocabulary_score"),
+  readingScore: integer("reading_score"),
+  writingScore: integer("writing_score"),
+  listeningScore: integer("listening_score"),
+  dialogueScore: integer("dialogue_score"),
+  overallScore: integer("overall_score"),
+  recommendedLevel: text("recommended_level"),
+  startedAt: integer("started_at").notNull(),
+  pausedAt: integer("paused_at"),
+  completedAt: integer("completed_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_placement_attempt_entry_mode_ck", sql`${table.entryMode} IN ('beginner', 'intermediate', 'advanced', 'adaptive')`),
+  check("smartlingo_placement_attempt_status_ck", sql`${table.status} IN ('in_progress', 'paused', 'completed', 'abandoned')`),
+  check("smartlingo_placement_attempt_difficulty_ck", sql`${table.currentDifficulty} BETWEEN 1 AND 5`),
+  check("smartlingo_placement_attempt_active_time_ck", sql`${table.activeSeconds} BETWEEN 0 AND 14400`),
+  check("smartlingo_placement_attempt_scores_ck", sql`
+    (${table.vocabularyScore} IS NULL OR ${table.vocabularyScore} BETWEEN 0 AND 100)
+    AND (${table.readingScore} IS NULL OR ${table.readingScore} BETWEEN 0 AND 100)
+    AND (${table.writingScore} IS NULL OR ${table.writingScore} BETWEEN 0 AND 100)
+    AND (${table.listeningScore} IS NULL OR ${table.listeningScore} BETWEEN 0 AND 100)
+    AND (${table.dialogueScore} IS NULL OR ${table.dialogueScore} BETWEEN 0 AND 100)
+    AND (${table.overallScore} IS NULL OR ${table.overallScore} BETWEEN 0 AND 100)
+  `),
+  check("smartlingo_placement_attempt_level_ck", sql`${table.recommendedLevel} IS NULL OR ${table.recommendedLevel} IN ('beginner', 'intermediate', 'advanced')`),
+  uniqueIndex("smartlingo_placement_attempt_active_uq")
+    .on(table.userId, table.classId)
+    .where(sql`${table.status} IN ('in_progress', 'paused')`),
+  index("smartlingo_placement_attempt_user_class_idx").on(table.userId, table.classId, table.updatedAt),
+  index("smartlingo_placement_attempt_class_status_idx").on(table.classId, table.status, table.updatedAt),
+]);
+
+export const lingoPlacementResponses = sqliteTable("smartlingo_placement_responses", {
+  id: text("id").primaryKey(),
+  attemptId: text("attempt_id").notNull().references(() => lingoPlacementAttempts.id, { onDelete: "cascade" }),
+  itemKey: text("item_key").notNull(),
+  itemVersion: text("item_version").notNull(),
+  skill: text("skill").notNull(),
+  difficulty: integer("difficulty").notNull(),
+  answerText: text("answer_text").notNull().default(""),
+  skipped: integer("skipped", { mode: "boolean" }).notNull().default(false),
+  score: integer("score"),
+  aiFeedback: text("ai_feedback").notNull().default(""),
+  durationSeconds: integer("duration_seconds").notNull().default(0),
+  answeredAt: integer("answered_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_placement_response_identity_ck", sql`length(trim(${table.itemKey})) > 0 AND length(trim(${table.itemVersion})) > 0`),
+  check("smartlingo_placement_response_skill_ck", sql`${table.skill} IN ('vocabulary', 'reading', 'writing', 'listening', 'dialogue')`),
+  check("smartlingo_placement_response_difficulty_ck", sql`${table.difficulty} BETWEEN 1 AND 5`),
+  check("smartlingo_placement_response_skipped_ck", sql`${table.skipped} IN (0, 1)`),
+  check("smartlingo_placement_response_score_ck", sql`${table.score} IS NULL OR ${table.score} BETWEEN 0 AND 100`),
+  check("smartlingo_placement_response_skip_score_ck", sql`${table.skipped} = 0 OR ${table.score} IS NULL`),
+  check("smartlingo_placement_response_text_ck", sql`length(${table.answerText}) <= 6000 AND length(${table.aiFeedback}) <= 6000`),
+  check("smartlingo_placement_response_duration_ck", sql`${table.durationSeconds} BETWEEN 0 AND 3600`),
+  uniqueIndex("smartlingo_placement_response_item_uq").on(table.attemptId, table.itemKey, table.itemVersion),
+  index("smartlingo_placement_response_attempt_skill_idx").on(table.attemptId, table.skill, table.answeredAt),
+]);
+
+/**
+ * Calendar events are append-only, server-authored evidence. `source_type` and
+ * `source_id` make writes idempotent without storing private exercise bodies.
+ */
+export const lingoLearningActivityEvents = sqliteTable("smartlingo_learning_activity_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").references(() => lingoClasses.id, { onDelete: "set null" }),
+  attemptId: text("attempt_id").references(() => lingoPlacementAttempts.id, { onDelete: "set null" }),
+  domain: text("domain").notNull(),
+  activityType: text("activity_type").notNull(),
+  durationSeconds: integer("duration_seconds").notNull().default(0),
+  units: integer("units").notNull().default(1),
+  score: integer("score"),
+  sourceType: text("source_type").notNull(),
+  sourceId: text("source_id").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_learning_activity_domain_ck", sql`${table.domain} IN ('vocabulary', 'reading', 'writing', 'listening', 'dialogue', 'community')`),
+  check("smartlingo_learning_activity_type_ck", sql`${table.activityType} IN ('placement', 'practice', 'flashcard', 'class_join', 'community_topic', 'community_reply', 'group_chat', 'live_chat')`),
+  check("smartlingo_learning_activity_duration_ck", sql`${table.durationSeconds} BETWEEN 0 AND 86400`),
+  check("smartlingo_learning_activity_units_ck", sql`${table.units} BETWEEN 1 AND 10000`),
+  check("smartlingo_learning_activity_score_ck", sql`${table.score} IS NULL OR ${table.score} BETWEEN 0 AND 100`),
+  check("smartlingo_learning_activity_source_ck", sql`length(trim(${table.sourceType})) BETWEEN 1 AND 48 AND length(trim(${table.sourceId})) BETWEEN 1 AND 160`),
+  uniqueIndex("smartlingo_learning_activity_source_uq").on(table.userId, table.sourceType, table.sourceId),
+  index("smartlingo_learning_activity_user_created_idx").on(table.userId, table.createdAt),
+  index("smartlingo_learning_activity_user_domain_idx").on(table.userId, table.domain, table.createdAt),
+  index("smartlingo_learning_activity_class_created_idx").on(table.classId, table.createdAt),
+]);
+
+/**
+ * Spaced vocabulary state references a stable, versioned word key. The word
+ * and its licensed/original content live outside this progress table.
+ */
+export const lingoVocabularyProgress = sqliteTable("smartlingo_vocabulary_progress", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  classId: text("class_id").references(() => lingoClasses.id, { onDelete: "set null" }),
+  wordKey: text("word_key").notNull(),
+  wordVersion: text("word_version").notNull(),
+  status: text("status").notNull().default("new"),
+  modesSeen: text("modes_seen").notNull().default("[]"),
+  reviewBox: integer("review_box").notNull().default(0),
+  intervalDays: integer("interval_days").notNull().default(0),
+  reviewCount: integer("review_count").notNull().default(0),
+  correctCount: integer("correct_count").notNull().default(0),
+  lapseCount: integer("lapse_count").notNull().default(0),
+  lastScore: integer("last_score"),
+  dueAt: integer("due_at"),
+  lastReviewedAt: integer("last_reviewed_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_vocabulary_progress_identity_ck", sql`length(trim(${table.wordKey})) > 0 AND length(trim(${table.wordVersion})) > 0`),
+  check("smartlingo_vocabulary_progress_status_ck", sql`${table.status} IN ('new', 'learning', 'review', 'mastered', 'suspended')`),
+  check("smartlingo_vocabulary_progress_modes_ck", sql`json_valid(${table.modesSeen}) AND json_type(${table.modesSeen}) = 'array' AND length(${table.modesSeen}) <= 320`),
+  check("smartlingo_vocabulary_progress_box_ck", sql`${table.reviewBox} BETWEEN 0 AND 5`),
+  check("smartlingo_vocabulary_progress_interval_ck", sql`${table.intervalDays} BETWEEN 0 AND 3650`),
+  check("smartlingo_vocabulary_progress_counts_ck", sql`
+    ${table.reviewCount} >= 0 AND ${table.correctCount} >= 0 AND ${table.lapseCount} >= 0
+    AND ${table.correctCount} + ${table.lapseCount} <= ${table.reviewCount}
+  `),
+  check("smartlingo_vocabulary_progress_score_ck", sql`${table.lastScore} IS NULL OR ${table.lastScore} BETWEEN 0 AND 100`),
+  uniqueIndex("smartlingo_vocabulary_progress_word_uq").on(table.userId, table.pathId, table.wordKey, table.wordVersion),
+  index("smartlingo_vocabulary_progress_user_due_idx").on(table.userId, table.status, table.dueAt),
+  index("smartlingo_vocabulary_progress_path_status_idx").on(table.pathId, table.status),
+  index("smartlingo_vocabulary_progress_class_idx").on(table.classId, table.updatedAt),
+]);

@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 21);
-  assert.equal(result.firstRunApplied, 21);
+  assert.equal(result.migrationCount, 22);
+  assert.equal(result.firstRunApplied, 22);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0020_restore_german_community");
+  assert.equal(result.newestMigration, "0021_smartlingo_placement_learning");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -26,8 +26,14 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     classOrderId: "d1-smoke-language-class-order",
     subscriptionPaymentId: "d1-smoke-platform-subscription",
     rewardLedgerId: "d1-smoke-introducer-reward",
-    officialCommunityCount: 10,
+    officialCommunityCount: 12,
     sameLanguageMembershipId: "d1-smoke-same-language-membership",
+    officialArabicClassId: "class_official_ar",
+    officialHindiClassId: "class_official_hi",
+    placementAttemptId: "d1-smoke-placement",
+    placementResponseId: "d1-smoke-placement-response",
+    learningActivityEventId: "d1-smoke-learning-activity",
+    vocabularyProgressId: "d1-smoke-vocabulary-progress",
   });
 });
 
@@ -73,6 +79,42 @@ test("0020 restores German as a public, free official language community", async
   assert.match(catalog, /nameZh: "德语"/);
   assert.match(catalog, /nameEn: "German"/);
   assert.match(journal, /"tag": "0020_restore_german_community"/);
+});
+
+test("0021 adds Arabic and Hindi communities plus placement, daily activity, and vocabulary evidence", async () => {
+  const [schema, migration, catalog, journal] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0021_smartlingo_placement_learning.sql"),
+    read("../lib/smartlingo-language-communities.ts"),
+    read("../drizzle/meta/_journal.json"),
+  ]);
+
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  for (const tableName of [
+    "smartlingo_placement_attempts",
+    "smartlingo_placement_responses",
+    "smartlingo_learning_activity_events",
+    "smartlingo_vocabulary_progress",
+  ]) {
+    assert.ok(migration.includes(`CREATE TABLE \`${tableName}\``));
+    assert.ok(schema.includes(`sqliteTable("${tableName}"`));
+  }
+  for (const value of [
+    "path_ar_a1",
+    "path_hi_a1",
+    "class_official_ar",
+    "class_official_hi",
+    "owner_class_official_ar",
+    "owner_class_official_hi",
+  ]) assert.match(migration, new RegExp(`'${value}'`));
+  assert.match(migration, /smartlingo placement requires an active official language class membership/);
+  assert.match(migration, /'vocabulary', 'reading', 'writing', 'listening', 'dialogue'/);
+  assert.match(migration, /json_valid\(`modes_seen`\).*json_type\(`modes_seen`\) = 'array'/s);
+  assert.match(migration, /FOREIGN KEY \(`attempt_id`\) REFERENCES `smartlingo_placement_attempts`/);
+  assert.match(migration, /FOREIGN KEY \(`class_id`\) REFERENCES `smartlingo_language_classes`/);
+  assert.match(catalog, /code: "ar"[\s\S]*direction: "rtl"/);
+  assert.match(catalog, /code: "hi"[\s\S]*nameEn: "Hindi"/);
+  assert.match(journal, /"tag": "0021_smartlingo_placement_learning"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

@@ -12,6 +12,7 @@ type JoinableClass = {
 };
 
 type Membership = {
+  id: string;
   role: "owner" | "teacher" | "coordinator" | "student";
   status: "invited" | "active" | "paused" | "left" | "removed";
 };
@@ -34,7 +35,7 @@ export async function POST(
     .bind(classId).first<JoinableClass>();
   if (!languageClass) return Response.json({ error: "Class not found" }, { status: 404 });
 
-  const existing = await database.prepare(`SELECT role, status
+  const existing = await database.prepare(`SELECT id, role, status
     FROM smartlingo_language_class_members
     WHERE class_id = ? AND user_id = ? LIMIT 1`)
     .bind(classId, user.id).first<Membership>();
@@ -57,6 +58,11 @@ export async function POST(
       SET status = 'active', updated_at = ?
       WHERE class_id = ? AND user_id = ? AND status IN ('invited', 'paused')`)
       .bind(now, classId, user.id).run();
+    await database.prepare(`INSERT OR IGNORE INTO smartlingo_learning_activity_events
+      (id, user_id, class_id, domain, activity_type, duration_seconds, units,
+       source_type, source_id, created_at)
+      VALUES (?, ?, ?, 'community', 'class_join', 0, 1, 'class_membership', ?, ?)`)
+      .bind(createId(), user.id, classId, existing.id, now).run();
     return Response.json({
       enrolled: true,
       charged: false,
@@ -97,13 +103,19 @@ export async function POST(
     WHERE smartlingo_language_class_members.status IN ('invited', 'paused', 'left')`)
     .bind(createId(), user.id, now, now, classId).run();
 
-  const membership = await database.prepare(`SELECT role, status
+  const membership = await database.prepare(`SELECT id, role, status
     FROM smartlingo_language_class_members
     WHERE class_id = ? AND user_id = ? LIMIT 1`)
     .bind(classId, user.id).first<Membership>();
   if (!membership || membership.status !== "active") {
     return Response.json({ error: "This class became full before enrollment completed." }, { status: 409 });
   }
+
+  await database.prepare(`INSERT OR IGNORE INTO smartlingo_learning_activity_events
+    (id, user_id, class_id, domain, activity_type, duration_seconds, units,
+     source_type, source_id, created_at)
+    VALUES (?, ?, ?, 'community', 'class_join', 0, 1, 'class_membership', ?, ?)`)
+    .bind(createId(), user.id, classId, membership.id, now).run();
 
   return Response.json({
     enrolled: true,

@@ -3,11 +3,17 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("English and Chinese routes use matching content", async () => {
-  const home = await readFile(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
+  const [home, assistant, live] = await Promise.all([
+    readFile(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/assistant/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/assistant/live/route.ts", import.meta.url), "utf8"),
+  ]);
   assert.match(home, /en:\s*\{/);
   assert.match(home, /zh:\s*\{/);
-  assert.match(home, /Ten languages, one connected learning loop/);
-  assert.match(home, /十种语言，同一套完整学习闭环/);
+  assert.match(home, /Twelve languages, one connected learning loop/);
+  assert.match(home, /十二种语言，同一套完整学习闭环/);
+  assert.match(home, /Build vocabulary, read, write, listen, and hold real dialogue/);
+  assert.match(home, /练词汇、做阅读、写作、听力和真实对话/);
   assert.match(home, /Create a class\. Coordinate learners\. Build a real community/);
   assert.match(home, /会员自主开班/);
   assert.match(home, /Introducer rewards apply only to platform subscriptions/);
@@ -17,6 +23,11 @@ test("English and Chinese routes use matching content", async () => {
   assert.match(home, /人工智能导师与实时语音/);
   assert.match(home, /The class owner earns 70%\. The platform receives 30%/);
   assert.match(home, /班主获得 70%，平台获得 30%/);
+  assert.match(assistant, /Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi/);
+  for (const skill of ["vocabulary", "reading", "writing", "listening", "dialogue"]) {
+    assert.match(assistant, new RegExp(skill));
+    assert.match(live, new RegExp(skill));
+  }
   assert.doesNotMatch(home, /BACC|Gold|Platinum|21-day|21 天/);
 });
 

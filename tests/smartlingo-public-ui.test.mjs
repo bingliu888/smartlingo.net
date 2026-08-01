@@ -20,18 +20,19 @@ test("SmartLingo branding and bilingual navigation expose learning, classes, com
   assert.match(layout, /"smartlingo\.net"/);
   assert.match(layout, /smartlingo-language-community-1600\.png/);
   assert.match(layout, /<html lang="zh-CN"/);
-  assert.match(languageLayout, /十种语言、听说读写、实时语音导师、会员自主开班与学习社区/);
+  assert.match(languageLayout, /十二种语言、词汇阅读写作听力对话五项技能、实时语音导师、会员自主开班与学习社区/);
+  assert.match(languageLayout, /twelve languages with five-skill vocabulary, reading, writing, listening, and dialogue practice/);
   assert.doesNotMatch(`${header}\n${footer}\n${layout}`, /SmartAICert|SmartCert\.pro|BingAcademy certificate/i);
 });
 
-test("homepage exposes ten target-language communities and a complete four-skill loop", async () => {
+test("homepage exposes twelve target-language communities and one complete five-skill loop", async () => {
   const [home, catalog] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../lib/smartlingo-language-communities.ts"),
   ]);
 
-  for (const language of ["中文", "英语", "西班牙语", "日语", "韩语", "法语", "德语", "俄语", "意大利语", "葡萄牙语"]) assert.match(catalog, new RegExp(language));
-  for (const skill of ["听力", "口语", "阅读", "写作"]) assert.match(home, new RegExp(skill));
+  for (const language of ["中文", "英语", "西班牙语", "日语", "韩语", "法语", "德语", "俄语", "意大利语", "葡萄牙语", "阿拉伯语", "印地语"]) assert.match(catalog, new RegExp(language));
+  for (const skill of ["词汇", "阅读", "写作", "听力", "对话"]) assert.match(home, new RegExp(skill));
   assert.match(home, /从第一天开始，开口说一门新语言/);
   assert.match(home, /每日短任务、间隔复习、透明技能分和可见进度/);
   assert.match(home, /人工智能导师与实时语音/);

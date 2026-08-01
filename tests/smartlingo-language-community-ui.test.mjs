@@ -15,7 +15,7 @@ function chooserMetrics(viewport) {
   return { container, inner, columns, card, popover };
 }
 
-test("the shared header uses one accessible ten-language text dropdown without flags or an I-speak selector", async () => {
+test("the shared header uses one accessible twelve-language text dropdown without flags or an I-speak selector", async () => {
   const [header, menu, chooser, home, catalog, css] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../components/InterfaceLanguageMenu.tsx"),
@@ -27,10 +27,11 @@ test("the shared header uses one accessible ten-language text dropdown without f
 
   assert.match(header, /<InterfaceLanguageMenu lang=\{lang\}/);
   assert.doesNotMatch(header, /<LanguageLink/);
-  for (const name of ["中文", "English", "Español", "日本語", "한국어", "Français", "Deutsch", "Русский", "Italiano", "Português"]) {
-    assert.match(menu, new RegExp(name));
+  assert.match(menu, /SMARTLINGO_LANGUAGE_COMMUNITIES\.map/);
+  for (const name of ["中文", "English", "Español", "日本語", "한국어", "Français", "Deutsch", "Русский", "Italiano", "Português", "العربية", "हिन्दी"]) {
+    assert.match(catalog, new RegExp(name));
   }
-  for (const code of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt"]) {
+  for (const code of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.match(catalog, new RegExp(`code: "${code}"`));
   }
   assert.match(menu, /中文与英文切换界面；其他选项设置目标学习语言/);
@@ -41,7 +42,7 @@ test("the shared header uses one accessible ten-language text dropdown without f
   assert.doesNotMatch(css, /\.interface-language-current\{display:none\}/);
 });
 
-test("the homepage language chooser gives all ten communities a working join or enter path", async () => {
+test("the homepage language chooser gives all twelve communities a working join, placement, or enter path", async () => {
   const [home, chooser, css] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/LanguageCommunityChooser.tsx"),
@@ -58,6 +59,7 @@ test("the homepage language chooser gives all ten communities a working join or 
   assert.match(chooser, /已加入 · 进入/);
   assert.match(chooser, /Joined · Enter/);
   assert.match(chooser, /\/api\/classes\/\$\{encodeURIComponent\(available\.id\)\}\/enroll/);
+  assert.match(chooser, /\/classes\/\$\{encodeURIComponent\(available\.id\)\}\/placement/);
   assert.match(chooser, /auth\/login\?returnTo=/);
   assert.match(css, /\.lingo-community-grid\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(max-width:820px\)\{\.lingo-hero-shell/);

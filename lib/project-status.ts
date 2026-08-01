@@ -174,7 +174,7 @@ export const projectReports: ProjectReport[] = [
     },
     next: {
       zh: "推进 8 月 2 日五项：十语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
-      en: "Continue with the five August 2 tasks: the ten-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
+      en: "Continue with the five August 2 tasks: the twelve-language catalog, goal and level onboarding, class-entry placement, the stage and unit map, and learning-path integrity tests.",
     },
   },
 ];

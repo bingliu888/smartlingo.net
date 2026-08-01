@@ -60,6 +60,13 @@ type Detail = {
   currentUserId: string;
   isOwner: boolean;
   membership: { role: string; status: string } | null;
+  placement: {
+    id: string;
+    status: string;
+    entryMode: string;
+    overallScore: number | null;
+    recommendedLevel: string | null;
+  } | null;
   paymentMode: string;
 };
 
@@ -121,6 +128,12 @@ const COPY = {
     community: "Class community",
     communityNote: "This private class is the home for peer practice, social learning, AI Guru, and live audio. Invitations and checkout are enabled only after their verified workflows are complete.",
     officialCommunityNote: "This official language community brings together daily practice, peer discussion, AI Guru guidance, and live audio. Members may also join additional teacher-created classes for the same language.",
+    placementTitle: "Start with your level",
+    placementBody: "Choose Beginner, Intermediate, or Advanced, or take the approximately 30-minute adaptive five-skill placement check. You can pause, resume, or skip an item.",
+    startPlacement: "Start placement",
+    resumePlacement: "Resume placement",
+    dailyLearning: "Daily five-skill learning",
+    learningCalendar: "Learning calendar",
     requestReview: "Request public directory review",
     reviewSent: "This class is now waiting for public directory review.",
   },
@@ -181,6 +194,12 @@ const COPY = {
     community: "班级社区",
     communityNote: "私有班级将承载同伴练习、社交学习、人工智能导师与实时语音。邀请和结账功能只会在相应的验证流程完成后开放。",
     officialCommunityNote: "官方语言社区连接每日训练、同伴交流、人工智能导师与实时语音。会员还可加入同一语言下由老师创建的不同主题班级。",
+    placementTitle: "先确定您的起点",
+    placementBody: "可直接选择初级、中级或高级，也可参加约 30 分钟的五项技能自适应分级测评；测评支持暂停、继续和跳过。",
+    startPlacement: "开始分级",
+    resumePlacement: "继续分级",
+    dailyLearning: "每日五项技能学习",
+    learningCalendar: "学习日历",
     requestReview: "申请加入公开班级目录",
     reviewSent: "本班已进入公开目录审核流程。",
   },
@@ -321,7 +340,9 @@ export function ClassStudio({
     try {
       const response = await fetch(`/api/classes/${encodeURIComponent(item.id)}/enroll`, { method: "POST" });
       if (!response.ok) throw new Error(t.joinFailed);
-      window.location.assign(`/${lang}/classes/${encodeURIComponent(item.id)}`);
+      window.location.assign(item.classKind === "official_language"
+        ? `/${lang}/classes/${encodeURIComponent(item.id)}/placement`
+        : `/${lang}/classes/${encodeURIComponent(item.id)}`);
     } catch {
       setNotice(t.joinFailed);
       setJoiningClassId(null);
@@ -403,6 +424,24 @@ export function ClassStudio({
           </dl>
         </div>
         <div className="class-detail-grid">
+          {item.classKind === "official_language" && detail.membership?.status === "active" && (
+            <article className="class-placement-card" data-layout-fill>
+              <span>{detail.placement?.status === "completed" ? t.dailyLearning : t.placementTitle}</span>
+              <h2>{detail.placement?.status === "completed" ? t.dailyLearning : t.placementTitle}</h2>
+              <p>{t.placementBody}</p>
+              <div className="class-learning-actions">
+                {detail.placement?.status !== "completed" && (
+                  <Link className="primary-button" href={`/${lang}/classes/${encodeURIComponent(item.id)}/placement`}>
+                    {detail.placement?.status === "paused" || detail.placement?.status === "in_progress" ? t.resumePlacement : t.startPlacement} →
+                  </Link>
+                )}
+                {detail.placement?.status === "completed" && (
+                  <Link className="primary-button" href={`/${lang}/classes/${encodeURIComponent(item.id)}/learn`}>{t.dailyLearning} →</Link>
+                )}
+                <Link className="secondary-button" href={`/${lang}/learning-log`}>{t.learningCalendar} →</Link>
+              </div>
+            </article>
+          )}
           <article>
             <span>{visibilityLabel(lang, item.visibility)}</span>
             <h2>{t.community}</h2>
@@ -513,6 +552,7 @@ function ClassStyles() {
     .class-create-panel{padding:clamp(28px,4vw,54px);display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:clamp(30px,5vw,70px);border-radius:24px;background:#e7eee9}.class-create-panel>div>p:last-child{color:var(--muted);line-height:1.7}.class-create-panel form{display:grid;gap:15px}.class-create-panel label{display:grid;gap:7px;font-size:13px;font-weight:850}.class-create-panel input,.class-create-panel textarea,.class-create-panel select{width:100%;padding:12px 14px;border:1px solid rgba(18,32,42,.22);border-radius:9px;background:white;font:16px/1.4 inherit}.class-create-panel textarea{min-height:112px;resize:vertical}.class-form-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}.class-create-panel button{width:max-content}.class-notice{position:sticky;bottom:20px;z-index:3;margin:24px 0 0;padding:15px 18px;border-radius:10px;background:#123f35;color:white;box-shadow:0 14px 34px rgba(0,0,0,.18)}
     .class-back{display:inline-flex;margin-bottom:36px;color:var(--jade);font-weight:850}.class-detail-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:clamp(30px,5vw,70px);align-items:end}.class-detail-hero dl{background:#e7eee9}.class-detail-hero dl div{border-color:rgba(18,32,42,.12)}.class-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:56px}.class-detail-grid article{min-height:0}.class-payment-card{background:#123f35!important;color:white}.class-payment-card p{color:rgba(255,255,255,.76)}.class-review-button{width:max-content;margin-top:22px}.class-auth-required{min-height:62vh;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}.class-auth-required h1{max-width:900px;margin:8px 0 20px;font:600 clamp(42px,6vw,76px)/1.03 "Iowan Old Style","Noto Serif SC",Georgia,serif}.class-auth-required>p:not(.section-kicker){max-width:72ch;color:var(--muted);line-height:1.72}.class-auth-required>a{width:max-content;margin-top:18px}.class-loading{min-height:54vh;display:grid;place-items:center;color:var(--jade);font-weight:900}
     @media(max-width:960px){.class-economics,.class-create-panel,.class-detail-hero{grid-template-columns:1fr}.class-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.class-economics dl,.class-detail-hero dl{max-width:560px}}
-    @media(max-width:620px){.smartlingo-class-studio{padding-top:48px}.class-card-grid,.class-form-pair,.class-detail-grid{grid-template-columns:1fr}.class-catalog,.class-create-panel,.class-economics{margin-top:52px}.class-create-panel button,.class-card-grid a,.class-card-grid button,.class-review-button,.class-auth-required>a{width:100%}.class-economics dl div,.class-detail-hero dl div{align-items:flex-start}.class-economics dd,.class-detail-hero dd{max-width:56%}}
+    .class-placement-card{grid-column:1/-1!important;background:#eaf8f1!important}.class-learning-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}.class-learning-actions a{width:max-content}
+    @media(max-width:620px){.smartlingo-class-studio{padding-top:48px}.class-card-grid,.class-form-pair,.class-detail-grid{grid-template-columns:1fr}.class-catalog,.class-create-panel,.class-economics{margin-top:52px}.class-create-panel button,.class-card-grid a,.class-card-grid button,.class-review-button,.class-auth-required>a,.class-learning-actions a{width:100%}.class-economics dl div,.class-detail-hero dl div{align-items:flex-start}.class-economics dd,.class-detail-hero dd{max-width:56%}}
   `}</style>;
 }

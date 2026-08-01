@@ -9,12 +9,12 @@ The migration preserves the browser-visible identity of the prior SmartLingo.net
 - “开口说，才会说” / “Speak from day one”
 - real-world AI conversation practice
 - pronunciation feedback, immersive reading, daily listening, and structured progression
-- a current ten-language catalog: Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, and Portuguese
+- a current twelve-language catalog: Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi
 - Community, social motivation, and class learning
 
 The preserved HTML and image evidence is documented in [`legacy-reference/README.md`](legacy-reference/README.md). The new application does not depend on the old deployment or import hidden source content.
 
-The product uses proven language-learning principles—short lessons, active recall, spaced review, balanced listening/speaking/reading/writing, visible progress, social accountability, and teacher-led classes—without copying a competitor's brand, characters, proprietary content, item banks, or visual assets.
+The product uses proven language-learning principles—short lessons, active recall, spaced review, balanced vocabulary/reading/writing/listening/dialogue practice, visible progress, social accountability, and teacher-led classes—without copying a competitor's brand, characters, proprietary content, item banks, or visual assets.
 
 ## Member-created language classes
 
@@ -38,7 +38,7 @@ Introducer rewards apply only to successful **platform subscription** payments c
 ## Shared site features
 
 - Chinese-default, bilingual public and member pages
-- language onboarding, daily practice, vocabulary review, listening, speaking, reading, and writing
+- language onboarding, adaptive placement, learning calendar, and daily vocabulary, reading, writing, listening, and dialogue practice
 - public text Ask Guru and signed-in Live Audio AI Chat
 - profiles, member discovery, Community, class forums, direct messages, and group Live Chat
 - member-created private classes with teacher and coordinator roles

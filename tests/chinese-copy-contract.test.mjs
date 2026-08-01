@@ -85,7 +85,7 @@ test("Chinese class, pricing, programs, and retired Admin UI are truthful", asyn
   assert.match(adminPage, /notFound\(\)/);
   assert.match(adminApi, /status: 410/);
   assert.match(auth, /lingo-brand-mark/);
-  assert.match(auth, /听说读写 · 会员开班 · 学习社区/);
+  assert.match(auth, /词汇阅读写作听力对话 · 会员开班 · 学习社区/);
   assert.doesNotMatch(`${classes}\n${pricing}\n${programs}`, /黄金|铂金|授权码|BACC|PayPal/);
 });
 

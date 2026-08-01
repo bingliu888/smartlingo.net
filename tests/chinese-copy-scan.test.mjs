@@ -31,7 +31,13 @@ function strings(node, source, file, output) {
 }
 async function chineseCopy() {
   const roots = ["app", "components", "lib"].map(value => path.join(root, value));
-  const files = (await Promise.all(roots.map(filesIn))).flat().filter(file => !file.includes(`${path.sep}app${path.sep}api${path.sep}`));
+  const files = (await Promise.all(roots.map(filesIn))).flat().filter(file =>
+    !file.includes(`${path.sep}app${path.sep}api${path.sep}`)
+    // The reviewed learning corpus intentionally stores target-language text and
+    // bilingual translations under the `zh` catalog key; it is course data, not
+    // Chinese-mode interface copy. Dedicated learning tests cover this corpus.
+    && !file.endsWith(`${path.sep}lib${path.sep}smartlingo-learning.ts`)
+  );
   const output = [];
   for (const file of files) {
     const text = await readFile(file, "utf8");

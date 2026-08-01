@@ -8,7 +8,7 @@ SmartLingo helps people practice a new language from the first day and sustain p
 
 The product has four connected pillars:
 
-1. **Daily language practice** — short, structured sessions that balance listening, speaking, reading, writing, vocabulary, and review.
+1. **Daily language practice** — short, structured sessions that balance the fixed five skills: vocabulary, reading, writing, listening, and dialogue.
 2. **Ask Guru and Live Audio AI Chat** — public text help plus signed-in, permission-based real-time speaking practice.
 3. **Member-created classes** — any signed-in member can organize a private class as teacher or coordinator and bring learners together socially.
 4. **Transparent commerce** — Stripe Connect supports class-owner payouts, while platform subscriptions and introducer rewards remain a separate accounting domain.
@@ -44,14 +44,18 @@ Each language has a stable ID, versioned stages, prerequisites, original or lice
 - Russian / 俄语
 - Italian / 意大利语
 - Portuguese / 葡萄牙语
+- Arabic / 阿拉伯语
+- Hindi / 印地语
 
 Every language has a free official community class, while member-created classes provide additional schedules and teaching approaches. A learner may join the community for their own primary language; the data model does not treat primary and target language as mutually exclusive.
 
-Onboarding asks for the learner's target language, real-world purpose, daily time, and self-reported level. Placement is optional. Its result recommends a starting point; it is not a formal test score or credential.
+After joining an official platform community class, the learner first chooses Beginner, Intermediate, or Advanced, or selects **Test me**. Test me begins at intermediate difficulty and adapts up or down from server-scored responses across vocabulary, reading, writing, listening, and dialogue. The approximately 30-minute preparation check has 15 versioned items, supports pause, resume, and skip, and produces five practice scores plus a recommended starting level. It is learning guidance, not a formal test score or credential. Self-selected levels never fabricate five-skill scores.
 
 ### Daily practice
 
-A daily session combines new material, spaced review, four-skill practice, and a short recap. The system saves server checkpoints, deduplicates submissions, preserves drafts in weak networks, and never marks a session complete merely because a client says it is complete.
+A daily session combines new material, spaced vocabulary review, all five fixed skills, and a short recap. The system saves server checkpoints, deduplicates submissions, preserves drafts in weak networks, and never marks a session complete merely because a client says it is complete.
+
+Every signed-in learner has a seven-column learning calendar. Each date uses compact skill and community indicators, with one selected-day detail panel below the calendar rather than a side column. Server activity records—not client claims—show vocabulary, reading, writing, listening, dialogue, official-class enrollment, Community topics or replies, and group-learning entry activity. Direct private messages are not exposed as community activity.
 
 Learning XP and streaks are motivational signals with no cash value. They are calculated separately from introducer reward points and do not create a financial claim.
 
@@ -59,11 +63,11 @@ Learning XP and streaks are motivational signals with no cash value. They are ca
 
 Vocabulary records include form, meaning, pronunciation, examples, level, topic, source type, and review state. Practice rotates recognition, recall, listening, spelling, and contextual cloze. A spaced-review schedule adapts to the learner's responses and remains explainable and adjustable.
 
-### Listening and speaking
+### Listening and dialogue
 
 Listening content includes graded natural speech, scene dialogues, and short broadcasts with transcripts and text alternatives. Recording begins only after an explicit action and provides visible state, preview, retry, and deletion.
 
-Pronunciation feedback focuses on intelligibility, selected target sounds, and rhythm, with uncertainty shown. It must not infer nationality, ethnicity, identity, disability, or personal worth from voice.
+Dialogue practice combines short role-play, optional speech input, transcript fallback, and brief AI coaching. Pronunciation feedback focuses on intelligibility, selected target sounds, and rhythm, with uncertainty shown. It must not infer nationality, ethnicity, identity, disability, or personal worth from voice.
 
 ### Reading and writing
 

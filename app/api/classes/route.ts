@@ -107,7 +107,7 @@ export async function GET(request: Request) {
       ORDER BY CASE target_language
         WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
         WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7
-        WHEN 'it' THEN 8 WHEN 'pt' THEN 9 ELSE 10 END, level`)
+        WHEN 'it' THEN 8 WHEN 'pt' THEN 9 WHEN 'ar' THEN 10 WHEN 'hi' THEN 11 ELSE 12 END, level`)
       .run<LanguagePathRow>(),
     database.prepare(`SELECT c.id, c.owner_user_id AS ownerUserId,
       u.display_name AS ownerName, c.path_id AS pathId,
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
         CASE c.target_language
           WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3
           WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7
-          WHEN 'it' THEN 8 WHEN 'pt' THEN 9 ELSE 10 END,
+          WHEN 'it' THEN 8 WHEN 'pt' THEN 9 WHEN 'ar' THEN 10 WHEN 'hi' THEN 11 ELSE 12 END,
         c.updated_at DESC
       LIMIT 240`).bind(user.id, user.id, user.id).run<LanguageClassRow>(),
     database.prepare(`SELECT onboarding_status AS onboardingStatus,

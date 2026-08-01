@@ -8,11 +8,13 @@ The migration may use only browser-visible legacy-site facts recorded in `legacy
 
 ## Product role
 
-SmartLingo is an AI-native language-learning and social-learning platform. Its public promise is practical progress through short daily sessions, listening, speaking, reading, writing, vocabulary review, text Ask Guru, and signed-in Live Audio AI Chat.
+SmartLingo is an AI-native language-learning and social-learning platform. Its public promise is practical progress through short daily sessions in the fixed five skills—vocabulary, reading, writing, listening, and dialogue—plus text Ask Guru and signed-in Live Audio AI Chat.
 
-The first supported community paths are Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, and Portuguese. A learner may join a community for any target language, including their own language, and each language may contain multiple official or member-created classes. Course content must be original or properly licensed, versioned, attributable by source type, and reviewed before public release. A placement result or platform completion record is not a government, academic, immigration, or third-party language credential.
+The first supported community paths are Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi. A learner may join a community for any target language, including their own language, and each language may contain multiple official or member-created classes. Every official community begins with a self-selected level or an adaptive five-skill placement covering vocabulary, reading, writing, listening, and dialogue. Course content must be original or properly licensed, versioned, attributable by source type, and reviewed before public release. A placement result or platform completion record is not a government, academic, immigration, or third-party language credential.
 
 Language selectors and language-community cards use language names as text. They never use national flags, because a language can belong to many countries, regions, and communities.
+
+An adaptive placement starts at intermediate difficulty, contains 15 versioned questions with three rounds across all five skills, and supports pause, resume, and skip. Server-scored results recommend a learning level; self-selected levels do not fabricate five-skill scores. The daily learning calendar is based only on server activity events and displays compact indicators for all five skills plus Community participation, with its selected-day detail below the calendar.
 
 ## Member-created class rules
 
