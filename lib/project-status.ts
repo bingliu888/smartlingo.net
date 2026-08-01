@@ -38,9 +38,49 @@ export const projectStats = {
 };
 
 // A release appears here only after the same revision has verifiable Sites,
-// GitHub, and production-domain evidence. Sites and the formal domain are
-// live, but GitHub is still empty, so there is no fabricated release record.
-export const projectBuilds: ProjectBuild[] = [];
+// GitHub, and production-domain evidence. Version 5 is the first revision to
+// satisfy all three evidence sources.
+export const projectBuilds: ProjectBuild[] = [
+  {
+    version: 5,
+    date: "2026-08-01",
+    title: {
+      zh: "SmartLingo 身份基础与正式生产验收版本",
+      en: "SmartLingo identity foundation and production acceptance release",
+    },
+    completed: {
+      zh: [
+        "完成 Clerk 邮箱验证码、D1 核心模型、R2 私有媒体与统一人工智能网关",
+        "启用正式域名、带 www 前缀域名、独立身份域名与安全证书",
+        "修复推荐入口生产错误，并用真实用户验证三条单层推荐关系与零注册积分",
+        "验收个人资料、头像、私有开班、社区、私信、群组实时聊天、附件与智能导师",
+        "通过完整发布门槛、多视口双语测量，并将相同提交同步到 GitHub main",
+      ],
+      en: [
+        "Completed Clerk email-code identity, the D1 core model, private R2 media, and the unified AI gateway",
+        "Activated the apex, WWW, dedicated identity domain, and secure certificates",
+        "Fixed the production referral-entry error and verified three single-level relationships with zero signup points",
+        "Accepted profile, avatar, private class creation, Community, direct messages, group Live Chat, attachment, and Guru flows",
+        "Passed the full release gate and bilingual multi-viewport measurements, then synchronized the same commit to GitHub main",
+      ],
+    },
+    testable: {
+      zh: [
+        "打开中英文首页、班级、课程、登录与项目中心",
+        "在项目日历选择 2026 年 8 月 1 日并确认当天五项均有完成证据",
+        "从 test1 推荐链接登录 test2、test3 或 test4，并在账户页查看介绍关系",
+        "检查公开智能导师、登录后语音入口、社区、私信与群组实时聊天",
+      ],
+      en: [
+        "Open the Chinese and English Home, Classes, Programs, sign-in, and Project surfaces",
+        "Select August 1, 2026 in Project and confirm that all five tasks have completion evidence",
+        "Sign in test2, test3, or test4 from test1's referral link and inspect attribution on the account page",
+        "Check public Guru, the signed-in voice entry, Community, direct messages, and group Live Chat",
+      ],
+    },
+    commit: "a4389a5edfa6d73cb5471d2c564625d041054a2b",
+  },
+];
 
 export const projectTasks: ProjectTask[] = smartLingoRoadmapTasks;
 
@@ -112,7 +152,7 @@ export const projectReports: ProjectReport[] = [
         "中英文首页、班级、课程、登录、社区、消息、群组实时聊天、智能导师、项目日历、当日任务与日报已在五个发布视口完成 110 项运行时测量；无横向溢出、裁切、重叠、关键省略或悬浮入口遮挡",
         "完整门禁包括全部 D1 迁移、全量测试、TypeScript、ESLint、vinext 生产构建、产物验证与客户端敏感信息扫描；任一失败均阻止发布",
         "主域与带 www 前缀的站点域名、提供商状态和安全证书均已启用；正式加密页面和真实人工智能回答通过验收，发布后边缘运行日志未发现应用错误",
-        "GitHub 空仓库仍等待账户的受保护操作确认，因此在相同提交同步 GitHub main 前，项目发布历史不会伪造经三方核验的版本记录",
+        "相同的已验收提交已同步到 GitHub main；Sites v5、GitHub 提交与正式域名共同构成首条经三方核验的发布记录",
       ],
       en: [
         "Migration 0018 adds original bilingual exercises, versioned progress, integer-cent order constraints, a single-use first-payment discount, and direct-introducer rewards backed only by paid platform subscriptions; migrations are repeatable",
@@ -125,7 +165,7 @@ export const projectReports: ProjectReport[] = [
         "Chinese and English Home, Classes, Programs, sign-in, Community, Messages, Live Chat, Guru, Project calendar, daily task, and report surfaces completed 110 runtime measurements across all five release viewports with no horizontal overflow, clipping, overlap, meaningful ellipsis, or floating-shortcut collision",
         "The full gate includes every D1 migration, all tests, TypeScript, ESLint, the vinext production build, artifact validation, and client sensitive-data scanning; any failure blocks publishing",
         "Apex and WWW Sites domain, provider, and SSL states are active; production HTTPS pages and a real AI answer passed acceptance, with no application errors after deployment",
-        "The empty GitHub repository still awaits the account's protected-action confirmation, so Project release history does not fabricate a three-way verified version before the same commit reaches GitHub main",
+        "The same accepted revision is synchronized to GitHub main; Sites v5, the GitHub commit, and the production domain form the first three-way verified release record",
       ],
     },
     rollback: {
@@ -133,8 +173,8 @@ export const projectReports: ProjectReport[] = [
       en: "The production domain now serves Sites; if the current build fails, it can return to the prior successful Sites version and matching source revision. Live charging, Stripe Connect, refunds, disputes, and payment webhooks remain off.",
     },
     next: {
-      zh: "完成 GitHub 受保护操作确认后，将同一验证提交同步到 main 并登记经三方核验的发布记录；随后推进 8 月 2 日五项：七语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
-      en: "After the protected GitHub action is confirmed, synchronize the same validated commit to main and record the three-way verified release; then continue the five August 2 tasks: the seven-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
+      zh: "推进 8 月 2 日五项：七语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
+      en: "Continue with the five August 2 tasks: the seven-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
     },
   },
 ];

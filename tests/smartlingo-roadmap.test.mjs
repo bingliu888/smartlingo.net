@@ -115,7 +115,7 @@ test("production release remains planned rather than reported as completed", () 
   }
 });
 
-test("Project status records the second-day evidence without inventing a verified release", () => {
+test("Project status records the second-day evidence and first verified release", () => {
   const projectStatus = fs.readFileSync(path.join(root, "lib", "project-status.ts"), "utf8");
   const runtime = fs.readFileSync(path.join(root, "lib", "project-runtime.ts"), "utf8");
   const dashboard = fs.readFileSync(path.join(root, "components", "ProjectDashboard.tsx"), "utf8");
@@ -125,15 +125,16 @@ test("Project status records the second-day evidence without inventing a verifie
   assert.match(projectStatus, /editionDate: "2026-08-01"/);
   assert.match(projectStatus, /today: 10/);
   assert.match(projectStatus, /total: 100/);
-  assert.match(projectStatus, /projectBuilds: ProjectBuild\[\] = \[\]/);
+  assert.match(projectStatus, /projectBuilds: ProjectBuild\[\] = \[/);
+  assert.match(projectStatus, /version: 5/);
+  assert.match(projectStatus, /commit: "a4389a5edfa6d73cb5471d2c564625d041054a2b"/);
   assert.match(projectStatus, /does not represent a completed Sites, GitHub, or production-domain release/);
   assert.match(projectStatus, /date: "2026-08-01"/);
   assert.match(projectStatus, /completed: 5/);
   assert.match(projectStatus, /The Clerk production app, dedicated domain, and SSL are active/);
   assert.match(projectStatus, /test1 has three direct introductions/);
   assert.match(projectStatus, /production referral-entry 500 was fixed/);
-  assert.match(projectStatus, /empty GitHub repository still awaits/);
-  assert.doesNotMatch(projectStatus, /Sites version \d+ (?:is|was) saved|deployment (?:is|was) successful|production (?:is|was) live/i);
+  assert.match(projectStatus, /same accepted revision is synchronized to GitHub main/);
   assert.match(runtime, /PROJECT_RUNTIME_KEY = "smartlingo-project-status"/);
 
   assert.match(dashboard, /SMARTLINGO PUBLIC PROJECT OPERATIONS/);
