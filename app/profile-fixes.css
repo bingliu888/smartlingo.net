@@ -1,0 +1,56 @@
+.user-icon {
+  box-sizing: border-box !important;
+  aspect-ratio: 1 !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 50% !important;
+}
+
+.user-icon img,
+.profile-photo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  border-radius: 50% !important;
+}
+
+.profile-photo {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.introducer-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.introducer-add input {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid rgba(18, 36, 47, .25);
+  border-radius: 9px;
+  font: inherit;
+  text-transform: uppercase;
+}
+
+.introducer-add button {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 9px;
+  background: #cb4b39;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.introducer-add button:disabled { opacity: .55; cursor: not-allowed; }

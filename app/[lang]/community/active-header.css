@@ -1,0 +1,9 @@
+.community-page .desktop-nav > a:nth-child(3),
+.community-page .mobile-menu > div > a:nth-child(3) {
+  color: var(--jade);
+  font-weight: 900;
+}
+
+.community-page .desktop-nav > a:nth-child(3)::after {
+  right: 0;
+}

@@ -1,0 +1,40 @@
+/* Community layout that adapts without clipping fixed-width panels. */
+@media (max-width: 1120px) {
+  .community-workspace {
+    display: grid;
+    grid-template-columns: minmax(260px, 38%) minmax(0, 1fr);
+    grid-template-areas: "rail rail" "topics discussion";
+    min-height: calc(100vh - 78px);
+  }
+  .community-rail {
+    grid-area: rail;
+    min-width: 0;
+    padding: 11px 18px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    overflow-x: auto;
+  }
+  .community-rail > strong { display: none; }
+  .community-rail > p, .community-online { display: none; }
+  .community-rail button { width: auto; flex: 0 0 auto; white-space: nowrap; padding: 10px 12px; }
+  .topic-column { grid-area: topics; min-height: calc(100vh - 145px); border-right: 1px solid rgba(18,32,42,.12); }
+  .discussion-column { grid-area: discussion; min-height: calc(100vh - 145px); }
+  .member-column { display: none; }
+}
+
+@media (max-width: 700px) {
+  .community-workspace { grid-template-columns: 1fr; grid-template-areas: "rail" "topics" "discussion"; }
+  .topic-column { min-height: 460px; border-right: 0; }
+  .topic-list { max-height: 300px; }
+  .discussion-column { min-height: 560px; border-top: 1px solid rgba(18,32,42,.12); }
+  .reply-list { max-height: 340px; }
+  .discussion-column > header, .opening-post, .reply-list article { padding-left: 18px; padding-right: 18px; }
+}
+
+@media (max-width: 480px) {
+  .community-rail { padding: 9px; }
+  .community-rail button { padding: 9px 10px; }
+  .topic-compose { padding: 12px; }
+  .reply-compose { grid-template-columns: 1fr; }
+}

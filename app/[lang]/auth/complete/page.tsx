@@ -1,0 +1,42 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ClerkSessionBridge } from "../../../../components/ClerkSessionBridge";
+import { LanguageLink } from "../../../../components/LanguageMemory";
+
+const safeReturnTo = (value: string | undefined, lang: "en" | "zh") =>
+  value && /^\/(?!\/)[A-Za-z0-9/_?&=.%#-]*$/.test(value)
+    ? value
+    : `/${lang}/dashboard`;
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  return { title: lang === "zh" ? "正在完成登录" : "Completing sign-in" };
+}
+
+export default async function AuthCompletePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
+  const { lang } = await params;
+  if (lang !== "en" && lang !== "zh") notFound();
+  const query = await searchParams;
+  const returnTo = safeReturnTo(query.returnTo, lang);
+
+  return <main className="auth-page">
+    <aside className="auth-art gc-auth-art smartlingo-auth-art">
+      <Link className="brand inverse smartlingo-brand" href={`/${lang}`}><span className="lingo-brand-mark" aria-hidden="true">S</span><span>Smart<em>Lingo</em></span></Link>
+      <blockquote>{lang === "zh" ? "安全登录后，继续您的语言学习、班级与社区。" : "Continue your language learning, classes, and Community after secure sign-in."}</blockquote>
+    </aside>
+    <section className="auth-panel">
+      <div className="auth-top">
+        <Link href={`/${lang}`}>← {lang === "zh" ? "返回首页" : "Back to home"}</Link>
+        <LanguageLink lang={lang}/>
+      </div>
+      <ClerkSessionBridge lang={lang} returnTo={returnTo}/>
+    </section>
+  </main>;
+}

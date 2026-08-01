@@ -1,0 +1,57 @@
+/* Permanent scope: a compact default with accessible user-controlled enlargement. */
+:root{--reader-base:16px;--reader-small:14px;--reader-muted:#405159}
+:root[data-text-size="large"]{--reader-base:18px;--reader-small:16px}
+:root[data-text-size="extra-large"]{--reader-base:20px;--reader-small:18px}
+body p:not(.eyebrow),body li,body label,body input,body select,body textarea{font-size:var(--reader-base)!important}
+body small,body time,body .eyebrow{font-size:var(--reader-small)!important}
+body nav a,body button:not(.mobile-menu){font-size:var(--reader-base)!important}
+body p,body small,body time{color:var(--reader-muted)}
+.coming-card :where(p,small,time),
+.gg-plan-grid .recommended :where(p,small,time),
+.next-card :where(p,small,time),
+.admin-section :where(p,small,time){color:#eef5f2!important}
+.coming-card .section-kicker{color:#f1c66f!important}
+.text-size-setting{margin-top:24px;padding:18px;border:1px solid #bdc8c3;border-radius:9px;background:#f7f3e9;display:grid;gap:14px}
+.text-size-setting>div:first-child{display:grid;gap:5px}.text-size-setting b{font-size:var(--reader-base)}.text-size-setting span{color:var(--reader-muted);line-height:1.45}
+.text-size-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.text-size-options button{min-height:58px;border:1px solid #aebbb5;border-radius:7px;background:#fff;color:var(--ink);display:grid;place-items:center;gap:2px;font-weight:800;cursor:pointer}
+.text-size-options button[aria-pressed="true"]{background:var(--jade);color:#fff;border-color:var(--jade)}
+.text-size-options button[aria-pressed="true"] span{color:#fff}.text-size-options button strong{font-size:20px}
+@media(max-width:520px){.text-size-options{grid-template-columns:1fr}}
+
+/* No essential supporting text may fall below the older-adult reading baseline. */
+body :where(
+  .eyebrow,
+  .section-kicker,
+  .trust-row,
+  .table-note span,
+  .table-note em,
+  .auth-art > p,
+  .auth-top,
+  .form-link,
+  .auth-switch,
+  .form-message,
+  .card-top,
+  .account-card dt,
+  .account-card dd,
+  .account-card > a,
+  .platform-label,
+  .gg-paypal-note,
+  .member-grid article > small,
+  .share-card em,
+  .editorial-grid article > span,
+  .community-rail > p,
+  .community-online,
+  .topic-list span,
+  .topic-list small,
+  .discussion-column > header > span,
+  .discussion-column > header p,
+  .reply-list small
+) {
+  font-size: var(--reader-small) !important;
+  line-height: 1.5 !important;
+}
+
+body :where(.account-card > a, .form-link, .topic-list > button) {
+  min-height: 44px;
+}
