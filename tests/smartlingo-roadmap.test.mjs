@@ -37,7 +37,7 @@ test("SmartLingo roadmap covers 20 consecutive delivery days", () => {
 test("every day has exactly five bilingual tasks with evidence-based status", () => {
   for (const day of days) {
     assert.match(day.date, /^\d{4}-\d{2}-\d{2}$/);
-    const expectedDayStatus = day.date === "2026-07-31" ? "done" : day.date === "2026-08-01" ? "blocked" : "planned";
+    const expectedDayStatus = ["2026-07-31", "2026-08-01"].includes(day.date) ? "done" : "planned";
     assert.equal(day.status, expectedDayStatus);
     assert.equal(day.tasks.length, 5, `${day.date} must contain exactly five tasks`);
     assert.ok(copyIsBilingual(day.category), `${day.date} category must be bilingual`);
@@ -49,9 +49,8 @@ test("every day has exactly five bilingual tasks with evidence-based status", ()
         assert.equal(task.status, "done");
         assert.equal(task.progress, 100);
       } else if (day.date === "2026-08-01") {
-        const blocked = task.id === "sl-d02-clerk-auth";
-        assert.equal(task.status, blocked ? "blocked" : "done");
-        assert.equal(task.progress, blocked ? 90 : 100);
+        assert.equal(task.status, "done");
+        assert.equal(task.progress, 100);
       } else {
         assert.equal(task.status, "planned");
         assert.equal(task.progress, 0);
@@ -124,14 +123,16 @@ test("Project status records the second-day evidence without inventing a verifie
   assert.match(projectStatus, /import \{ smartLingoRoadmapTasks \} from "\.\/smartlingo-roadmap";/);
   assert.match(projectStatus, /projectTasks: ProjectTask\[\] = smartLingoRoadmapTasks/);
   assert.match(projectStatus, /editionDate: "2026-08-01"/);
-  assert.match(projectStatus, /today: 9/);
+  assert.match(projectStatus, /today: 10/);
   assert.match(projectStatus, /total: 100/);
   assert.match(projectStatus, /projectBuilds: ProjectBuild\[\] = \[\]/);
   assert.match(projectStatus, /does not represent a completed Sites, GitHub, or production-domain release/);
   assert.match(projectStatus, /date: "2026-08-01"/);
-  assert.match(projectStatus, /completed: 4/);
-  assert.match(projectStatus, /Sites has no Clerk production configuration/);
-  assert.match(projectStatus, /production domain has not passed Sites custom-domain acceptance/);
+  assert.match(projectStatus, /completed: 5/);
+  assert.match(projectStatus, /The Clerk production app, dedicated domain, and SSL are active/);
+  assert.match(projectStatus, /test1 has three direct introductions/);
+  assert.match(projectStatus, /production referral-entry 500 was fixed/);
+  assert.match(projectStatus, /empty GitHub repository still awaits/);
   assert.doesNotMatch(projectStatus, /Sites version \d+ (?:is|was) saved|deployment (?:is|was) successful|production (?:is|was) live/i);
   assert.match(runtime, /PROJECT_RUNTIME_KEY = "smartlingo-project-status"/);
 

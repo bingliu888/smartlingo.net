@@ -33,13 +33,13 @@ export type ProjectReport = {
 
 export const projectStats = {
   editionDate: "2026-08-01",
-  today: 9,
+  today: 10,
   total: 100,
 };
 
 // A release appears here only after the same revision has verifiable Sites,
-// GitHub, and production-domain evidence. The migration foundation is local,
-// so the truthful initial state contains no release record.
+// GitHub, and production-domain evidence. Sites and the formal domain are
+// live, but GitHub is still empty, so there is no fabricated release record.
 export const projectBuilds: ProjectBuild[] = [];
 
 export const projectTasks: ProjectTask[] = smartLingoRoadmapTasks;
@@ -92,43 +92,49 @@ export const projectReports: ProjectReport[] = [
       en: "SmartLingo identity, data, media, and AI foundation report",
     },
     beta: {
-      zh: "查看四项完成与一项阻塞证据",
-      en: "Review four completions and one blocker",
+      zh: "查看当天五项完成证据",
+      en: "Review evidence for all five completions",
     },
-    completed: 4,
+    completed: 5,
     summary: {
-      zh: "当天恰好处理五项：D1 核心模型、R2 私有媒体、统一人工智能网关与基础设施隔离测试已有代码和验证证据；Clerk 邮箱验证码与会话桥接已在本地完成，但正式域名仍提供旧站、Sites 生产环境未配置 Clerk，真实邮件、CAPTCHA、Safari 会话与 Cookie 桥接无法验收，因此该项保持受阻而不伪造完成。",
-      en: "Exactly five tasks were handled: the D1 core model, private R2 media, unified AI gateway, and infrastructure-isolation tests have code and validation evidence. Clerk email codes and the session bridge are locally complete, but the production domain still serves the legacy site and Sites has no Clerk production configuration, so real email, CAPTCHA, Safari-session, and cookie-bridge acceptance is blocked and the task is not falsely marked complete.",
+      zh: "当天恰好完成五项：Clerk 邮箱验证码身份、D1 核心模型、R2 私有媒体、统一人工智能网关与基础设施隔离测试均已有代码、配置和正式域名证据。首位用户及四名测试用户完成真实 Safari 登录；test2、test3、test4 通过 test1 的单层推荐链接建立关系，注册不产生积分。推荐入口的生产 500 根因已修复并加入运行时回归测试。",
+      en: "Exactly five tasks are complete: Clerk email-code identity, the D1 core model, private R2 media, the unified AI gateway, and infrastructure-isolation tests all have code, configuration, and production-domain evidence. The first user and four test users completed real Safari sign-in; test2, test3, and test4 established single-level attribution through test1's link, with no signup points. The production referral-entry 500 was fixed and covered by a runtime regression test.",
     },
     validation: {
       zh: [
         "0018 迁移加入原创双语练习、版本化进度、整分订单约束、首次支付单次优惠和只由已付款平台订阅支持的直接介绍人积分关系；迁移可重复执行",
         "七类私有媒体执行内容签名、大小、所有权与范围约束；班级封面、语音练习和聊天附件具备授权读取与可重试删除",
         "人工智能网关统一公开导师、听说写反馈和安全审核，使用键控主体哈希、原子限流、完整响应体超时、审计与不冒充真人教师的回退",
-        "Clerk 行为测试覆盖未知邮箱无密码注册、验证码、缺失要求、二次验证、CAPTCHA 挂载和严格会话桥接，但生产外部配置验收仍受阻",
-        "首次 Sites 生产验收发现身份代理在缺少 Clerk 配置时错误阻断公开班级与登录外壳；共享根因已修为公开外壳继续渲染、受保护页面由路由安全跳转，而身份写入仍由服务端失败关闭",
+        "Clerk 生产应用、独立域名和 SSL 已启用；注册时不强制设置密码，用户可在账户中后续添加密码",
+        "首位用户及四名测试用户完成真实 Safari 登录；首位用户无错误介绍人，test1 有三名直接介绍用户且所有注册积分均为零",
+        "有效推荐码曾因向重定向响应的不可变响应头追加推荐记录文件而在生产返回 500；现在一次性构造 302、跳转地址与安全推荐记录文件，并由真实边缘运行路由测试覆盖",
+        "个人资料与头像、私有开班、公共社区主题和回复、私信及智能导师润色、直接与群组实时聊天、附件、未读通知、公开智能导师和登录语音入口均在正式域名完成真实验收",
         "中英文首页、班级、课程、登录、社区、消息、群组实时聊天、智能导师、项目日历、当日任务与日报已在五个发布视口完成 110 项运行时测量；无横向溢出、裁切、重叠、关键省略或悬浮入口遮挡",
         "完整门禁包括全部 D1 迁移、全量测试、TypeScript、ESLint、vinext 生产构建、产物验证与客户端敏感信息扫描；任一失败均阻止发布",
-        "正式域名未通过 Sites 自定义域验收，因此项目发布历史不登记经核验版本；Sites 版本、GitHub 提交与域名结果以本次自动化报告为准",
+        "主域与带 www 前缀的站点域名、提供商状态和安全证书均已启用；正式加密页面和真实人工智能回答通过验收，发布后边缘运行日志未发现应用错误",
+        "GitHub 空仓库仍等待账户的受保护操作确认，因此在相同提交同步 GitHub main 前，项目发布历史不会伪造经三方核验的版本记录",
       ],
       en: [
         "Migration 0018 adds original bilingual exercises, versioned progress, integer-cent order constraints, a single-use first-payment discount, and direct-introducer rewards backed only by paid platform subscriptions; migrations are repeatable",
         "Seven private-media purposes enforce content signatures, size, ownership, and scope; class covers, voice practice, and chat attachments have authorized reads and retry-safe deletion",
         "The AI gateway unifies public Guru, listening, speaking, writing, and safety review with keyed subject hashes, atomic limits, full-response timeouts, auditing, and fallbacks that never impersonate a human teacher",
-        "Clerk behavior tests cover passwordless unknown-email registration, codes, missing requirements, second factors, the CAPTCHA mount, and a strict session bridge, while production external-configuration acceptance remains blocked",
-        "The first Sites production acceptance found that the identity proxy incorrectly blocked public class and sign-in shells when Clerk was unconfigured; the shared fix preserves those shells and route-level protected redirects while server-side identity writes still fail closed",
+        "The Clerk production app, dedicated domain, and SSL are active; signup does not require setting a password, while users may add one later from their account",
+        "The first user and four test users completed real Safari sign-in; the first user has no incorrect introducer, test1 has three direct introductions, and every signup reward balance remains zero",
+        "Valid referral codes once returned a production 500 because code appended a cookie to immutable Response.redirect() headers; the route now constructs the 302, Location, and secure cookie together and is covered by a real Worker-route regression test",
+        "Profile and avatar, private class creation, a public Community topic and reply, direct messages and Guru polish, direct and group Live Chat, an attachment, unread notifications, public Guru, and the signed-in voice entry completed real production-domain acceptance",
         "Chinese and English Home, Classes, Programs, sign-in, Community, Messages, Live Chat, Guru, Project calendar, daily task, and report surfaces completed 110 runtime measurements across all five release viewports with no horizontal overflow, clipping, overlap, meaningful ellipsis, or floating-shortcut collision",
         "The full gate includes every D1 migration, all tests, TypeScript, ESLint, the vinext production build, artifact validation, and client sensitive-data scanning; any failure blocks publishing",
-        "The production domain has not passed Sites custom-domain acceptance, so Project release history records no verified release; the Sites version, GitHub commit, and domain result are reported by this automation run",
+        "Apex and WWW Sites domain, provider, and SSL states are active; production HTTPS pages and a real AI answer passed acceptance, with no application errors after deployment",
+        "The empty GitHub repository still awaits the account's protected-action confirmation, so Project release history does not fabricate a three-way verified version before the same commit reaches GitHub main",
       ],
     },
     rollback: {
-      zh: "正式域名尚未切换到 Sites，旧站流量未被本次改动替换；如新 Sites 构建出现问题，可回退到既有 Sites v1 与其对应源提交。真实收费、连接账户、退款、争议与 Webhook 仍保持关闭。",
-      en: "The production domain has not cut over to Sites, so this change has not replaced legacy-site traffic. If the new Sites build fails, it can return to the existing Sites v1 and its matching source revision. Live charging, connected accounts, refunds, disputes, and webhooks remain off.",
+      zh: "正式域名已切换到 Sites；如当前构建出现问题，可回退到前一成功 Sites 版本及其对应源提交。真实收费、Stripe Connect、退款、争议与付款 Webhook 仍保持关闭。",
+      en: "The production domain now serves Sites; if the current build fails, it can return to the prior successful Sites version and matching source revision. Live charging, Stripe Connect, refunds, disputes, and payment webhooks remain off.",
     },
     next: {
-      zh: "先重试最早受阻的 Clerk 正式环境验收；解除后推进 8 月 2 日五项：七语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
-      en: "First retry the earliest blocked Clerk production acceptance; once cleared, continue the five August 2 tasks: the seven-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
+      zh: "完成 GitHub 受保护操作确认后，将同一验证提交同步到 main 并登记经三方核验的发布记录；随后推进 8 月 2 日五项：七语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
+      en: "After the protected GitHub action is confirmed, synchronize the same validated commit to main and record the three-way verified release; then continue the five August 2 tasks: the seven-language catalog, goal and level onboarding, optional placement checks, the stage and unit map, and learning-path integrity tests.",
     },
   },
 ];
