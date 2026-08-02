@@ -997,6 +997,43 @@ export const lingoIntroducerRewardLedger = sqliteTable("smartlingo_introducer_re
 ]);
 
 /**
+ * One durable onboarding plan is retained per learner and language path.
+ * Switching languages changes only the active marker; a later save updates
+ * preferences without erasing the learner's current stage or unit.
+ */
+export const lingoLearningPlans = sqliteTable("smartlingo_learning_plans", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  targetLanguage: text("target_language").notNull(),
+  useCase: text("use_case").notNull(),
+  dailyMinutes: integer("daily_minutes").notNull(),
+  selfReportedLevel: text("self_reported_level").notNull(),
+  entryMode: text("entry_mode").notNull(),
+  contentVersion: text("content_version").notNull(),
+  currentStageId: text("current_stage_id"),
+  currentUnitId: text("current_unit_id"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_learning_plan_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_learning_plan_use_case_ck", sql`${table.useCase} IN ('daily_life', 'travel', 'work', 'study', 'community')`),
+  check("smartlingo_learning_plan_daily_minutes_ck", sql`${table.dailyMinutes} IN (5, 10, 15, 20)`),
+  check("smartlingo_learning_plan_level_ck", sql`${table.selfReportedLevel} IN ('beginner', 'intermediate', 'advanced')`),
+  check("smartlingo_learning_plan_entry_mode_ck", sql`${table.entryMode} IN ('adaptive', 'self_selected', 'fundamentals')`),
+  check("smartlingo_learning_plan_version_ck", sql`length(trim(${table.contentVersion})) BETWEEN 1 AND 48`),
+  check("smartlingo_learning_plan_stage_ck", sql`${table.currentStageId} IS NULL OR ${table.currentStageId} IN ('foundation', 'everyday', 'independent')`),
+  check("smartlingo_learning_plan_unit_ck", sql`${table.currentUnitId} IS NULL OR length(trim(${table.currentUnitId})) BETWEEN 1 AND 120`),
+  check("smartlingo_learning_plan_position_ck", sql`(${table.currentStageId} IS NULL) = (${table.currentUnitId} IS NULL)`),
+  check("smartlingo_learning_plan_active_ck", sql`${table.isActive} IN (0, 1)`),
+  uniqueIndex("smartlingo_learning_plan_user_path_uq").on(table.userId, table.pathId),
+  uniqueIndex("smartlingo_learning_plan_active_user_uq").on(table.userId).where(sql`${table.isActive} = 1`),
+  index("smartlingo_learning_plan_user_updated_idx").on(table.userId, table.updatedAt),
+  index("smartlingo_learning_plan_path_idx").on(table.pathId, table.targetLanguage),
+]);
+
+/**
  * A placement attempt belongs to one active member of one platform-provided
  * language community. Self-selected entry levels intentionally keep the five
  * skill scores nullable; adaptive attempts add evidence as each skill is

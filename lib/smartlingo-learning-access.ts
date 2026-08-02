@@ -26,10 +26,13 @@ export async function requireOfficialClassMembership(
     c.target_language AS targetLanguage, c.level, c.title,
     member.role AS membershipRole
     FROM smartlingo_language_classes c
+    JOIN smartlingo_language_paths path
+      ON path.id = c.path_id AND path.target_language = c.target_language
     JOIN smartlingo_language_class_members member
       ON member.class_id = c.id AND member.user_id = ? AND member.status = 'active'
     WHERE c.id = ? AND c.class_kind = 'official_language'
       AND c.status = 'open' AND c.visibility = 'public' AND c.price_cents = 0
+      AND path.status = 'published'
     LIMIT 1`).bind(user.id, classId).first<OfficialClassAccess>();
   return access;
 }

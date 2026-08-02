@@ -32,8 +32,8 @@ export type ProjectReport = {
 };
 
 export const projectStats = {
-  editionDate: "2026-08-01",
-  today: 10,
+  editionDate: "2026-08-02",
+  today: 15,
   total: 100,
 };
 
@@ -173,8 +173,54 @@ export const projectReports: ProjectReport[] = [
       en: "The production domain now serves Sites; if the current build fails, it can return to the prior successful Sites version and matching source revision. Live charging, Stripe Connect, refunds, disputes, and payment webhooks remain off.",
     },
     next: {
-      zh: "推进 8 月 2 日五项：十语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
+      zh: "推进 8 月 2 日五项：十二语目录、目标与水平引导、可选定位测评、阶段与单元地图、学习路径完整性测试。",
       en: "Continue with the five August 2 tasks: the twelve-language catalog, goal and level onboarding, class-entry placement, the stage and unit map, and learning-path integrity tests.",
+    },
+  },
+  {
+    date: "2026-08-02",
+    title: {
+      zh: "SmartLingo 十二语目录与学习路径日报",
+      en: "SmartLingo twelve-language catalog and learning-path report",
+    },
+    beta: {
+      zh: "体验十二语引导与阶段地图",
+      en: "Try the twelve-language onboarding and stage map",
+    },
+    completed: 5,
+    summary: {
+      zh: "当天恰好完成五项：十二种语言目录、目标与水平引导、入班自适应分级、阶段与单元地图，以及学习路径完整性测试。课程页现在提供十二条清晰、版本化的路径；登录会员可保存目标与起点，且所有定位结果只用于推荐练习，不冒充教师判断或正式证书。",
+      en: "Exactly five tasks are complete: the twelve-language catalog, goal and level onboarding, class-entry adaptive placement, the stage and unit map, and learning-path integrity tests. Programs now exposes twelve clear, versioned paths; signed-in members can persist their goals and starting point, and every placement result is only a practice recommendation, never a teacher judgment or official credential.",
+    },
+    validation: {
+      zh: [
+        "十二语目录为中文、英语、西班牙语、日语、韩语、法语、德语、俄语、意大利语、葡萄牙语、阿拉伯语和印地语保存稳定编号、本名、文字方向、语音能力、阶段与内容版本；阿拉伯语使用从右向左方向，目录不使用国旗",
+        "每条路径由基础、日常和独立三阶段、九个原创双语单元及显式先决关系组成，覆盖词汇、阅读、写作、听力、对话与真实场景；后续阶段明确标为预览，不伪造已完成课程",
+        "目标引导收集语言、使用场景、每日五至二十分钟、自报水平与自适应、自选或基础起步方式；认证 API 与 D1 原子批处理持久保存单一有效计划，并在内容升级时保留已有位置",
+        "入班定位保留十五题五技能、版本化原创题、服务端评分、暂停与重测，并新增可审计的跳过路径；跳过分数为空，所有结果均显示练习用途与非正式证书说明",
+        "0022 D1 迁移加入学习计划表、有效计划唯一约束、已发布路径和语言匹配触发器；迁移验证覆盖重复执行、十二语切换、内容升级保位、非法路径与跨语单元拒绝",
+        "运行时响应式门槛覆盖中英文十三条代表性路由与 390×844、430×932、834×1112、1194×834、1440×1000 五个视口，共一百三十组；全部满足无横向溢出、满宽内框、自然换行和关键内容不省略",
+        "完整门禁通过全部二十三个 D1 迁移、全量一百六十六项测试、TypeScript、ESLint、vinext 生产构建、产物验证和客户端敏感信息扫描；依赖与锁文件未修改",
+        "正式域名当前并未列入唯一站点托管项目的自定义域名，因此本次不新增声称站点托管、代码仓库与正式域名三方一致的项目发布记录，也不越权更改域名解析",
+      ],
+      en: [
+        "The catalog stores stable IDs, native names, writing direction, speech capabilities, stages, and content versions for Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi; Arabic is right-to-left and no flags identify languages",
+        "Each path has Foundation, Everyday, and Independent stages, nine original bilingual units, and explicit prerequisites spanning vocabulary, reading, writing, listening, dialogue, and real scenarios; later stages are honestly marked as previews rather than fabricated complete courses",
+        "Onboarding captures language, use case, a five-to-twenty-minute daily goal, self-reported level, and adaptive, self-selected, or fundamentals entry; an authenticated API and atomic D1 batch persist one active plan while retaining position across content upgrades",
+        "Class placement retains fifteen versioned original items across five skills, server scoring, pause, and retake, and adds an auditable skip path; skips have null scores and every outcome carries a practice-only, non-credential disclaimer",
+        "D1 migration 0022 adds learning plans, an active-plan uniqueness constraint, and published-path and matching-language triggers; migration validation covers repeatability, twelve-language switching, version upgrades retaining position, and invalid-path or cross-language-unit rejection",
+        "The runtime responsive gate covers thirteen representative routes in Chinese and English at 390×844, 430×932, 834×1112, 1194×834, and 1440×1000, totaling 130 cases; all meet no-overflow, full-inner-width, natural-wrap, and no-meaningful-ellipsis requirements",
+        "The complete gate passes all 23 D1 migrations, all 166 tests, TypeScript, ESLint, the vinext production build, artifact validation, and client sensitive-data scanning; dependencies and the lockfile are unchanged",
+        "The production domain is not currently listed as a custom domain of the sole Sites project, so this run does not add a Project release record claiming three-way Sites, GitHub, and production-domain parity and does not alter DNS without authority",
+      ],
+    },
+    rollback: {
+      zh: "0022 为增量迁移，旧学习进度保持不变；如候选出现问题，可回退 Sites 版本并隐藏新引导入口。真实收费、Stripe Connect、退款、争议与付款 Webhook 继续关闭。",
+      en: "Migration 0022 is additive and preserves prior learning progress; if the candidate fails, the Sites version can be rolled back and the new onboarding entry hidden. Live charging, Stripe Connect, refunds, disputes, and payment webhooks remain off.",
+    },
+    next: {
+      zh: "推进 8 月 3 日五项：每日练习编排、即时反馈与讲解、学习经验值与连续学习、中断恢复与跨设备同步、每日学习循环测试。",
+      en: "Continue with the five August 3 tasks: daily session composition, instant feedback and explanations, learning XP and streaks, resume and cross-device sync, and daily-loop tests.",
     },
   },
 ];

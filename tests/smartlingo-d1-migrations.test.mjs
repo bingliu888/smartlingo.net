@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 22);
-  assert.equal(result.firstRunApplied, 22);
+  assert.equal(result.migrationCount, 23);
+  assert.equal(result.firstRunApplied, 23);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0021_smartlingo_placement_learning");
+  assert.equal(result.newestMigration, "0022_smartlingo_learning_paths");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -34,6 +34,7 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     placementResponseId: "d1-smoke-placement-response",
     learningActivityEventId: "d1-smoke-learning-activity",
     vocabularyProgressId: "d1-smoke-vocabulary-progress",
+    learningPlanId: "d1-smoke-plan-ar",
   });
 });
 
@@ -115,6 +116,29 @@ test("0021 adds Arabic and Hindi communities plus placement, daily activity, and
   assert.match(catalog, /code: "ar"[\s\S]*direction: "rtl"/);
   assert.match(catalog, /code: "hi"[\s\S]*nameEn: "Hindi"/);
   assert.match(journal, /"tag": "0021_smartlingo_placement_learning"/);
+});
+
+test("0022 stores bilingual learning goals without erasing per-language path progress", async () => {
+  const [schema, migration, journal, route] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0022_smartlingo_learning_paths.sql"),
+    read("../drizzle/meta/_journal.json"),
+    read("../app/api/learning-plan/route.ts"),
+  ]);
+
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  assert.match(migration, /CREATE TABLE `smartlingo_learning_plans`/);
+  assert.match(schema, /sqliteTable\("smartlingo_learning_plans"/);
+  assert.match(migration, /smartlingo_learning_plan_user_path_uq/);
+  assert.match(migration, /smartlingo_learning_plan_active_user_uq/);
+  assert.match(migration, /'daily_life', 'travel', 'work', 'study', 'community'/);
+  assert.match(migration, /'adaptive', 'self_selected', 'fundamentals'/);
+  assert.match(migration, /smartlingo learning plan requires its matching published language path/);
+  assert.match(migration, /smartlingo learning plan unit must belong to its target language/);
+  assert.match(route, /COALESCE\(smartlingo_learning_plans\.current_stage_id, excluded\.current_stage_id\)/);
+  assert.match(route, /COALESCE\(smartlingo_learning_plans\.current_unit_id, excluded\.current_unit_id\)/);
+  assert.match(route, /scoresCreated: false/);
+  assert.match(journal, /"tag": "0022_smartlingo_learning_paths"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

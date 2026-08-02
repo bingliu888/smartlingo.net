@@ -37,7 +37,7 @@ test("SmartLingo roadmap covers 20 consecutive delivery days", () => {
 test("every day has exactly five bilingual tasks with evidence-based status", () => {
   for (const day of days) {
     assert.match(day.date, /^\d{4}-\d{2}-\d{2}$/);
-    const expectedDayStatus = ["2026-07-31", "2026-08-01"].includes(day.date) ? "done" : "planned";
+    const expectedDayStatus = ["2026-07-31", "2026-08-01", "2026-08-02"].includes(day.date) ? "done" : "planned";
     assert.equal(day.status, expectedDayStatus);
     assert.equal(day.tasks.length, 5, `${day.date} must contain exactly five tasks`);
     assert.ok(copyIsBilingual(day.category), `${day.date} category must be bilingual`);
@@ -45,10 +45,7 @@ test("every day has exactly five bilingual tasks with evidence-based status", ()
     assert.ok(copyIsBilingual(day.acceptance), `${day.date} acceptance must be bilingual`);
 
     for (const task of day.tasks) {
-      if (day.date === "2026-07-31") {
-        assert.equal(task.status, "done");
-        assert.equal(task.progress, 100);
-      } else if (day.date === "2026-08-01") {
+      if (["2026-07-31", "2026-08-01", "2026-08-02"].includes(day.date)) {
         assert.equal(task.status, "done");
         assert.equal(task.progress, 100);
       } else {
@@ -115,15 +112,15 @@ test("production release remains planned rather than reported as completed", () 
   }
 });
 
-test("Project status records the second-day evidence and first verified release", () => {
+test("Project status records the third-day evidence without fabricating a verified release", () => {
   const projectStatus = fs.readFileSync(path.join(root, "lib", "project-status.ts"), "utf8");
   const runtime = fs.readFileSync(path.join(root, "lib", "project-runtime.ts"), "utf8");
   const dashboard = fs.readFileSync(path.join(root, "components", "ProjectDashboard.tsx"), "utf8");
 
   assert.match(projectStatus, /import \{ smartLingoRoadmapTasks \} from "\.\/smartlingo-roadmap";/);
   assert.match(projectStatus, /projectTasks: ProjectTask\[\] = smartLingoRoadmapTasks/);
-  assert.match(projectStatus, /editionDate: "2026-08-01"/);
-  assert.match(projectStatus, /today: 10/);
+  assert.match(projectStatus, /editionDate: "2026-08-02"/);
+  assert.match(projectStatus, /today: 15/);
   assert.match(projectStatus, /total: 100/);
   assert.match(projectStatus, /projectBuilds: ProjectBuild\[\] = \[/);
   assert.match(projectStatus, /version: 5/);
@@ -135,6 +132,10 @@ test("Project status records the second-day evidence and first verified release"
   assert.match(projectStatus, /test1 has three direct introductions/);
   assert.match(projectStatus, /production referral-entry 500 was fixed/);
   assert.match(projectStatus, /same accepted revision is synchronized to GitHub main/);
+  assert.match(projectStatus, /date: "2026-08-02"/);
+  assert.match(projectStatus, /Exactly five tasks are complete: the twelve-language catalog/);
+  assert.match(projectStatus, /The complete gate passes all 23 D1 migrations, all 166 tests/);
+  assert.match(projectStatus, /does not add a Project release record claiming three-way Sites, GitHub, and production-domain parity/);
   assert.match(runtime, /PROJECT_RUNTIME_KEY = "smartlingo-project-status"/);
 
   assert.match(dashboard, /SMARTLINGO PUBLIC PROJECT OPERATIONS/);

@@ -102,14 +102,14 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
 
   return (
     <section className="lingo-community-chooser" aria-labelledby="language-community-title">
-      <div className="lingo-community-heading">
+      <div className="lingo-community-heading" data-readable-copy="home-language-copy">
         <p className="section-kicker">{zh ? "选择目标语言社区" : "CHOOSE A TARGET LANGUAGE COMMUNITY"}</p>
-        <h1 id="language-community-title">{zh ? "您想加入哪个语言学习社区？" : "Which language community would you like to join?"}</h1>
+        <h1 id="language-community-title" data-layout-text-fit="home-language-title">{zh ? "您想加入哪个语言学习社区？" : "Which language community would you like to join?"}</h1>
         <p>{zh
           ? "可以学习新语言，也可以选择自己已经会的语言继续提高。每种语言都有官方社区班，并可包含老师新建的不同主题班级。"
           : "Learn a new language or keep developing one you already speak. Every language has an official community class and can include additional teacher-created classes."}</p>
       </div>
-      <div className="lingo-community-grid">
+      <div className="lingo-community-grid" data-layout-fill="home-language-grid">
         {SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
           const joined = classFor(language.code, classes.joined);
           const available = classFor(language.code, classes.available);
@@ -123,6 +123,7 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
               type="button"
               onClick={() => openCommunity(language.code)}
               aria-busy={isBusy}
+              data-layout-track={`home-language-${language.code}`}
             >
               <span className="lingo-community-name">
                 <b>{zh ? language.nameZh : language.nameEn}</b>

@@ -451,6 +451,98 @@ function runD1Smoke(database) {
     },
   );
 
+  database.prepare(`
+    INSERT INTO smartlingo_learning_plans
+      (id, user_id, path_id, target_language, use_case, daily_minutes,
+       self_reported_level, entry_mode, content_version, current_stage_id,
+       current_unit_id, is_active, created_at, updated_at)
+    VALUES ('d1-smoke-plan-ar', 'd1-smoke-learner', 'path_ar_a1', 'ar',
+      'travel', 10, 'beginner', 'fundamentals', '2026-08-02.1',
+      'foundation', 'sl-unit-ar-first-contact', 1, ?, ?)
+  `).run(now, now);
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_learning_plans
+        (id, user_id, path_id, target_language, use_case, daily_minutes,
+         self_reported_level, entry_mode, content_version, is_active,
+         created_at, updated_at)
+      VALUES ('d1-smoke-plan-wrong-path', 'd1-smoke-user', 'path_hi_a1', 'ar',
+        'study', 5, 'beginner', 'adaptive', '2026-08-02.1', 0, ?, ?)
+    `).run(now, now),
+    /smartlingo learning plan requires its matching published language path/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_learning_plans
+        (id, user_id, path_id, target_language, use_case, daily_minutes,
+         self_reported_level, entry_mode, content_version, current_stage_id,
+         current_unit_id, is_active, created_at, updated_at)
+      VALUES ('d1-smoke-plan-wrong-unit', 'd1-smoke-user', 'path_ar_a1', 'ar',
+        'study', 5, 'beginner', 'fundamentals', '2026-08-02.1',
+        'foundation', 'sl-unit-hi-first-contact', 0, ?, ?)
+    `).run(now, now),
+    /smartlingo learning plan unit must belong to its target language/,
+  );
+  database.prepare(`UPDATE smartlingo_learning_plans SET is_active = 0
+    WHERE id = 'd1-smoke-plan-ar'`).run();
+  database.prepare(`
+    INSERT INTO smartlingo_learning_plans
+      (id, user_id, path_id, target_language, use_case, daily_minutes,
+       self_reported_level, entry_mode, content_version, is_active,
+       created_at, updated_at)
+    VALUES ('d1-smoke-plan-hi', 'd1-smoke-learner', 'path_hi_a1', 'hi',
+      'work', 15, 'intermediate', 'adaptive', '2026-08-02.1', 1, ?, ?)
+  `).run(now, now);
+  database.prepare(`UPDATE smartlingo_learning_plans SET is_active = 0
+    WHERE id = 'd1-smoke-plan-hi'`).run();
+  database.prepare(`
+    INSERT INTO smartlingo_learning_plans
+      (id, user_id, path_id, target_language, use_case, daily_minutes,
+       self_reported_level, entry_mode, content_version, current_stage_id,
+       current_unit_id, is_active, created_at, updated_at)
+    VALUES ('d1-smoke-plan-ar-retry', 'd1-smoke-learner', 'path_ar_a1', 'ar',
+      'community', 20, 'advanced', 'self_selected', '2026-08-02.2',
+      'independent', 'sl-unit-ar-explain-a-choice', 1, ?, ?)
+    ON CONFLICT(user_id, path_id) DO UPDATE SET
+      use_case = excluded.use_case,
+      daily_minutes = excluded.daily_minutes,
+      self_reported_level = excluded.self_reported_level,
+      entry_mode = excluded.entry_mode,
+      content_version = excluded.content_version,
+      current_stage_id = COALESCE(smartlingo_learning_plans.current_stage_id, excluded.current_stage_id),
+      current_unit_id = COALESCE(smartlingo_learning_plans.current_unit_id, excluded.current_unit_id),
+      is_active = 1,
+      updated_at = excluded.updated_at
+  `).run(now, now + 1);
+  const learningPlans = database.prepare(`
+    SELECT target_language AS targetLanguage, use_case AS useCase,
+      daily_minutes AS dailyMinutes, content_version AS contentVersion,
+      current_stage_id AS currentStageId, current_unit_id AS currentUnitId,
+      is_active AS isActive
+    FROM smartlingo_learning_plans WHERE user_id = 'd1-smoke-learner'
+    ORDER BY target_language
+  `).all().map(row => ({ ...row }));
+  assert.deepEqual(learningPlans, [
+    {
+      targetLanguage: "ar",
+      useCase: "community",
+      dailyMinutes: 20,
+      contentVersion: "2026-08-02.2",
+      currentStageId: "foundation",
+      currentUnitId: "sl-unit-ar-first-contact",
+      isActive: 1,
+    },
+    {
+      targetLanguage: "hi",
+      useCase: "work",
+      dailyMinutes: 15,
+      contentVersion: "2026-08-02.1",
+      currentStageId: null,
+      currentUnitId: null,
+      isActive: 0,
+    },
+  ], "language switching and version updates must retain each path's saved position");
+
   const insertPlacementAttempt = database.prepare(`
     INSERT INTO smartlingo_placement_attempts
       (id, user_id, class_id, path_id, entry_mode, status, current_difficulty,
@@ -1042,12 +1134,13 @@ function runD1Smoke(database) {
     placementResponseId: placementSmoke.responseId,
     learningActivityEventId: placementSmoke.activityId,
     vocabularyProgressId: placementSmoke.vocabularyProgressId,
+    learningPlanId: "d1-smoke-plan-ar",
   };
 }
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0021_smartlingo_placement_learning");
+  assert.equal(migrations.at(-1)?.tag, "0022_smartlingo_learning_paths");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1092,6 +1185,8 @@ export function validateD1Migrations() {
       "smartlingo_placement_response_item_uq",
       "smartlingo_learning_activity_source_uq",
       "smartlingo_vocabulary_progress_word_uq",
+      "smartlingo_learning_plan_user_path_uq",
+      "smartlingo_learning_plan_active_user_uq",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1111,6 +1206,7 @@ export function validateD1Migrations() {
       "smartlingo_placement_responses",
       "smartlingo_learning_activity_events",
       "smartlingo_vocabulary_progress",
+      "smartlingo_learning_plans",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     const smoke = runD1Smoke(database);

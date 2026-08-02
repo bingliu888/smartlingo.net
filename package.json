@@ -15,7 +15,8 @@
     "scan:sensitive": "node scripts/scan-sensitive-data.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
-    "db:validate": "node scripts/validate-d1-migrations.mjs"
+    "db:validate": "node scripts/validate-d1-migrations.mjs",
+    "validate:layout": "node scripts/verify-runtime-layout-webkit.mjs"
   },
   "dependencies": {
     "@clerk/backend": "^3.13.0",

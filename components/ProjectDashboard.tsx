@@ -79,23 +79,23 @@ export async function ProjectDashboard({ lang, month }: { lang: "en" | "zh"; mon
     </section>;
   };
 
-  return <main className="gg-project-page">
+  return <main className="gg-project-page" data-layout-page="project">
     <SiteHeader lang={lang}/>
     <div className="gg-project-main" style={{ minWidth: 0, overflowX: "clip" }}>
-      <section className="gg-project-hero">
-        <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+      <section className="gg-project-hero" data-layout-fill="project-hero">
+        <div style={{ minWidth: 0, overflowWrap: "anywhere" }} data-layout-track="project-hero-copy">
           <p className="section-kicker">{zh ? "SmartLingo 公开项目管理" : "SMARTLINGO PUBLIC PROJECT OPERATIONS"}</p>
-          <h1>{zh ? "二十天，每天五项。" : "Twenty days. Five tasks every day."}</h1>
-          <p>{zh ? "公开展示旧站迁移、十二种语言与五项技能学习、会员自助开班、班级社区、智能导师、实时语音、平台会员与安全商务的一百项交付计划。" : "Follow 100 public deliverables across legacy migration, twelve-language five-skill learning, member-created classes, class communities, Ask Guru, Live Audio, platform memberships, and safe commerce."}</p>
+          <h1 data-layout-text-fit="project-title">{zh ? "二十天，每天五项。" : "Twenty days. Five tasks every day."}</h1>
+          <p data-readable-copy="project-hero-copy">{zh ? "公开展示旧站迁移、十二种语言与五项技能学习、会员自助开班、班级社区、智能导师、实时语音、平台会员与安全商务的一百项交付计划。" : "Follow 100 public deliverables across legacy migration, twelve-language five-skill learning, member-created classes, class communities, Ask Guru, Live Audio, platform memberships, and safe commerce."}</p>
         </div>
-        <div className="gg-project-picker" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+        <div className="gg-project-picker" style={{ minWidth: 0, overflowWrap: "anywhere" }} data-layout-track="project-checkpoint">
           <span>{zh ? "最新真实检查点" : "LATEST RECORDED CHECKPOINT"}</span>
           <strong>{latestReport.date}</strong>
           <Link href={`/${lang}/project/report/${latestReport.date}`}>{zh ? "查看任务证据" : "Review task evidence"} →</Link>
         </div>
       </section>
 
-      <section className="gg-velocity">
+      <section className="gg-velocity" data-layout-fill="project-velocity">
         <div style={{ minWidth: 0, overflowWrap: "anywhere" }}>
           <p className="section-kicker">{zh ? "二十天交付节奏" : "TWENTY-DAY DELIVERY CADENCE"}</p>
           <h2>{zh ? "每日五项 / 路线图一百项" : "Five per day / 100 roadmap tasks"}</h2>
@@ -104,7 +104,7 @@ export async function ProjectDashboard({ lang, month }: { lang: "en" | "zh"; mon
         <strong>{runtime.today} / {runtime.total}</strong>
       </section>
 
-      <section className="gg-kpis" aria-label={zh ? "项目任务统计" : "Project task totals"}>
+      <section className="gg-kpis" data-layout-fill="project-kpis" aria-label={zh ? "项目任务统计" : "Project task totals"}>
         <article><b>{projectTasks.length}</b><span>{zh ? "任务总数" : "Total tasks"}</span></article>
         <article><b>{done}</b><span>{zh ? "已完成" : "Completed"}</span></article>
         <article><b>{planned}</b><span>{zh ? "已计划" : "Planned"}</span></article>

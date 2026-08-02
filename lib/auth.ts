@@ -13,7 +13,10 @@ type Statement = {
   first: <T>() => Promise<T | null>;
   run: <T = Record<string, unknown>>() => Promise<D1Result<T>>;
 };
-type Database = { prepare: (query: string) => Statement };
+type Database = {
+  prepare: (query: string) => Statement;
+  batch: <T = Record<string, unknown>>(statements: Statement[]) => Promise<D1Result<T>[]>;
+};
 
 export type SessionUser = {
   id: string;

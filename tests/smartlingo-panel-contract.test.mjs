@@ -81,5 +81,5 @@ test("hero text containment is source-stable and headings remain free to wrap na
   assert.match(css, /\.lingo-heading h2,[^}]*text-wrap:wrap;overflow-wrap:anywhere;word-break:normal/);
   assert.doesNotMatch(css, /\.lingo-hero-copy h2\{[^}]*white-space:nowrap/);
   assert.match(home, /title: "从第一天开始，开口说一门新语言。"/);
-  assert.match(home, /<h2>\{t\.title\}<\/h2>/);
+  assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);
 });

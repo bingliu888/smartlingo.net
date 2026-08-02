@@ -52,7 +52,7 @@ test("the homepage language chooser gives all twelve communities a working join,
   assert.match(home, /<LanguageCommunityChooser lang=\{lang\}/);
   assert.equal((chooser.match(/<h1/g) || []).length, 1);
   assert.equal((home.match(/<h1/g) || []).length, 0);
-  assert.match(home, /<h2>\{t\.title\}<\/h2>/);
+  assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);
   assert.match(chooser, /您想加入哪个语言学习社区/);
   assert.match(chooser, /已经会的语言继续提高/);
   assert.match(chooser, /className=\{joined \? "joined" : ""\}/);

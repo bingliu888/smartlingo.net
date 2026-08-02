@@ -173,10 +173,11 @@ export interface PlacementQuestion {
   readonly round: 1 | 2 | 3;
   readonly level: SmartLingoLevel;
   readonly prompt: BilingualText;
-  readonly context?: string;
+  readonly context?: string | BilingualText;
   readonly audioText?: string;
   readonly options?: readonly PlacementOption[];
   readonly estimatedMinutes: number;
+  readonly sourceType: "smartlingo_original";
   readonly answerSpec: PlacementAnswerSpec;
 }
 
@@ -278,6 +279,7 @@ function buildPlacementQuestion(
     round,
     level,
     estimatedMinutes: SMARTLINGO_SKILL_ESTIMATED_MINUTES[skill],
+    sourceType: "smartlingo_original" as const,
   } as const;
 
   if (skill === "vocabulary") {
@@ -326,7 +328,7 @@ function buildPlacementQuestion(
         zh: `使用“${sample.form}”写一个完整、自然的句子。`,
         en: `Write one complete, natural sentence using “${sample.form}”.`,
       },
-      context: sample.meaning.zh,
+      context: sample.meaning,
       answerSpec: {
         kind: "constructed",
         requiredTerms: [sample.form],
@@ -342,10 +344,10 @@ function buildPlacementQuestion(
       en: `Use “${sample.form}” in a natural, short reply to another person.`,
     },
     context: round === 1
-      ? "A new classmate greets you."
+      ? { zh: "一位新同学向你问好。", en: "A new classmate greets you." }
       : round === 2
-        ? "A classmate asks about your plan."
-        : "A classmate asks for your view before a group decision.",
+        ? { zh: "一位同学询问你的计划。", en: "A classmate asks about your plan." }
+        : { zh: "小组决定前，一位同学询问你的看法。", en: "A classmate asks for your view before a group decision." },
     answerSpec: {
       kind: "constructed",
       requiredTerms: [sample.form],
@@ -655,7 +657,7 @@ export function buildDailyPracticeItem(
     level: question.level,
     date,
     prompt: localize(question.prompt, uiLang),
-    context: question.context,
+    context: typeof question.context === "string" ? question.context : question.context?.[uiLang],
     audioText: question.audioText,
     options: question.options?.map(option => ({ id: option.id, label: localize(option.label, uiLang) })),
     estimatedMinutes: question.estimatedMinutes,

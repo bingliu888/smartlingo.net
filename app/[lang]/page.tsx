@@ -147,14 +147,14 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   if (lang !== "en" && lang !== "zh") notFound();
   const t = copy[lang];
   return (
-    <main className="lingo-home">
+    <main className="lingo-home" data-layout-page="home">
       <div className="lingo-hero-shell">
         <SiteHeader lang={lang}/>
         <LanguageCommunityChooser lang={lang}/>
         <section className="lingo-hero">
-          <div className="lingo-hero-copy">
+          <div className="lingo-hero-copy" data-readable-copy="home-hero-copy">
             <p className="section-kicker">{t.eyebrow}</p>
-            <h2>{t.title}</h2>
+            <h2 data-layout-text-fit="home-hero-title">{t.title}</h2>
             <p>{t.intro}</p>
             <div className="lingo-actions">
               <Link className="primary-button" href={`/${lang}/auth/sign-up`}>{t.start} →</Link>

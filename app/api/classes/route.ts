@@ -124,7 +124,7 @@ export async function GET(request: Request) {
       LEFT JOIN smartlingo_language_class_members mine ON mine.class_id = c.id AND mine.user_id = ?
       LEFT JOIN smartlingo_language_class_members members ON members.class_id = c.id
       WHERE c.owner_user_id = ?
-         OR (c.visibility = 'public' AND c.status = 'open')
+         OR (c.visibility = 'public' AND c.status = 'open' AND p.status = 'published')
          OR mine.status IN ('active', 'invited', 'paused')
       GROUP BY c.id
       ORDER BY CASE

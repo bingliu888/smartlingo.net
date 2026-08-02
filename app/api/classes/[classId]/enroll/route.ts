@@ -30,8 +30,9 @@ export async function POST(
     c.price_cents AS priceCents, c.capacity,
     COALESCE(SUM(CASE WHEN members.role = 'student' AND members.status = 'active' THEN 1 ELSE 0 END), 0) AS enrollmentCount
     FROM smartlingo_language_classes c
+    JOIN smartlingo_language_paths path ON path.id = c.path_id
     LEFT JOIN smartlingo_language_class_members members ON members.class_id = c.id
-    WHERE c.id = ? GROUP BY c.id LIMIT 1`)
+    WHERE c.id = ? AND path.status = 'published' GROUP BY c.id LIMIT 1`)
     .bind(classId).first<JoinableClass>();
   if (!languageClass) return Response.json({ error: "Class not found" }, { status: 404 });
 
@@ -93,7 +94,9 @@ export async function POST(
     (id, class_id, user_id, role, status, joined_at, updated_at)
     SELECT ?, c.id, ?, 'student', 'active', ?, ?
     FROM smartlingo_language_classes c
+    JOIN smartlingo_language_paths path ON path.id = c.path_id
     WHERE c.id = ? AND c.status = 'open' AND c.visibility = 'public' AND c.price_cents = 0
+      AND path.status = 'published'
       AND (SELECT COUNT(*) FROM smartlingo_language_class_members active_members
         WHERE active_members.class_id = c.id
           AND active_members.role = 'student'

@@ -18,6 +18,7 @@ import {
   type LearningDatabase,
   type OfficialClassAccess,
 } from "../../../../../lib/smartlingo-learning-access";
+import { speechLocaleForLanguage } from "../../../../../lib/smartlingo-paths";
 
 export const dynamic = "force-dynamic";
 
@@ -69,21 +70,6 @@ type PlacementBody = {
   itemId?: unknown;
   answer?: unknown;
   lang?: unknown;
-};
-
-const SPEECH_LOCALES: Record<SmartLingoLearningLanguage, string> = {
-  zh: "zh-CN",
-  en: "en-US",
-  es: "es-ES",
-  ja: "ja-JP",
-  ko: "ko-KR",
-  fr: "fr-FR",
-  de: "de-DE",
-  ru: "ru-RU",
-  it: "it-IT",
-  pt: "pt-PT",
-  ar: "ar-SA",
-  hi: "hi-IN",
 };
 
 function isEntryMode(value: unknown): value is EntryMode {
@@ -152,13 +138,13 @@ function clientQuestion(question: PlacementQuestion, uiLanguage: SmartLingoInter
     difficulty: levelDifficulty(question.level),
     responseKind: question.options ? "choice" as const : "text" as const,
     prompt: question.prompt[uiLanguage],
-    targetText: question.context,
+    targetText: typeof question.context === "string" ? question.context : question.context?.[uiLanguage],
     audioText: question.audioText,
     options: question.options?.map(option => ({
       value: option.id,
       label: option.label[uiLanguage],
     })),
-    speechLocale: SPEECH_LOCALES[question.language],
+    speechLocale: speechLocaleForLanguage(question.language),
     direction: question.language === "ar" ? "rtl" as const : "ltr" as const,
   };
 }
@@ -335,6 +321,39 @@ export async function POST(
   const uiLanguage = interfaceLanguage(request, auth.user.preferredLanguage, body.lang);
   const targetLanguage = auth.access.targetLanguage as SmartLingoLearningLanguage;
   const action = typeof body.action === "string" ? body.action : "";
+
+  if (action === "skip_placement") {
+    if (!isEntryMode(body.mode) || body.mode === "adaptive") {
+      return Response.json({ error: "Choose beginner, intermediate, or advanced when skipping placement" }, { status: 400 });
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const attemptId = createId();
+    await auth.database.batch([
+      auth.database.prepare(`UPDATE smartlingo_placement_attempts
+        SET status = 'abandoned', last_resumed_at = NULL, updated_at = ?
+        WHERE user_id = ? AND class_id = ? AND status IN ('in_progress', 'paused')`)
+        .bind(now, auth.user.id, auth.classId),
+      auth.database.prepare(`INSERT INTO smartlingo_placement_attempts
+        (id, user_id, class_id, path_id, entry_mode, status, current_difficulty,
+         active_seconds, last_resumed_at, recommended_level, started_at, paused_at,
+         completed_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'completed', ?, 0, NULL, ?, ?, NULL, ?, ?, ?)`)
+        .bind(
+          attemptId,
+          auth.user.id,
+          auth.classId,
+          auth.access.pathId,
+          body.mode,
+          levelDifficulty(body.mode),
+          body.mode,
+          now,
+          now,
+          now,
+          now,
+        ),
+    ]);
+    return Response.json(await placementState(auth.database, auth.user.id, auth.access, uiLanguage), { status: 201 });
+  }
 
   if (action === "start" || action === "restart") {
     if (!isEntryMode(body.mode)) return Response.json({ error: "A valid placement mode is required" }, { status: 400 });

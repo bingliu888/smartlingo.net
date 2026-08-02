@@ -80,7 +80,7 @@ test("Chinese class, pricing, programs, and retired Admin UI are truthful", asyn
   assert.match(pricing, /进阶方案/);
   assert.match(pricing, /协调员方案/);
   assert.match(pricing, /本页面不会发起真实收费/);
-  assert.match(programs, /听力 · 口语 · 阅读 · 写作/);
+  assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
   assert.match(programs, /任何已登录会员都可以准备私有班级/);
   assert.match(adminPage, /notFound\(\)/);
   assert.match(adminApi, /status: 410/);

@@ -24,6 +24,22 @@ interface R2ObjectBody {
   body: ReadableStream<Uint8Array>;
   httpEtag?: string;
   size?: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+interface R2ListedObject {
+  key: string;
+  size: number;
+  etag: string;
+  uploaded: Date;
+  httpMetadata?: Record<string, unknown>;
+  customMetadata?: Record<string, string>;
+}
+
+interface R2Objects {
+  objects: R2ListedObject[];
+  truncated: boolean;
+  cursor?: string;
 }
 
 interface R2PutOptions {
@@ -32,7 +48,12 @@ interface R2PutOptions {
 }
 
 interface R2Bucket {
-  get(key: string): Promise<R2ObjectBody | null>;
+  get(key: string, options?: { range?: { offset: number; length: number } }): Promise<R2ObjectBody | null>;
+  list(options?: {
+    cursor?: string;
+    limit?: number;
+    include?: Array<"httpMetadata" | "customMetadata">;
+  }): Promise<R2Objects>;
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
