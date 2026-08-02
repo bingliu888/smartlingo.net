@@ -65,6 +65,13 @@ type LearningPayload = {
   placement?: Placement | null;
   date?: string;
   vocabulary?: VocabularyItem | null;
+  vocabularyDeck?: VocabularyItem[];
+  vocabularyDeckMeta?: {
+    day: number;
+    total: number;
+    activeIndex: number;
+    scene?: { zh: string; en: string } | null;
+  };
   tasks?: PracticeTask[];
   dailyTasks?: PracticeTask[];
   quickCourse?: {
@@ -135,6 +142,9 @@ const COPY = {
     courseDay: "课程日",
     visualCue: "视觉提示",
     sourceMeaning: "中文释义",
+    flashcard: "闪卡",
+    previousCard: "上一张",
+    nextCard: "下一张",
     minutes: "分钟",
     vocabulary: "词汇",
     reading: "阅读",
@@ -202,6 +212,9 @@ const COPY = {
     courseDay: "Course day",
     visualCue: "Visual cue",
     sourceMeaning: "English meaning",
+    flashcard: "Flashcard",
+    previousCard: "Previous",
+    nextCard: "Next",
     minutes: "minutes",
     vocabulary: "Vocabulary",
     reading: "Reading",
@@ -311,6 +324,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
   const [days, setDays] = useState<LearningLogDay[]>([]);
   const [loadedLogKey, setLoadedLogKey] = useState("");
   const [vocabularyMode, setVocabularyMode] = useState<VocabularyMode>("recognition");
+  const [vocabularyIndex, setVocabularyIndex] = useState(0);
   const [revealState, setRevealState] = useState({ key: "", revealed: false });
   const [answers, setAnswers] = useState<Partial<Record<Skill, string>>>({});
   const [busyKey, setBusyKey] = useState("");
@@ -322,7 +336,8 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
   const logLoaded = loadedLogKey === logRequestKey;
 
   const placementComplete = placement?.status === "completed";
-  const vocabulary = learning?.vocabulary ?? null;
+  const vocabularyDeck = learning?.vocabularyDeck?.length ? learning.vocabularyDeck : learning?.vocabulary ? [learning.vocabulary] : [];
+  const vocabulary = vocabularyDeck[Math.min(vocabularyIndex, Math.max(0, vocabularyDeck.length - 1))] ?? null;
   const vocabularyKey = `${vocabulary?.sampleId || vocabulary?.stableId || vocabulary?.taskId || vocabulary?.word || vocabulary?.form || "none"}:${vocabularyMode}`;
   const revealed = revealState.key === vocabularyKey && revealState.revealed;
   const tasks = useMemo(
@@ -347,39 +362,6 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
       setLogError(cause instanceof Error ? cause.message : t.logError);
     }
   }, [calendarMonth, classId, logRequestKey, t.logError, timeZone]);
-
-  const loadClassAndLearning = useCallback(async () => {
-    if (!classId || calendarOnly) return;
-    try {
-      const classResponse = await fetch(`/api/classes/${encodeURIComponent(classId)}`, { cache: "no-store" });
-      const classResult = await classResponse.json().catch(() => ({})) as ClassDetailPayload;
-      if (!classResponse.ok) throw new Error(classResult.error || t.loadError);
-      setLearningError("");
-      setClassInfo(classResult.class ?? null);
-      setPlacement(classResult.placement ?? null);
-      setPlacementChecked(true);
-      if (classResult.placement?.status !== "completed") {
-        setLearning(null);
-        return;
-      }
-
-      const query = new URLSearchParams({
-        date: today,
-        lang,
-        timeZone,
-        vocabularyMode,
-      });
-      const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/learning?${query}`, { cache: "no-store" });
-      const result = await response.json().catch(() => ({})) as LearningPayload;
-      if (!response.ok) throw new Error(result.error || t.loadError);
-      setLearning(result);
-      setClassInfo(current => result.class ?? current);
-      setPlacement(current => result.placement ?? current);
-    } catch (cause) {
-      setPlacementChecked(true);
-      setLearningError(cause instanceof Error ? cause.message : t.loadError);
-    }
-  }, [calendarOnly, classId, lang, t.loadError, timeZone, today, vocabularyMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -422,6 +404,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
         setClassInfo(result.classResult.class ?? result.learningResult?.class ?? null);
         setPlacement(result.learningResult?.placement ?? result.classResult.placement ?? null);
         setLearning(result.learningResult);
+        setVocabularyIndex(result.learningResult?.vocabularyDeckMeta?.activeIndex ?? 0);
         setPlacementChecked(true);
         setLearningError("");
       })
@@ -447,7 +430,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
       const result = await response.json().catch(() => ({})) as LearningPayload;
       if (!response.ok) throw new Error(result.error || t.saveError);
       setNotice(t.saved);
-      await Promise.all([loadClassAndLearning(), loadLog()]);
+      setLearning(result);
+      setClassInfo(current => result.class ?? current);
+      setPlacement(current => result.placement ?? current);
+      await loadLog();
       return result;
     } catch (cause) {
       setLearningError(cause instanceof Error ? cause.message : t.saveError);
@@ -506,6 +492,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
       answer: answers.vocabulary || "",
     }, `vocabulary:${grade}`);
     if (result) {
+      setVocabularyIndex(current => Math.min(current + 1, Math.max(0, (result.vocabularyDeck?.length || 1) - 1)));
       setRevealState({ key: "", revealed: false });
       setAnswers(current => ({ ...current, vocabulary: "" }));
     }
@@ -588,6 +575,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
           </header>
 
           {vocabulary ? <div className="sl-vocabulary-practice" dir={vocabulary.direction || "ltr"}>
+            <div className="sl-flashcard-progress">
+              <strong>{t.flashcard} {vocabularyIndex + 1} / {vocabularyDeck.length}</strong>
+              <div>
+                <button type="button" disabled={vocabularyIndex === 0} onClick={() => { setVocabularyIndex(current => Math.max(0, current - 1)); setRevealState({ key: "", revealed: false }); }}>{t.previousCard}</button>
+                <button type="button" disabled={vocabularyIndex >= vocabularyDeck.length - 1} onClick={() => { setVocabularyIndex(current => Math.min(vocabularyDeck.length - 1, current + 1)); setRevealState({ key: "", revealed: false }); }}>{t.nextCard}</button>
+              </div>
+            </div>
             <p className="sl-mode-help">{t.modeHelp[vocabularyMode]}</p>
             {vocabulary.visualCue ? <div className="sl-vocabulary-cue" aria-label={`${t.visualCue}：${localizedText(vocabulary.visualCue.label, lang)}`}>
               <span role="img" aria-hidden="true">{vocabulary.visualCue.symbol}</span>
@@ -699,6 +693,7 @@ function LearningWorkspaceStyles() {
   return <style>{`
     .sl-workspace,.sl-workspace *{box-sizing:border-box}.sl-workspace{width:100%;max-width:none;min-width:0;margin:0;padding:clamp(48px,7vw,92px) clamp(16px,4vw,58px) clamp(76px,9vw,126px);display:grid;gap:clamp(30px,5vw,64px);color:var(--ink)}.sl-workspace-heading,.sl-section-heading{width:100%;min-width:0;display:grid;gap:12px}.sl-workspace-heading h1{width:100%;max-width:none;margin:0;font:850 clamp(40px,6vw,76px)/1.03 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.055em;overflow-wrap:anywhere}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{max-width:76ch;margin:0;color:var(--muted);font-size:17px;line-height:1.72}.sl-eyebrow{margin:0;color:#087d62;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.sl-placement-gate,.sl-community-entry{width:100%;min-width:0;padding:clamp(24px,4vw,48px);display:flex;align-items:center;justify-content:space-between;gap:24px;border-radius:25px}.sl-placement-gate.pending{background:#fff1cb}.sl-placement-gate.complete{background:#e3f5ed}.sl-placement-gate>div,.sl-community-entry>div{min-width:0}.sl-placement-gate h2,.sl-community-entry h2,.sl-section-heading h2{width:100%;max-width:none;margin:8px 0 10px;font:820 clamp(28px,4vw,47px)/1.08 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em;overflow-wrap:anywhere}.sl-placement-gate p:last-child,.sl-community-entry p:last-child{max-width:76ch;margin:0;color:#58706a;line-height:1.65}.sl-primary-action,.sl-secondary-action{min-height:46px;padding:0 19px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:999px;font-size:16px;font-weight:850;text-align:center;text-decoration:none}.sl-primary-action{background:#0b9473;color:#fff}.sl-secondary-action{border-color:#a8bdb5;background:#fff;color:var(--ink)}button.sl-primary-action{font-family:inherit;cursor:pointer}.sl-daily-workspace,.sl-calendar-stack{width:100%;min-width:0;display:grid;gap:28px}.sl-skill-stack{width:100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}.sl-skill-card{width:100%;min-width:0;padding:clamp(22px,4vw,44px);border:1px solid #d7e0db;border-left:5px solid var(--skill-accent);border-radius:24px;background:#fffdf8;overflow:hidden}.sl-skill-card-head{width:100%;min-width:0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}.sl-skill-card-head>div:first-child{display:flex;align-items:baseline;gap:12px;min-width:0}.sl-skill-card-head span{color:var(--skill-accent);font-size:12px;font-weight:900}.sl-skill-card-head h3{margin:0;font:830 clamp(27px,4vw,42px)/1.08 Inter,"Noto Sans SC",sans-serif}.sl-skill-card-head>small{color:#65746f}.sl-mode-picker{min-width:0;display:flex;flex-wrap:wrap;gap:7px}.sl-mode-picker button,.sl-inline-actions button,.sl-grade-actions button,.sl-audio-action,.sl-voice-action,.sl-task-actions button{min-height:44px;padding:9px 14px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 16px/1.25 inherit;cursor:pointer}.sl-mode-picker button.active{border-color:#087d62;background:#e2f5ed;color:#08745e}.sl-vocabulary-practice,.sl-task-body{width:100%;min-width:0;margin-top:24px}.sl-mode-help{max-width:76ch;margin:0 0 20px;color:#5f706a;line-height:1.65}.sl-word-stage{width:100%;min-width:0;padding:clamp(24px,5vw,54px);display:grid;place-items:center;gap:10px;border-radius:20px;background:#edf7f2;text-align:center;overflow:hidden}.sl-word-stage strong{max-width:100%;font-size:clamp(34px,6vw,70px);line-height:1.12;overflow-wrap:anywhere}.sl-word-stage span{color:#547068;font-size:17px}.sl-inline-actions,.sl-grade-actions,.sl-task-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.sl-vocabulary-reveal{width:100%;min-width:0;margin-top:18px;padding:clamp(20px,3vw,32px);border:1px solid #cfe1d8;border-radius:18px;background:#fff}.sl-vocabulary-reveal>strong{display:block;font-size:clamp(28px,4vw,46px);overflow-wrap:anywhere}.sl-vocabulary-reveal>span,.sl-vocabulary-reveal>small{display:block;margin-top:6px;color:#64736e}.sl-vocabulary-reveal>p,.sl-vocabulary-reveal blockquote{max-width:76ch;line-height:1.65;overflow-wrap:anywhere}.sl-vocabulary-reveal blockquote{margin:16px 0;padding-left:16px;border-left:3px solid #0b9473}.sl-grade-help{color:#5b6d67}.sl-grade-actions button:last-child{color:#9b3e39}.sl-task-label{margin:0 0 8px;color:var(--skill-accent);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.sl-task-body h4{width:100%;max-width:none;margin:0;font-size:clamp(22px,3vw,34px);line-height:1.25;overflow-wrap:anywhere}.sl-task-context{width:100%;min-width:0;margin-top:18px;padding:18px;border-radius:15px;background:#f1f5f2}.sl-task-context span{font-size:12px;font-weight:900}.sl-task-context p{max-width:76ch;margin:8px 0 0;white-space:pre-wrap;line-height:1.68;overflow-wrap:anywhere}.sl-audio-action,.sl-voice-action{margin-top:16px;border-color:#8cc7b6;background:#eaf8f2;color:#08745e}.sl-answer-field{width:100%;min-width:0;margin-top:18px;display:grid;gap:8px;font-weight:850}.sl-answer-field input,.sl-answer-field textarea{width:100%;min-width:0;padding:15px;border:1px solid #bdccc5;border-radius:13px;background:#fff;color:var(--ink);font:16px/1.55 inherit}.sl-answer-field textarea{min-height:135px;resize:vertical}.sl-task-options{width:100%;min-width:0;margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.sl-task-options button{min-width:0;min-height:52px;padding:12px 15px;border:1px solid #cbd7d1;border-radius:13px;background:#fff;color:var(--ink);font:750 16px/1.4 inherit;text-align:left;overflow-wrap:anywhere}.sl-task-options button.selected{border-color:#0b9473;background:#e7f7f0;box-shadow:inset 0 0 0 1px #0b9473}.sl-task-actions{justify-content:flex-end}.sl-task-actions button{padding-inline:18px}.sl-task-actions button:disabled,.sl-grade-actions button:disabled{cursor:not-allowed;opacity:.55}.sl-task-status{margin:20px 0 0;padding:14px 17px;border-radius:12px;background:#e4f6ed;color:#08745e;font-weight:850}.sl-task-status.skipped{background:#f2eee4;color:#715e3f}.sl-empty-task,.sl-loading,.sl-calendar-loading{width:100%;margin:22px 0 0;padding:18px;border-radius:13px;background:#f2f5f2;color:#5b6b66}.sl-community-entry{background:#103f35;color:#fff}.sl-community-entry .sl-eyebrow{color:#65ddb7}.sl-community-entry h2{color:#fff}.sl-community-entry p:last-child{color:#c8dbd4}.sl-community-entry nav{display:flex;flex-wrap:wrap;gap:9px}.sl-notice,.sl-error{width:100%;margin:0;padding:14px 17px;border-radius:12px}.sl-notice{background:#e3f6ed;color:#08745e}.sl-error{background:#fff0ee;color:#9a3933}.sl-calendar-stack{padding-top:8px}.sl-calendar-stack>.sl-calendar-loading{margin:0}.sl-workspace button:focus-visible,.sl-workspace a:focus-visible,.sl-workspace input:focus-visible,.sl-workspace textarea:focus-visible{outline:3px solid rgba(10,142,111,.28);outline-offset:3px}
     .sl-vocabulary-cue{width:100%;min-width:0;margin:0 0 14px;padding:16px 20px;display:flex;align-items:center;gap:14px;border:1px solid #c9ded5;border-radius:18px;background:#fff}.sl-vocabulary-cue>span{flex:0 0 auto;font-size:clamp(38px,6vw,62px);line-height:1}.sl-vocabulary-cue>div{min-width:0;display:grid;gap:3px}.sl-vocabulary-cue small{color:#5c7169;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.sl-vocabulary-cue strong{font-size:clamp(18px,3vw,25px);overflow-wrap:anywhere}
+    .sl-flashcard-progress{width:100%;min-width:0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.sl-flashcard-progress>strong{color:#08745e;font-size:15px}.sl-flashcard-progress>div{display:flex;gap:7px}.sl-flashcard-progress button{min-height:40px;padding:8px 13px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 14px/1.2 inherit;cursor:pointer}.sl-flashcard-progress button:disabled{cursor:not-allowed;opacity:.45}
     @media(max-width:760px){.sl-workspace{padding-inline:16px}.sl-placement-gate,.sl-community-entry{display:grid;grid-template-columns:minmax(0,1fr)}.sl-placement-gate>.sl-primary-action,.sl-community-entry nav,.sl-community-entry nav a{width:100%}.sl-task-options{grid-template-columns:minmax(0,1fr)}.sl-task-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-task-actions button,.sl-inline-actions button,.sl-grade-actions button{width:100%}.sl-mode-picker{display:grid;grid-template-columns:1fr 1fr;width:100%}.sl-mode-picker button:last-child{grid-column:1/-1}.sl-skill-card{padding:20px 16px}.sl-skill-card-head{display:grid;grid-template-columns:minmax(0,1fr)}.sl-word-stage{padding:28px 16px}.sl-community-entry nav{display:grid;grid-template-columns:minmax(0,1fr)}}
     @media(max-width:430px){.sl-workspace-heading h1{font-size:40px}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{font-size:16px}.sl-placement-gate,.sl-community-entry{padding:22px 17px}.sl-mode-picker button{padding-inline:8px}.sl-grade-actions{display:grid;grid-template-columns:minmax(0,1fr)}}
     .sl-course-day{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;border-radius:24px;background:#102f2a;color:#fff}.sl-course-day h2{width:100%;margin:8px 0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-course-day p{margin:0;color:#cce0d9}.sl-course-day>div:last-child{min-width:0;padding:18px;border-radius:16px;background:rgba(255,255,255,.08)}.sl-course-day strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.25;overflow-wrap:anywhere}.sl-course-day ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:7px;list-style:none}.sl-course-day li{padding:7px 10px;border-radius:999px;background:#dff5ec;color:#075d4a;font-size:12px;font-weight:850}@media(max-width:760px){.sl-course-day{grid-template-columns:minmax(0,1fr)}}

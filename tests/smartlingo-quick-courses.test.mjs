@@ -6,7 +6,13 @@ import {
   buildQuickCourse,
 } from "../lib/smartlingo-quick-courses.ts";
 import { SMARTLINGO_COMMUNITY_LANGUAGE_CODES } from "../lib/smartlingo-language-communities.ts";
-import { getVocabularySample, getVocabularyVisualCue } from "../lib/smartlingo-learning.ts";
+import {
+  SMARTLINGO_BEGINNER_VOCABULARY_METADATA,
+  getBeginnerVocabularyDeck,
+  getVocabularySample,
+  getVocabularySampleById,
+  getVocabularyVisualCue,
+} from "../lib/smartlingo-learning.ts";
 
 test("all twelve languages publish one-, two-, and four-week beginner fast tracks", () => {
   const courses = SMARTLINGO_COMMUNITY_LANGUAGE_CODES.flatMap(language =>
@@ -62,4 +68,33 @@ test("vocabulary practice pairs a neutral visual cue with bilingual source-langu
     assert.ok(sample.meaning.zh.length > 0);
     assert.ok(sample.meaning.en.length > 0);
   }
+});
+
+test("every language class has a seven-day, scene-based beginner flashcard library", () => {
+  assert.deepEqual(SMARTLINGO_BEGINNER_VOCABULARY_METADATA, {
+    version: "2026-08-02.1",
+    cardsPerDay: 4,
+    days: 7,
+    cardsPerLanguage: 28,
+    sourceType: "smartlingo_original",
+  });
+  for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
+    const cards = Array.from({ length: 7 }, (_, index) => getBeginnerVocabularyDeck(language, index + 1)).flat();
+    assert.equal(cards.length, 28, `${language} must publish 28 beginner cards`);
+    assert.equal(new Set(cards.map(card => card.stableId)).size, 28);
+    for (const card of cards) {
+      assert.equal(card.sourceType, "smartlingo_original");
+      assert.equal(card.level, "beginner");
+      assert.ok(card.form && card.pronunciation && card.meaning.zh && card.meaning.en);
+      assert.equal(getVocabularySampleById(language, card.stableId)?.stableId, card.stableId);
+      const cue = getVocabularyVisualCue(card);
+      assert.ok(cue.symbol && cue.label.zh && cue.label.en);
+    }
+  }
+});
+
+test("the free week follows practical life scenes instead of isolated word lists", () => {
+  const topics = Array.from({ length: 7 }, (_, index) => getBeginnerVocabularyDeck("it", index + 1)[0].topic);
+  assert.deepEqual(topics, ["greetings", "introductions", "transport", "directions", "restaurant", "shopping", "help"]);
+  assert.deepEqual(getBeginnerVocabularyDeck("it", 5).map(card => card.form), ["menù", "acqua", "vegetariano", "il conto, per favore"]);
 });

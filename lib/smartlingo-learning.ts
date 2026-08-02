@@ -1,6 +1,12 @@
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
+import {
+  SMARTLINGO_BEGINNER_VOCABULARY_VERSION,
+  beginnerVocabularySceneForDay,
+  beginnerVocabularySeedsForDay,
+  type SmartLingoBeginnerScene,
+} from "./smartlingo-beginner-vocabulary.ts";
 
-export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-01.1" as const;
+export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-02.2" as const;
 
 export const SMARTLINGO_LEARNING_LANGUAGE_CODES = [
   "zh",
@@ -46,7 +52,7 @@ export interface SmartLingoVocabularySample {
   readonly meaning: BilingualText;
   readonly example: string;
   readonly exampleTranslation: BilingualText;
-  readonly topic: "greeting" | "planning" | "ideas";
+  readonly topic: "greeting" | "planning" | "ideas" | SmartLingoBeginnerScene;
   readonly sourceType: "smartlingo_original";
 }
 
@@ -60,8 +66,26 @@ export interface SmartLingoVocabularyVisualCue {
 export function getVocabularyVisualCue(
   sample: Pick<SmartLingoVocabularySample, "topic">,
 ): SmartLingoVocabularyVisualCue {
-  if (sample.topic === "greeting") {
+  if (sample.topic === "greeting" || sample.topic === "greetings") {
     return { kind: "pictogram", symbol: "👋", label: { zh: "见面问候", en: "Greeting someone" } };
+  }
+  if (sample.topic === "introductions") {
+    return { kind: "pictogram", symbol: "🙂", label: { zh: "介绍自己", en: "Introducing yourself" } };
+  }
+  if (sample.topic === "transport") {
+    return { kind: "pictogram", symbol: "✈️", label: { zh: "机场与交通", en: "Airport and transport" } };
+  }
+  if (sample.topic === "directions") {
+    return { kind: "pictogram", symbol: "↗️", label: { zh: "问路与方向", en: "Directions and places" } };
+  }
+  if (sample.topic === "restaurant") {
+    return { kind: "pictogram", symbol: "🍽️", label: { zh: "餐厅点餐", en: "Ordering at a restaurant" } };
+  }
+  if (sample.topic === "shopping") {
+    return { kind: "pictogram", symbol: "🧾", label: { zh: "购物与付款", en: "Shopping and payment" } };
+  }
+  if (sample.topic === "help") {
+    return { kind: "pictogram", symbol: "🆘", label: { zh: "求助与紧急情况", en: "Help and emergencies" } };
   }
   if (sample.topic === "planning") {
     return { kind: "pictogram", symbol: "🗓️", label: { zh: "日程与计划", en: "Schedule and plan" } };
@@ -272,6 +296,49 @@ export function getVocabularySample(
   if (!sample) throw new Error(`No ${level} vocabulary sample for ${language}`);
   return sample;
 }
+
+/** Four original, practical flashcards for one day of the free beginner path. */
+export function getBeginnerVocabularyDeck(
+  language: SmartLingoLearningLanguage,
+  day: number,
+): readonly SmartLingoVocabularySample[] {
+  const normalizedDay = Math.max(1, Math.min(7, Math.trunc(day || 1)));
+  const topic = beginnerVocabularySceneForDay(normalizedDay);
+  return beginnerVocabularySeedsForDay(language, normalizedDay).map((seed, index) => ({
+    stableId: `sl-vocab-${language}-beginner-d${normalizedDay}-${index + 1}`,
+    version: SMARTLINGO_LEARNING_CONTENT_VERSION,
+    language,
+    level: "beginner" as const,
+    form: seed[0],
+    pronunciation: seed[1],
+    meaning: { zh: seed[2], en: seed[3] },
+    example: seed[0],
+    exampleTranslation: { zh: seed[2], en: seed[3] },
+    topic,
+    sourceType: "smartlingo_original" as const,
+  }));
+}
+
+export function getVocabularySampleById(
+  language: SmartLingoLearningLanguage,
+  sampleId: string,
+): SmartLingoVocabularySample | null {
+  const seed = SMARTLINGO_VOCABULARY_SAMPLES[language].find(sample => sample.stableId === sampleId);
+  if (seed) return seed;
+  for (let day = 1; day <= 7; day += 1) {
+    const sample = getBeginnerVocabularyDeck(language, day).find(item => item.stableId === sampleId);
+    if (sample) return sample;
+  }
+  return null;
+}
+
+export const SMARTLINGO_BEGINNER_VOCABULARY_METADATA = {
+  version: SMARTLINGO_BEGINNER_VOCABULARY_VERSION,
+  cardsPerDay: 4,
+  days: 7,
+  cardsPerLanguage: 28,
+  sourceType: "smartlingo_original",
+} as const;
 
 function buildPlacementQuestion(
   language: SmartLingoLearningLanguage,

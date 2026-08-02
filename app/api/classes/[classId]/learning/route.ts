@@ -2,8 +2,10 @@ import { createId, getDatabase, getSessionUser } from "../../../../../lib/auth";
 import {
   buildDailyPracticeItem,
   createVocabularyReviewState,
+  getBeginnerVocabularyDeck,
   getVocabularyVisualCue,
   getVocabularySample,
+  getVocabularySampleById,
   gradeDailyPracticeItem,
   scheduleVocabularyReview,
   selectNextVocabularyReviewMode,
@@ -240,10 +242,6 @@ async function learningState(
 ) {
   const targetLanguage = access.targetLanguage as SmartLingoLearningLanguage;
   const level = placementLevel(placement.recommendedLevel);
-  const sample = getVocabularySample(targetLanguage, level);
-  const progress = await vocabularyProgress(database, userId, access.pathId, sample.stableId, sample.version);
-  const state = reviewState(sample.stableId, progress, Date.now());
-  const nextMode = requestedMode ?? selectNextVocabularyReviewMode(state);
   const quickEnrollment = await database.prepare(`SELECT e.offering_id AS offeringId,
     offering.duration_days AS durationDays, e.current_day AS currentDay,
     e.started_at AS startedAt, e.status
@@ -260,6 +258,20 @@ async function learningState(
   const courseDay = quickCourse
     ? quickCourse.schedule[Math.min(quickCourse.days, elapsedDay) - 1]
     : null;
+  const vocabularyDay = courseDay
+    ? ((courseDay.day - 1) % 7) + 1
+    : ((Number(date.slice(-2)) - 1) % 7) + 1;
+  const vocabularySamples = level === "beginner"
+    ? getBeginnerVocabularyDeck(targetLanguage, vocabularyDay)
+    : [getVocabularySample(targetLanguage, level)];
+  const vocabularyProgressRows = await Promise.all(vocabularySamples.map(sample =>
+    vocabularyProgress(database, userId, access.pathId, sample.stableId, sample.version)));
+  const selectedIndex = vocabularyProgressRows.findIndex(row => row?.status !== "mastered" && row?.status !== "suspended");
+  const activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+  const sample = vocabularySamples[activeIndex];
+  const progress = vocabularyProgressRows[activeIndex];
+  const state = reviewState(sample.stableId, progress, Date.now());
+  const nextMode = requestedMode ?? selectNextVocabularyReviewMode(state);
   const assignedSkills = courseDay?.skills ?? SMARTLINGO_SKILLS;
   const dailyTasks = SMARTLINGO_SKILLS.map(skill => ({
     ...buildDailyPracticeItem(targetLanguage, skill, date, uiLanguage, level),
@@ -282,6 +294,28 @@ async function learningState(
   }).filter(task => assignedSkills.includes(task.skill));
   const localizedMeaning = sample.meaning[uiLanguage];
   const localizedExampleTranslation = sample.exampleTranslation[uiLanguage];
+  const vocabularyDeck = vocabularySamples.map((deckSample, index) => {
+    const deckProgress = vocabularyProgressRows[index];
+    const deckState = reviewState(deckSample.stableId, deckProgress, Date.now());
+    return {
+      taskId: deckSample.stableId,
+      sampleId: deckSample.stableId,
+      stableId: deckSample.stableId,
+      word: deckSample.form,
+      form: deckSample.form,
+      pronunciation: deckSample.pronunciation,
+      meaning: deckSample.meaning,
+      visualCue: getVocabularyVisualCue(deckSample),
+      example: deckSample.example,
+      exampleTranslation: deckSample.exampleTranslation,
+      audioText: deckSample.form,
+      speechLocale: SPEECH_LOCALES[targetLanguage],
+      direction: targetLanguage === "ar" ? "rtl" as const : "ltr" as const,
+      mode: requestedMode ?? selectNextVocabularyReviewMode(deckState),
+      status: deckProgress?.status ?? "new",
+      progress: publicProgress(deckProgress),
+    };
+  });
 
   return {
     class: {
@@ -342,6 +376,13 @@ async function learningState(
       },
       progress: publicProgress(progress),
       nextMode,
+    },
+    vocabularyDeck,
+    vocabularyDeckMeta: {
+      day: vocabularyDay,
+      total: vocabularyDeck.length,
+      activeIndex,
+      scene: courseDay?.scene ?? null,
     },
     tasks,
     dailyTasks: tasks,
@@ -432,8 +473,18 @@ export async function POST(
     if (!sampleId || !isVocabularyMode(body.mode) || !isVocabularyGrade(body.grade)) {
       return Response.json({ error: "A valid vocabulary sample, mode, and grade are required" }, { status: 400 });
     }
-    const sample = getVocabularySample(auth.access.targetLanguage, placementLevel(auth.placement.recommendedLevel));
-    if (sampleId !== sample.stableId) {
+    const currentState = await learningState(
+      auth.database,
+      auth.user.id,
+      auth.access,
+      auth.placement,
+      today,
+      uiLanguage,
+      body.mode,
+    );
+    const assignedSampleIds = new Set(currentState.vocabularyDeck.map(item => item.sampleId));
+    const sample = getVocabularySampleById(auth.access.targetLanguage, sampleId);
+    if (!sample || !assignedSampleIds.has(sampleId)) {
       return Response.json({ error: "This vocabulary sample is not the current server-assigned item" }, { status: 409 });
     }
     const sourceId = `${auth.classId}:${today}:${sample.stableId}:${body.mode}`;
