@@ -183,6 +183,13 @@
       "when": 1785705600000,
       "tag": "0025_smartlingo_daily_coaching",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1785792000000,
+      "tag": "0026_smartlingo_admin_roles",
+      "breakpoints": true
     }
   ]
 }

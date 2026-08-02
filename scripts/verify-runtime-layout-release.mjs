@@ -18,6 +18,8 @@ const protectedPages = [
   "/zh/community",
   "/zh/messages",
   "/zh/messages/live/layout-check",
+  "/zh/admin/members",
+  "/zh/admin/language-classes",
 ];
 const protectedApis = [
   "/api/classes",
@@ -90,7 +92,7 @@ async function assertControls(baseURL, token) {
     const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
     if (anonymous.status !== 401) throw new Error(`anonymous API control failed: ${path} returned ${anonymous.status}`);
   }
-  process.stdout.write("Authenticated layout controls verified: 6 pages + 6 APIs return 200; anonymous controls still redirect or return 401.\n");
+  process.stdout.write(`Authenticated layout controls verified: ${protectedPages.length} pages + ${protectedApis.length} APIs return 200; anonymous controls still redirect or return 401.\n`);
 }
 
 async function stopChild(child) {
@@ -156,9 +158,9 @@ async function main() {
       r2_buckets: [{ binding: "BUCKET", bucket_name: "smartlingo-layout-release-media" }],
     }), { mode: 0o600 });
     await writeFile(fixture, `
-INSERT INTO users (id,email,display_name,password_hash,preferred_language,created_at) VALUES
- ('layout-user','layout-user@smartlingo.invalid','Layout Learner','disabled-local-fixture','en',1785680000),
- ('layout-peer','layout-peer@smartlingo.invalid','Layout Peer','disabled-local-fixture','zh',1785680001);
+INSERT INTO users (id,email,display_name,password_hash,preferred_language,role,created_at) VALUES
+ ('layout-user','layout-user@smartlingo.invalid','Layout Learner','disabled-local-fixture','en','admin',1785680000),
+ ('layout-peer','layout-peer@smartlingo.invalid','Layout Peer','disabled-local-fixture','zh','member',1785680001);
 INSERT INTO sessions (id,user_id,clerk_session_id,expires_at,created_at) VALUES
  ('${sessionHash}','layout-user','layout-local-session',4102444800,1785680002);
 INSERT INTO smartlingo_language_class_members (id,class_id,user_id,role,status,joined_at,updated_at) VALUES

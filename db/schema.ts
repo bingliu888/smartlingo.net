@@ -8,9 +8,13 @@ export const users = sqliteTable("users", {
   displayName: text("display_name").notNull(),
   passwordHash: text("password_hash").notNull(),
   preferredLanguage: text("preferred_language").notNull().default("en"),
+  role: text("role").notNull().default("member"),
   walletAddress: text("wallet_address"),
   createdAt: integer("created_at").notNull(),
-});
+}, (table) => [
+  check("smartlingo_user_role_ck", sql`${table.role} IN ('member', 'admin')`),
+  index("smartlingo_users_role_created_idx").on(table.role, table.createdAt),
+]);
 
 export const userAvatars = sqliteTable("user_avatars", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),

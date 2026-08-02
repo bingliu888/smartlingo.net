@@ -1239,7 +1239,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0025_smartlingo_daily_coaching");
+  assert.equal(migrations.at(-1)?.tag, "0026_smartlingo_admin_roles");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1291,6 +1291,7 @@ export function validateD1Migrations() {
       "smartlingo_quick_course_path_duration_v2_uq",
       "smartlingo_quick_enrollment_user_offering_v2_uq",
       "smartlingo_daily_quiz_attempt_uq",
+      "smartlingo_users_role_created_idx",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(

@@ -1,0 +1,8 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+const read=path=>readFile(new URL(path,import.meta.url),"utf8");
+
+test("admin dashboard branches from the normal dashboard and exposes members and classes",async()=>{const[page,panel]=await Promise.all([read("../app/[lang]/dashboard/page.tsx"),read("../components/AdminDashboard.tsx")]);assert.match(page,/user\.role === "admin"/);assert.match(panel,/admin\/members\?tab=recent/);assert.match(panel,/admin\/members\?tab=subscribers/);assert.match(panel,/admin\/language-classes/);assert.match(panel,/COUNT\(DISTINCT subscriber_user_id\)/)});
+test("member management is server protected and subscribers come from paid platform payments",async()=>{const[list,detail,route]=await Promise.all([read("../app/[lang]/admin/members/page.tsx"),read("../app/[lang]/admin/members/[memberId]/page.tsx"),read("../app/api/admin/members/[memberId]/route.ts")]);for(const source of[list,detail,route])assert.match(source,/isAdmin/);assert.match(list,/status = 'paid'/);assert.match(list,/tab===\"subscribers\"/);assert.match(detail,/AdminMemberRoleEditor/);assert.match(route,/Role must be member or admin/);assert.match(route,/administrator role is protected/i);assert.match(route,/UPDATE users SET role=\?/)});
+test("class administration is read-only in this first safe increment",async()=>{const page=await read("../app/[lang]/admin/language-classes/page.tsx");assert.match(page,/isAdmin/);assert.match(page,/smartlingo_language_classes/);assert.match(page,/owner_user_id/);assert.doesNotMatch(page,/DELETE FROM|UPDATE smartlingo_language_classes/)});

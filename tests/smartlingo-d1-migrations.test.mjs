@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 26);
-  assert.equal(result.firstRunApplied, 26);
+  assert.equal(result.migrationCount, 27);
+  assert.equal(result.firstRunApplied, 27);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0025_smartlingo_daily_coaching");
+  assert.equal(result.newestMigration, "0026_smartlingo_admin_roles");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -190,6 +190,19 @@ test("0025 stores daily session preferences and server-graded quiz history", asy
   assert.match(route, /gradeDailyVocabularyQuiz/);
   assert.match(route, /scorePronunciationTranscript/);
   assert.match(journal, /"tag": "0025_smartlingo_daily_coaching"/);
+});
+
+test("0026 adds durable admin roles and promotes only the bootstrap administrator", async () => {
+  const [schema, migration, journal, auth] = await Promise.all([
+    read("../db/schema.ts"), read("../drizzle/0026_smartlingo_admin_roles.sql"),
+    read("../drizzle/meta/_journal.json"), read("../lib/auth.ts"),
+  ]);
+  assert.match(schema, /role: text\("role"\)\.notNull\(\)\.default\("member"\)/);
+  assert.match(migration, /lower\(`email`\) = 'bingliu@cybeye\.com'/);
+  assert.match(migration, /smartlingo_users_role_created_idx/);
+  assert.match(auth, /BOOTSTRAP_ADMIN_EMAIL = "bingliu@cybeye\.com"/);
+  assert.match(auth, /UPDATE users SET role = 'admin'/);
+  assert.match(journal, /"tag": "0026_smartlingo_admin_roles"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

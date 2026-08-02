@@ -23,7 +23,10 @@ export type SessionUser = {
   email: string;
   displayName: string;
   preferredLanguage: "en" | "zh";
+  role: "member" | "admin";
 };
+
+export const BOOTSTRAP_ADMIN_EMAIL = "bingliu@cybeye.com";
 
 function db(): Database {
   const binding = (globalThis as unknown as { __SMARTLINGO_DB__?: Database }).__SMARTLINGO_DB__;
@@ -117,6 +120,13 @@ function normalizedLanguage(language: string | null | undefined): "en" | "zh" {
   return language === "en" ? "en" : "zh";
 }
 
+async function applyBootstrapAdmin(userId: string, email: string) {
+  if (email === BOOTSTRAP_ADMIN_EMAIL) {
+    await db().prepare("UPDATE users SET role = 'admin' WHERE id = ? AND role <> 'admin'").bind(userId).run();
+  }
+  return { id: userId };
+}
+
 async function ensureClerkUser(
   clerkUserId: string,
   email: string,
@@ -140,7 +150,7 @@ async function ensureClerkUser(
         .bind(normalizedEmail, user.id, clerkUserId)
         .run();
     }
-    return { id: user.id };
+    return applyBootstrapAdmin(user.id, normalizedEmail);
   }
 
   const emailUser = await db().prepare(
@@ -156,7 +166,7 @@ async function ensureClerkUser(
     user = await db().prepare(
       "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? LIMIT 1",
     ).bind(clerkUserId).first<ClerkIdentityRow>();
-    if (user) return { id: user.id };
+    if (user) return applyBootstrapAdmin(user.id, normalizedEmail);
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -187,7 +197,7 @@ async function ensureClerkUser(
     }
   }
   if (!user) throw new Error("Unable to create or load Clerk user");
-  return { id: user.id };
+  return applyBootstrapAdmin(user.id, normalizedEmail);
 }
 
 export async function createSessionForClerkUser(
@@ -247,7 +257,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
     try {
       const now = Math.floor(Date.now() / 1000);
       user = await db().prepare(
-        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ? AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
+        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ? AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
       ).bind(await sha256(token), now).first<SessionUser>();
     } catch {
       // A stale legacy session cookie must not turn a public page into an error page.
@@ -278,7 +288,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
           "zh",
         );
         user = await db().prepare(
-          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage FROM users WHERE clerk_user_id = ? LIMIT 1",
+          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage, role FROM users WHERE clerk_user_id = ? LIMIT 1",
         ).bind(clerkUser.id).first<SessionUser>();
       } catch {
         // Identity conflicts fail closed and must be resolved by an Admin.
