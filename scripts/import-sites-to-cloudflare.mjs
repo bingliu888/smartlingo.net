@@ -98,7 +98,9 @@ async function main() {
   const inventory = await request("/api/admin/cloudflare-migration?mode=inventory");
   const temporary = await mkdtemp(join(tmpdir(), "smartlingo-migration-"));
   try {
-    const sql = ["PRAGMA foreign_keys=OFF;", "BEGIN IMMEDIATE;"];
+    // Wrangler's remote D1 import executes uploaded statements atomically at
+    // the platform layer and rejects explicit SQL transaction statements.
+    const sql = ["PRAGMA foreign_keys=OFF;"];
     let exportedRows = 0;
     const sourceTables = inventory.tables.filter((item) => !item.name.startsWith("__") && item.name !== "d1_migrations");
     const expectedRows = sourceTables.reduce((total, item) => total + item.rows, 0);
@@ -115,7 +117,7 @@ async function main() {
       if (tableRows !== item.rows) fail(`Row count changed during export for ${item.name}`);
     }
     if (exportedRows !== expectedRows) fail("D1 export total did not match inventory");
-    sql.push("COMMIT;", "PRAGMA foreign_keys=ON;");
+    sql.push("PRAGMA foreign_keys=ON;");
     const sqlPath = join(temporary, "migration.sql");
     await writeFile(sqlPath, sql.filter(Boolean).join("\n"), { mode: 0o600 });
     await run(["d1", "execute", "DB", "--remote", "--config", CONFIG, "--file", sqlPath]);

@@ -34,4 +34,5 @@ test("importer is pinned to the isolated Cloudflare resources and checks totals"
   assert.match(importer, /Row count changed during export/);
   assert.match(importer, /R2 import total did not match inventory/);
   assert.match(importer, /PRAGMA foreign_keys=OFF/);
+  assert.doesNotMatch(importer, /BEGIN IMMEDIATE|SAVEPOINT/);
 });
