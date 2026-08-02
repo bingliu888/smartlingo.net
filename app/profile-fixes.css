@@ -4,7 +4,7 @@
   min-width: 42px !important;
   min-height: 42px !important;
   padding: 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   border-radius: 50% !important;
 }
 

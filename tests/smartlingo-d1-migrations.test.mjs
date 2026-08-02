@@ -34,6 +34,7 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     placementResponseId: "d1-smoke-placement-response",
     learningActivityEventId: "d1-smoke-learning-activity",
     vocabularyProgressId: "d1-smoke-vocabulary-progress",
+    learningPathUnitCount: 108,
     learningPlanId: "d1-smoke-plan-ar",
   });
 });
@@ -127,6 +128,13 @@ test("0022 stores bilingual learning goals without erasing per-language path pro
   ]);
 
   assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  assert.match(migration, /CREATE TABLE `smartlingo_learning_path_units`/);
+  assert.match(schema, /sqliteTable\("smartlingo_learning_path_units"/);
+  assert.match(migration, /smartlingo_path_unit_path_key_uq/);
+  assert.match(migration, /smartlingo_path_unit_path_sequence_uq/);
+  assert.match(migration, /WITH `languages` \(`target_language`, `path_id`\) AS/);
+  assert.match(migration, /'sl-unit-' \|\| `languages`\.`target_language` \|\| '-' \|\| `units`\.`unit_key`/);
+  assert.match(migration, /smartlingo path unit prerequisite must be the preceding unit in the same path/);
   assert.match(migration, /CREATE TABLE `smartlingo_learning_plans`/);
   assert.match(schema, /sqliteTable\("smartlingo_learning_plans"/);
   assert.match(migration, /smartlingo_learning_plan_user_path_uq/);
@@ -134,7 +142,11 @@ test("0022 stores bilingual learning goals without erasing per-language path pro
   assert.match(migration, /'daily_life', 'travel', 'work', 'study', 'community'/);
   assert.match(migration, /'adaptive', 'self_selected', 'fundamentals'/);
   assert.match(migration, /smartlingo learning plan requires its matching published language path/);
-  assert.match(migration, /smartlingo learning plan unit must belong to its target language/);
+  assert.match(migration, /FOREIGN KEY \(`current_unit_id`\) REFERENCES `smartlingo_learning_path_units`\(`id`\)/);
+  assert.match(migration, /`unit`\.`path_id` = NEW\.`path_id`/);
+  assert.match(migration, /`unit`\.`target_language` = NEW\.`target_language`/);
+  assert.match(migration, /`unit`\.`stage_id` = NEW\.`current_stage_id`/);
+  assert.match(migration, /smartlingo learning plan unit must exist in its matching path, language, and stage/);
   assert.match(route, /COALESCE\(smartlingo_learning_plans\.current_stage_id, excluded\.current_stage_id\)/);
   assert.match(route, /COALESCE\(smartlingo_learning_plans\.current_unit_id, excluded\.current_unit_id\)/);
   assert.match(route, /scoresCreated: false/);

@@ -1,0 +1,11 @@
+.message-sidebar nav b,
+.message-sidebar nav small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.message-sidebar nav > button {
+  height: auto;
+}

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
+import { SMARTLINGO_LANGUAGE_CATALOG, buildLanguagePath } from "../lib/smartlingo-paths.ts";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDirectory, "..");
@@ -451,6 +452,51 @@ function runD1Smoke(database) {
     },
   );
 
+  const learningPathUnitRegistry = database.prepare(`
+    SELECT COUNT(*) AS unitCount,
+      COUNT(DISTINCT target_language) AS languageCount,
+      COUNT(DISTINCT path_id) AS pathCount,
+      SUM(CASE WHEN stage_id = 'foundation' THEN 1 ELSE 0 END) AS foundationCount,
+      SUM(CASE WHEN stage_id = 'everyday' THEN 1 ELSE 0 END) AS everydayCount,
+      SUM(CASE WHEN stage_id = 'independent' THEN 1 ELSE 0 END) AS independentCount
+    FROM smartlingo_learning_path_units
+  `).get();
+  assert.deepEqual({ ...learningPathUnitRegistry }, {
+    unitCount: 108,
+    languageCount: 12,
+    pathCount: 12,
+    foundationCount: 36,
+    everydayCount: 36,
+    independentCount: 36,
+  }, "0022 must seed exactly nine registered units for every language path");
+  const registeredLearningPathUnits = database.prepare(`
+    SELECT id, path_id AS pathId, target_language AS targetLanguage,
+      stage_id AS stageId, sequence, unit_key AS unitKey,
+      prerequisite_unit_id AS prerequisiteUnitId, availability,
+      content_version AS contentVersion, source_type AS sourceType
+    FROM smartlingo_learning_path_units
+    ORDER BY target_language, sequence
+  `).all().map(row => ({ ...row }));
+  const expectedLearningPathUnits = SMARTLINGO_LANGUAGE_CATALOG
+    .flatMap(language => buildLanguagePath(language.code).flatMap(stage => stage.units.map((unit, index) => ({
+      id: unit.id,
+      pathId: language.pathId,
+      targetLanguage: language.code,
+      stageId: stage.id,
+      sequence: ({ foundation: 0, everyday: 3, independent: 6 })[stage.id] + index + 1,
+      unitKey: unit.id.replace(`sl-unit-${language.code}-`, ""),
+      prerequisiteUnitId: unit.prerequisiteUnitId,
+      availability: unit.availability,
+      contentVersion: unit.contentVersion,
+      sourceType: unit.sourceType,
+    }))))
+    .sort((left, right) => left.targetLanguage.localeCompare(right.targetLanguage) || left.sequence - right.sequence);
+  assert.deepEqual(
+    registeredLearningPathUnits,
+    expectedLearningPathUnits,
+    "D1 unit identities, stages, prerequisites, and versions must exactly match the authored path catalog",
+  );
+
   database.prepare(`
     INSERT INTO smartlingo_learning_plans
       (id, user_id, path_id, target_language, use_case, daily_minutes,
@@ -481,7 +527,37 @@ function runD1Smoke(database) {
         'study', 5, 'beginner', 'fundamentals', '2026-08-02.1',
         'foundation', 'sl-unit-hi-first-contact', 0, ?, ?)
     `).run(now, now),
-    /smartlingo learning plan unit must belong to its target language/,
+    /smartlingo learning plan unit must exist in its matching path, language, and stage/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_learning_plans
+        (id, user_id, path_id, target_language, use_case, daily_minutes,
+         self_reported_level, entry_mode, content_version, current_stage_id,
+         current_unit_id, is_active, created_at, updated_at)
+      VALUES ('d1-smoke-plan-missing-unit', 'd1-smoke-user', 'path_ar_a1', 'ar',
+        'study', 5, 'beginner', 'fundamentals', '2026-08-02.1',
+        'foundation', 'sl-unit-ar-does-not-exist', 0, ?, ?)
+    `).run(now, now),
+    /smartlingo learning plan unit must exist in its matching path, language, and stage/,
+  );
+  assert.throws(
+    () => database.prepare(`
+      INSERT INTO smartlingo_learning_plans
+        (id, user_id, path_id, target_language, use_case, daily_minutes,
+         self_reported_level, entry_mode, content_version, current_stage_id,
+         current_unit_id, is_active, created_at, updated_at)
+      VALUES ('d1-smoke-plan-stage-mismatch', 'd1-smoke-user', 'path_ar_a1', 'ar',
+        'study', 5, 'advanced', 'self_selected', '2026-08-02.1',
+        'independent', 'sl-unit-ar-first-contact', 0, ?, ?)
+    `).run(now, now),
+    /smartlingo learning plan unit must exist in its matching path, language, and stage/,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_learning_plans
+      SET current_stage_id = 'independent'
+      WHERE id = 'd1-smoke-plan-ar'`).run(),
+    /smartlingo learning plan unit must exist in its matching path, language, and stage/,
   );
   database.prepare(`UPDATE smartlingo_learning_plans SET is_active = 0
     WHERE id = 'd1-smoke-plan-ar'`).run();
@@ -1134,6 +1210,7 @@ function runD1Smoke(database) {
     placementResponseId: placementSmoke.responseId,
     learningActivityEventId: placementSmoke.activityId,
     vocabularyProgressId: placementSmoke.vocabularyProgressId,
+    learningPathUnitCount: learningPathUnitRegistry.unitCount,
     learningPlanId: "d1-smoke-plan-ar",
   };
 }
@@ -1185,6 +1262,8 @@ export function validateD1Migrations() {
       "smartlingo_placement_response_item_uq",
       "smartlingo_learning_activity_source_uq",
       "smartlingo_vocabulary_progress_word_uq",
+      "smartlingo_path_unit_path_key_uq",
+      "smartlingo_path_unit_path_sequence_uq",
       "smartlingo_learning_plan_user_path_uq",
       "smartlingo_learning_plan_active_user_uq",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
@@ -1206,6 +1285,7 @@ export function validateD1Migrations() {
       "smartlingo_placement_responses",
       "smartlingo_learning_activity_events",
       "smartlingo_vocabulary_progress",
+      "smartlingo_learning_path_units",
       "smartlingo_learning_plans",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 

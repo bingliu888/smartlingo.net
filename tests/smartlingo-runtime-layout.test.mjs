@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import {
+  SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES,
   SMARTLINGO_LAYOUT_LANGUAGES,
   SMARTLINGO_LAYOUT_ROUTES,
   SMARTLINGO_VIEWPORTS,
@@ -11,6 +12,8 @@ import {
 
 const swiftSource = await readFile(new URL("../scripts/measure-runtime-layout.swift", import.meta.url), "utf8");
 const runnerSource = await readFile(new URL("../scripts/verify-runtime-layout-webkit.mjs", import.meta.url), "utf8");
+const releaseSource = await readFile(new URL("../scripts/verify-runtime-layout-release.mjs", import.meta.url), "utf8");
+const packageSource = await readFile(new URL("../package.json", import.meta.url), "utf8");
 
 test("runtime layout matrix pins both path locales and all five required viewports", () => {
   assert.deepEqual(SMARTLINGO_LAYOUT_LANGUAGES, ["zh", "en"]);
@@ -25,7 +28,7 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/",
     "/classes",
     "/programs",
-    "/classes/class_official_en/placement",
+    "/classes/class_official_es/placement",
     "/classes/class_official_en/learn",
     "/community",
     "/messages",
@@ -101,17 +104,62 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {
-  for (const page of ["home", "programs", "assistant", "project", "auth"]) {
+  for (const page of ["home", "classes", "programs", "placement", "learning", "community", "messages", "live-chat", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
   }
   assert.match(runnerSource, /requiredHooks/);
-  assert.match(swiftSource, /document\.querySelector\('\[data-layout-page\]'\)/);
+  assert.match(swiftSource, /route\.readySelector/);
   assert.match(swiftSource, /WKWebsiteDataStore|websiteDataStore = \.nonPersistent\(\)/);
+});
+
+test("authenticated surfaces require a loopback D1-backed session and their own ready marker", () => {
+  assert.deepEqual(SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES, [
+    "/classes",
+    "/classes/class_official_es/placement",
+    "/classes/class_official_en/learn",
+    "/community",
+    "/messages",
+    "/messages/live/layout-check",
+  ]);
+  assert.match(runnerSource, /session cookies are allowed only for a loopback layout fixture/);
+  assert.match(runnerSource, /authenticated layout routes require --session-cookie-file backed by an ephemeral local D1 session/);
+  assert.doesNotMatch(runnerSource, /argv\[index\] === "--session-cookie"/);
+  assert.match(runnerSource, /SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES\.includes\(route\)/);
+  assert.match(runnerSource, /five-skill-workspace/);
+  assert.match(swiftSource, /httpCookieStore/);
+  assert.match(swiftSource, /cookieStore\.setCookie/);
+  assert.match(swiftSource, /smartlingo_session/);
+  assert.match(swiftSource, /\.originURL: baseURL/);
+  assert.match(swiftSource, /HTTPCookiePropertyKey\("HttpOnly"\)/);
+  assert.match(swiftSource, /!\$0\.isSecure/);
+  assert.doesNotMatch(swiftSource, /\.secure:/);
+  assert.match(swiftSource, /url\.scheme != baseScheme/);
+  assert.match(swiftSource, /url\.host != baseHost/);
+  assert.match(swiftSource, /port != basePort/);
+  assert.match(releaseSource, /randomBytes\(32\)\.toString\("base64url"\)/);
+  assert.match(releaseSource, /createHash\("sha256"\)\.update\(token\)\.digest\("base64"\)/);
+  assert.match(releaseSource, /mkdtemp\(join\(tmpdir\(\), "smartlingo-layout-release-"\)\)/);
+  assert.match(releaseSource, /delete isolatedEnv\.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/);
+  assert.match(releaseSource, /delete isolatedEnv\.CLERK_SECRET_KEY/);
+  assert.match(releaseSource, /const common = \["--local", "--persist-to", state, "--config", config\]/);
+  assert.doesNotMatch(releaseSource, /--remote/);
+  assert.match(releaseSource, /database_id: "00000000-0000-4000-8000-000000000001"/);
+  assert.doesNotMatch(releaseSource, /\broutes:/);
+  assert.match(releaseSource, /WRANGLER_SEND_METRICS: "false"/);
+  assert.match(releaseSource, /writeFile\(sessionCookieFile, `\$\{token\}\\n`, \{ mode: 0o600 \}\)/);
+  assert.match(releaseSource, /"--session-cookie-file", sessionCookieFile/);
+  assert.doesNotMatch(releaseSource, /"--session-cookie", token/);
+  assert.match(releaseSource, /'layout-placement-active'/);
+  assert.match(releaseSource, /anonymous page control failed/);
+  assert.match(releaseSource, /anonymous API control failed/);
+  assert.match(releaseSource, /rm\(work, \{ recursive: true, force: true \}\)/);
+  assert.match(packageSource, /"validate:layout": "node scripts\/verify-runtime-layout-release\.mjs"/);
 });
 
 test("full release matrix uses bounded fresh-WebKit batches and one merged count", () => {
   assert.match(runnerSource, /selectedRoutes\.slice\(index, index \+ 5\)/);
   assert.match(runnerSource, /reports\.push\(\.\.\.stdout\.split/);
   assert.match(runnerSource, /expectedCount = selectedRoutes\.length \* SMARTLINGO_LAYOUT_LANGUAGES\.length \* SMARTLINGO_VIEWPORTS\.length/);
+  assert.match(runnerSource, /code: "path-mismatch"/);
   assert.match(swiftSource, /Double\(combinationCount\) \* 5\.0/);
 });

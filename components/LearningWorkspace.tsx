@@ -516,11 +516,11 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
       ? `${finiteScore(placement.overallScore)} / 100`
       : t.placementUnknown;
 
-  return <section className="sl-workspace" data-layout-fill="learning-workspace">
-    <header className="sl-workspace-heading" data-layout-fill="learning-workspace-heading" data-readable-copy>
+  return <section className="sl-workspace" data-layout-fill="learning-workspace" data-layout-ready={placementChecked && logLoaded ? "true" : undefined} data-layout-text-fit="learning-workspace">
+    <header className="sl-workspace-heading" data-layout-fill="learning-workspace-heading">
       <p className="section-kicker">{calendarOnly ? t.calendarKicker : t.kicker}</p>
       <h1>{calendarOnly ? t.calendarTitle : t.title}</h1>
-      <p>{calendarOnly ? t.calendarIntro : t.intro}</p>
+      <p data-readable-copy="learning-intro">{calendarOnly ? t.calendarIntro : t.intro}</p>
     </header>
 
     {!calendarOnly && classId ? <section className={`sl-placement-gate ${placementComplete ? "complete" : "pending"}`} data-layout-fill="learning-placement-status">
@@ -536,11 +536,11 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
 
     {!calendarOnly && classId && !placementChecked && !learningError ? <p className="sl-loading" aria-live="polite">{t.loading}</p> : null}
 
-    {!calendarOnly && classId && placementComplete ? <section className="sl-daily-workspace" data-layout-fill="five-skill-workspace">
-      <header className="sl-section-heading" data-layout-fill="five-skill-heading" data-readable-copy>
+    {!calendarOnly && classId && placementComplete ? <section className="sl-daily-workspace" data-layout-fill="five-skill-workspace" data-layout-ready={learning ? "true" : undefined}>
+      <header className="sl-section-heading" data-layout-fill="five-skill-heading">
         <p className="sl-eyebrow">{today}</p>
         <h2>{t.today}</h2>
-        <p>{t.todayIntro}</p>
+        <p data-readable-copy="five-skill-intro">{t.todayIntro}</p>
       </header>
 
       {!learning && !learningError ? <p className="sl-loading" aria-live="polite">{t.loading}</p> : null}
@@ -650,10 +650,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
     {learningError ? <p className="sl-error" role="alert">{learningError}</p> : null}
 
     <section className="sl-calendar-stack" data-layout-fill="learning-calendar-stack">
-      <header className="sl-section-heading" data-layout-fill="learning-calendar-heading" data-readable-copy>
+      <header className="sl-section-heading" data-layout-fill="learning-calendar-heading">
         <p className="sl-eyebrow">{classId ? t.classCalendar : t.allClasses}</p>
         <h2>{t.calendarTitle}</h2>
-        <p>{t.calendarIntro}</p>
+        <p data-readable-copy="learning-calendar-intro">{t.calendarIntro}</p>
       </header>
       {logError ? <p className="sl-error" role="alert">{logError}</p> : null}
       {!logError && !logLoaded ? <p className="sl-calendar-loading" aria-live="polite">{t.calendarLoading}</p> : null}

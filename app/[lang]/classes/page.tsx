@@ -38,7 +38,7 @@ export default async function ClassesPage({
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
-    <main className="classes-page">
+    <main className="classes-page" data-layout-page="classes">
       <SiteHeader lang={lang} />
       <ClassStudio lang={lang} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
       <SiteFooter lang={lang} />

@@ -18,7 +18,7 @@ export default async function PlacementPage({ params }: { params: Promise<{ lang
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
-    <main className="placement-page">
+    <main className="placement-page" data-layout-page="placement">
       <SiteHeader lang={lang} />
       <PlacementAssessment lang={lang} classId={classId} />
       <SiteFooter lang={lang} />

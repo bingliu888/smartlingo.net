@@ -4,6 +4,7 @@ import { MessageCenter } from "../../../components/MessageCenter";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { getSessionUser } from "../../../lib/auth";
 import "./messages.css";
+import "./layout-contract.css";
 
 export const dynamic = "force-dynamic";
 
@@ -12,5 +13,5 @@ export default async function MessagesPage({ params, searchParams }: { params: P
   const requestHeaders = await headers(); const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
   const { member } = await searchParams;
-  return <main className="messages-page"><SiteHeader lang={lang}/><MessageCenter lang={lang} initialMemberId={member || ""}/></main>;
+  return <main className="messages-page" data-layout-page="messages"><SiteHeader lang={lang}/><MessageCenter lang={lang} initialMemberId={member || ""}/></main>;
 }

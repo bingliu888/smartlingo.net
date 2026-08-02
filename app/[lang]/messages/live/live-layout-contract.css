@@ -1,0 +1,16 @@
+.live-chat-page {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.live-chat-shell {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+@media (max-width: 680px) {
+  .live-chat-page { min-height: 0; }
+  .live-chat-shell { height: 100%; min-height: 0; }
+}

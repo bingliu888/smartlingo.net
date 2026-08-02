@@ -224,11 +224,11 @@ export function PlacementAssessment({ lang, classId }: { lang: Lang; classId: st
   if (!state && !error) return <section className="placement-shell placement-loading" aria-live="polite">SmartLingo…<PlacementStyles /></section>;
 
   return (
-    <section className="placement-shell" data-layout-fill="placement-shell">
+    <section className="placement-shell" data-layout-fill="placement-shell" data-layout-ready={state ? "true" : undefined} data-layout-text-fit="placement-shell">
       <header className="placement-heading" data-layout-fill="placement-heading">
         <p className="section-kicker">{t.kicker}</p>
         <h1>{t.title}</h1>
-        <p>{t.intro}</p>
+        <p data-readable-copy="placement-intro">{t.intro}</p>
       </header>
 
       {state && !state.attempt && (

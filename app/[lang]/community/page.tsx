@@ -17,5 +17,5 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   const { lang } = await params; if (lang !== "en" && lang !== "zh") notFound();
   const incoming = await headers(); const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/community`);
-  return <main className="community-page"><SiteHeader lang={lang}/><CommunityClient lang={lang}/><SiteFooter lang={lang}/></main>;
+  return <main className="community-page" data-layout-page="community"><SiteHeader lang={lang}/><CommunityClient lang={lang}/><SiteFooter lang={lang}/></main>;
 }

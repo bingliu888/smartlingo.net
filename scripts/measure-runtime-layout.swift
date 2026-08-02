@@ -11,6 +11,7 @@ struct LayoutViewport: Decodable {
 struct LayoutRoute: Decodable {
   let route: String
   let loadPath: String
+  let readySelector: String?
 }
 
 struct LayoutConfig: Decodable {
@@ -20,11 +21,14 @@ struct LayoutConfig: Decodable {
   let viewports: [LayoutViewport]
   let collectorSource: String
   let settleMilliseconds: Int
+  let sessionCookieValue: String?
 }
 
 final class LayoutRunner: NSObject, WKNavigationDelegate {
   private let config: LayoutConfig
+  private let baseScheme: String
   private let baseHost: String
+  private let basePort: Int?
   private let webView: WKWebView
   private var routeIndex = 0
   private var languageIndex = 0
@@ -34,7 +38,10 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
 
   init(config: LayoutConfig) {
     self.config = config
-    self.baseHost = URL(string: config.baseURL)?.host ?? ""
+    let configuredBaseURL = URL(string: config.baseURL)
+    self.baseScheme = configuredBaseURL?.scheme ?? ""
+    self.baseHost = configuredBaseURL?.host ?? ""
+    self.basePort = configuredBaseURL?.port ?? (configuredBaseURL?.scheme == "https" ? 443 : 80)
     let webConfiguration = WKWebViewConfiguration()
     webConfiguration.websiteDataStore = .nonPersistent()
     webConfiguration.defaultWebpagePreferences.allowsContentJavaScript = true
@@ -53,11 +60,12 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
   ) {
     if navigationAction.targetFrame?.isMainFrame == true,
-       let host = navigationAction.request.url?.host,
-       !baseHost.isEmpty,
-       host != baseHost {
-      decisionHandler(.cancel)
-      return
+       let url = navigationAction.request.url {
+      let port = url.port ?? (url.scheme == "https" ? 443 : 80)
+      if baseHost.isEmpty || url.scheme != baseScheme || url.host != baseHost || port != basePort {
+        decisionHandler(.cancel)
+        return
+      }
     }
     decisionHandler(.allow)
   }
@@ -76,7 +84,30 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
     timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutSeconds, repeats: false) { [weak self] _ in
       self?.fail("runtime-layout WebKit matrix timed out")
     }
-    loadCurrentPage()
+    if let sessionCookieValue = config.sessionCookieValue,
+       let baseURL = URL(string: config.baseURL),
+       let cookie = HTTPCookie(properties: [
+         .name: "smartlingo_session",
+         .value: sessionCookieValue,
+         .originURL: baseURL,
+         .path: "/",
+         HTTPCookiePropertyKey("HttpOnly"): "TRUE",
+       ]) {
+      let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+      cookieStore.setCookie(cookie) { [weak self] in
+        cookieStore.getAllCookies { cookies in
+          guard cookies.contains(where: {
+            $0.name == "smartlingo_session" && $0.value == sessionCookieValue && !$0.isSecure
+          }) else {
+            self?.fail("loopback layout session cookie was not stored as a non-secure cookie")
+            return
+          }
+          self?.loadCurrentPage()
+        }
+      }
+    } else {
+      loadCurrentPage()
+    }
   }
 
   private func localizedPath(route: LayoutRoute, language: String) -> String {
@@ -126,8 +157,10 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
   }
 
   private func waitForReady(remainingAttempts: Int) {
+    let route = config.routes[routeIndex]
+    let selector = route.readySelector ?? "[data-layout-page]"
     let readiness = """
-      (() => document.readyState === 'complete' && Boolean(document.querySelector('[data-layout-page]')))()
+      (() => document.readyState === 'complete' && Boolean(document.querySelector(\(jsonString(selector)))))()
       """
     webView.evaluateJavaScript(readiness) { [weak self] result, _ in
       guard let self else { return }
@@ -144,7 +177,7 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
         self.webView.evaluateJavaScript(diagnostic) { value, _ in
           let route = self.config.routes[self.routeIndex]
           let language = self.config.languages[self.languageIndex]
-          self.fail("page never reached a measurable runtime state: \(self.localizedPath(route: route, language: language)) · \(value as? String ?? "no diagnostic")")
+          self.fail("page never reached runtime selector \(selector): \(self.localizedPath(route: route, language: language)) · \(value as? String ?? "no diagnostic")")
         }
       }
     }

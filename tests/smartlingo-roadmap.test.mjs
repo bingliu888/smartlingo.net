@@ -134,7 +134,7 @@ test("Project status records the third-day evidence without fabricating a verifi
   assert.match(projectStatus, /same accepted revision is synchronized to GitHub main/);
   assert.match(projectStatus, /date: "2026-08-02"/);
   assert.match(projectStatus, /Exactly five tasks are complete: the twelve-language catalog/);
-  assert.match(projectStatus, /The complete gate passes all 23 D1 migrations, all 166 tests/);
+  assert.match(projectStatus, /The complete gate passes all 23 D1 migrations, all 167 tests/);
   assert.match(projectStatus, /does not add a Project release record claiming three-way Sites, GitHub, and production-domain parity/);
   assert.match(runtime, /PROJECT_RUNTIME_KEY = "smartlingo-project-status"/);
 

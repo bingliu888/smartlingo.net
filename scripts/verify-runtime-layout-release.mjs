@@ -1,0 +1,208 @@
+#!/usr/bin/env node
+
+import { createHash, randomBytes } from "node:crypto";
+import { access, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
+
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const wrangler = join(projectRoot, "node_modules", "wrangler", "bin", "wrangler.js");
+const verifier = join(projectRoot, "scripts", "verify-runtime-layout-webkit.mjs");
+const protectedPages = [
+  "/zh/classes",
+  "/zh/classes/class_official_es/placement",
+  "/zh/classes/class_official_en/learn",
+  "/zh/community",
+  "/zh/messages",
+  "/zh/messages/live/layout-check",
+];
+const protectedApis = [
+  "/api/classes",
+  "/api/classes/class_official_es/placement",
+  "/api/classes/class_official_en/learning",
+  "/api/community",
+  "/api/messages",
+  "/api/messages?thread=layout-check",
+];
+
+function run(command, args, options = {}) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args, { ...options, stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", value => { stdout += value; });
+    child.stderr.on("data", value => { stderr += value; });
+    child.on("error", rejectPromise);
+    child.on("close", code => {
+      if (code === 0) resolvePromise({ stdout, stderr });
+      else rejectPromise(new Error(`${command} exited ${code}: ${stderr.trim() || stdout.trim()}`));
+    });
+  });
+}
+
+async function freePort() {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const server = createServer();
+    server.once("error", rejectPromise);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      server.close(error => error ? rejectPromise(error) : resolvePromise(port));
+    });
+  });
+}
+
+async function waitForServer(baseURL, process) {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (process.exitCode !== null) throw new Error(`local layout Worker exited ${process.exitCode}`);
+    try {
+      const response = await fetch(`${baseURL}/zh`, { redirect: "manual" });
+      if (response.status === 200) return;
+    } catch {
+      // The isolated Worker is still starting.
+    }
+    await new Promise(resolvePromise => setTimeout(resolvePromise, 250));
+  }
+  throw new Error("local layout Worker did not become ready");
+}
+
+async function assertControls(baseURL, token) {
+  for (const path of protectedPages) {
+    const signedIn = await fetch(`${baseURL}${path}`, {
+      headers: { cookie: `smartlingo_session=${token}` },
+      redirect: "manual",
+    });
+    if (signedIn.status !== 200) throw new Error(`authenticated page control failed: ${path} returned ${signedIn.status}`);
+    const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
+    if (![302, 307, 308].includes(anonymous.status)) throw new Error(`anonymous page control failed: ${path} returned ${anonymous.status}`);
+  }
+  for (const path of protectedApis) {
+    const signedIn = await fetch(`${baseURL}${path}`, {
+      headers: { cookie: `smartlingo_session=${token}` },
+      redirect: "manual",
+    });
+    if (signedIn.status !== 200) throw new Error(`authenticated API control failed: ${path} returned ${signedIn.status}`);
+    const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
+    if (anonymous.status !== 401) throw new Error(`anonymous API control failed: ${path} returned ${anonymous.status}`);
+  }
+  process.stdout.write("Authenticated layout controls verified: 6 pages + 6 APIs return 200; anonymous controls still redirect or return 401.\n");
+}
+
+async function stopChild(child) {
+  if (!child || child.exitCode !== null) return;
+  child.kill("SIGTERM");
+  await Promise.race([
+    new Promise(resolvePromise => child.once("close", resolvePromise)),
+    new Promise(resolvePromise => setTimeout(resolvePromise, 3000)),
+  ]);
+  if (child.exitCode === null) child.kill("SIGKILL");
+}
+
+async function main() {
+  await Promise.all([
+    access(join(projectRoot, "dist", "server", "index.js")),
+    access(join(projectRoot, "dist", "client")),
+    access(join(projectRoot, "drizzle", "0022_smartlingo_learning_paths.sql")),
+  ]);
+  const work = await mkdtemp(join(tmpdir(), "smartlingo-layout-release-"));
+  const state = join(work, "state");
+  const config = join(work, "wrangler.jsonc");
+  const fixture = join(work, "fixture.sql");
+  const sessionCookieFile = join(work, "session-cookie");
+  const token = randomBytes(32).toString("base64url");
+  const sessionHash = createHash("sha256").update(token).digest("base64");
+  const port = await freePort();
+  const baseURL = `http://127.0.0.1:${port}`;
+  let worker = null;
+
+  const isolatedEnv = { ...process.env };
+  delete isolatedEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  delete isolatedEnv.CLERK_SECRET_KEY;
+  Object.assign(isolatedEnv, {
+    CI: "1",
+    WRANGLER_SEND_METRICS: "false",
+    WRANGLER_WRITE_LOGS: "false",
+    WRANGLER_LOG_PATH: join(work, "wrangler.log"),
+    MINIFLARE_REGISTRY_PATH: join(work, "registry"),
+  });
+
+  try {
+    await writeFile(config, JSON.stringify({
+      $schema: join(projectRoot, "node_modules", "wrangler", "config-schema.json"),
+      name: "smartlingo-layout-release",
+      main: join(projectRoot, "dist", "server", "index.js"),
+      compatibility_date: "2026-05-15",
+      compatibility_flags: ["nodejs_compat"],
+      no_bundle: true,
+      find_additional_modules: true,
+      rules: [{ type: "ESModule", globs: ["**/*.js", "**/*.mjs"] }],
+      assets: { directory: join(projectRoot, "dist", "client"), binding: "ASSETS" },
+      d1_databases: [{
+        binding: "DB",
+        database_name: "smartlingo-layout-release",
+        database_id: "00000000-0000-4000-8000-000000000001",
+        migrations_dir: join(projectRoot, "drizzle"),
+      }],
+      r2_buckets: [{ binding: "BUCKET", bucket_name: "smartlingo-layout-release-media" }],
+    }), { mode: 0o600 });
+    await writeFile(fixture, `
+INSERT INTO users (id,email,display_name,password_hash,preferred_language,created_at) VALUES
+ ('layout-user','layout-user@smartlingo.invalid','Layout Learner','disabled-local-fixture','en',1785680000),
+ ('layout-peer','layout-peer@smartlingo.invalid','Layout Peer','disabled-local-fixture','zh',1785680001);
+INSERT INTO sessions (id,user_id,clerk_session_id,expires_at,created_at) VALUES
+ ('${sessionHash}','layout-user','layout-local-session',4102444800,1785680002);
+INSERT INTO smartlingo_language_class_members (id,class_id,user_id,role,status,joined_at,updated_at) VALUES
+ ('layout-en-member','class_official_en','layout-user','student','active',1785680003,1785680003),
+ ('layout-es-member','class_official_es','layout-user','student','active',1785680004,1785680004);
+INSERT INTO smartlingo_placement_attempts
+ (id,user_id,class_id,path_id,entry_mode,status,current_difficulty,active_seconds,vocabulary_score,reading_score,writing_score,listening_score,dialogue_score,overall_score,recommended_level,started_at,completed_at,created_at,updated_at)
+ VALUES ('layout-placement','layout-user','class_official_en','path_en_a1','beginner','completed',1,900,82,78,75,80,79,79,'beginner',1785680100,1785681000,1785680100,1785681000);
+INSERT INTO smartlingo_placement_attempts
+ (id,user_id,class_id,path_id,entry_mode,status,current_difficulty,active_seconds,last_resumed_at,started_at,created_at,updated_at)
+ VALUES ('layout-placement-active','layout-user','class_official_es','path_es_a1','adaptive','in_progress',3,45,1785682000,1785681900,1785681900,1785682000);
+INSERT INTO community_topics (id,user_id,category,title,body,created_at,updated_at) VALUES
+ ('layout-topic','layout-peer','learning','Practice together / 一起练习','Share one phrase used today. / 分享一句今天使用的表达。',1785681100,1785681200);
+INSERT INTO community_replies (id,topic_id,user_id,body,created_at) VALUES
+ ('layout-reply','layout-topic','layout-user','I reviewed greetings. / 我复习了问候表达。',1785681200);
+INSERT INTO message_threads (id,kind,subject,created_by,created_at,updated_at) VALUES
+ ('layout-check','group','Daily practice / 每日练习','layout-user',1785681300,1785681500);
+INSERT INTO message_participants (id,thread_id,user_id,last_read_at,deleted_at) VALUES
+ ('layout-participant-user','layout-check','layout-user',1785681300,NULL),
+ ('layout-participant-peer','layout-check','layout-peer',0,NULL);
+INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
+ ('layout-message-1','layout-check','layout-peer','Ready for speaking practice? / 准备好口语练习了吗？',1785681400,NULL),
+ ('layout-message-2','layout-check','layout-user','Yes—start with greetings. / 好的，从问候语开始。',1785681500,NULL);
+`, { mode: 0o600 });
+    await writeFile(sessionCookieFile, `${token}\n`, { mode: 0o600 });
+
+    const common = ["--local", "--persist-to", state, "--config", config];
+    await run(process.execPath, [wrangler, "d1", "migrations", "apply", "DB", ...common], { cwd: projectRoot, env: isolatedEnv });
+    await run(process.execPath, [wrangler, "d1", "execute", "DB", ...common, "--file", fixture, "-y"], { cwd: projectRoot, env: isolatedEnv });
+
+    worker = spawn(process.execPath, [
+      wrangler, "dev", ...common, "--ip", "127.0.0.1", "--port", String(port), "--log-level", "warn",
+    ], { cwd: projectRoot, env: isolatedEnv, stdio: ["ignore", "pipe", "pipe"] });
+    worker.stdout.on("data", () => {});
+    worker.stderr.on("data", () => {});
+    await waitForServer(baseURL, worker);
+    await assertControls(baseURL, token);
+    const verified = await run(process.execPath, [verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile], {
+      cwd: projectRoot,
+      env: isolatedEnv,
+    });
+    process.stdout.write(verified.stdout);
+  } finally {
+    await stopChild(worker);
+    await rm(work, { recursive: true, force: true });
+  }
+}
+
+main().catch(error => {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.exitCode = 1;
+});

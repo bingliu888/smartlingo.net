@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { type AnySQLiteColumn, check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -997,6 +997,40 @@ export const lingoIntroducerRewardLedger = sqliteTable("smartlingo_introducer_re
 ]);
 
 /**
+ * Exact, versioned unit identities for every published language path. Learning
+ * plans reference this registry so a position cannot name a fabricated unit,
+ * cross a language path, or pair a real unit with the wrong stage.
+ */
+export const lingoLearningPathUnits = sqliteTable("smartlingo_learning_path_units", {
+  id: text("id").primaryKey(),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  targetLanguage: text("target_language").notNull(),
+  stageId: text("stage_id").notNull(),
+  sequence: integer("sequence").notNull(),
+  unitKey: text("unit_key").notNull(),
+  prerequisiteUnitId: text("prerequisite_unit_id").references(
+    (): AnySQLiteColumn => lingoLearningPathUnits.id,
+    { onDelete: "restrict" },
+  ),
+  availability: text("availability").notNull(),
+  contentVersion: text("content_version").notNull(),
+  sourceType: text("source_type").notNull().default("smartlingo_original"),
+}, (table) => [
+  check("smartlingo_path_unit_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_path_unit_stage_ck", sql`${table.stageId} IN ('foundation', 'everyday', 'independent')`),
+  check("smartlingo_path_unit_sequence_ck", sql`${table.sequence} BETWEEN 1 AND 9`),
+  check("smartlingo_path_unit_stage_sequence_ck", sql`(${table.stageId} = 'foundation' AND ${table.sequence} BETWEEN 1 AND 3) OR (${table.stageId} = 'everyday' AND ${table.sequence} BETWEEN 4 AND 6) OR (${table.stageId} = 'independent' AND ${table.sequence} BETWEEN 7 AND 9)`),
+  check("smartlingo_path_unit_key_ck", sql`length(trim(${table.unitKey})) BETWEEN 1 AND 80`),
+  check("smartlingo_path_unit_prerequisite_ck", sql`(${table.sequence} = 1 AND ${table.prerequisiteUnitId} IS NULL) OR (${table.sequence} > 1 AND ${table.prerequisiteUnitId} IS NOT NULL)`),
+  check("smartlingo_path_unit_availability_ck", sql`${table.availability} IN ('available', 'preview')`),
+  check("smartlingo_path_unit_version_ck", sql`length(trim(${table.contentVersion})) BETWEEN 1 AND 48`),
+  check("smartlingo_path_unit_source_ck", sql`${table.sourceType} = 'smartlingo_original'`),
+  uniqueIndex("smartlingo_path_unit_path_key_uq").on(table.pathId, table.unitKey),
+  uniqueIndex("smartlingo_path_unit_path_sequence_uq").on(table.pathId, table.sequence),
+  index("smartlingo_path_unit_path_stage_idx").on(table.pathId, table.targetLanguage, table.stageId, table.sequence),
+]);
+
+/**
  * One durable onboarding plan is retained per learner and language path.
  * Switching languages changes only the active marker; a later save updates
  * preferences without erasing the learner's current stage or unit.
@@ -1012,7 +1046,7 @@ export const lingoLearningPlans = sqliteTable("smartlingo_learning_plans", {
   entryMode: text("entry_mode").notNull(),
   contentVersion: text("content_version").notNull(),
   currentStageId: text("current_stage_id"),
-  currentUnitId: text("current_unit_id"),
+  currentUnitId: text("current_unit_id").references(() => lingoLearningPathUnits.id, { onDelete: "restrict" }),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),

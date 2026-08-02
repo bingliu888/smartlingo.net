@@ -18,7 +18,7 @@ export default async function LearnPage({ params }: { params: Promise<{ lang: st
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
-    <main className="learning-page">
+    <main className="learning-page" data-layout-page="learning">
       <SiteHeader lang={lang} />
       <LearningWorkspace lang={lang} classId={classId} />
       <SiteFooter lang={lang} />

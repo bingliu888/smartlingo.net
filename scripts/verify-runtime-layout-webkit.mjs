@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -20,7 +20,7 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/",
   "/classes",
   "/programs",
-  "/classes/class_official_en/placement",
+  "/classes/class_official_es/placement",
   "/classes/class_official_en/learn",
   "/community",
   "/messages",
@@ -32,15 +32,24 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/auth/login",
 ]);
 
+export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
+  "/classes",
+  "/classes/class_official_es/placement",
+  "/classes/class_official_en/learn",
+  "/community",
+  "/messages",
+  "/messages/live/layout-check",
+]);
+
 const expectedPageNames = Object.freeze({
   "/": "home",
-  "/classes": "auth",
+  "/classes": "classes",
   "/programs": "programs",
-  "/classes/class_official_en/placement": "auth",
-  "/classes/class_official_en/learn": "auth",
-  "/community": "auth",
-  "/messages": "auth",
-  "/messages/live/layout-check": "auth",
+  "/classes/class_official_es/placement": "placement",
+  "/classes/class_official_en/learn": "learning",
+  "/community": "community",
+  "/messages": "messages",
+  "/messages/live/layout-check": "live-chat",
   "/assistant": "assistant",
   "/project": "project",
   "/project/day/2026-08-02": "project",
@@ -50,13 +59,13 @@ const expectedPageNames = Object.freeze({
 
 const requiredHooks = Object.freeze({
   "/": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/classes": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
+  "/classes": { fills: 4, tracks: 2, readableCopy: 1, textFits: 1 },
   "/programs": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
-  "/classes/class_official_en/placement": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/classes/class_official_en/learn": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/community": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/messages": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/messages/live/layout-check": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
+  "/classes/class_official_es/placement": { fills: 2, readableCopy: 1, textFits: 1 },
+  "/classes/class_official_en/learn": { fills: 2, readableCopy: 1, textFits: 1 },
+  "/community": { fills: 1, tracks: 3, readableCopy: 1, textFits: 1 },
+  "/messages": { fills: 1, textFits: 1 },
+  "/messages/live/layout-check": { fills: 1, textFits: 1 },
   "/assistant": { fills: 2, readableCopy: 1 },
   "/project": { fills: 2, tracks: 1, readableCopy: 1, textFits: 1 },
   "/project/day/2026-08-02": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
@@ -501,17 +510,21 @@ function fail(message) {
 }
 
 function parseArgs(argv) {
-  const options = { baseURL: "http://127.0.0.1:4173", routes: [] };
+  const options = { baseURL: "http://127.0.0.1:4173", routes: [], sessionCookie: null, sessionCookieFile: null };
   for (let index = 0; index < argv.length; index += 1) {
-    if (!argv[index + 1]) fail("usage: verify-runtime-layout-webkit --base-url <url> [--route <path>]");
+    if (!argv[index + 1]) fail("usage: verify-runtime-layout-webkit --base-url <url> [--route <path>] [--session-cookie-file <0600-local-fixture-file>]");
     if (argv[index] === "--base-url") options.baseURL = argv[index + 1];
     else if (argv[index] === "--route") options.routes.push(argv[index + 1]);
-    else fail("usage: verify-runtime-layout-webkit --base-url <url> [--route <path>]");
+    else if (argv[index] === "--session-cookie-file") options.sessionCookieFile = argv[index + 1];
+    else fail("usage: verify-runtime-layout-webkit --base-url <url> [--route <path>] [--session-cookie-file <0600-local-fixture-file>]");
     index += 1;
   }
   const parsed = new URL(options.baseURL);
   if (!/^https?:$/.test(parsed.protocol)) fail("base URL must use http or https");
   options.baseURL = parsed.href.endsWith("/") ? parsed.href : `${parsed.href}/`;
+  if (options.sessionCookieFile) {
+    if (!["127.0.0.1", "localhost"].includes(parsed.hostname)) fail("session cookies are allowed only for a loopback layout fixture");
+  }
   if (options.routes.some(route => !SMARTLINGO_LAYOUT_ROUTES.includes(route))) {
     fail("every --route must be in SMARTLINGO_LAYOUT_ROUTES");
   }
@@ -537,7 +550,14 @@ async function run(command, args, options = {}) {
 
 export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
+  if (options.sessionCookieFile) options.sessionCookie = (await readFile(options.sessionCookieFile, "utf8")).trim();
+  if (options.sessionCookie && !/^[A-Za-z0-9_-]{16,128}$/.test(options.sessionCookie)) {
+    fail("local fixture session cookie has an invalid format");
+  }
   const selectedRoutes = options.routes.length ? [...new Set(options.routes)] : SMARTLINGO_LAYOUT_ROUTES;
+  if (selectedRoutes.some(route => SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)) && !options.sessionCookie) {
+    fail("authenticated layout routes require --session-cookie-file backed by an ephemeral local D1 session");
+  }
   const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const work = await mkdtemp(join(tmpdir(), "smartlingo-runtime-layout-"));
   try {
@@ -579,11 +599,20 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
     for (const routes of routeBatches) {
       await writeFile(configPath, JSON.stringify({
         baseURL: options.baseURL,
-        routes: routes.map(route => ({ route, loadPath: route })),
+        routes: routes.map(route => ({
+          route,
+          loadPath: route,
+          readySelector: route === "/classes/class_official_en/learn"
+            ? '[data-layout-fill="five-skill-workspace"][data-layout-ready="true"]'
+            : SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)
+              ? '[data-layout-ready="true"]'
+              : "[data-layout-page]",
+        })),
         languages: SMARTLINGO_LAYOUT_LANGUAGES,
         viewports: SMARTLINGO_VIEWPORTS,
         collectorSource: collectSmartLingoRuntimeLayout.toString(),
         settleMilliseconds: 700,
+        sessionCookieValue: options.sessionCookie,
       }));
       const { stdout } = await run(executable, [configPath]);
       reports.push(...stdout.split("\n").filter(line => line.startsWith("{")).map(line => JSON.parse(line)));
@@ -594,6 +623,17 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
     const failures = [];
     for (const entry of reports) {
       const expectedPage = expectedPageNames[entry.route];
+      const expectedPath = `/${entry.language}${entry.route === "/" ? "" : entry.route}`;
+      const actualPath = new URL(entry.report.url).pathname;
+      if (actualPath !== expectedPath) {
+        failures.push({
+          route: entry.route,
+          language: entry.language,
+          viewport: entry.viewport.id,
+          issues: [{ code: "path-mismatch", actual: actualPath, expected: expectedPath, url: entry.report.url }],
+        });
+        continue;
+      }
       if (entry.report.pageName !== expectedPage) {
         failures.push({
           route: entry.route,
