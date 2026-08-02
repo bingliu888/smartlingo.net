@@ -135,7 +135,7 @@ async function ensureClerkUser(
 ) {
   const normalizedEmail = email.trim().toLowerCase();
   let user = await db().prepare(
-    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? LIMIT 1",
+    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
   ).bind(clerkUserId).first<ClerkIdentityRow>();
 
   if (user) {
@@ -164,7 +164,7 @@ async function ensureClerkUser(
       "UPDATE users SET clerk_user_id = ? WHERE id = ? AND (clerk_user_id IS NULL OR clerk_user_id = ?)",
     ).bind(clerkUserId, emailUser.id, clerkUserId).run();
     user = await db().prepare(
-      "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? LIMIT 1",
+      "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
     ).bind(clerkUserId).first<ClerkIdentityRow>();
     if (user) return applyBootstrapAdmin(user.id, normalizedEmail);
   }
@@ -186,7 +186,7 @@ async function ensureClerkUser(
     now,
   ).run();
   user = await db().prepare(
-    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? LIMIT 1",
+    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
   ).bind(clerkUserId).first<ClerkIdentityRow>();
   if (!user) {
     const conflict = await db().prepare(
@@ -257,7 +257,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
     try {
       const now = Math.floor(Date.now() / 1000);
       user = await db().prepare(
-        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.role FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ? AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
+        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.role FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN platform_member_access a ON a.user_id = u.id WHERE s.id = ? AND COALESCE(a.status, 'active') = 'active' AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
       ).bind(await sha256(token), now).first<SessionUser>();
     } catch {
       // A stale legacy session cookie must not turn a public page into an error page.
@@ -288,7 +288,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
           "zh",
         );
         user = await db().prepare(
-          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage, role FROM users WHERE clerk_user_id = ? LIMIT 1",
+          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage, role FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
         ).bind(clerkUser.id).first<SessionUser>();
       } catch {
         // Identity conflicts fail closed and must be resolved by an Admin.
