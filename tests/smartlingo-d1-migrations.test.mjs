@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 23);
-  assert.equal(result.firstRunApplied, 23);
+  assert.equal(result.migrationCount, 24);
+  assert.equal(result.firstRunApplied, 24);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0022_smartlingo_learning_paths");
+  assert.equal(result.newestMigration, "0023_smartlingo_quick_courses");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -36,6 +36,9 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     vocabularyProgressId: "d1-smoke-vocabulary-progress",
     learningPathUnitCount: 108,
     learningPlanId: "d1-smoke-plan-ar",
+    quickCourseCount: 36,
+    freeQuickCourseCount: 12,
+    quickCourseEnrollmentId: "d1-smoke-quick-enrollment",
   });
 });
 

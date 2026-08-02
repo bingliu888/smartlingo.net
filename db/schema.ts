@@ -1067,6 +1067,49 @@ export const lingoLearningPlans = sqliteTable("smartlingo_learning_plans", {
   index("smartlingo_learning_plan_path_idx").on(table.pathId, table.targetLanguage),
 ]);
 
+/** Admin-configurable beginner fast tracks. `is_free` is stored in D1 so a
+ * course can change access policy without a new frontend release. */
+export const lingoQuickCourseOfferings = sqliteTable("smartlingo_quick_course_offerings", {
+  id: text("id").primaryKey(),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  targetLanguage: text("target_language").notNull(),
+  durationDays: integer("duration_days").notNull(),
+  level: text("level").notNull().default("beginner"),
+  curriculumVersion: text("curriculum_version").notNull(),
+  isFree: integer("is_free", { mode: "boolean" }).notNull().default(false),
+  status: text("status").notNull().default("published"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_quick_course_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_quick_course_duration_ck", sql`${table.durationDays} IN (7, 14, 30)`),
+  check("smartlingo_quick_course_level_ck", sql`${table.level} = 'beginner'`),
+  check("smartlingo_quick_course_free_ck", sql`${table.isFree} IN (0, 1)`),
+  check("smartlingo_quick_course_status_ck", sql`${table.status} IN ('published', 'paused', 'retired')`),
+  uniqueIndex("smartlingo_quick_course_path_duration_uq").on(table.pathId, table.durationDays),
+  index("smartlingo_quick_course_catalog_idx").on(table.status, table.targetLanguage, table.durationDays),
+]);
+
+export const lingoQuickCourseEnrollments = sqliteTable("smartlingo_quick_course_enrollments", {
+  id: text("id").primaryKey(),
+  offeringId: text("offering_id").notNull().references(() => lingoQuickCourseOfferings.id, { onDelete: "restrict" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  accessType: text("access_type").notNull(),
+  status: text("status").notNull().default("active"),
+  currentDay: integer("current_day").notNull().default(1),
+  startedAt: integer("started_at").notNull(),
+  completedAt: integer("completed_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_quick_enrollment_access_ck", sql`${table.accessType} IN ('free', 'entitled', 'payment_required')`),
+  check("smartlingo_quick_enrollment_status_ck", sql`${table.status} IN ('active', 'paused', 'completed', 'withdrawn', 'pending_payment')`),
+  check("smartlingo_quick_enrollment_day_ck", sql`${table.currentDay} BETWEEN 1 AND 30`),
+  uniqueIndex("smartlingo_quick_enrollment_user_offering_uq").on(table.userId, table.offeringId),
+  index("smartlingo_quick_enrollment_user_status_idx").on(table.userId, table.status, table.updatedAt),
+]);
+
 /**
  * A placement attempt belongs to one active member of one platform-provided
  * language community. Self-selected entry levels intentionally keep the five

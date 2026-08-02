@@ -23,6 +23,7 @@ import {
   type LearningDatabase,
   type OfficialClassAccess,
 } from "../../../../../lib/smartlingo-learning-access";
+import { buildQuickCourse, isQuickCourseDays } from "../../../../../lib/smartlingo-quick-courses";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,14 @@ type VocabularyProgressRow = {
 type PracticeEventRow = {
   sourceId: string;
   score: number | null;
+};
+
+type QuickEnrollmentRow = {
+  offeringId: string;
+  durationDays: number;
+  currentDay: number;
+  startedAt: number;
+  status: string;
 };
 
 type LearningBody = {
@@ -234,6 +243,23 @@ async function learningState(
   const progress = await vocabularyProgress(database, userId, access.pathId, sample.stableId, sample.version);
   const state = reviewState(sample.stableId, progress, Date.now());
   const nextMode = requestedMode ?? selectNextVocabularyReviewMode(state);
+  const quickEnrollment = await database.prepare(`SELECT e.offering_id AS offeringId,
+    offering.duration_days AS durationDays, e.current_day AS currentDay,
+    e.started_at AS startedAt, e.status
+    FROM smartlingo_quick_course_enrollments e
+    JOIN smartlingo_quick_course_offerings offering ON offering.id = e.offering_id
+    WHERE e.user_id = ? AND e.class_id = ? AND e.status IN ('active','completed')
+    ORDER BY e.updated_at DESC LIMIT 1`).bind(userId, access.classId).first<QuickEnrollmentRow>();
+  const quickCourse = quickEnrollment && isQuickCourseDays(quickEnrollment.durationDays)
+    ? buildQuickCourse(targetLanguage, quickEnrollment.durationDays)
+    : null;
+  const elapsedDay = quickEnrollment
+    ? Math.max(1, Math.floor((Math.floor(Date.now() / 1000) - quickEnrollment.startedAt) / 86400) + 1)
+    : 1;
+  const courseDay = quickCourse
+    ? quickCourse.schedule[Math.min(quickCourse.days, elapsedDay) - 1]
+    : null;
+  const assignedSkills = courseDay?.skills ?? SMARTLINGO_SKILLS;
   const dailyTasks = SMARTLINGO_SKILLS.map(skill => ({
     ...buildDailyPracticeItem(targetLanguage, skill, date, uiLanguage, level),
     speechLocale: SPEECH_LOCALES[targetLanguage],
@@ -252,7 +278,7 @@ async function learningState(
       status: event ? event.score === null ? "skipped" as const : "completed" as const : "available" as const,
       score: event?.score ?? null,
     };
-  });
+  }).filter(task => assignedSkills.includes(task.skill));
   const localizedMeaning = sample.meaning[uiLanguage];
   const localizedExampleTranslation = sample.exampleTranslation[uiLanguage];
 
@@ -278,6 +304,16 @@ async function learningState(
         dialogue: placement.dialogueScore,
       },
     },
+    quickCourse: quickCourse && courseDay ? {
+      offeringId: quickEnrollment!.offeringId,
+      title: quickCourse.title,
+      durationDays: quickCourse.days,
+      currentDay: courseDay.day,
+      scene: courseDay.scene,
+      skills: courseDay.skills,
+      estimatedMinutes: courseDay.estimatedMinutes,
+      curriculumVersion: quickCourse.curriculumVersion,
+    } : null,
     vocabulary: {
       taskId: sample.stableId,
       sampleId: sample.stableId,
