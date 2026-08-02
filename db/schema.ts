@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { type AnySQLiteColumn, check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { type AnySQLiteColumn, check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -1215,6 +1215,42 @@ export const lingoLearningActivityEvents = sqliteTable("smartlingo_learning_acti
   index("smartlingo_learning_activity_user_created_idx").on(table.userId, table.createdAt),
   index("smartlingo_learning_activity_user_domain_idx").on(table.userId, table.domain, table.createdAt),
   index("smartlingo_learning_activity_class_created_idx").on(table.classId, table.createdAt),
+]);
+
+/** One server-owned duration preference per learner and official class. */
+export const lingoDailyLearningPreferences = sqliteTable("smartlingo_daily_learning_preferences", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  sessionMinutes: integer("session_minutes").notNull().default(15),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.classId] }),
+  check("smartlingo_daily_preference_minutes_ck", sql`${table.sessionMinutes} IN (15, 30, 45, 60)`),
+  index("smartlingo_daily_preference_user_updated_idx").on(table.userId, table.updatedAt),
+]);
+
+/** Daily quiz results are graded and retained by the server; answer keys never leave it. */
+export const lingoDailyQuizAttempts = sqliteTable("smartlingo_daily_quiz_attempts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  localDate: text("local_date").notNull(),
+  targetLanguage: text("target_language").notNull(),
+  contentVersion: text("content_version").notNull(),
+  attemptNumber: integer("attempt_number").notNull(),
+  score: integer("score").notNull(),
+  correctCount: integer("correct_count").notNull(),
+  questionCount: integer("question_count").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_daily_quiz_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_daily_quiz_attempt_ck", sql`${table.attemptNumber} BETWEEN 1 AND 20`),
+  check("smartlingo_daily_quiz_score_ck", sql`${table.score} BETWEEN 0 AND 100`),
+  check("smartlingo_daily_quiz_counts_ck", sql`${table.questionCount} BETWEEN 1 AND 20 AND ${table.correctCount} BETWEEN 0 AND ${table.questionCount}`),
+  uniqueIndex("smartlingo_daily_quiz_attempt_uq").on(table.userId, table.classId, table.localDate, table.attemptNumber),
+  index("smartlingo_daily_quiz_user_date_idx").on(table.userId, table.localDate, table.createdAt),
+  index("smartlingo_daily_quiz_class_date_idx").on(table.classId, table.localDate, table.createdAt),
 ]);
 
 /**

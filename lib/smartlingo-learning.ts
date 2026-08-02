@@ -762,3 +762,143 @@ export function gradeDailyPracticeItem(
 ): PlacementAnswerScore {
   return scorePlacementAnswer(buildDailyInternalQuestion(language, skill, date, levelOverride), answer, skipped);
 }
+
+export const SMARTLINGO_SESSION_MINUTES = [15, 30, 45, 60] as const;
+export type SmartLingoSessionMinutes = (typeof SMARTLINGO_SESSION_MINUTES)[number];
+
+export type SmartLingoTeachingBlock = {
+  readonly skill: SmartLingoSkill | "quiz" | "community";
+  readonly minutes: number;
+  readonly title: BilingualText;
+};
+
+const SESSION_BLUEPRINTS: Record<SmartLingoSessionMinutes, readonly [SmartLingoTeachingBlock["skill"], number][]> = {
+  15: [["vocabulary", 5], ["listening", 3], ["dialogue", 4], ["quiz", 3]],
+  30: [["vocabulary", 8], ["listening", 5], ["dialogue", 6], ["reading", 5], ["quiz", 6]],
+  45: [["vocabulary", 10], ["listening", 7], ["dialogue", 8], ["reading", 7], ["writing", 6], ["quiz", 7]],
+  60: [["vocabulary", 12], ["listening", 9], ["dialogue", 10], ["reading", 9], ["writing", 8], ["quiz", 7], ["community", 5]],
+};
+
+const TEACHING_TITLES: Record<SmartLingoTeachingBlock["skill"], BilingualText> = {
+  vocabulary: { zh: "词汇闪卡与跟读", en: "Vocabulary flashcards & speaking" },
+  reading: { zh: "情境阅读", en: "Context reading" },
+  writing: { zh: "引导写作", en: "Guided writing" },
+  listening: { zh: "精听与辨音", en: "Focused listening" },
+  dialogue: { zh: "互动对话", en: "Interactive dialogue" },
+  quiz: { zh: "每日测验", en: "Daily quiz" },
+  community: { zh: "社区交流", en: "Community practice" },
+};
+
+export function buildDailyTeachingPlan(minutes: SmartLingoSessionMinutes): readonly SmartLingoTeachingBlock[] {
+  return SESSION_BLUEPRINTS[minutes].map(([skill, blockMinutes]) => ({
+    skill,
+    minutes: blockMinutes,
+    title: TEACHING_TITLES[skill],
+  }));
+}
+
+function normalizeSpeech(value: string): string {
+  return value.normalize("NFKC").toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, "").trim();
+}
+
+function editDistance(left: string, right: string): number {
+  const a = Array.from(left);
+  const b = Array.from(right);
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const previous = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diagonal = previous;
+    }
+  }
+  return row[b.length];
+}
+
+export type SmartLingoPronunciationFeedback = {
+  readonly score: number;
+  readonly target: string;
+  readonly heard: string;
+  readonly feedback: BilingualText;
+  readonly provisional: true;
+  readonly basis: "device_transcript_match";
+};
+
+/**
+ * Gives a conservative intelligibility signal from the device transcript.
+ * It is not acoustic phoneme analysis and never infers accent or identity.
+ */
+export function scorePronunciationTranscript(target: string, heard: string): SmartLingoPronunciationFeedback {
+  const expected = normalizeSpeech(target);
+  const observed = normalizeSpeech(heard);
+  const longest = Math.max(expected.length, observed.length, 1);
+  const score = observed ? clampScore((1 - editDistance(expected, observed) / longest) * 100) : 0;
+  const feedback = score >= 90
+    ? { zh: "设备清楚识别到了目标词。保持当前节奏，再跟读一次巩固。", en: "Your device recognized the target clearly. Repeat once more with the same rhythm." }
+    : score >= 70
+      ? { zh: "已经很接近。放慢一点，按音节或词块再读一次。", en: "Very close. Slow down and repeat in syllables or short chunks." }
+      : score >= 40
+        ? { zh: "设备识别到了部分内容。先听示范，再分段跟读并合起来。", en: "Your device caught part of it. Listen again, repeat in chunks, then combine them." }
+        : { zh: "这次设备未能清楚识别。请靠近麦克风，听示范后慢速重试。", en: "The device could not recognize it clearly. Move closer, replay the model, and retry slowly." };
+  return { score, target, heard, feedback, provisional: true, basis: "device_transcript_match" };
+}
+
+export type SmartLingoDailyQuizQuestion = {
+  readonly id: string;
+  readonly prompt: string;
+  readonly pronunciation: string;
+  readonly options: readonly { readonly id: string; readonly label: string }[];
+};
+
+function buildDailyQuizInternal(
+  language: SmartLingoLearningLanguage,
+  day: number,
+  date: string,
+  uiLang: SmartLingoInterfaceLanguage,
+) {
+  assertIsoDate(date);
+  const deck = getBeginnerVocabularyDeck(language, day);
+  return deck.map((sample, questionIndex) => {
+    const options = deterministicOrder(deck.map((candidate, optionIndex) => ({
+      id: `q${questionIndex}-o${optionIndex}`,
+      label: candidate.meaning[uiLang],
+      correct: candidate.stableId === sample.stableId,
+    })), `${date}:${language}:quiz:${questionIndex}`);
+    return {
+      question: {
+        id: `daily-quiz:${date}:${language}:${questionIndex + 1}`,
+        prompt: sample.form,
+        pronunciation: sample.pronunciation,
+        options: options.map(({ id, label }) => ({ id, label })),
+      } satisfies SmartLingoDailyQuizQuestion,
+      correctOptionId: options.find(option => option.correct)!.id,
+    };
+  });
+}
+
+export function buildDailyVocabularyQuiz(
+  language: SmartLingoLearningLanguage,
+  day: number,
+  date: string,
+  uiLang: SmartLingoInterfaceLanguage,
+): readonly SmartLingoDailyQuizQuestion[] {
+  return buildDailyQuizInternal(language, day, date, uiLang).map(item => item.question);
+}
+
+export function gradeDailyVocabularyQuiz(
+  language: SmartLingoLearningLanguage,
+  day: number,
+  date: string,
+  uiLang: SmartLingoInterfaceLanguage,
+  answers: Readonly<Record<string, string>>,
+) {
+  const items = buildDailyQuizInternal(language, day, date, uiLang);
+  const correctCount = items.filter(item => answers[item.question.id] === item.correctOptionId).length;
+  return {
+    score: Math.round((correctCount / Math.max(1, items.length)) * 100),
+    correctCount,
+    questionCount: items.length,
+  };
+}

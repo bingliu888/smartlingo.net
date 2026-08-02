@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 25);
-  assert.equal(result.firstRunApplied, 25);
+  assert.equal(result.migrationCount, 26);
+  assert.equal(result.firstRunApplied, 26);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0024_smartlingo_four_week_courses");
+  assert.equal(result.newestMigration, "0025_smartlingo_daily_coaching");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -171,6 +171,25 @@ test("0024 introduces the four-week catalog without deleting legacy enrollment e
   assert.match(schema, /sqliteTable\("smartlingo_quick_course_offerings_v2"/);
   assert.match(route, /FROM smartlingo_quick_course_offerings_v2/);
   assert.match(journal, /"tag": "0024_smartlingo_four_week_courses"/);
+});
+
+test("0025 stores daily session preferences and server-graded quiz history", async () => {
+  const [schema, migration, journal, route] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0025_smartlingo_daily_coaching.sql"),
+    read("../drizzle/meta/_journal.json"),
+    read("../app/api/classes/[classId]/learning/route.ts"),
+  ]);
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  for (const name of ["smartlingo_daily_learning_preferences", "smartlingo_daily_quiz_attempts"]) {
+    assert.ok(migration.includes(`CREATE TABLE \`${name}\``));
+    assert.match(schema, new RegExp(`sqliteTable\\("${name}"`));
+  }
+  assert.match(migration, /session_minutes` IN \(15,30,45,60\)/);
+  assert.match(migration, /smartlingo_daily_quiz_attempt_uq/);
+  assert.match(route, /gradeDailyVocabularyQuiz/);
+  assert.match(route, /scorePronunciationTranscript/);
+  assert.match(journal, /"tag": "0025_smartlingo_daily_coaching"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

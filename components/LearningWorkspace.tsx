@@ -82,6 +82,22 @@ type LearningPayload = {
     skills: Skill[];
     estimatedMinutes: number;
   } | null;
+  sessionPreference?: { minutes: 15 | 30 | 45 | 60 };
+  teachingPlan?: { skill: Skill | "quiz" | "community"; minutes: number; title: { zh: string; en: string } }[];
+  dailyQuiz?: {
+    contentVersion: string;
+    questions: { id: string; prompt: string; pronunciation?: string; options: { id: string; label: string }[] }[];
+  };
+  dailyQuizStatus?: { attemptNumber: number; score: number; correctCount: number; questionCount: number } | null;
+  dailyQuizResult?: { attemptNumber: number; score: number; correctCount: number; questionCount: number };
+  pronunciationFeedback?: {
+    score: number;
+    target: string;
+    heard: string;
+    feedback: { zh: string; en: string };
+    provisional: true;
+    basis: "device_transcript_match";
+  };
   error?: string;
 };
 
@@ -138,6 +154,10 @@ const COPY = {
     level: { beginner: "初级", intermediate: "中级", advanced: "高级" },
     today: "今日五技能",
     todayIntro: "每项任务均可提交或跳过；跳过会被如实记录，不会伪造成已掌握。",
+    sessionTitle: "选择今天的学习时长",
+    sessionIntro: "系统会按您可用的时间连续安排词汇跟读、听力、对话、阅读、写作和每日测验。",
+    sessionSaved: "今日学习时长已保存。",
+    teachingPlan: "今日连续学习安排",
     quickCourse: "旅行入门课程",
     courseDay: "课程日",
     visualCue: "视觉提示",
@@ -160,6 +180,10 @@ const COPY = {
       cloze: "根据例句语境补全目标词语。",
     },
     pronounce: "播放发音",
+    speakCompare: "跟读并比较",
+    speakingNow: "正在听您跟读",
+    pronunciationBasis: "暂定反馈：依据设备转写与目标词的匹配度，不是完整声学或口音判断。",
+    heard: "设备听到",
     reveal: "揭示答案",
     answer: "输入答案",
     grades: { again: "重来", hard: "困难", good: "良好", easy: "容易", suspend: "暂停此词" },
@@ -172,6 +196,12 @@ const COPY = {
     completed: "已完成",
     skipped: "已跳过",
     score: "得分",
+    quizKicker: "每日巩固",
+    quizTitle: "每日词汇测验",
+    quizIntro: "题目来自今天的词汇闪卡，由服务器判分并保存成绩。",
+    quizSubmit: "提交每日测验",
+    quizResult: "本次测验成绩",
+    quizRequired: "请先完成全部题目。",
     noTask: "今天暂时没有可用任务，请稍后再试。",
     response: "输入您的回答",
     voice: "语音输入",
@@ -208,6 +238,10 @@ const COPY = {
     level: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" },
     today: "Today's five skills",
     todayIntro: "Submit or skip each task. A skip is recorded honestly and is never presented as mastery.",
+    sessionTitle: "Choose today's study time",
+    sessionIntro: "SmartLingo builds a continuous session across speaking vocabulary, listening, dialogue, reading, writing, and the daily quiz.",
+    sessionSaved: "Today's study time is saved.",
+    teachingPlan: "Today's continuous learning plan",
     quickCourse: "BEGINNER TRAVEL COURSE",
     courseDay: "Course day",
     visualCue: "Visual cue",
@@ -230,6 +264,10 @@ const COPY = {
       cloze: "Complete the target word from its sentence context.",
     },
     pronounce: "Play pronunciation",
+    speakCompare: "Speak & compare",
+    speakingNow: "Listening to your repetition",
+    pronunciationBasis: "Provisional feedback: based on device transcript matching, not full acoustic or accent analysis.",
+    heard: "Device heard",
     reveal: "Reveal answer",
     answer: "Enter your answer",
     grades: { again: "Again", hard: "Hard", good: "Good", easy: "Easy", suspend: "Suspend" },
@@ -242,6 +280,12 @@ const COPY = {
     completed: "Completed",
     skipped: "Skipped",
     score: "Score",
+    quizKicker: "DAILY REVIEW",
+    quizTitle: "Daily vocabulary quiz",
+    quizIntro: "Questions come from today's flashcards. The server grades and saves each score.",
+    quizSubmit: "Submit daily quiz",
+    quizResult: "Quiz result",
+    quizRequired: "Answer every question first.",
     noTask: "No task is available right now. Please try again shortly.",
     response: "Enter your response",
     voice: "Voice input",
@@ -332,6 +376,9 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
   const [logError, setLogError] = useState("");
   const [notice, setNotice] = useState("");
   const [dictating, setDictating] = useState<Skill | null>(null);
+  const [pronouncing, setPronouncing] = useState(false);
+  const [pronunciationFeedback, setPronunciationFeedback] = useState<LearningPayload["pronunciationFeedback"]>(undefined);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const logRequestKey = `${calendarMonth}:${classId || "all"}:${timeZone}`;
   const logLoaded = loadedLogKey === logRequestKey;
 
@@ -473,6 +520,50 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
     recognition.start();
   }
 
+  function startPronunciationPractice(item: VocabularyItem) {
+    const sampleId = item.sampleId || item.stableId || item.taskId;
+    if (!sampleId) return;
+    const browser = window as typeof window & {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Recognition) {
+      setLearningError(lang === "zh" ? "当前浏览器不支持语音转写，请使用 Safari 或 Chrome 的最新版本。" : "Speech transcription is unavailable in this browser. Try the latest Safari or Chrome.");
+      return;
+    }
+    const recognition = new Recognition();
+    recognition.lang = item.speechLocale || classInfo?.targetLanguage || "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = event => {
+      const transcript = event.results[0]?.[0]?.transcript || "";
+      void postLearning({ action: "pronunciation_review", sampleId, transcript }, `pronunciation:${sampleId}`).then(result => {
+        if (result?.pronunciationFeedback) setPronunciationFeedback(result.pronunciationFeedback);
+      });
+    };
+    recognition.onend = () => setPronouncing(false);
+    recognition.onerror = () => setPronouncing(false);
+    setPronunciationFeedback(undefined);
+    setPronouncing(true);
+    recognition.start();
+  }
+
+  async function setSessionMinutes(minutes: 15 | 30 | 45 | 60) {
+    const result = await postLearning({ action: "set_session_minutes", sessionMinutes: minutes }, `session:${minutes}`);
+    if (result) setNotice(t.sessionSaved);
+  }
+
+  async function submitDailyQuiz() {
+    const questions = learning?.dailyQuiz?.questions || [];
+    if (!questions.length || questions.some(question => !quizAnswers[question.id])) {
+      setNotice(t.quizRequired);
+      return;
+    }
+    const result = await postLearning({ action: "submit_daily_quiz", answers: quizAnswers }, "daily-quiz");
+    if (result?.dailyQuizResult) setQuizAnswers({});
+  }
+
   function changeVocabularyMode(mode: VocabularyMode) {
     setVocabularyMode(mode);
     setRevealState({ key: "", revealed: false });
@@ -551,6 +642,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
         <div><p className="sl-eyebrow">{t.quickCourse}</p><h2>{learning.quickCourse.title[lang]}</h2><p>{t.courseDay} {learning.quickCourse.currentDay} / {learning.quickCourse.durationDays} · {learning.quickCourse.estimatedMinutes} {t.minutes}</p></div>
         <div><strong>{learning.quickCourse.scene[lang]}</strong><ul>{learning.quickCourse.skills.map(skill => <li key={skill}>{t[skill]}</li>)}</ul></div>
       </aside> : null}
+      {learning ? <section className="sl-session-planner" data-layout-fill="daily-session-planner">
+        <header><p className="sl-eyebrow">{t.teachingPlan}</p><h2>{t.sessionTitle}</h2><p>{t.sessionIntro}</p></header>
+        <div className="sl-duration-picker" role="group" aria-label={t.sessionTitle}>
+          {([15, 30, 45, 60] as const).map(minutes => <button type="button" key={minutes} disabled={Boolean(busyKey)} className={learning.sessionPreference?.minutes === minutes ? "active" : ""} aria-pressed={learning.sessionPreference?.minutes === minutes} onClick={() => setSessionMinutes(minutes)}>{minutes} {t.minutes}</button>)}
+        </div>
+        <ol className="sl-teaching-plan">{learning.teachingPlan?.map(block => <li key={block.skill}><strong>{localizedText(block.title, lang)}</strong><span>{block.minutes} {t.minutes}</span></li>)}</ol>
+      </section> : null}
       <header className="sl-section-heading" data-layout-fill="five-skill-heading">
         <p className="sl-eyebrow">{today}</p>
         <h2>{t.today}</h2>
@@ -598,8 +696,15 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
               <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale)}>
                 ◉ {t.pronounce}
               </button>
+              <button type="button" disabled={pronouncing || Boolean(busyKey)} onClick={() => startPronunciationPractice(vocabulary)}>◉ {pronouncing ? t.speakingNow : t.speakCompare}</button>
               <button type="button" onClick={() => setRevealState({ key: vocabularyKey, revealed: true })}>{t.reveal}</button>
             </div>
+            {pronunciationFeedback ? <div className="sl-pronunciation-feedback" aria-live="polite">
+              <strong>{t.score} {pronunciationFeedback.score} / 100</strong>
+              <p>{localizedText(pronunciationFeedback.feedback, lang)}</p>
+              <p><b>{t.heard}：</b>{pronunciationFeedback.heard}</p>
+              <small>{t.pronunciationBasis}</small>
+            </div> : null}
             {(vocabularyMode === "spelling" || vocabularyMode === "cloze") && !revealed ? <label className="sl-answer-field">
               <span>{t.answer}</span>
               <input value={answers.vocabulary || ""} maxLength={160} onChange={event => setAnswers(current => ({ ...current, vocabulary: event.target.value }))}/>
@@ -657,6 +762,15 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false }: 
           </article>;
         })}
       </div> : null}
+      {learning?.dailyQuiz?.questions?.length ? <section className="sl-daily-quiz" data-layout-fill="daily-vocabulary-quiz">
+        <header><p className="sl-eyebrow">{t.quizKicker}</p><h2>{t.quizTitle}</h2><p>{t.quizIntro}</p></header>
+        {learning.dailyQuizStatus ? <p className="sl-quiz-status">{t.quizResult}：{learning.dailyQuizStatus.score} / 100 · {learning.dailyQuizStatus.correctCount} / {learning.dailyQuizStatus.questionCount}</p> : null}
+        <div className="sl-quiz-questions">{learning.dailyQuiz.questions.map((question, index) => <fieldset key={question.id}>
+          <legend>{index + 1}. <span dir={learning.class?.targetLanguage === "ar" ? "rtl" : "ltr"}>{question.prompt}</span>{question.pronunciation ? <small>{question.pronunciation}</small> : null}</legend>
+          <div>{question.options.map(option => <button type="button" className={quizAnswers[question.id] === option.id ? "selected" : ""} aria-pressed={quizAnswers[question.id] === option.id} key={option.id} onClick={() => setQuizAnswers(current => ({ ...current, [question.id]: option.id }))}>{option.label}</button>)}</div>
+        </fieldset>)}</div>
+        <button type="button" className="sl-primary-action" disabled={Boolean(busyKey)} onClick={submitDailyQuiz}>{t.quizSubmit} →</button>
+      </section> : null}
     </section> : null}
 
     {!calendarOnly ? <section className="sl-community-entry" data-layout-fill="learning-community-entry">
@@ -693,8 +807,9 @@ function LearningWorkspaceStyles() {
   return <style>{`
     .sl-workspace,.sl-workspace *{box-sizing:border-box}.sl-workspace{width:100%;max-width:none;min-width:0;margin:0;padding:clamp(48px,7vw,92px) clamp(16px,4vw,58px) clamp(76px,9vw,126px);display:grid;gap:clamp(30px,5vw,64px);color:var(--ink)}.sl-workspace-heading,.sl-section-heading{width:100%;min-width:0;display:grid;gap:12px}.sl-workspace-heading h1{width:100%;max-width:none;margin:0;font:850 clamp(40px,6vw,76px)/1.03 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.055em;overflow-wrap:anywhere}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{max-width:76ch;margin:0;color:var(--muted);font-size:17px;line-height:1.72}.sl-eyebrow{margin:0;color:#087d62;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.sl-placement-gate,.sl-community-entry{width:100%;min-width:0;padding:clamp(24px,4vw,48px);display:flex;align-items:center;justify-content:space-between;gap:24px;border-radius:25px}.sl-placement-gate.pending{background:#fff1cb}.sl-placement-gate.complete{background:#e3f5ed}.sl-placement-gate>div,.sl-community-entry>div{min-width:0}.sl-placement-gate h2,.sl-community-entry h2,.sl-section-heading h2{width:100%;max-width:none;margin:8px 0 10px;font:820 clamp(28px,4vw,47px)/1.08 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em;overflow-wrap:anywhere}.sl-placement-gate p:last-child,.sl-community-entry p:last-child{max-width:76ch;margin:0;color:#58706a;line-height:1.65}.sl-primary-action,.sl-secondary-action{min-height:46px;padding:0 19px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:999px;font-size:16px;font-weight:850;text-align:center;text-decoration:none}.sl-primary-action{background:#0b9473;color:#fff}.sl-secondary-action{border-color:#a8bdb5;background:#fff;color:var(--ink)}button.sl-primary-action{font-family:inherit;cursor:pointer}.sl-daily-workspace,.sl-calendar-stack{width:100%;min-width:0;display:grid;gap:28px}.sl-skill-stack{width:100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}.sl-skill-card{width:100%;min-width:0;padding:clamp(22px,4vw,44px);border:1px solid #d7e0db;border-left:5px solid var(--skill-accent);border-radius:24px;background:#fffdf8;overflow:hidden}.sl-skill-card-head{width:100%;min-width:0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}.sl-skill-card-head>div:first-child{display:flex;align-items:baseline;gap:12px;min-width:0}.sl-skill-card-head span{color:var(--skill-accent);font-size:12px;font-weight:900}.sl-skill-card-head h3{margin:0;font:830 clamp(27px,4vw,42px)/1.08 Inter,"Noto Sans SC",sans-serif}.sl-skill-card-head>small{color:#65746f}.sl-mode-picker{min-width:0;display:flex;flex-wrap:wrap;gap:7px}.sl-mode-picker button,.sl-inline-actions button,.sl-grade-actions button,.sl-audio-action,.sl-voice-action,.sl-task-actions button{min-height:44px;padding:9px 14px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 16px/1.25 inherit;cursor:pointer}.sl-mode-picker button.active{border-color:#087d62;background:#e2f5ed;color:#08745e}.sl-vocabulary-practice,.sl-task-body{width:100%;min-width:0;margin-top:24px}.sl-mode-help{max-width:76ch;margin:0 0 20px;color:#5f706a;line-height:1.65}.sl-word-stage{width:100%;min-width:0;padding:clamp(24px,5vw,54px);display:grid;place-items:center;gap:10px;border-radius:20px;background:#edf7f2;text-align:center;overflow:hidden}.sl-word-stage strong{max-width:100%;font-size:clamp(34px,6vw,70px);line-height:1.12;overflow-wrap:anywhere}.sl-word-stage span{color:#547068;font-size:17px}.sl-inline-actions,.sl-grade-actions,.sl-task-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.sl-vocabulary-reveal{width:100%;min-width:0;margin-top:18px;padding:clamp(20px,3vw,32px);border:1px solid #cfe1d8;border-radius:18px;background:#fff}.sl-vocabulary-reveal>strong{display:block;font-size:clamp(28px,4vw,46px);overflow-wrap:anywhere}.sl-vocabulary-reveal>span,.sl-vocabulary-reveal>small{display:block;margin-top:6px;color:#64736e}.sl-vocabulary-reveal>p,.sl-vocabulary-reveal blockquote{max-width:76ch;line-height:1.65;overflow-wrap:anywhere}.sl-vocabulary-reveal blockquote{margin:16px 0;padding-left:16px;border-left:3px solid #0b9473}.sl-grade-help{color:#5b6d67}.sl-grade-actions button:last-child{color:#9b3e39}.sl-task-label{margin:0 0 8px;color:var(--skill-accent);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.sl-task-body h4{width:100%;max-width:none;margin:0;font-size:clamp(22px,3vw,34px);line-height:1.25;overflow-wrap:anywhere}.sl-task-context{width:100%;min-width:0;margin-top:18px;padding:18px;border-radius:15px;background:#f1f5f2}.sl-task-context span{font-size:12px;font-weight:900}.sl-task-context p{max-width:76ch;margin:8px 0 0;white-space:pre-wrap;line-height:1.68;overflow-wrap:anywhere}.sl-audio-action,.sl-voice-action{margin-top:16px;border-color:#8cc7b6;background:#eaf8f2;color:#08745e}.sl-answer-field{width:100%;min-width:0;margin-top:18px;display:grid;gap:8px;font-weight:850}.sl-answer-field input,.sl-answer-field textarea{width:100%;min-width:0;padding:15px;border:1px solid #bdccc5;border-radius:13px;background:#fff;color:var(--ink);font:16px/1.55 inherit}.sl-answer-field textarea{min-height:135px;resize:vertical}.sl-task-options{width:100%;min-width:0;margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.sl-task-options button{min-width:0;min-height:52px;padding:12px 15px;border:1px solid #cbd7d1;border-radius:13px;background:#fff;color:var(--ink);font:750 16px/1.4 inherit;text-align:left;overflow-wrap:anywhere}.sl-task-options button.selected{border-color:#0b9473;background:#e7f7f0;box-shadow:inset 0 0 0 1px #0b9473}.sl-task-actions{justify-content:flex-end}.sl-task-actions button{padding-inline:18px}.sl-task-actions button:disabled,.sl-grade-actions button:disabled{cursor:not-allowed;opacity:.55}.sl-task-status{margin:20px 0 0;padding:14px 17px;border-radius:12px;background:#e4f6ed;color:#08745e;font-weight:850}.sl-task-status.skipped{background:#f2eee4;color:#715e3f}.sl-empty-task,.sl-loading,.sl-calendar-loading{width:100%;margin:22px 0 0;padding:18px;border-radius:13px;background:#f2f5f2;color:#5b6b66}.sl-community-entry{background:#103f35;color:#fff}.sl-community-entry .sl-eyebrow{color:#65ddb7}.sl-community-entry h2{color:#fff}.sl-community-entry p:last-child{color:#c8dbd4}.sl-community-entry nav{display:flex;flex-wrap:wrap;gap:9px}.sl-notice,.sl-error{width:100%;margin:0;padding:14px 17px;border-radius:12px}.sl-notice{background:#e3f6ed;color:#08745e}.sl-error{background:#fff0ee;color:#9a3933}.sl-calendar-stack{padding-top:8px}.sl-calendar-stack>.sl-calendar-loading{margin:0}.sl-workspace button:focus-visible,.sl-workspace a:focus-visible,.sl-workspace input:focus-visible,.sl-workspace textarea:focus-visible{outline:3px solid rgba(10,142,111,.28);outline-offset:3px}
     .sl-vocabulary-cue{width:100%;min-width:0;margin:0 0 14px;padding:16px 20px;display:flex;align-items:center;gap:14px;border:1px solid #c9ded5;border-radius:18px;background:#fff}.sl-vocabulary-cue>span{flex:0 0 auto;font-size:clamp(38px,6vw,62px);line-height:1}.sl-vocabulary-cue>div{min-width:0;display:grid;gap:3px}.sl-vocabulary-cue small{color:#5c7169;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.sl-vocabulary-cue strong{font-size:clamp(18px,3vw,25px);overflow-wrap:anywhere}
+    .sl-session-planner,.sl-daily-quiz{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;gap:20px;border:1px solid #cfded7;border-radius:24px;background:#f6fbf8}.sl-session-planner header,.sl-daily-quiz header{width:100%;min-width:0;display:grid;gap:8px}.sl-session-planner h2,.sl-daily-quiz h2{width:100%;margin:0;font:820 clamp(27px,4vw,43px)/1.1 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-session-planner header>p:last-child,.sl-daily-quiz header>p:last-child{max-width:76ch;margin:0;color:#5f706a;line-height:1.65}.sl-duration-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.sl-duration-picker button{min-width:0;min-height:48px;padding:10px;border:1px solid #afc7bc;border-radius:13px;background:#fff;color:var(--ink);font:850 15px/1.2 inherit;cursor:pointer}.sl-duration-picker button.active{border-color:#087d62;background:#087d62;color:#fff}.sl-teaching-plan{margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px;list-style:none}.sl-teaching-plan li{min-width:0;padding:14px;display:grid;gap:4px;border-radius:13px;background:#fff}.sl-teaching-plan strong{overflow-wrap:anywhere}.sl-teaching-plan span{color:#64736e;font-size:13px}.sl-pronunciation-feedback{width:100%;min-width:0;margin-top:16px;padding:17px;border-radius:14px;background:#fff6d8}.sl-pronunciation-feedback strong{font-size:20px}.sl-pronunciation-feedback p{max-width:76ch;margin:8px 0;line-height:1.55;overflow-wrap:anywhere}.sl-pronunciation-feedback small{display:block;color:#6f6448;line-height:1.5}.sl-quiz-status{margin:0;padding:14px;border-radius:12px;background:#e2f5ed;color:#08745e;font-weight:850}.sl-quiz-questions{width:100%;min-width:0;display:grid;gap:12px}.sl-quiz-questions fieldset{min-width:0;margin:0;padding:18px;border:1px solid #cfdbd5;border-radius:16px;background:#fff}.sl-quiz-questions legend{max-width:100%;padding:0 5px;font:800 clamp(18px,2.5vw,25px)/1.35 inherit;overflow-wrap:anywhere}.sl-quiz-questions legend small{display:block;color:#64736e;font-size:14px;font-weight:600}.sl-quiz-questions fieldset>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sl-quiz-questions button{min-width:0;min-height:48px;padding:10px 13px;border:1px solid #cbd7d1;border-radius:12px;background:#fff;color:var(--ink);font:750 15px/1.35 inherit;text-align:left;overflow-wrap:anywhere;cursor:pointer}.sl-quiz-questions button.selected{border-color:#0b9473;background:#e7f7f0;box-shadow:inset 0 0 0 1px #0b9473}
     .sl-flashcard-progress{width:100%;min-width:0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.sl-flashcard-progress>strong{color:#08745e;font-size:15px}.sl-flashcard-progress>div{display:flex;gap:7px}.sl-flashcard-progress button{min-height:40px;padding:8px 13px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 14px/1.2 inherit;cursor:pointer}.sl-flashcard-progress button:disabled{cursor:not-allowed;opacity:.45}
-    @media(max-width:760px){.sl-workspace{padding-inline:16px}.sl-placement-gate,.sl-community-entry{display:grid;grid-template-columns:minmax(0,1fr)}.sl-placement-gate>.sl-primary-action,.sl-community-entry nav,.sl-community-entry nav a{width:100%}.sl-task-options{grid-template-columns:minmax(0,1fr)}.sl-task-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-task-actions button,.sl-inline-actions button,.sl-grade-actions button{width:100%}.sl-mode-picker{display:grid;grid-template-columns:1fr 1fr;width:100%}.sl-mode-picker button:last-child{grid-column:1/-1}.sl-skill-card{padding:20px 16px}.sl-skill-card-head{display:grid;grid-template-columns:minmax(0,1fr)}.sl-word-stage{padding:28px 16px}.sl-community-entry nav{display:grid;grid-template-columns:minmax(0,1fr)}}
+    @media(max-width:760px){.sl-workspace{padding-inline:16px}.sl-placement-gate,.sl-community-entry{display:grid;grid-template-columns:minmax(0,1fr)}.sl-placement-gate>.sl-primary-action,.sl-community-entry nav,.sl-community-entry nav a{width:100%}.sl-task-options,.sl-quiz-questions fieldset>div{grid-template-columns:minmax(0,1fr)}.sl-duration-picker{grid-template-columns:1fr 1fr}.sl-task-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-task-actions button,.sl-inline-actions button,.sl-grade-actions button{width:100%}.sl-mode-picker{display:grid;grid-template-columns:1fr 1fr;width:100%}.sl-mode-picker button:last-child{grid-column:1/-1}.sl-skill-card{padding:20px 16px}.sl-skill-card-head{display:grid;grid-template-columns:minmax(0,1fr)}.sl-word-stage{padding:28px 16px}.sl-community-entry nav{display:grid;grid-template-columns:minmax(0,1fr)}}
     @media(max-width:430px){.sl-workspace-heading h1{font-size:40px}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{font-size:16px}.sl-placement-gate,.sl-community-entry{padding:22px 17px}.sl-mode-picker button{padding-inline:8px}.sl-grade-actions{display:grid;grid-template-columns:minmax(0,1fr)}}
     .sl-course-day{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;border-radius:24px;background:#102f2a;color:#fff}.sl-course-day h2{width:100%;margin:8px 0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-course-day p{margin:0;color:#cce0d9}.sl-course-day>div:last-child{min-width:0;padding:18px;border-radius:16px;background:rgba(255,255,255,.08)}.sl-course-day strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.25;overflow-wrap:anywhere}.sl-course-day ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:7px;list-style:none}.sl-course-day li{padding:7px 10px;border-radius:999px;background:#dff5ec;color:#075d4a;font-size:12px;font-weight:850}@media(max-width:760px){.sl-course-day{grid-template-columns:minmax(0,1fr)}}
   `}</style>;

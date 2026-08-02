@@ -1,5 +1,7 @@
 import { createId, getDatabase, getSessionUser } from "../../../../../lib/auth";
 import {
+  buildDailyTeachingPlan,
+  buildDailyVocabularyQuiz,
   buildDailyPracticeItem,
   createVocabularyReviewState,
   getBeginnerVocabularyDeck,
@@ -7,14 +9,19 @@ import {
   getVocabularySample,
   getVocabularySampleById,
   gradeDailyPracticeItem,
+  gradeDailyVocabularyQuiz,
   scheduleVocabularyReview,
   selectNextVocabularyReviewMode,
+  scorePronunciationTranscript,
+  SMARTLINGO_LEARNING_CONTENT_VERSION,
   SMARTLINGO_LEARNING_LANGUAGE_CODES,
+  SMARTLINGO_SESSION_MINUTES,
   SMARTLINGO_SKILLS,
   SMARTLINGO_VOCABULARY_REVIEW_MODES,
   type SmartLingoInterfaceLanguage,
   type SmartLingoLearningLanguage,
   type SmartLingoLevel,
+  type SmartLingoSessionMinutes,
   type VocabularyReviewGrade,
   type VocabularyReviewMode,
   type VocabularyReviewState,
@@ -90,7 +97,13 @@ type LearningBody = {
   answer?: unknown;
   skipped?: unknown;
   channel?: unknown;
+  sessionMinutes?: unknown;
+  transcript?: unknown;
+  answers?: unknown;
 };
+
+type DailyPreferenceRow = { sessionMinutes: number };
+type DailyQuizRow = { attemptNumber: number; score: number; correctCount: number; questionCount: number; createdAt: number };
 
 const SPEECH_LOCALES: Record<SmartLingoLearningLanguage, string> = {
   zh: "zh-CN",
@@ -121,6 +134,17 @@ function isVocabularyMode(value: unknown): value is VocabularyReviewMode {
 
 function isVocabularyGrade(value: unknown): value is VocabularyReviewGrade {
   return typeof value === "string" && VOCABULARY_GRADES.includes(value as VocabularyReviewGrade);
+}
+
+function isSessionMinutes(value: unknown): value is SmartLingoSessionMinutes {
+  return typeof value === "number" && SMARTLINGO_SESSION_MINUTES.includes(value as SmartLingoSessionMinutes);
+}
+
+function quizAnswers(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length > 8 || entries.some(([key, answer]) => key.length > 120 || typeof answer !== "string" || answer.length > 80)) return null;
+  return Object.fromEntries(entries) as Record<string, string>;
 }
 
 function safeIdentifier(value: unknown, maximum = 160) {
@@ -316,6 +340,17 @@ async function learningState(
       progress: publicProgress(deckProgress),
     };
   });
+  const preference = await database.prepare(`SELECT session_minutes AS sessionMinutes
+    FROM smartlingo_daily_learning_preferences WHERE user_id = ? AND class_id = ? LIMIT 1`)
+    .bind(userId, access.classId).first<DailyPreferenceRow>();
+  const sessionMinutes = isSessionMinutes(Number(preference?.sessionMinutes))
+    ? Number(preference?.sessionMinutes) as SmartLingoSessionMinutes
+    : 15;
+  const latestQuiz = await database.prepare(`SELECT attempt_number AS attemptNumber, score,
+    correct_count AS correctCount, question_count AS questionCount, created_at AS createdAt
+    FROM smartlingo_daily_quiz_attempts
+    WHERE user_id = ? AND class_id = ? AND local_date = ?
+    ORDER BY attempt_number DESC LIMIT 1`).bind(userId, access.classId, date).first<DailyQuizRow>();
 
   return {
     class: {
@@ -384,6 +419,19 @@ async function learningState(
       activeIndex,
       scene: courseDay?.scene ?? null,
     },
+    sessionPreference: { minutes: sessionMinutes },
+    teachingPlan: buildDailyTeachingPlan(sessionMinutes),
+    dailyQuiz: {
+      contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
+      questions: buildDailyVocabularyQuiz(targetLanguage, vocabularyDay, date, uiLanguage),
+    },
+    dailyQuizStatus: latestQuiz ? {
+      attemptNumber: Number(latestQuiz.attemptNumber),
+      score: Number(latestQuiz.score),
+      correctCount: Number(latestQuiz.correctCount),
+      questionCount: Number(latestQuiz.questionCount),
+      createdAt: Number(latestQuiz.createdAt),
+    } : null,
     tasks,
     dailyTasks: tasks,
   };
@@ -467,6 +515,74 @@ export async function POST(
   const action = rawAction === "review_vocabulary" ? "vocabulary_review"
     : rawAction === "complete_practice" ? (body.skipped ? "skip_task" : "submit_task")
       : rawAction;
+
+  if (action === "set_session_minutes") {
+    if (!isSessionMinutes(body.sessionMinutes)) {
+      return Response.json({ error: "Session length must be 15, 30, 45, or 60 minutes" }, { status: 400 });
+    }
+    const now = Math.floor(Date.now() / 1000);
+    await auth.database.prepare(`INSERT INTO smartlingo_daily_learning_preferences
+      (user_id, class_id, session_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(user_id, class_id) DO UPDATE SET session_minutes = excluded.session_minutes,
+      updated_at = excluded.updated_at`).bind(auth.user.id, auth.classId, body.sessionMinutes, now, now).run();
+    return Response.json(await learningState(auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage));
+  }
+
+  if (action === "pronunciation_review") {
+    const sampleId = safeIdentifier(body.sampleId, 160);
+    const transcript = typeof body.transcript === "string" ? body.transcript.trim() : "";
+    if (!sampleId || !transcript || transcript.length > 240) {
+      return Response.json({ error: "A current vocabulary item and short device transcript are required" }, { status: 400 });
+    }
+    const currentState = await learningState(auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage);
+    const assigned = currentState.vocabularyDeck.find(item => item.sampleId === sampleId);
+    if (!assigned) return Response.json({ error: "This is not today's server-assigned vocabulary item" }, { status: 409 });
+    const feedback = scorePronunciationTranscript(assigned.form, transcript);
+    const sourceId = `${auth.classId}:${today}:${sampleId}:pronunciation`;
+    const now = Math.floor(Date.now() / 1000);
+    const inserted = await auth.database.prepare(`INSERT OR IGNORE INTO smartlingo_learning_activity_events
+      (id, user_id, class_id, domain, activity_type, duration_seconds, units, score,
+       source_type, source_id, created_at)
+      VALUES (?, ?, ?, 'dialogue', 'practice', 45, 1, ?, 'pronunciation_review', ?, ?) RETURNING id`)
+      .bind(createId(), auth.user.id, auth.classId, feedback.score, sourceId, now).first<{ id: string }>();
+    return Response.json({
+      ...await learningState(auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage),
+      pronunciationFeedback: feedback,
+      idempotent: !inserted,
+    });
+  }
+
+  if (action === "submit_daily_quiz") {
+    const answers = quizAnswers(body.answers);
+    if (!answers) return Response.json({ error: "Valid daily quiz answers are required" }, { status: 400 });
+    const state = await learningState(auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage);
+    const day = Number(state.vocabularyDeckMeta.day);
+    const assignedIds = new Set(state.dailyQuiz.questions.map(question => question.id));
+    if (Object.keys(answers).some(questionId => !assignedIds.has(questionId))) {
+      return Response.json({ error: "The quiz version is no longer current" }, { status: 409 });
+    }
+    const result = gradeDailyVocabularyQuiz(auth.access.targetLanguage, day, today, uiLanguage, answers);
+    const latest = await auth.database.prepare(`SELECT COALESCE(MAX(attempt_number), 0) AS attemptNumber
+      FROM smartlingo_daily_quiz_attempts WHERE user_id = ? AND class_id = ? AND local_date = ?`)
+      .bind(auth.user.id, auth.classId, today).first<{ attemptNumber: number }>();
+    const attemptNumber = Number(latest?.attemptNumber || 0) + 1;
+    if (attemptNumber > 20) return Response.json({ error: "Daily quiz retry limit reached" }, { status: 409 });
+    const now = Math.floor(Date.now() / 1000);
+    const attemptId = createId();
+    await auth.database.prepare(`INSERT INTO smartlingo_daily_quiz_attempts
+      (id, user_id, class_id, local_date, target_language, content_version, attempt_number,
+       score, correct_count, question_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(attemptId, auth.user.id, auth.classId, today, auth.access.targetLanguage,
+        SMARTLINGO_LEARNING_CONTENT_VERSION, attemptNumber, result.score, result.correctCount, result.questionCount, now).run();
+    await auth.database.prepare(`INSERT OR IGNORE INTO smartlingo_learning_activity_events
+      (id, user_id, class_id, domain, activity_type, duration_seconds, units, score,
+       source_type, source_id, created_at) VALUES (?, ?, ?, 'vocabulary', 'practice', 180, ?, ?, 'daily_quiz', ?, ?)`)
+      .bind(createId(), auth.user.id, auth.classId, result.questionCount, result.score, attemptId, now).run();
+    return Response.json({
+      ...await learningState(auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage),
+      dailyQuizResult: { ...result, attemptNumber },
+    });
+  }
 
   if (action === "vocabulary_review") {
     const sampleId = safeIdentifier(body.sampleId || body.taskId, 160);

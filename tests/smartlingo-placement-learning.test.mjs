@@ -8,14 +8,45 @@ import {
   SMARTLINGO_SKILLS,
   SMARTLINGO_VOCABULARY_SAMPLES,
   buildDailyPracticeItem,
+  buildDailyTeachingPlan,
+  buildDailyVocabularyQuiz,
   createVocabularyReviewState,
   evaluatePlacement,
   generateAdaptivePlacementQuestions,
   gradeDailyPracticeItem,
+  gradeDailyVocabularyQuiz,
   scheduleVocabularyReview,
   scorePlacementAnswer,
+  scorePronunciationTranscript,
   toClientPlacementQuestions,
 } from "../lib/smartlingo-learning.ts";
+
+test("daily session plans fill exactly 15, 30, 45, or 60 minutes", () => {
+  for (const minutes of [15, 30, 45, 60]) {
+    const plan = buildDailyTeachingPlan(minutes);
+    assert.equal(plan.reduce((total, block) => total + block.minutes, 0), minutes);
+    assert.equal(plan.at(-1)?.skill === "community" || plan.at(-1)?.skill === "quiz", true);
+    assert.ok(plan.every(block => block.title.zh && block.title.en));
+  }
+});
+
+test("pronunciation feedback is conservative, transcript-based, and never infers identity", () => {
+  const exact = scorePronunciationTranscript("buongiorno", "Buongiorno!");
+  const partial = scorePronunciationTranscript("buongiorno", "buon giorno");
+  assert.equal(exact.score, 100);
+  assert.ok(partial.score >= 80);
+  assert.equal(exact.provisional, true);
+  assert.equal(exact.basis, "device_transcript_match");
+  assert.doesNotMatch(JSON.stringify(exact), /nationality|ethnicity|accent origin/i);
+});
+
+test("daily vocabulary quiz exposes no answer key and is graded server-side", () => {
+  const questions = buildDailyVocabularyQuiz("it", 1, "2026-08-02", "en");
+  assert.equal(questions.length, 4);
+  assert.ok(questions.every(question => !JSON.stringify(question).includes("correctOptionId")));
+  const blank = gradeDailyVocabularyQuiz("it", 1, "2026-08-02", "en", {});
+  assert.deepEqual(blank, { score: 0, correctCount: 0, questionCount: 4 });
+});
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
