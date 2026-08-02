@@ -1,4 +1,18 @@
 /* Community layout that adapts without clipping fixed-width panels. */
+.community-rail .floating-community-members {
+  position: static;
+  inset: auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  height: auto;
+  margin-top: auto;
+  padding: 10px 12px;
+  box-shadow: none;
+  transform: none;
+}
+.community-rail .floating-community-members b { display: inline; }
+
 @media (max-width: 1120px) {
   .community-workspace {
     display: grid;
@@ -10,14 +24,16 @@
     grid-area: rail;
     min-width: 0;
     padding: 11px 18px;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
     gap: 7px;
-    overflow-x: auto;
+    overflow: visible;
   }
   .community-rail > strong { display: none; }
   .community-rail > p, .community-online { display: none; }
-  .community-rail button { width: auto; flex: 0 0 auto; white-space: nowrap; padding: 10px 12px; }
+  .community-rail button { width: 100%; min-width: 0; white-space: normal; padding: 10px 12px; }
+  .community-rail .floating-community-members { width: 100%; min-width: 0; height: 44px; margin: 0; }
   .topic-column { grid-area: topics; min-height: calc(100vh - 145px); border-right: 1px solid rgba(18,32,42,.12); }
   .discussion-column { grid-area: discussion; min-height: calc(100vh - 145px); }
   .member-column { display: none; }
@@ -28,6 +44,7 @@
   .community-rail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
   .community-rail button { width: 100%; min-width: 0; white-space: normal; }
   .community-rail button:last-of-type { grid-column: 1 / -1; }
+  .community-rail .floating-community-members { width: 100%; min-width: 0; }
   .topic-column { min-height: 460px; border-right: 0; }
   .topic-list { max-height: 300px; }
   .discussion-column { min-height: 560px; border-top: 1px solid rgba(18,32,42,.12); }

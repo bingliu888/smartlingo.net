@@ -120,12 +120,17 @@ async function main() {
   const baseURL = `http://127.0.0.1:${port}`;
   let worker = null;
 
-  const isolatedEnv = { ...process.env };
-  delete isolatedEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  delete isolatedEnv.CLERK_SECRET_KEY;
+  const allowedEnvironmentKeys = [
+    "PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "SHELL", "USER", "LOGNAME", "TERM",
+    "DEVELOPER_DIR", "SDKROOT", "SMARTLINGO_SWIFT_SDK",
+  ];
+  const isolatedEnv = Object.fromEntries(allowedEnvironmentKeys
+    .filter(key => typeof process.env[key] === "string")
+    .map(key => [key, process.env[key]]));
   Object.assign(isolatedEnv, {
     CI: "1",
     WRANGLER_SEND_METRICS: "false",
+    CLOUDFLARE_INCLUDE_PROCESS_ENV: "false",
     WRANGLER_WRITE_LOGS: "false",
     WRANGLER_LOG_PATH: join(work, "wrangler.log"),
     MINIFLARE_REGISTRY_PATH: join(work, "registry"),

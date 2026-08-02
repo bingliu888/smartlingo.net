@@ -341,7 +341,46 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
   }
 
   const overlaps = [];
-  const overlapCandidates = Array.from(document.querySelectorAll("[data-layout-overlap-check]"));
+  const overlapChecks = [];
+  const overlapCandidates = new Set(document.querySelectorAll([
+    "[data-layout-overlap-check]",
+    "[data-layout-fill] > :not(style):not(script):not(template):not(link):not(meta)",
+    "[data-layout-track] > :not(style):not(script):not(template):not(link):not(meta)",
+  ].join(",")));
+  const overlapIds = new Map(Array.from(overlapCandidates, (element, index) => [element, index]));
+  const checkedPairs = new Set();
+  const checkOverlapPair = (leftElement, rightElement) => {
+    if (leftElement === rightElement
+      || leftElement.contains(rightElement)
+      || rightElement.contains(leftElement)
+      || allowsOverlap(leftElement)
+      || allowsOverlap(rightElement)) return;
+    if (!overlapIds.has(leftElement)) overlapIds.set(leftElement, overlapIds.size);
+    if (!overlapIds.has(rightElement)) overlapIds.set(rightElement, overlapIds.size);
+    const leftId = overlapIds.get(leftElement);
+    const rightId = overlapIds.get(rightElement);
+    const pairKey = leftId < rightId ? `${leftId}:${rightId}` : `${rightId}:${leftId}`;
+    if (checkedPairs.has(pairKey)) return;
+    checkedPairs.add(pairKey);
+    const leftStyle = getComputedStyle(leftElement);
+    const rightStyle = getComputedStyle(rightElement);
+    const leftRect = leftElement.getBoundingClientRect();
+    const rightRect = rightElement.getBoundingClientRect();
+    if (!isVisible(leftElement, leftStyle, leftRect) || !isVisible(rightElement, rightStyle, rightRect)) return;
+    const overlapWidth = Math.min(leftRect.right, rightRect.right) - Math.max(leftRect.left, rightRect.left);
+    const overlapHeight = Math.min(leftRect.bottom, rightRect.bottom) - Math.max(leftRect.top, rightRect.top);
+    const measurement = {
+      first: selectorFor(leftElement),
+      second: selectorFor(rightElement),
+      visible: true,
+      overlapWidth,
+      overlapHeight,
+      firstRect: rectValue(leftRect),
+      secondRect: rectValue(rightRect),
+    };
+    overlapChecks.push(measurement);
+    if (overlapWidth > tolerance && overlapHeight > tolerance) overlaps.push(measurement);
+  };
   const siblingGroups = new Map();
   for (const element of overlapCandidates) {
     const parent = element.parentElement;
@@ -352,28 +391,16 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
   for (const elements of siblingGroups.values()) {
     for (let leftIndex = 0; leftIndex < elements.length; leftIndex += 1) {
       for (let rightIndex = leftIndex + 1; rightIndex < elements.length; rightIndex += 1) {
-        const leftElement = elements[leftIndex];
-        const rightElement = elements[rightIndex];
-        if (allowsOverlap(leftElement) || allowsOverlap(rightElement)) continue;
-        const leftStyle = getComputedStyle(leftElement);
-        const rightStyle = getComputedStyle(rightElement);
-        const leftRect = leftElement.getBoundingClientRect();
-        const rightRect = rightElement.getBoundingClientRect();
-        if (!isVisible(leftElement, leftStyle, leftRect) || !isVisible(rightElement, rightStyle, rightRect)) continue;
-        const overlapWidth = Math.min(leftRect.right, rightRect.right) - Math.max(leftRect.left, rightRect.left);
-        const overlapHeight = Math.min(leftRect.bottom, rightRect.bottom) - Math.max(leftRect.top, rightRect.top);
-        if (overlapWidth > tolerance && overlapHeight > tolerance) {
-          overlaps.push({
-            first: selectorFor(leftElement),
-            second: selectorFor(rightElement),
-            overlapWidth,
-            overlapHeight,
-            firstRect: rectValue(leftRect),
-            secondRect: rectValue(rightRect),
-          });
-        }
+        checkOverlapPair(elements[leftIndex], elements[rightIndex]);
       }
     }
+  }
+  const floatingCandidates = Array.from(keyElements).filter(element => {
+    const position = getComputedStyle(element).position;
+    return position === "fixed" || position === "sticky" || position === "absolute";
+  });
+  for (const floating of floatingCandidates) {
+    for (const element of keyElements) checkOverlapPair(floating, element);
   }
 
   return {
@@ -393,6 +420,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     textFits,
     headings,
     clipping,
+    overlapChecks,
     overlaps,
     viewportExceeds,
   };
@@ -646,7 +674,7 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
       const issues = findSmartLingoRuntimeLayoutIssues(entry.report, {
         viewport: entry.viewport,
         language: entry.language,
-        required: requiredHooks[entry.route] ?? { fills: 1 },
+        required: { overlapChecks: 1, ...(requiredHooks[entry.route] ?? { fills: 1 }) },
       });
       if (issues.length) failures.push({
         route: entry.route,

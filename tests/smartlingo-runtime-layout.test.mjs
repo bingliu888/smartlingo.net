@@ -57,6 +57,7 @@ test("serialized WebKit collector covers fill, track, readable, text, clipping, 
     "clientHeight",
     "textOverflow",
     "overlaps",
+    "overlapChecks",
     "viewportExceeds",
   ]) {
     assert.match(collectorSource, new RegExp(contract));
@@ -95,11 +96,13 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
   const codes = findSmartLingoRuntimeLayoutIssues(report, {
     language: "zh",
     viewport: { width: 390, height: 844 },
+    required: { overlapChecks: 1 },
   }).map(issue => issue.code);
   assert.ok(codes.includes("horizontal-overflow"));
   assert.ok(codes.includes("fill-surface-gap"));
   assert.ok(codes.includes("clipped-content"));
   assert.ok(codes.includes("content-overlap"));
+  assert.ok(codes.includes("missing-layout-hooks"));
   assert.ok(codes.includes("viewport-exceed"));
 });
 
@@ -139,13 +142,15 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /randomBytes\(32\)\.toString\("base64url"\)/);
   assert.match(releaseSource, /createHash\("sha256"\)\.update\(token\)\.digest\("base64"\)/);
   assert.match(releaseSource, /mkdtemp\(join\(tmpdir\(\), "smartlingo-layout-release-"\)\)/);
-  assert.match(releaseSource, /delete isolatedEnv\.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/);
-  assert.match(releaseSource, /delete isolatedEnv\.CLERK_SECRET_KEY/);
+  assert.match(releaseSource, /const allowedEnvironmentKeys = \[/);
+  assert.match(releaseSource, /Object\.fromEntries\(allowedEnvironmentKeys/);
+  assert.doesNotMatch(releaseSource, /\.\.\.process\.env/);
   assert.match(releaseSource, /const common = \["--local", "--persist-to", state, "--config", config\]/);
   assert.doesNotMatch(releaseSource, /--remote/);
   assert.match(releaseSource, /database_id: "00000000-0000-4000-8000-000000000001"/);
   assert.doesNotMatch(releaseSource, /\broutes:/);
   assert.match(releaseSource, /WRANGLER_SEND_METRICS: "false"/);
+  assert.match(releaseSource, /CLOUDFLARE_INCLUDE_PROCESS_ENV: "false"/);
   assert.match(releaseSource, /writeFile\(sessionCookieFile, `\$\{token\}\\n`, \{ mode: 0o600 \}\)/);
   assert.match(releaseSource, /"--session-cookie-file", sessionCookieFile/);
   assert.doesNotMatch(releaseSource, /"--session-cookie", token/);
@@ -161,5 +166,6 @@ test("full release matrix uses bounded fresh-WebKit batches and one merged count
   assert.match(runnerSource, /reports\.push\(\.\.\.stdout\.split/);
   assert.match(runnerSource, /expectedCount = selectedRoutes\.length \* SMARTLINGO_LAYOUT_LANGUAGES\.length \* SMARTLINGO_VIEWPORTS\.length/);
   assert.match(runnerSource, /code: "path-mismatch"/);
+  assert.match(runnerSource, /required: \{ overlapChecks: 1/);
   assert.match(swiftSource, /Double\(combinationCount\) \* 5\.0/);
 });
