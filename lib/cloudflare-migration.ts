@@ -3,7 +3,12 @@ const EXPORT_VERSION = 1;
 const MAX_LIMIT = 500;
 const MAX_OBJECT_CHUNK = 4 * 1024 * 1024;
 const INTERNAL_TABLE_PREFIXES = ["sqlite_", "_cf_", "__new_"];
-const INTERNAL_TABLES = new Set(["d1_migrations", "__drizzle_migrations", "__smartlingo_core_integrity_guard"]);
+const INTERNAL_TABLES = new Set([
+  "d1_migrations",
+  "__drizzle_migrations",
+  "__appgarden_migrations",
+  "__smartlingo_core_integrity_guard",
+]);
 
 type MigrationBindings = {
   DB?: D1Database;
