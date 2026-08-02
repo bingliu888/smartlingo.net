@@ -35,6 +35,9 @@ test("the shared header uses one accessible twelve-language text dropdown withou
     assert.match(catalog, new RegExp(`code: "${code}"`));
   }
   assert.match(menu, /中文与英文切换界面；其他选项设置目标学习语言/);
+  assert.match(menu, /currentInterface.*language\.code === lang/s);
+  assert.match(menu, /interface-language-current">\{currentInterface\.nativeName\}/);
+  assert.doesNotMatch(menu, /interface-language-current">\{current\.nativeName\}/);
   assert.match(menu, /window\.location\.assign\(`\/\$\{lang\}#\$\{anchor\}`\)/);
   assert.doesNotMatch(`${header}\n${menu}`, /I speak|我会说|母语选择/iu);
   assert.doesNotMatch(`${menu}\n${chooser}\n${home}`, /[\u{1F1E6}-\u{1F1FF}]{2}/u);

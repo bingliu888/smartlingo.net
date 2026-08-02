@@ -4,7 +4,7 @@ import {
   buildDailyVocabularyQuiz,
   buildDailyPracticeItem,
   createVocabularyReviewState,
-  getBeginnerVocabularyDeck,
+  getBeginnerSessionVocabularyDeck,
   getVocabularyVisualCue,
   getVocabularySample,
   getVocabularySampleById,
@@ -286,7 +286,7 @@ async function learningState(
     ? ((courseDay.day - 1) % 7) + 1
     : ((Number(date.slice(-2)) - 1) % 7) + 1;
   const vocabularySamples = level === "beginner"
-    ? getBeginnerVocabularyDeck(targetLanguage, vocabularyDay)
+    ? getBeginnerSessionVocabularyDeck(targetLanguage, vocabularyDay)
     : [getVocabularySample(targetLanguage, level)];
   const vocabularyProgressRows = await Promise.all(vocabularySamples.map(sample =>
     vocabularyProgress(database, userId, access.pathId, sample.stableId, sample.version)));

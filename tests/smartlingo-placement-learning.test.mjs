@@ -15,6 +15,7 @@ import {
   generateAdaptivePlacementQuestions,
   gradeDailyPracticeItem,
   gradeDailyVocabularyQuiz,
+  getBeginnerSessionVocabularyDeck,
   scheduleVocabularyReview,
   scorePlacementAnswer,
   scorePronunciationTranscript,
@@ -27,7 +28,34 @@ test("daily session plans fill exactly 15, 30, 45, or 60 minutes", () => {
     assert.equal(plan.reduce((total, block) => total + block.minutes, 0), minutes);
     assert.equal(plan.at(-1)?.skill === "community" || plan.at(-1)?.skill === "quiz", true);
     assert.ok(plan.every(block => block.title.zh && block.title.en));
+    assert.equal(plan.find(block => block.skill === "vocabulary")?.itemCount, 10);
   }
+});
+
+test("every beginner timed session assigns ten unique vocabulary cards", () => {
+  for (const language of SMARTLINGO_LEARNING_LANGUAGE_CODES) {
+    for (let day = 1; day <= 7; day += 1) {
+      const deck = getBeginnerSessionVocabularyDeck(language, day);
+      assert.equal(deck.length, 10, `${language} day ${day} must assign ten cards`);
+      assert.equal(new Set(deck.map(card => card.stableId)).size, 10);
+      assert.ok(deck.every(card => card.sourceType === "smartlingo_original"));
+    }
+  }
+});
+
+test("learning UI explains five skills plus quiz before time selection and starts a controllable timer", async () => {
+  const workspace = await read("../components/LearningWorkspace.tsx");
+  assert.ok(workspace.indexOf('className="sl-feature-overview"') < workspace.indexOf('className="sl-session-planner"'));
+  for (const skill of ["vocabulary", "reading", "writing", "listening", "dialogue"]) {
+    assert.match(workspace, new RegExp(`skillDetails\\.${skill}|skillDetails\\[skill\\]`));
+  }
+  assert.match(workspace, /skillDetails\.quiz/);
+  assert.match(workspace, /className="sl-session-start"/);
+  assert.match(workspace, /className=\{`sl-session-timer/);
+  assert.match(workspace, /setSessionStatus\("paused"\)|status === "paused" \? "running" : "paused"/);
+  assert.match(workspace, /quitSession/);
+  assert.match(workspace, /vocabularyItems: "10 vocabulary items"/);
+  assert.match(workspace, /position:fixed;left:max\(16px,env\(safe-area-inset-left\)\)/);
 });
 
 test("pronunciation feedback is conservative, transcript-based, and never infers identity", () => {

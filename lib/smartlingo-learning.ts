@@ -319,6 +319,26 @@ export function getBeginnerVocabularyDeck(
   }));
 }
 
+/**
+ * Ten unique cards for a 15-minute-or-longer learning session. The first four
+ * are today's new scene; the remaining six are spaced review/preview cards
+ * from the surrounding beginner scenes. This keeps the authored 7-day library
+ * stable while giving every session the ten vocabulary interactions promised
+ * in the learner UI.
+ */
+export function getBeginnerSessionVocabularyDeck(
+  language: SmartLingoLearningLanguage,
+  day: number,
+): readonly SmartLingoVocabularySample[] {
+  const normalizedDay = Math.max(1, Math.min(7, Math.trunc(day || 1)));
+  const orderedDays = [
+    normalizedDay,
+    ...Array.from({ length: 6 }, (_, index) => ((normalizedDay + index) % 7) + 1),
+  ];
+  const cards = orderedDays.flatMap(deckDay => getBeginnerVocabularyDeck(language, deckDay));
+  return cards.slice(0, 10);
+}
+
 export function getVocabularySampleById(
   language: SmartLingoLearningLanguage,
   sampleId: string,
@@ -770,6 +790,7 @@ export type SmartLingoTeachingBlock = {
   readonly skill: SmartLingoSkill | "quiz" | "community";
   readonly minutes: number;
   readonly title: BilingualText;
+  readonly itemCount?: number;
 };
 
 const SESSION_BLUEPRINTS: Record<SmartLingoSessionMinutes, readonly [SmartLingoTeachingBlock["skill"], number][]> = {
@@ -794,6 +815,7 @@ export function buildDailyTeachingPlan(minutes: SmartLingoSessionMinutes): reado
     skill,
     minutes: blockMinutes,
     title: TEACHING_TITLES[skill],
+    ...(skill === "vocabulary" ? { itemCount: 10 } : {}),
   }));
 }
 

@@ -63,7 +63,10 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
     };
   }, []);
 
-  const current = SMARTLINGO_LANGUAGE_COMMUNITIES.find(language => language.code === selected)
+  // The header reports the interface language, not the independently selected
+  // learning target. Keeping these two states separate prevents an English
+  // page from being labelled 中文 after someone joins a Chinese class.
+  const currentInterface = SMARTLINGO_LANGUAGE_COMMUNITIES.find(language => language.code === lang)
     ?? SMARTLINGO_LANGUAGE_COMMUNITIES[0];
 
   function choose(code: SmartLingoCommunityLanguage) {
@@ -87,8 +90,8 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
 
   return (
     <details ref={menu} className="interface-language-menu">
-      <summary aria-label={zh ? `当前语言：${current.nativeName}。打开语言选择` : `Current language: ${current.nativeName}. Open language selection`}>
-        <span className="interface-language-current">{current.nativeName}</span>
+      <summary aria-label={zh ? `当前界面语言：${currentInterface.nativeName}。打开语言选择` : `Current interface language: ${currentInterface.nativeName}. Open language selection`}>
+        <span className="interface-language-current">{currentInterface.nativeName}</span>
         <span className="interface-language-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div className="interface-language-popover" role="menu" aria-label={zh ? "语言选择" : "Language selection"}>
