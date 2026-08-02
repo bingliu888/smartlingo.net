@@ -10,7 +10,10 @@ test("direct Cloudflare deployment uses isolated SmartLingo resources", () => {
   assert.match(config.d1_databases[0].database_name, /^smartlingo-net-cutover-/);
   assert.equal(config.r2_buckets[0].binding, "BUCKET");
   assert.match(config.r2_buckets[0].bucket_name, /^smartlingo-net-cutover-/);
-  assert.equal(config.routes, undefined, "formal domains stay on Sites until shadow acceptance passes");
+  assert.deepEqual(config.routes, [
+    { pattern: "smartlingo.net", custom_domain: true },
+    { pattern: "www.smartlingo.net", custom_domain: true },
+  ], "accepted shadow deployment owns both formal domains at cutover");
 });
 
 test("direct config contains no runtime secrets", () => {

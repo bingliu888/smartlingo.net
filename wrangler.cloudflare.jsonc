@@ -7,6 +7,16 @@
   "workers_dev": true,
   "preview_urls": true,
   "keep_vars": true,
+  "routes": [
+    {
+      "pattern": "smartlingo.net",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.smartlingo.net",
+      "custom_domain": true
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuc21hcnRsaW5nby5uZXQk",
     "GITHUB_REPOSITORY_URL": "https://github.com/bingliu888/smartlingo.net"
