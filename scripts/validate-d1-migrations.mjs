@@ -1189,12 +1189,18 @@ function runD1Smoke(database) {
   );
 
   const quickCourseCount = database.prepare(`SELECT COUNT(*) AS count
-    FROM smartlingo_quick_course_offerings WHERE status = 'published'`).get();
+    FROM smartlingo_quick_course_offerings_v2 WHERE status = 'published'`).get();
   assert.equal(quickCourseCount.count, 36);
   const freeCourseCount = database.prepare(`SELECT COUNT(*) AS count
-    FROM smartlingo_quick_course_offerings WHERE is_free = 1`).get();
+    FROM smartlingo_quick_course_offerings_v2 WHERE is_free = 1`).get();
   assert.equal(freeCourseCount.count, 12);
-  database.prepare(`INSERT INTO smartlingo_quick_course_enrollments
+  const fourWeekCourseCount = database.prepare(`SELECT COUNT(*) AS count
+    FROM smartlingo_quick_course_offerings_v2 WHERE duration_days = 28`).get();
+  assert.equal(fourWeekCourseCount.count, 12);
+  const legacyDurationCount = database.prepare(`SELECT COUNT(*) AS count
+    FROM smartlingo_quick_course_offerings_v2 WHERE duration_days = 30`).get();
+  assert.equal(legacyDurationCount.count, 0);
+  database.prepare(`INSERT INTO smartlingo_quick_course_enrollments_v2
     (id, offering_id, user_id, class_id, access_type, status, current_day,
      started_at, created_at, updated_at)
     VALUES ('d1-smoke-quick-enrollment','sl-quick-zh-beginner-7d-v1',
@@ -1233,7 +1239,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0023_smartlingo_quick_courses");
+  assert.equal(migrations.at(-1)?.tag, "0024_smartlingo_four_week_courses");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1282,8 +1288,8 @@ export function validateD1Migrations() {
       "smartlingo_path_unit_path_sequence_uq",
       "smartlingo_learning_plan_user_path_uq",
       "smartlingo_learning_plan_active_user_uq",
-      "smartlingo_quick_course_path_duration_uq",
-      "smartlingo_quick_enrollment_user_offering_uq",
+      "smartlingo_quick_course_path_duration_v2_uq",
+      "smartlingo_quick_enrollment_user_offering_v2_uq",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1307,6 +1313,8 @@ export function validateD1Migrations() {
       "smartlingo_learning_plans",
       "smartlingo_quick_course_offerings",
       "smartlingo_quick_course_enrollments",
+      "smartlingo_quick_course_offerings_v2",
+      "smartlingo_quick_course_enrollments_v2",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     const smoke = runD1Smoke(database);

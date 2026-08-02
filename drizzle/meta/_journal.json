@@ -169,6 +169,13 @@
       "when": 1785676800000,
       "tag": "0023_smartlingo_quick_courses",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1785686400000,
+      "tag": "0024_smartlingo_four_week_courses",
+      "breakpoints": true
     }
   ]
 }

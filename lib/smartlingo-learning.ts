@@ -50,6 +50,25 @@ export interface SmartLingoVocabularySample {
   readonly sourceType: "smartlingo_original";
 }
 
+export interface SmartLingoVocabularyVisualCue {
+  readonly kind: "pictogram";
+  readonly symbol: string;
+  readonly label: BilingualText;
+}
+
+/** A language-neutral cue paired with the learner's interface-language meaning. */
+export function getVocabularyVisualCue(
+  sample: Pick<SmartLingoVocabularySample, "topic">,
+): SmartLingoVocabularyVisualCue {
+  if (sample.topic === "greeting") {
+    return { kind: "pictogram", symbol: "👋", label: { zh: "见面问候", en: "Greeting someone" } };
+  }
+  if (sample.topic === "planning") {
+    return { kind: "pictogram", symbol: "🗓️", label: { zh: "日程与计划", en: "Schedule and plan" } };
+  }
+  return { kind: "pictogram", symbol: "💡", label: { zh: "想法与观点", en: "Idea and viewpoint" } };
+}
+
 function vocabularySample(
   language: SmartLingoLearningLanguage,
   level: SmartLingoLevel,

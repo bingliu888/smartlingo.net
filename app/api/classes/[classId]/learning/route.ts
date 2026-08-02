@@ -2,6 +2,7 @@ import { createId, getDatabase, getSessionUser } from "../../../../../lib/auth";
 import {
   buildDailyPracticeItem,
   createVocabularyReviewState,
+  getVocabularyVisualCue,
   getVocabularySample,
   gradeDailyPracticeItem,
   scheduleVocabularyReview,
@@ -246,8 +247,8 @@ async function learningState(
   const quickEnrollment = await database.prepare(`SELECT e.offering_id AS offeringId,
     offering.duration_days AS durationDays, e.current_day AS currentDay,
     e.started_at AS startedAt, e.status
-    FROM smartlingo_quick_course_enrollments e
-    JOIN smartlingo_quick_course_offerings offering ON offering.id = e.offering_id
+    FROM smartlingo_quick_course_enrollments_v2 e
+    JOIN smartlingo_quick_course_offerings_v2 offering ON offering.id = e.offering_id
     WHERE e.user_id = ? AND e.class_id = ? AND e.status IN ('active','completed')
     ORDER BY e.updated_at DESC LIMIT 1`).bind(userId, access.classId).first<QuickEnrollmentRow>();
   const quickCourse = quickEnrollment && isQuickCourseDays(quickEnrollment.durationDays)
@@ -322,6 +323,7 @@ async function learningState(
       form: sample.form,
       pronunciation: sample.pronunciation,
       meaning: sample.meaning,
+      visualCue: getVocabularyVisualCue(sample),
       example: sample.example,
       exampleTranslation: sample.exampleTranslation,
       audioText: sample.form,

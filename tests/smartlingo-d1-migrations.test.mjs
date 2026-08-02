@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 24);
-  assert.equal(result.firstRunApplied, 24);
+  assert.equal(result.migrationCount, 25);
+  assert.equal(result.firstRunApplied, 25);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0023_smartlingo_quick_courses");
+  assert.equal(result.newestMigration, "0024_smartlingo_four_week_courses");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -154,6 +154,23 @@ test("0022 stores bilingual learning goals without erasing per-language path pro
   assert.match(route, /COALESCE\(smartlingo_learning_plans\.current_unit_id, excluded\.current_unit_id\)/);
   assert.match(route, /scoresCreated: false/);
   assert.match(journal, /"tag": "0022_smartlingo_learning_paths"/);
+});
+
+test("0024 introduces the four-week catalog without deleting legacy enrollment evidence", async () => {
+  const [schema, migration, journal, route] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0024_smartlingo_four_week_courses.sql"),
+    read("../drizzle/meta/_journal.json"),
+    read("../app/api/quick-courses/route.ts"),
+  ]);
+
+  assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
+  assert.match(migration, /CREATE TABLE `smartlingo_quick_course_offerings_v2`/);
+  assert.match(migration, /CHECK\(`duration_days` IN \(7,14,28\)\)/);
+  assert.match(migration, /CASE WHEN o\.`duration_days` = 30 THEN 28/);
+  assert.match(schema, /sqliteTable\("smartlingo_quick_course_offerings_v2"/);
+  assert.match(route, /FROM smartlingo_quick_course_offerings_v2/);
+  assert.match(journal, /"tag": "0024_smartlingo_four_week_courses"/);
 });
 
 test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {

@@ -1,8 +1,8 @@
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities.ts";
 import type { BilingualText, SmartLingoSkill } from "./smartlingo-learning.ts";
 
-export const SMARTLINGO_QUICK_COURSE_VERSION = "2026-08-02.1" as const;
-export const SMARTLINGO_QUICK_COURSE_DAYS = [7, 14, 30] as const;
+export const SMARTLINGO_QUICK_COURSE_VERSION = "2026-08-02.2" as const;
+export const SMARTLINGO_QUICK_COURSE_DAYS = [7, 14, 28] as const;
 export type SmartLingoQuickCourseDays = (typeof SMARTLINGO_QUICK_COURSE_DAYS)[number];
 
 const SCENES: readonly BilingualText[] = [
@@ -61,7 +61,7 @@ export type SmartLingoQuickCourse = {
 function skillsForDay(courseDays: SmartLingoQuickCourseDays, day: number): readonly SmartLingoSkill[] {
   const skills: SmartLingoSkill[] = ["vocabulary", "listening", "dialogue"];
   if (courseDays >= 14 && day >= 4) skills.splice(1, 0, "reading");
-  if (courseDays === 30 && day >= 8) skills.splice(2, 0, "writing");
+  if (courseDays === 28 && day >= 8) skills.splice(2, 0, "writing");
   return skills;
 }
 
@@ -73,12 +73,12 @@ export function buildQuickCourse(
     ? { zh: "七天旅行生存课", en: "7-day Travel Essentials" }
     : days === 14
       ? { zh: "十四天旅行交流课", en: "14-day Travel Confidence" }
-      : { zh: "三十天实用入门课", en: "30-day Practical Beginner" };
+      : { zh: "四周实用入门课", en: "4-week Practical Beginner" };
   const summary = days === 7
     ? { zh: "免费建立旅行所需的核心词汇、听力与对话能力。", en: "Build core travel vocabulary, listening, and dialogue skills for free." }
     : days === 14
       ? { zh: "在七天课程上加入路牌、菜单、通知和短消息阅读。", en: "Add signs, menus, notices, and short-message reading to the 7-day foundation." }
-      : { zh: "在完整五项技能中加入实用写作、复习与综合旅行任务。", en: "Add practical writing, review, and integrated travel missions across all five skills." };
+      : { zh: "二十八天完成四周训练，加入实用写作、复习与五项技能综合旅行任务。", en: "Complete four weeks of practical writing, review, and integrated travel missions across all five skills." };
   return {
     stableId: `sl-quick-${language}-beginner-${days}d-v1`,
     language,

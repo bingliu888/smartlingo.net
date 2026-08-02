@@ -16,7 +16,7 @@ type OfferingRow = {
 const offeringSelect = `SELECT id, target_language AS targetLanguage,
   duration_days AS durationDays, is_free AS isFree, status,
   curriculum_version AS curriculumVersion
-  FROM smartlingo_quick_course_offerings`;
+  FROM smartlingo_quick_course_offerings_v2`;
 
 export async function GET() {
   const result = await getDatabase().prepare(`${offeringSelect}
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   }
   const language = typeof body.targetLanguage === "string" ? languageCatalogEntry(body.targetLanguage) : null;
   if (!language || !isQuickCourseDays(body.durationDays)) {
-    return Response.json({ error: "Choose a supported language and 7, 14, or 30-day course." }, { status: 400 });
+    return Response.json({ error: "Choose a supported language and a 7, 14, or 28-day course." }, { status: 400 });
   }
 
   const database = getDatabase();
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   const now = Math.floor(Date.now() / 1000);
   const accessType = offering.isFree ? "free" : "payment_required";
   const status = offering.isFree ? "active" : "pending_payment";
-  await database.prepare(`INSERT INTO smartlingo_quick_course_enrollments
+  await database.prepare(`INSERT INTO smartlingo_quick_course_enrollments_v2
     (id, offering_id, user_id, class_id, access_type, status, current_day,
      started_at, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       class_id = excluded.class_id,
       access_type = excluded.access_type,
       status = CASE
-        WHEN smartlingo_quick_course_enrollments.status = 'completed' THEN 'completed'
+        WHEN smartlingo_quick_course_enrollments_v2.status = 'completed' THEN 'completed'
         ELSE excluded.status END,
       updated_at = excluded.updated_at`)
     .bind(createId(), offering.id, user.id, language.classId, accessType, status, now, now, now).run();
