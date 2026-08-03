@@ -26,6 +26,7 @@ export function CommunityClient({ lang }: { lang: "en" | "zh" }) {
   // The async loader updates state only after the network request resolves.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load().catch(() => setError(zh ? "暂时无法读取社区。" : "Unable to load the community.")); }, [zh]);
+  useEffect(() => { const refreshMeetings = () => { load().catch(() => undefined); }; window.addEventListener("smartlingo:meetings-changed", refreshMeetings); return () => window.removeEventListener("smartlingo:meetings-changed", refreshMeetings); }, []);
   useEffect(() => { const timer = window.setInterval(() => setClock(Math.floor(Date.now() / 1000)), 1000); return () => window.clearInterval(timer); }, []);
   const topics = data.topics.filter(topic => channel === "all" || topic.category === channel);
   const active = data.topics.find(topic => topic.id === selected) || topics[0];

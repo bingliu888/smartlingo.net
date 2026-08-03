@@ -68,7 +68,7 @@ export function CommunityMeetings({ lang }: { lang: "en" | "zh" }) {
       const response = await fetch("/api/community/meetings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "schedule", title, scheduledAt }) });
       const data = await response.json().catch(() => ({})) as { error?: string };
       if (!response.ok) throw new Error(data.error || "Schedule failed");
-      setTitle(""); setStart(""); setShowForm(false); setTab(scheduledAt <= Math.floor(Date.now() / 1000) ? "live" : "upcoming"); await load();
+      setTitle(""); setStart(""); setShowForm(false); setTab(scheduledAt <= Math.floor(Date.now() / 1000) ? "live" : "upcoming"); await load(); window.dispatchEvent(new Event("smartlingo:meetings-changed"));
     } catch (reason) { setError(reason instanceof Error ? reason.message : (zh ? "无法预约会议。" : "Unable to schedule meeting.")); }
     finally { setBusy(false); }
   }
@@ -80,7 +80,7 @@ export function CommunityMeetings({ lang }: { lang: "en" | "zh" }) {
       const data = await response.json().catch(() => ({})) as { error?: string; threadId?: string };
       if (!response.ok) throw new Error(data.error || "Meeting action failed");
       if (action === "join" && data.threadId) window.location.assign(`/${lang}/messages/live/${encodeURIComponent(data.threadId)}`);
-      else await load();
+      else { await load(); window.dispatchEvent(new Event("smartlingo:meetings-changed")); }
     } catch (reason) { setError(reason instanceof Error ? reason.message : (zh ? "操作失败。" : "Action failed.")); setBusy(false); }
   }
 

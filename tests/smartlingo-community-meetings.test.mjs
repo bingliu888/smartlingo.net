@@ -26,8 +26,10 @@ test("meeting center separates live and upcoming meetings and profiles expose co
   assert.match(center, /Schedule/);
   assert.match(center, /Create meeting & chat/);
   assert.match(center, /setInterval/);
+  assert.match(center, /smartlingo:meetings-changed/);
   assert.match(community, /meetingCountdown/);
   assert.match(community, /joinMemberMeeting/);
+  assert.match(community, /addEventListener\("smartlingo:meetings-changed"/);
   assert.match(page, /CommunityMeetings/);
 });
 
