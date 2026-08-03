@@ -1121,6 +1121,73 @@ export const lingoQuickCourseEnrollments = sqliteTable("smartlingo_quick_course_
 ]);
 
 /**
+ * One authoritative score snapshot per learner, fast-track enrollment, and
+ * local study date. The JSON skill map contains only the scheduled skills for
+ * that course day; the server computes the 1–100 daily score and completion
+ * flag from recorded learning evidence.
+ */
+export const lingoQuickCourseDailyScores = sqliteTable("smartlingo_quick_course_daily_scores", {
+  id: text("id").primaryKey(),
+  enrollmentId: text("enrollment_id").notNull().references(() => lingoQuickCourseEnrollments.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  courseDay: integer("course_day").notNull(),
+  localDate: text("local_date").notNull(),
+  score: integer("score").notNull(),
+  skillScores: text("skill_scores").notNull().default("{}"),
+  quizScore: integer("quiz_score"),
+  isComplete: integer("is_complete", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_quick_daily_day_ck", sql`${table.courseDay} BETWEEN 1 AND 28`),
+  check("smartlingo_quick_daily_date_ck", sql`length(${table.localDate}) = 10`),
+  check("smartlingo_quick_daily_score_ck", sql`${table.score} BETWEEN 1 AND 100`),
+  check("smartlingo_quick_daily_skills_ck", sql`json_valid(${table.skillScores}) AND json_type(${table.skillScores}) = 'object' AND length(${table.skillScores}) <= 1000`),
+  check("smartlingo_quick_daily_quiz_ck", sql`${table.quizScore} IS NULL OR ${table.quizScore} BETWEEN 0 AND 100`),
+  check("smartlingo_quick_daily_complete_ck", sql`${table.isComplete} IN (0, 1)`),
+  uniqueIndex("smartlingo_quick_daily_enrollment_date_uq").on(table.enrollmentId, table.localDate),
+  uniqueIndex("smartlingo_quick_daily_enrollment_day_uq").on(table.enrollmentId, table.courseDay),
+  index("smartlingo_quick_daily_user_date_idx").on(table.userId, table.localDate),
+  index("smartlingo_quick_daily_class_date_idx").on(table.classId, table.localDate),
+]);
+
+/** A completion certificate is immutable evidence for one passed enrollment. */
+export const lingoCourseCertificates = sqliteTable("smartlingo_course_certificates", {
+  id: text("id").primaryKey(),
+  certificateNumber: text("certificate_number").notNull().unique(),
+  verificationCode: text("verification_code").notNull().unique(),
+  enrollmentId: text("enrollment_id").notNull().unique().references(() => lingoQuickCourseEnrollments.id, { onDelete: "restrict" }),
+  offeringId: text("offering_id").notNull().references(() => lingoQuickCourseOfferings.id, { onDelete: "restrict" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "restrict" }),
+  memberName: text("member_name").notNull(),
+  courseTitleZh: text("course_title_zh").notNull(),
+  courseTitleEn: text("course_title_en").notNull(),
+  targetLanguage: text("target_language").notNull(),
+  level: text("level").notNull().default("beginner"),
+  durationDays: integer("duration_days").notNull(),
+  completedDays: integer("completed_days").notNull(),
+  finalScore: integer("final_score").notNull(),
+  passScore: integer("pass_score").notNull().default(60),
+  completionReason: text("completion_reason").notNull(),
+  curriculumVersion: text("curriculum_version").notNull(),
+  issuedAt: integer("issued_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_certificate_member_ck", sql`length(trim(${table.memberName})) BETWEEN 1 AND 120`),
+  check("smartlingo_certificate_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_certificate_level_ck", sql`${table.level} = 'beginner'`),
+  check("smartlingo_certificate_duration_ck", sql`${table.durationDays} IN (7, 14, 28)`),
+  check("smartlingo_certificate_days_ck", sql`${table.completedDays} BETWEEN 1 AND ${table.durationDays}`),
+  check("smartlingo_certificate_score_ck", sql`${table.finalScore} BETWEEN 60 AND 100 AND ${table.passScore} = 60`),
+  check("smartlingo_certificate_reason_ck", sql`${table.completionReason} IN ('course_complete', 'early_mastery')`),
+  index("smartlingo_certificate_user_issued_idx").on(table.userId, table.issuedAt),
+  index("smartlingo_certificate_class_score_idx").on(table.classId, table.finalScore, table.issuedAt),
+  index("smartlingo_certificate_rank_idx").on(table.finalScore, table.issuedAt),
+]);
+
+/**
  * A placement attempt belongs to one active member of one platform-provided
  * language community. Self-selected entry levels intentionally keep the five
  * skill scores nullable; adaptive attempts add evidence as each skill is

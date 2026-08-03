@@ -1206,6 +1206,23 @@ function runD1Smoke(database) {
     VALUES ('d1-smoke-quick-enrollment','sl-quick-zh-beginner-7d-v1',
       'd1-smoke-learner','class_official_zh','free','active',1,?,?,?)`)
     .run(now, now, now);
+  database.prepare(`INSERT INTO smartlingo_quick_course_daily_scores
+    (id, enrollment_id, user_id, class_id, course_day, local_date, score,
+     skill_scores, quiz_score, is_complete, created_at, updated_at)
+    VALUES ('d1-smoke-quick-score','d1-smoke-quick-enrollment','d1-smoke-learner',
+      'class_official_zh',1,'2026-08-02',95,
+      '{"vocabulary":95,"listening":95,"dialogue":95}',95,1,?,?)`)
+    .run(now, now);
+  database.prepare(`INSERT INTO smartlingo_course_certificates
+    (id, certificate_number, verification_code, enrollment_id, offering_id,
+     user_id, class_id, member_name, course_title_zh, course_title_en,
+     target_language, level, duration_days, completed_days, final_score,
+     pass_score, completion_reason, curriculum_version, issued_at, created_at)
+    VALUES ('d1-smoke-certificate','SL-2026-SMOKE','SMOKEVERIFY2026',
+      'd1-smoke-quick-enrollment','sl-quick-zh-beginner-7d-v1','d1-smoke-learner',
+      'class_official_zh','D1 Smoke Learner','七天旅行生存课','7-day Travel Essentials',
+      'zh','beginner',7,1,95,60,'early_mastery','2026-08-02.2',?,?)`)
+    .run(now, now);
 
   assertDatabaseIntegrity(database);
   return {
@@ -1234,12 +1251,14 @@ function runD1Smoke(database) {
     quickCourseCount: quickCourseCount.count,
     freeQuickCourseCount: freeCourseCount.count,
     quickCourseEnrollmentId: "d1-smoke-quick-enrollment",
+    quickCourseDailyScoreId: "d1-smoke-quick-score",
+    certificateId: "d1-smoke-certificate",
   };
 }
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0028_wise_baron_strucker");
+  assert.equal(migrations.at(-1)?.tag, "0029_calm_deathstrike");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1292,6 +1311,9 @@ export function validateD1Migrations() {
       "smartlingo_quick_enrollment_user_offering_v2_uq",
       "smartlingo_daily_quiz_attempt_uq",
       "smartlingo_users_role_created_idx",
+      "smartlingo_quick_daily_enrollment_date_uq",
+      "smartlingo_quick_daily_enrollment_day_uq",
+      "smartlingo_course_certificates_enrollment_id_unique",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1319,6 +1341,8 @@ export function validateD1Migrations() {
       "smartlingo_quick_course_enrollments_v2",
       "smartlingo_daily_learning_preferences",
       "smartlingo_daily_quiz_attempts",
+      "smartlingo_quick_course_daily_scores",
+      "smartlingo_course_certificates",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     const smoke = runD1Smoke(database);

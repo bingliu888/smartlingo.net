@@ -16,6 +16,8 @@ Language selectors and language-community cards use language names as text. They
 
 An adaptive placement starts at intermediate difficulty, contains 15 versioned questions with three rounds across all five skills, and supports pause, resume, and skip. Server-scored results recommend a learning level; self-selected levels do not fabricate five-skill scores. The daily learning calendar is based only on server activity events and displays compact indicators for all five skills plus Community participation, with its selected-day detail below the calendar.
 
+Beginner fast tracks are 7, 14, or 28 days. Every recorded daily and course score uses a 1–100 scale. A completed course passes at 60; once the learner completes all server-assigned skills and the daily quiz, a current course score of 95 or higher may finish the course early. Missing, skipped, or incomplete evidence never fabricates a passing score. A passed enrollment creates one immutable SmartLingo course-completion certificate with the member-name snapshot, course and language, final score, completion reason, curriculum version, issue date, certificate number, and verification code. It is a SmartLingo learning record, not a government, academic, immigration, or third-party language credential.
+
 ## Member-created class rules
 
 - Any signed-in member may create a private language class as a **teacher** or **coordinator**. Class creation is not restricted to a paid membership tier.

@@ -35,6 +35,10 @@ import {
 } from "../../../../../lib/smartlingo-learning-access";
 import { buildQuickCourse, isQuickCourseDays } from "../../../../../lib/smartlingo-quick-courses";
 import { reviewSmartAiLearningContent, smartAiRequestCountry } from "../../../../../lib/smartlingo-ai-gateway";
+import {
+  calculateCourseDailyScore,
+  calculateCourseOutcome,
+} from "../../../../../lib/smartlingo-course-scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -77,11 +81,26 @@ type PracticeEventRow = {
 };
 
 type QuickEnrollmentRow = {
+  id: string;
   offeringId: string;
   durationDays: number;
   currentDay: number;
   startedAt: number;
   status: string;
+};
+
+type CourseDailyScoreRow = {
+  courseDay: number;
+  localDate: string;
+  score: number;
+  isComplete: number;
+};
+
+type CourseCertificateRow = {
+  id: string;
+  certificateNumber: string;
+  finalScore: number;
+  issuedAt: number;
 };
 
 type LearningBody = {
@@ -203,6 +222,132 @@ function gradeScore(grade: VocabularyReviewGrade) {
   return null;
 }
 
+function certificateIdentity() {
+  const token = crypto.randomUUID().replaceAll("-", "").toUpperCase();
+  const year = new Date().getUTCFullYear();
+  return {
+    id: crypto.randomUUID(),
+    certificateNumber: `SL-${year}-${token.slice(0, 10)}`,
+    verificationCode: token.slice(10, 26),
+  };
+}
+
+async function refreshQuickCourseProgress(
+  database: LearningDatabase,
+  userId: string,
+  access: OfficialClassAccess,
+  date: string,
+) {
+  const enrollment = await database.prepare(`SELECT e.id, e.offering_id AS offeringId,
+    offering.duration_days AS durationDays, e.current_day AS currentDay,
+    e.started_at AS startedAt, e.status
+    FROM smartlingo_quick_course_enrollments_v2 e
+    JOIN smartlingo_quick_course_offerings_v2 offering ON offering.id = e.offering_id
+    WHERE e.user_id = ? AND e.class_id = ? AND e.status IN ('active','completed')
+    ORDER BY e.updated_at DESC LIMIT 1`).bind(userId, access.classId).first<QuickEnrollmentRow>();
+  if (!enrollment || !isQuickCourseDays(enrollment.durationDays) || !isLearningLanguage(access.targetLanguage)) return null;
+
+  const course = buildQuickCourse(access.targetLanguage, enrollment.durationDays);
+  const existingDay = await database.prepare(`SELECT course_day AS courseDay, local_date AS localDate,
+    score, is_complete AS isComplete FROM smartlingo_quick_course_daily_scores
+    WHERE enrollment_id = ? AND local_date = ? LIMIT 1`)
+    .bind(enrollment.id, date).first<CourseDailyScoreRow>();
+  const courseDay = Math.max(1, Math.min(course.days, Number(existingDay?.courseDay || enrollment.currentDay || 1)));
+  const schedule = course.schedule[courseDay - 1];
+  const eventScores = await database.prepare(`SELECT domain, ROUND(AVG(score)) AS score
+    FROM smartlingo_learning_activity_events
+    WHERE user_id = ? AND class_id = ? AND score IS NOT NULL AND (
+      (source_type = 'daily_practice' AND source_id LIKE ?)
+      OR (source_type = 'vocabulary_review' AND source_id LIKE ?)
+    ) GROUP BY domain`)
+    .bind(userId, access.classId, `${access.classId}:daily:${date}:%`, `${access.classId}:${date}:%`)
+    .run<{ domain: SmartLingoLearningLanguage | (typeof SMARTLINGO_SKILLS)[number]; score: number }>();
+  const skillScores = Object.fromEntries((eventScores.results || []).map(row => [row.domain, Number(row.score)]));
+  const quiz = await database.prepare(`SELECT score FROM smartlingo_daily_quiz_attempts
+    WHERE user_id = ? AND class_id = ? AND local_date = ? ORDER BY score DESC, created_at DESC LIMIT 1`)
+    .bind(userId, access.classId, date).first<{ score: number }>();
+  const daily = calculateCourseDailyScore({
+    requiredSkills: schedule.skills,
+    skillScores,
+    quizScore: quiz?.score,
+  });
+  const now = Math.floor(Date.now() / 1000);
+  if (daily.score !== null) {
+    await database.prepare(`INSERT INTO smartlingo_quick_course_daily_scores
+      (id, enrollment_id, user_id, class_id, course_day, local_date, score,
+       skill_scores, quiz_score, is_complete, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(enrollment_id, local_date) DO UPDATE SET
+        score = excluded.score, skill_scores = excluded.skill_scores,
+        quiz_score = excluded.quiz_score, is_complete = excluded.is_complete,
+        updated_at = excluded.updated_at`)
+      .bind(
+        createId(), enrollment.id, userId, access.classId, courseDay, date, daily.score,
+        JSON.stringify(skillScores), quiz?.score ?? null, daily.complete ? 1 : 0, now, now,
+      ).run();
+  }
+
+  const completedRows = await database.prepare(`SELECT course_day AS courseDay,
+    local_date AS localDate, score, is_complete AS isComplete
+    FROM smartlingo_quick_course_daily_scores
+    WHERE enrollment_id = ? AND is_complete = 1 ORDER BY course_day`)
+    .bind(enrollment.id).run<CourseDailyScoreRow>();
+  const outcome = calculateCourseOutcome({
+    durationDays: course.days,
+    completedDayScores: (completedRows.results || []).map(row => Number(row.score)),
+  });
+  let certificate = await database.prepare(`SELECT id, certificate_number AS certificateNumber,
+    final_score AS finalScore, issued_at AS issuedAt
+    FROM smartlingo_course_certificates WHERE enrollment_id = ? LIMIT 1`)
+    .bind(enrollment.id).first<CourseCertificateRow>();
+
+  if (outcome.passed && !certificate) {
+    const identity = certificateIdentity();
+    const member = await database.prepare("SELECT display_name AS displayName FROM users WHERE id = ? LIMIT 1")
+      .bind(userId).first<{ displayName: string }>();
+    await database.prepare(`INSERT OR IGNORE INTO smartlingo_course_certificates
+      (id, certificate_number, verification_code, enrollment_id, offering_id,
+       user_id, class_id, member_name, course_title_zh, course_title_en,
+       target_language, level, duration_days, completed_days, final_score,
+       pass_score, completion_reason, curriculum_version, issued_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'beginner', ?, ?, ?, 60, ?, ?, ?, ?)`)
+      .bind(
+        identity.id, identity.certificateNumber, identity.verificationCode,
+        enrollment.id, enrollment.offeringId, userId, access.classId,
+        member?.displayName || "SmartLingo Learner", course.title.zh, course.title.en,
+        access.targetLanguage, course.days, outcome.completedDays, outcome.currentScore,
+        outcome.completionReason, course.curriculumVersion, now, now,
+      ).run();
+    await database.prepare(`UPDATE smartlingo_quick_course_enrollments_v2
+      SET status = 'completed', completed_at = ?, updated_at = ? WHERE id = ? AND status = 'active'`)
+      .bind(now, now, enrollment.id).run();
+    certificate = await database.prepare(`SELECT id, certificate_number AS certificateNumber,
+      final_score AS finalScore, issued_at AS issuedAt
+      FROM smartlingo_course_certificates WHERE enrollment_id = ? LIMIT 1`)
+      .bind(enrollment.id).first<CourseCertificateRow>();
+  } else if (daily.complete && !existingDay?.isComplete && courseDay < course.days && enrollment.status === "active") {
+    await database.prepare(`UPDATE smartlingo_quick_course_enrollments_v2
+      SET current_day = ?, updated_at = ? WHERE id = ? AND current_day = ? AND status = 'active'`)
+      .bind(courseDay + 1, now, enrollment.id, courseDay).run();
+  }
+
+  return {
+    enrollmentId: enrollment.id,
+    courseDay,
+    durationDays: course.days,
+    dailyScore: daily.score,
+    dailyComplete: daily.complete,
+    requiredSkills: schedule.skills,
+    completedDays: outcome.completedDays,
+    currentScore: outcome.currentScore,
+    passScore: outcome.passScore,
+    earlyMasteryScore: outcome.earlyMasteryScore,
+    passed: outcome.passed,
+    completionReason: outcome.completionReason,
+    certificate,
+  };
+}
+
 async function completedPlacement(database: LearningDatabase, userId: string, classId: string) {
   return database.prepare(`SELECT id, status, entry_mode AS entryMode,
     overall_score AS overallScore, recommended_level AS recommendedLevel,
@@ -265,9 +410,10 @@ async function learningState(
   uiLanguage: SmartLingoInterfaceLanguage,
   requestedMode?: VocabularyReviewMode,
 ) {
+  const courseProgress = await refreshQuickCourseProgress(database, userId, access, date);
   const targetLanguage = access.targetLanguage as SmartLingoLearningLanguage;
   const level = placementLevel(placement.recommendedLevel);
-  const quickEnrollment = await database.prepare(`SELECT e.offering_id AS offeringId,
+  const quickEnrollment = await database.prepare(`SELECT e.id, e.offering_id AS offeringId,
     offering.duration_days AS durationDays, e.current_day AS currentDay,
     e.started_at AS startedAt, e.status
     FROM smartlingo_quick_course_enrollments_v2 e
@@ -277,11 +423,11 @@ async function learningState(
   const quickCourse = quickEnrollment && isQuickCourseDays(quickEnrollment.durationDays)
     ? buildQuickCourse(targetLanguage, quickEnrollment.durationDays)
     : null;
-  const elapsedDay = quickEnrollment
-    ? Math.max(1, Math.floor((Math.floor(Date.now() / 1000) - quickEnrollment.startedAt) / 86400) + 1)
-    : 1;
   const courseDay = quickCourse
-    ? quickCourse.schedule[Math.min(quickCourse.days, elapsedDay) - 1]
+    ? quickCourse.schedule[Math.max(1, Math.min(
+      quickCourse.days,
+      courseProgress?.courseDay ?? quickEnrollment?.currentDay ?? 1,
+    )) - 1]
     : null;
   const vocabularyDay = courseDay
     ? ((courseDay.day - 1) % 7) + 1
@@ -433,6 +579,7 @@ async function learningState(
       questionCount: Number(latestQuiz.questionCount),
       createdAt: Number(latestQuiz.createdAt),
     } : null,
+    courseProgress,
     tasks,
     dailyTasks: tasks,
   };

@@ -84,6 +84,21 @@ type LearningPayload = {
     skills: Skill[];
     estimatedMinutes: number;
   } | null;
+  courseProgress?: {
+    enrollmentId: string;
+    courseDay: number;
+    durationDays: number;
+    dailyScore: number | null;
+    dailyComplete: boolean;
+    requiredSkills: Skill[];
+    completedDays: number;
+    currentScore: number | null;
+    passScore: 60;
+    earlyMasteryScore: 95;
+    passed: boolean;
+    completionReason: "course_complete" | "early_mastery" | null;
+    certificate: { id: string; certificateNumber: string; finalScore: number; issuedAt: number } | null;
+  } | null;
   sessionPreference?: { minutes: 15 | 30 | 45 | 60 };
   teachingPlan?: { skill: Skill | "quiz" | "community"; minutes: number; title: { zh: string; en: string }; itemCount?: number }[];
   dailyQuiz?: {
@@ -186,6 +201,13 @@ const COPY = {
     teachingPlan: "今日连续学习安排",
     quickCourse: "旅行入门课程",
     courseDay: "课程日",
+    courseScore: "当前课程分",
+    todayScore: "今日练习分",
+    passStandard: "60 分达标",
+    earlyMastery: "95 分可提前结业",
+    dayIncomplete: "完成今日必修技能与测验后锁定今日成绩。",
+    passedCourse: "课程已通过",
+    viewCertificate: "查看结业证书",
     visualCue: "视觉提示",
     sourceMeaning: "中文释义",
     flashcard: "闪卡",
@@ -297,6 +319,13 @@ const COPY = {
     teachingPlan: "Today's continuous learning plan",
     quickCourse: "BEGINNER TRAVEL COURSE",
     courseDay: "Course day",
+    courseScore: "Current course score",
+    todayScore: "Today's practice score",
+    passStandard: "60 to pass",
+    earlyMastery: "95 unlocks early completion",
+    dayIncomplete: "Complete today's required skills and quiz to lock the daily score.",
+    passedCourse: "Course passed",
+    viewCertificate: "View certificate",
     visualCue: "Visual cue",
     sourceMeaning: "English meaning",
     flashcard: "Flashcard",
@@ -775,6 +804,12 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       {learning?.quickCourse ? <aside className="sl-course-day" data-layout-fill="quick-course-day">
         <div><p className="sl-eyebrow">{t.quickCourse}</p><h2>{learning.quickCourse.title[lang]}</h2><p>{t.courseDay} {learning.quickCourse.currentDay} / {learning.quickCourse.durationDays} · {learning.quickCourse.estimatedMinutes} {t.minutes}</p></div>
         <div><strong>{learning.quickCourse.scene[lang]}</strong><ul>{learning.quickCourse.skills.map(skill => <li key={skill}>{t[skill]}</li>)}</ul></div>
+        {learning.courseProgress ? <div className="sl-course-score" aria-live="polite">
+          <div><span>{t.courseScore}</span><strong>{learning.courseProgress.currentScore ?? "—"}<small> / 100</small></strong></div>
+          <div><span>{t.todayScore}</span><strong>{learning.courseProgress.dailyScore ?? "—"}<small> / 100</small></strong></div>
+          <p>{learning.courseProgress.dailyComplete ? `${t.passStandard} · ${t.earlyMastery}` : t.dayIncomplete}</p>
+          {learning.courseProgress.certificate ? <Link href={`/${lang}/certificates/${encodeURIComponent(learning.courseProgress.certificate.id)}`} className="sl-certificate-link">{t.passedCourse} · {t.viewCertificate} →</Link> : null}
+        </div> : null}
       </aside> : null}
       {!trainingView && learning ? <section className="sl-session-planner" data-layout-fill="daily-session-planner">
         <header><p className="sl-eyebrow">{t.teachingPlan}</p><h2>{t.sessionTitle}</h2><p>{t.sessionIntro}</p></header>
@@ -970,7 +1005,7 @@ function LearningWorkspaceStyles() {
     .sl-flashcard-progress{width:100%;min-width:0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.sl-flashcard-progress>strong{color:#08745e;font-size:15px}.sl-flashcard-progress>div{display:flex;gap:7px}.sl-flashcard-progress button{min-height:40px;padding:8px 13px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 14px/1.2 inherit;cursor:pointer}.sl-flashcard-progress button:disabled{cursor:not-allowed;opacity:.45}.sl-recording-preview{width:100%;min-width:0;margin-top:14px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid #d4dfda;border-radius:14px;background:#fff}.sl-recording-preview>strong,.sl-recording-preview>small{grid-column:1/-1}.sl-recording-preview audio{width:100%;min-width:0}.sl-recording-preview button{min-height:42px;padding:8px 13px;border:1px solid #d1aaa5;border-radius:999px;background:#fff;color:#8e3730;font:800 14px/1.2 inherit;cursor:pointer}.sl-recording-preview small{color:#61716b;line-height:1.5}
     @media(max-width:760px){.sl-workspace{padding-inline:16px}.sl-placement-gate,.sl-community-entry{display:grid;grid-template-columns:minmax(0,1fr)}.sl-placement-gate>.sl-primary-action,.sl-community-entry nav,.sl-community-entry nav a{width:100%}.sl-feature-overview>ol,.sl-task-options,.sl-quiz-questions fieldset>div{grid-template-columns:minmax(0,1fr)}.sl-duration-picker{grid-template-columns:1fr 1fr}.sl-skill-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.sl-skill-stepper{grid-template-columns:1fr 1fr}.sl-skill-stepper a{grid-column:1/-1;grid-row:2}.sl-task-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-task-actions button,.sl-inline-actions button,.sl-grade-actions button{width:100%}.sl-mode-picker{display:grid;grid-template-columns:1fr 1fr;width:100%}.sl-mode-picker button:last-child{grid-column:1/-1}.sl-skill-card{padding:20px 16px}.sl-skill-card-head{display:grid;grid-template-columns:minmax(0,1fr)}.sl-word-stage{padding:28px 16px}.sl-community-entry nav{display:grid;grid-template-columns:minmax(0,1fr)}}
     @media(max-width:430px){.sl-workspace-heading h1{font-size:40px}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{font-size:16px}.sl-placement-gate,.sl-community-entry{padding:22px 17px}.sl-mode-picker button{padding-inline:8px}.sl-grade-actions{display:grid;grid-template-columns:minmax(0,1fr)}}
-    .sl-course-day{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;border-radius:24px;background:#102f2a;color:#fff}.sl-course-day h2{width:100%;margin:8px 0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-course-day p{margin:0;color:#cce0d9}.sl-course-day>div:last-child{min-width:0;padding:18px;border-radius:16px;background:rgba(255,255,255,.08)}.sl-course-day strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.25;overflow-wrap:anywhere}.sl-course-day ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:7px;list-style:none}.sl-course-day li{padding:7px 10px;border-radius:999px;background:#dff5ec;color:#075d4a;font-size:12px;font-weight:850}@media(max-width:760px){.sl-course-day{grid-template-columns:minmax(0,1fr)}}
+    .sl-course-day{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;border-radius:24px;background:#102f2a;color:#fff}.sl-course-day h2{width:100%;margin:8px 0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-course-day p{margin:0;color:#cce0d9}.sl-course-day>div{min-width:0}.sl-course-day>div:not(:first-child){padding:18px;border-radius:16px;background:rgba(255,255,255,.08)}.sl-course-day strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.25;overflow-wrap:anywhere}.sl-course-day ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:7px;list-style:none}.sl-course-day li{padding:7px 10px;border-radius:999px;background:#dff5ec;color:#075d4a;font-size:12px;font-weight:850}.sl-course-score{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sl-course-score>div span{display:block;color:#bad5cc;font-size:12px;font-weight:800;text-transform:uppercase}.sl-course-score>div strong{margin-top:5px;font-size:clamp(28px,4vw,42px)}.sl-course-score small{font-size:13px}.sl-course-score>p,.sl-certificate-link{grid-column:1/-1}.sl-certificate-link{display:block;padding:11px 13px;border-radius:11px;background:#f3c969;color:#173d34;font-weight:900;text-decoration:none}@media(max-width:980px){.sl-course-day{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sl-course-score{grid-column:1/-1}}@media(max-width:760px){.sl-course-day{grid-template-columns:minmax(0,1fr)}.sl-course-score{grid-column:auto}}
   `}</style>;
 }
 

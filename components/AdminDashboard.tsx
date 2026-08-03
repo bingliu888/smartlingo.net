@@ -8,11 +8,12 @@ async function count(sql: string) {
 }
 
 export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: SessionUser }) {
-  const [members, subscribers, classes, openClasses] = await Promise.all([
+  const [members, subscribers, classes, openClasses, certificates] = await Promise.all([
     count("SELECT COUNT(*) AS count FROM users"),
     count("SELECT COUNT(DISTINCT subscriber_user_id) AS count FROM smartlingo_platform_subscription_payments WHERE status = 'paid'"),
     count("SELECT COUNT(*) AS count FROM smartlingo_language_classes"),
     count("SELECT COUNT(*) AS count FROM smartlingo_language_classes WHERE status = 'open'"),
+    count("SELECT COUNT(*) AS count FROM smartlingo_course_certificates"),
   ]);
   const zh = lang === "zh";
   return (
@@ -30,6 +31,10 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
         <article className="admin-overview-card">
           <div><p>{zh ? "语言班级" : "Language classes"}</p><strong>{classes.toLocaleString()}</strong><span>{zh ? `${openClasses.toLocaleString()} 个开放班级` : `${openClasses.toLocaleString()} open classes`}</span></div>
           <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "管理班级" : "Manage classes"} →</a></nav>
+        </article>
+        <article className="admin-overview-card">
+          <div><p>{zh ? "结业证书" : "Certificates"}</p><strong>{certificates.toLocaleString()}</strong><span>{zh ? "由真实课程成绩生成" : "Issued from recorded course scores"}</span></div>
+          <nav><a href={`/${lang}/admin/certificates?tab=recent`}>{zh ? "最近证书" : "Recent"} →</a><a href={`/${lang}/admin/certificates?tab=ranks`}>{zh ? "成绩排名" : "Ranks"} →</a></nav>
         </article>
       </section>
       <section className="admin-quick-links">
