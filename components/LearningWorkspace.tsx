@@ -7,6 +7,7 @@ import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar"
 
 type Lang = "zh" | "en";
 type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
+type TrainingTab = Skill | "exam";
 type VocabularyMode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
 type VocabularyGrade = "again" | "hard" | "good" | "easy" | "suspend";
 type SessionStatus = "idle" | "running" | "paused";
@@ -100,6 +101,13 @@ type LearningPayload = {
     certificate: { id: string; certificateNumber: string; finalScore: number; issuedAt: number } | null;
   } | null;
   sessionPreference?: { minutes: 15 | 30 | 45 | 60 };
+  sessionState?: {
+    enrollmentId: string;
+    courseDay: number;
+    durationSeconds: 3600;
+    remainingSeconds: number;
+    status: "ready" | "running" | "paused" | "completed";
+  } | null;
   teachingPlan?: { skill: Skill | "quiz" | "community"; minutes: number; title: { zh: string; en: string }; itemCount?: number }[];
   dailyQuiz?: {
     contentVersion: string;
@@ -172,8 +180,8 @@ const COPY = {
     level: { beginner: "初级", intermediate: "中级", advanced: "高级" },
     today: "今日五技能",
     todayIntro: "每项任务均可提交或跳过；跳过会被如实记录，不会伪造成已掌握。",
-    sessionTitle: "选择今天的学习时长",
-    sessionIntro: "系统会按您可用的时间连续安排词汇跟读、听力、对话、阅读、写作和每日测验。",
+    sessionTitle: "开始今天的 60 分钟课程",
+    sessionIntro: "系统会保存剩余时间；暂停或跨日后仍从当前课程日继续。",
     sessionSaved: "今日学习时长已保存。",
     skillsOverviewTitle: "开始前先看清今天练什么",
     skillsOverviewIntro: "五项语言能力与每日测验都在同一个学习流程中；选择时长后点击开始，系统会显示剩余时间。",
@@ -199,7 +207,7 @@ const COPY = {
     sessionComplete: "本次计时学习已完成。",
     vocabularyItems: "10 个词汇",
     teachingPlan: "今日连续学习安排",
-    quickCourse: "旅行入门课程",
+    quickCourse: "语言课程",
     courseDay: "课程日",
     courseScore: "当前课程分",
     todayScore: "今日练习分",
@@ -290,8 +298,8 @@ const COPY = {
     level: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" },
     today: "Today's five skills",
     todayIntro: "Submit or skip each task. A skip is recorded honestly and is never presented as mastery.",
-    sessionTitle: "Choose today's study time",
-    sessionIntro: "SmartLingo builds a continuous session across speaking vocabulary, listening, dialogue, reading, writing, and the daily quiz.",
+    sessionTitle: "Start today's 60-minute course day",
+    sessionIntro: "SmartLingo saves remaining time and resumes the same course day after a pause or on another date.",
     sessionSaved: "Today's study time is saved.",
     skillsOverviewTitle: "See exactly what you will practice",
     skillsOverviewIntro: "All five language skills and the daily quiz belong to one guided session. Choose a duration, press Start, and keep the remaining time visible as you learn.",
@@ -317,7 +325,7 @@ const COPY = {
     sessionComplete: "This timed learning session is complete.",
     vocabularyItems: "10 vocabulary items",
     teachingPlan: "Today's continuous learning plan",
-    quickCourse: "BEGINNER TRAVEL COURSE",
+    quickCourse: "LANGUAGE COURSE",
     courseDay: "Course day",
     courseScore: "Current course score",
     todayScore: "Today's practice score",
@@ -436,12 +444,11 @@ function clozeText(example: string | undefined, word: string | undefined) {
   return example.replace(new RegExp(escapedWord, "giu"), "_____");
 }
 
-export function LearningWorkspace({ lang, classId = "", calendarOnly = false, view = "dashboard", initialMinutes = 15 }: {
+export function LearningWorkspace({ lang, classId = "", calendarOnly = false, view = "dashboard" }: {
   lang: Lang;
   classId?: string;
   calendarOnly?: boolean;
   view?: "dashboard" | "session";
-  initialMinutes?: 15 | 30 | 45 | 60;
 }) {
   const router = useRouter();
   const t = COPY[lang];
@@ -472,9 +479,9 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   const pronunciationStream = useRef<MediaStream | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>(view === "session" ? "running" : "idle");
-  const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState(view === "session" ? initialMinutes * 60 : 0);
+  const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState(view === "session" ? 3600 : 0);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
-  const [activeSkill, setActiveSkill] = useState<Skill>("vocabulary");
+  const [activeSkill, setActiveSkill] = useState<TrainingTab>("vocabulary");
   const logRequestKey = `${calendarMonth}:${classId || "all"}:${timeZone}`;
   const logLoaded = loadedLogKey === logRequestKey;
 
@@ -500,12 +507,17 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         setSessionStatus("idle");
         setSessionPanelOpen(false);
         setNotice(t.sessionComplete);
+        void fetch(`/api/classes/${encodeURIComponent(classId)}/learning`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "complete_session", remainingSeconds: 0, date: today, lang, timeZone }),
+        });
         return;
       }
       setSessionRemainingSeconds(sessionRemainingSeconds - 1);
     }, 1_000);
     return () => window.clearTimeout(timer);
-  }, [sessionRemainingSeconds, sessionStatus, t.sessionComplete]);
+  }, [classId, lang, sessionRemainingSeconds, sessionStatus, t.sessionComplete, timeZone, today]);
 
   useEffect(() => () => {
     pronunciationRecorder.current?.stop();
@@ -569,6 +581,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         setClassInfo(result.classResult.class ?? result.learningResult?.class ?? null);
         setPlacement(result.learningResult?.placement ?? result.classResult.placement ?? null);
         setLearning(result.learningResult);
+        if (result.learningResult?.sessionState) {
+          setSessionRemainingSeconds(Math.max(0, Math.min(3600, Number(result.learningResult.sessionState.remainingSeconds))));
+          setSessionStatus(result.learningResult.sessionState.status === "running" ? "running" : result.learningResult.sessionState.status === "paused" ? "paused" : "idle");
+        }
         setVocabularyIndex(result.learningResult?.vocabularyDeckMeta?.activeIndex ?? 0);
         setPlacementChecked(true);
         setLearningError("");
@@ -596,6 +612,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       if (!response.ok) throw new Error(result.error || t.saveError);
       setNotice(t.saved);
       setLearning(result);
+      if (result.sessionState) {
+        setSessionRemainingSeconds(Math.max(0, Math.min(3600, Number(result.sessionState.remainingSeconds))));
+        setSessionStatus(result.sessionState.status === "running" ? "running" : result.sessionState.status === "paused" ? "paused" : "idle");
+      }
       setClassInfo(current => result.class ?? current);
       setPlacement(current => result.placement ?? current);
       await loadLog();
@@ -695,20 +715,22 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     recognition.start();
   }
 
-  async function setSessionMinutes(minutes: 15 | 30 | 45 | 60) {
-    const result = await postLearning({ action: "set_session_minutes", sessionMinutes: minutes }, `session:${minutes}`);
-    if (result) setNotice(t.sessionSaved);
+  async function startSession() {
+    const result = await postLearning({ action: "start_session" }, "session-start");
+    if (result) router.push(`/${lang}/classes/${encodeURIComponent(classId)}/learn/session`);
   }
 
-  function startSession() {
-    const minutes = learning?.sessionPreference?.minutes ?? 15;
-    router.push(`/${lang}/classes/${encodeURIComponent(classId)}/learn/session?minutes=${minutes}`);
+  async function toggleSession() {
+    const nextAction = sessionStatus === "paused" ? "resume_session" : "pause_session";
+    const result = await postLearning({ action: nextAction, remainingSeconds: sessionRemainingSeconds }, `session-${nextAction}`);
+    if (result) setSessionPanelOpen(false);
   }
 
-  function quitSession() {
+  async function quitSession() {
+    await postLearning({ action: "pause_session", remainingSeconds: sessionRemainingSeconds }, "session-quit");
     setSessionStatus("idle");
-    setSessionRemainingSeconds(0);
     setSessionPanelOpen(false);
+    router.push(`/${lang}/classes/${encodeURIComponent(classId)}/learn`);
   }
 
   function formattedSessionTime() {
@@ -812,11 +834,9 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         </div> : null}
       </aside> : null}
       {!trainingView && learning ? <section className="sl-session-planner" data-layout-fill="daily-session-planner">
-        <header><p className="sl-eyebrow">{t.teachingPlan}</p><h2>{t.sessionTitle}</h2><p>{t.sessionIntro}</p></header>
-        <div className="sl-duration-picker" role="group" aria-label={t.sessionTitle}>
-          {([15, 30, 45, 60] as const).map(minutes => <button type="button" key={minutes} disabled={Boolean(busyKey)} className={learning.sessionPreference?.minutes === minutes ? "active" : ""} aria-pressed={learning.sessionPreference?.minutes === minutes} onClick={() => setSessionMinutes(minutes)}>{minutes} {t.minutes}</button>)}
-        </div>
-        <button type="button" className="sl-session-start" disabled={Boolean(busyKey) || sessionStatus !== "idle"} onClick={startSession}><span aria-hidden="true">▶</span>{t.startSession}</button>
+        <header><p className="sl-eyebrow">{t.teachingPlan}</p><h2>{t.sessionTitle}</h2><p>{lang === "zh" ? "每个课程日固定 60 分钟。未完成会保存剩余时间，明天从同一课程日继续；考试标签始终开放。" : "Every course day is a fixed 60-minute session. Unfinished time is saved across days, and the Exam tab always remains available."}</p></header>
+        <div className="sl-fixed-duration" style={{ width: "100%", padding: 18, display: "grid", gridTemplateColumns: "auto auto minmax(0,1fr)", alignItems: "baseline", gap: 8, border: "1px solid #c8ddd4", borderRadius: 16, background: "#fff" }}><strong style={{ fontSize: 38, color: "#087d62" }}>60</strong><span>{t.minutes}</span><small style={{ justifySelf: "end", color: "#60716b" }}>{learning.sessionState?.remainingSeconds === 3600 ? (lang === "zh" ? "尚未开始" : "Not started") : `${lang === "zh" ? "剩余" : "Remaining"} ${Math.ceil((learning.sessionState?.remainingSeconds ?? 3600) / 60)} ${t.minutes}`}</small></div>
+        <button type="button" className="sl-session-start" disabled={Boolean(busyKey) || learning.sessionState?.status === "completed"} onClick={startSession}><span aria-hidden="true">▶</span>{learning.sessionState?.status === "paused" ? t.resumeSession : t.startSession}</button>
       </section> : null}
       {trainingView ? <><header className="sl-section-heading" id="today-five-skills" data-layout-fill="five-skill-heading">
         <p className="sl-eyebrow">{today}</p>
@@ -824,7 +844,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         <p data-readable-copy="five-skill-intro">{t.trainingIntro}</p>
       </header>
       <nav className="sl-skill-tabs" role="tablist" aria-label={t.trainingTitle}>
-        {(["vocabulary", "reading", "writing", "listening", "dialogue"] as const).map((skill, index) => <button type="button" role="tab" aria-selected={activeSkill === skill} className={activeSkill === skill ? "active" : ""} onClick={() => setActiveSkill(skill)} key={skill}><span>0{index + 1}</span>{t[skill]}</button>)}
+        {(["vocabulary", "reading", "writing", "listening", "dialogue", "exam"] as const).map((skill, index) => <button type="button" role="tab" aria-selected={activeSkill === skill} className={activeSkill === skill ? "active" : ""} onClick={() => setActiveSkill(skill)} key={skill}><span>0{index + 1}</span>{skill === "exam" ? (lang === "zh" ? "考试" : "Exam") : t[skill]}</button>)}
       </nav></> : null}
 
       {!learning && !learningError ? <p className="sl-loading" aria-live="polite">{t.loading}</p> : null}
@@ -940,13 +960,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
             </div> : <p className="sl-empty-task">{t.noTask}</p>}
           </article>;
         })}
-        <nav className="sl-skill-stepper" aria-label={t.trainingTitle}>
-          <button type="button" disabled={activeSkill === "vocabulary"} onClick={() => setActiveSkill(SMART_SKILLS[Math.max(0, SMART_SKILLS.indexOf(activeSkill) - 1)])}>← {t.previousSkill}</button>
+        {activeSkill !== "exam" ? <nav className="sl-skill-stepper" aria-label={t.trainingTitle}>
+          <button type="button" disabled={activeSkill === "vocabulary"} onClick={() => setActiveSkill(SMART_SKILLS[Math.max(0, SMART_SKILLS.indexOf(activeSkill as Skill) - 1)])}>← {t.previousSkill}</button>
           <Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{t.backToPlan}</Link>
-          <button type="button" disabled={activeSkill === "dialogue"} onClick={() => setActiveSkill(SMART_SKILLS[Math.min(SMART_SKILLS.length - 1, SMART_SKILLS.indexOf(activeSkill) + 1)])}>{t.nextSkill} →</button>
-        </nav>
+          <button type="button" onClick={() => setActiveSkill(activeSkill === "dialogue" ? "exam" : SMART_SKILLS[Math.min(SMART_SKILLS.length - 1, SMART_SKILLS.indexOf(activeSkill as Skill) + 1)])}>{activeSkill === "dialogue" ? (lang === "zh" ? "前往考试" : "Go to exam") : t.nextSkill} →</button>
+        </nav> : null}
       </div> : null}
-      {trainingView && activeSkill === "dialogue" && learning?.dailyQuiz?.questions?.length ? <section className="sl-daily-quiz" data-layout-fill="daily-vocabulary-quiz">
+      {trainingView && activeSkill === "exam" && learning?.dailyQuiz?.questions?.length ? <section className="sl-daily-quiz" data-layout-fill="daily-vocabulary-quiz">
         <header><p className="sl-eyebrow">{t.quizKicker}</p><h2>{t.quizTitle}</h2><p>{t.quizIntro}</p></header>
         {learning.dailyQuizStatus ? <p className="sl-quiz-status">{t.quizResult}：{learning.dailyQuizStatus.score} / 100 · {learning.dailyQuizStatus.correctCount} / {learning.dailyQuizStatus.questionCount}</p> : null}
         <div className="sl-quiz-questions">{learning.dailyQuiz.questions.map((question, index) => <fieldset key={question.id}>
@@ -974,7 +994,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         <strong>{formattedSessionTime()}</strong>
       </button>
       {sessionPanelOpen ? <div className="sl-session-timer-controls">
-        <button type="button" onClick={() => setSessionStatus(status => status === "paused" ? "running" : "paused")}>{sessionStatus === "paused" ? `▶ ${t.resumeSession}` : `Ⅱ ${t.pauseSession}`}</button>
+        <button type="button" onClick={toggleSession}>{sessionStatus === "paused" ? `▶ ${t.resumeSession}` : `Ⅱ ${t.pauseSession}`}</button>
         <button type="button" onClick={quitSession}>× {t.quitSession}</button>
       </div> : null}
     </aside> : null}
@@ -994,6 +1014,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       {logLoaded ? <LearningLogCalendar lang={lang} days={days} month={calendarMonth} onMonthChange={setMonthOverride}/> : null}
     </section>
     <LearningWorkspaceStyles/>
+    <style>{`.sl-skill-tabs{grid-template-columns:repeat(6,minmax(0,1fr))}@media(max-width:760px){.sl-skill-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}`}</style>
   </section>;
 }
 

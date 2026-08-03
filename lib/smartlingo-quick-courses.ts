@@ -1,9 +1,17 @@
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities.ts";
 import type { BilingualText, SmartLingoSkill } from "./smartlingo-learning.ts";
 
-export const SMARTLINGO_QUICK_COURSE_VERSION = "2026-08-02.2" as const;
-export const SMARTLINGO_QUICK_COURSE_DAYS = [7, 14, 28] as const;
+export const SMARTLINGO_QUICK_COURSE_VERSION = "2026-08-02.3" as const;
+export const SMARTLINGO_COURSE_LEVELS = ["beginner", "intermediate", "advanced"] as const;
+export type SmartLingoCourseLevel = (typeof SMARTLINGO_COURSE_LEVELS)[number];
+export const SMARTLINGO_COURSE_DURATIONS = {
+  beginner: [7, 14, 30],
+  intermediate: [30, 60, 90],
+  advanced: [90, 180, 365],
+} as const satisfies Record<SmartLingoCourseLevel, readonly number[]>;
+export const SMARTLINGO_QUICK_COURSE_DAYS = SMARTLINGO_COURSE_DURATIONS.beginner;
 export type SmartLingoQuickCourseDays = (typeof SMARTLINGO_QUICK_COURSE_DAYS)[number];
+export type SmartLingoCourseDays = 7 | 14 | 30 | 60 | 90 | 180 | 365;
 
 const SCENES: readonly BilingualText[] = [
   { zh: "问候与礼貌表达", en: "Greetings and courtesy" },
@@ -48,8 +56,8 @@ export type SmartLingoQuickCourseDay = {
 export type SmartLingoQuickCourse = {
   readonly stableId: string;
   readonly language: SmartLingoCommunityLanguage;
-  readonly days: SmartLingoQuickCourseDays;
-  readonly level: "beginner";
+  readonly days: SmartLingoCourseDays;
+  readonly level: SmartLingoCourseLevel;
   readonly title: BilingualText;
   readonly summary: BilingualText;
   readonly isFreeDefault: boolean;
@@ -58,42 +66,56 @@ export type SmartLingoQuickCourse = {
   readonly sourceType: "smartlingo_original";
 };
 
-function skillsForDay(courseDays: SmartLingoQuickCourseDays, day: number): readonly SmartLingoSkill[] {
+function skillsForDay(level: SmartLingoCourseLevel, courseDays: SmartLingoCourseDays, day: number): readonly SmartLingoSkill[] {
   const skills: SmartLingoSkill[] = ["vocabulary", "listening", "dialogue"];
-  if (courseDays >= 14 && day >= 4) skills.splice(1, 0, "reading");
-  if (courseDays === 28 && day >= 8) skills.splice(2, 0, "writing");
+  if (level !== "beginner" || (courseDays >= 14 && day >= 4)) skills.splice(1, 0, "reading");
+  if (level !== "beginner" || (courseDays >= 30 && day >= 8)) skills.splice(2, 0, "writing");
   return skills;
 }
 
 export function buildQuickCourse(
   language: SmartLingoCommunityLanguage,
-  days: SmartLingoQuickCourseDays,
+  days: SmartLingoCourseDays,
+  level: SmartLingoCourseLevel = "beginner",
 ): SmartLingoQuickCourse {
-  const title = days === 7
-    ? { zh: "七天旅行生存课", en: "7-day Travel Essentials" }
-    : days === 14
-      ? { zh: "十四天旅行交流课", en: "14-day Travel Confidence" }
-      : { zh: "四周实用入门课", en: "4-week Practical Beginner" };
-  const summary = days === 7
-    ? { zh: "免费建立旅行所需的核心词汇、听力与对话能力。", en: "Build core travel vocabulary, listening, and dialogue skills for free." }
-    : days === 14
-      ? { zh: "在七天课程上加入路牌、菜单、通知和短消息阅读。", en: "Add signs, menus, notices, and short-message reading to the 7-day foundation." }
-      : { zh: "二十八天完成四周训练，加入实用写作、复习与五项技能综合旅行任务。", en: "Complete four weeks of practical writing, review, and integrated travel missions across all five skills." };
+  const levelName = level === "beginner"
+    ? { zh: "入门", en: "Beginner" }
+    : level === "intermediate"
+      ? { zh: "中级", en: "Intermediate" }
+      : { zh: "高级", en: "Advanced" };
+  const durationName = days < 30
+    ? { zh: `${days} 天`, en: `${days}-day` }
+    : days === 365
+      ? { zh: "12 个月", en: "12-month" }
+      : { zh: `${Math.round(days / 30)} 个月`, en: `${Math.round(days / 30)}-month` };
+  const title = {
+    zh: `${durationName.zh}${levelName.zh}课程`,
+    en: `${durationName.en} ${levelName.en} Course`,
+  };
+  const summary = level === "beginner"
+    ? days === 7
+      ? { zh: "免费建立旅行所需的核心词汇、听力与对话能力。", en: "Build core travel vocabulary, listening, and dialogue skills for free." }
+      : days === 14
+        ? { zh: "承接七天基础，并加入路牌、菜单、通知和短消息阅读。", en: "Continue from the 7-day foundation and add signs, menus, notices, and short-message reading." }
+        : { zh: "承接十四天基础，加入实用写作、复习与五项技能综合任务。", en: "Continue from the 14-day foundation with practical writing, review, and integrated five-skill missions." }
+    : level === "intermediate"
+      ? { zh: "用真实生活与工作场景提升五项语言技能的准确度、流利度和理解深度。", en: "Improve accuracy, fluency, and comprehension across five skills in real-life and work scenarios." }
+      : { zh: "通过复杂表达、专业材料和长篇任务训练接近熟练使用者的综合能力。", en: "Build near-proficient command through complex expression, professional materials, and extended tasks." };
   return {
-    stableId: `sl-quick-${language}-beginner-${days}d-v1`,
+    stableId: `sl-course-${language}-${level}-${days}d-v1`,
     language,
     days,
-    level: "beginner",
+    level,
     title,
     summary,
     isFreeDefault: days === 7,
     curriculumVersion: SMARTLINGO_QUICK_COURSE_VERSION,
     sourceType: "smartlingo_original",
-    schedule: SCENES.slice(0, days).map((scene, index) => ({
+    schedule: Array.from({ length: days }, (_, index) => ({
       day: index + 1,
-      scene,
-      skills: skillsForDay(days, index + 1),
-      estimatedMinutes: days === 7 ? 10 : days === 14 ? 15 : 20,
+      scene: SCENES[index % SCENES.length],
+      skills: skillsForDay(level, days, index + 1),
+      estimatedMinutes: 60,
     })),
   };
 }
@@ -112,4 +134,18 @@ export const SMARTLINGO_SHOWCASE_LEARNERS = [
 
 export function isQuickCourseDays(value: unknown): value is SmartLingoQuickCourseDays {
   return SMARTLINGO_QUICK_COURSE_DAYS.includes(Number(value) as SmartLingoQuickCourseDays);
+}
+
+export function isCourseLevel(value: unknown): value is SmartLingoCourseLevel {
+  return SMARTLINGO_COURSE_LEVELS.includes(value as SmartLingoCourseLevel);
+}
+
+export function isCourseDuration(level: SmartLingoCourseLevel, value: unknown): value is SmartLingoCourseDays {
+  return (SMARTLINGO_COURSE_DURATIONS[level] as readonly number[]).includes(Number(value));
+}
+
+export function previousCourseDuration(level: SmartLingoCourseLevel, days: SmartLingoCourseDays): SmartLingoCourseDays | null {
+  const durations = SMARTLINGO_COURSE_DURATIONS[level] as readonly SmartLingoCourseDays[];
+  const index = durations.indexOf(days);
+  return index > 0 ? durations[index - 1] : null;
 }

@@ -10,11 +10,13 @@ export type SmartLingoCertificateRow = {
   courseTitleZh: string;
   courseTitleEn: string;
   targetLanguage: string;
+  level: "beginner" | "intermediate" | "advanced";
   durationDays: number;
+  startDay: number;
   completedDays: number;
   finalScore: number;
   passScore: number;
-  completionReason: "course_complete" | "early_mastery";
+  completionReason: "course_complete" | "early_mastery" | "exam_pass";
   curriculumVersion: string;
   issuedAt: number;
 };
@@ -29,14 +31,16 @@ export const SMARTLINGO_CERTIFICATE_SELECT = `SELECT cert.id,
   cert.course_title_zh AS courseTitleZh,
   cert.course_title_en AS courseTitleEn,
   cert.target_language AS targetLanguage,
+  cert.level AS level,
   cert.duration_days AS durationDays,
+  cert.start_day AS startDay,
   cert.completed_days AS completedDays,
   cert.final_score AS finalScore,
   cert.pass_score AS passScore,
   cert.completion_reason AS completionReason,
   cert.curriculum_version AS curriculumVersion,
   cert.issued_at AS issuedAt
-  FROM smartlingo_course_certificates cert`;
+  FROM smartlingo_course_certificates_v2 cert`;
 
 export const SMARTLINGO_LANGUAGE_NAMES: Record<string, { zh: string; en: string }> = {
   zh: { zh: "中文", en: "Chinese" },
@@ -60,4 +64,3 @@ export function certificateCourseName(certificate: SmartLingoCertificateRow, lan
 export function certificateLanguageName(code: string, lang: "zh" | "en") {
   return SMARTLINGO_LANGUAGE_NAMES[code]?.[lang] || code.toUpperCase();
 }
-

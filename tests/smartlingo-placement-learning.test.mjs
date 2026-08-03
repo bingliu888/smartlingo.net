@@ -47,13 +47,15 @@ test("class dashboard starts a focused tabbed session with a compact bottom-righ
   const workspace = await read("../components/LearningWorkspace.tsx");
   const sessionPage = await read("../app/[lang]/classes/[classId]/learn/session/page.tsx");
   assert.match(workspace, /className="sl-session-start"/);
-  assert.match(workspace, /learn\/session\?minutes=/);
+  assert.match(workspace, /learn\/session`/);
   assert.match(sessionPage, /view="session"/);
   assert.match(workspace, /className="sl-skill-tabs"/);
   assert.match(workspace, /activeSkill === "vocabulary"/);
   assert.match(workspace, /PRACTICE_SKILLS\.filter\(skill => skill === activeSkill\)/);
   assert.match(workspace, /className=\{`sl-session-timer/);
-  assert.match(workspace, /setSessionStatus\("paused"\)|status === "paused" \? "running" : "paused"/);
+  assert.match(workspace, /pause_session/);
+  assert.match(workspace, /resume_session/);
+  assert.match(workspace, /"exam"/);
   assert.match(workspace, /quitSession/);
   assert.match(workspace, /vocabularyItems: "10 vocabulary items"/);
   assert.match(workspace, /position:fixed;right:max\(18px,env\(safe-area-inset-right\)\)/);

@@ -10,23 +10,15 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   return { title: lang === "zh" ? "五项技能训练 · SmartLingo" : "Five-skill training · SmartLingo" };
 }
 
-function sessionMinutes(value: string | undefined): 15 | 30 | 45 | 60 {
-  const parsed = Number(value);
-  return parsed === 30 || parsed === 45 || parsed === 60 ? parsed : 15;
-}
-
 export default async function LearningSessionPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ lang: string; classId: string }>;
-  searchParams: Promise<{ minutes?: string }>;
 }) {
   const { lang, classId } = await params;
   if (lang !== "zh" && lang !== "en") notFound();
-  const query = await searchParams;
   if (!await requestUser()) {
-    const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session?minutes=${sessionMinutes(query.minutes)}`;
+    const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
@@ -36,7 +28,6 @@ export default async function LearningSessionPage({
         lang={lang}
         classId={classId}
         view="session"
-        initialMinutes={sessionMinutes(query.minutes)}
       />
       <SiteFooter lang={lang} />
     </main>

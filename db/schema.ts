@@ -1187,6 +1187,132 @@ export const lingoCourseCertificates = sqliteTable("smartlingo_course_certificat
   index("smartlingo_certificate_rank_idx").on(table.finalScore, table.issuedAt),
 ]);
 
+/** Unified language-course catalog. Every language has three cumulative levels
+ * and three durations per level; each site owns its own D1 rows. */
+export const lingoCourseOfferingsV3 = sqliteTable("smartlingo_course_offerings_v3", {
+  id: text("id").primaryKey(),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  targetLanguage: text("target_language").notNull(),
+  level: text("level").notNull(),
+  durationDays: integer("duration_days").notNull(),
+  sequence: integer("sequence").notNull(),
+  curriculumVersion: text("curriculum_version").notNull(),
+  isFree: integer("is_free", { mode: "boolean" }).notNull().default(false),
+  status: text("status").notNull().default("published"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_course_v3_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_course_v3_level_ck", sql`${table.level} IN ('beginner', 'intermediate', 'advanced')`),
+  check("smartlingo_course_v3_duration_ck", sql`${table.durationDays} IN (7, 14, 30, 60, 90, 180, 365)`),
+  check("smartlingo_course_v3_sequence_ck", sql`${table.sequence} BETWEEN 1 AND 3`),
+  check("smartlingo_course_v3_free_ck", sql`${table.isFree} IN (0, 1)`),
+  check("smartlingo_course_v3_status_ck", sql`${table.status} IN ('published', 'paused', 'retired')`),
+  uniqueIndex("smartlingo_course_v3_path_level_duration_uq").on(table.pathId, table.level, table.durationDays),
+  index("smartlingo_course_v3_catalog_idx").on(table.status, table.targetLanguage, table.level, table.sequence),
+]);
+
+export const lingoCourseEnrollmentsV3 = sqliteTable("smartlingo_course_enrollments_v3", {
+  id: text("id").primaryKey(),
+  offeringId: text("offering_id").notNull().references(() => lingoCourseOfferingsV3.id, { onDelete: "restrict" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  accessType: text("access_type").notNull(),
+  status: text("status").notNull().default("active"),
+  startDay: integer("start_day").notNull().default(1),
+  currentDay: integer("current_day").notNull().default(1),
+  dailySeconds: integer("daily_seconds").notNull().default(3600),
+  startedAt: integer("started_at").notNull(),
+  completedAt: integer("completed_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_course_enrollment_v3_access_ck", sql`${table.accessType} IN ('free', 'entitled', 'payment_required')`),
+  check("smartlingo_course_enrollment_v3_status_ck", sql`${table.status} IN ('active', 'paused', 'completed', 'withdrawn', 'pending_payment')`),
+  check("smartlingo_course_enrollment_v3_start_ck", sql`${table.startDay} BETWEEN 1 AND 365`),
+  check("smartlingo_course_enrollment_v3_day_ck", sql`${table.currentDay} BETWEEN ${table.startDay} AND 365`),
+  check("smartlingo_course_enrollment_v3_timer_ck", sql`${table.dailySeconds} = 3600`),
+  uniqueIndex("smartlingo_course_enrollment_v3_user_offering_uq").on(table.userId, table.offeringId),
+  index("smartlingo_course_enrollment_v3_user_status_idx").on(table.userId, table.status, table.updatedAt),
+]);
+
+/** Cross-date progress is keyed by course day, so an unfinished lesson resumes
+ * tomorrow instead of advancing or losing its evidence. */
+export const lingoCourseDayProgressV2 = sqliteTable("smartlingo_course_day_progress_v2", {
+  id: text("id").primaryKey(),
+  enrollmentId: text("enrollment_id").notNull().references(() => lingoCourseEnrollmentsV3.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  courseDay: integer("course_day").notNull(),
+  startedDate: text("started_date").notNull(),
+  lastActivityDate: text("last_activity_date").notNull(),
+  score: integer("score").notNull().default(1),
+  skillScores: text("skill_scores").notNull().default("{}"),
+  quizScore: integer("quiz_score"),
+  isComplete: integer("is_complete", { mode: "boolean" }).notNull().default(false),
+  startedAt: integer("started_at").notNull(),
+  completedAt: integer("completed_at"),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_course_day_v2_day_ck", sql`${table.courseDay} BETWEEN 1 AND 365`),
+  check("smartlingo_course_day_v2_date_ck", sql`length(${table.startedDate}) = 10 AND length(${table.lastActivityDate}) = 10`),
+  check("smartlingo_course_day_v2_score_ck", sql`${table.score} BETWEEN 1 AND 100`),
+  check("smartlingo_course_day_v2_skills_ck", sql`json_valid(${table.skillScores}) AND json_type(${table.skillScores}) = 'object' AND length(${table.skillScores}) <= 1000`),
+  check("smartlingo_course_day_v2_quiz_ck", sql`${table.quizScore} IS NULL OR ${table.quizScore} BETWEEN 0 AND 100`),
+  check("smartlingo_course_day_v2_complete_ck", sql`${table.isComplete} IN (0, 1)`),
+  uniqueIndex("smartlingo_course_day_v2_enrollment_day_uq").on(table.enrollmentId, table.courseDay),
+  index("smartlingo_course_day_v2_user_date_idx").on(table.userId, table.lastActivityDate),
+]);
+
+export const lingoCourseSessionState = sqliteTable("smartlingo_course_session_state", {
+  enrollmentId: text("enrollment_id").primaryKey().references(() => lingoCourseEnrollmentsV3.id, { onDelete: "cascade" }),
+  courseDay: integer("course_day").notNull(),
+  durationSeconds: integer("duration_seconds").notNull().default(3600),
+  remainingSeconds: integer("remaining_seconds").notNull().default(3600),
+  status: text("status").notNull().default("ready"),
+  lastStartedAt: integer("last_started_at"),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_course_session_day_ck", sql`${table.courseDay} BETWEEN 1 AND 365`),
+  check("smartlingo_course_session_duration_ck", sql`${table.durationSeconds} = 3600`),
+  check("smartlingo_course_session_remaining_ck", sql`${table.remainingSeconds} BETWEEN 0 AND 3600`),
+  check("smartlingo_course_session_status_ck", sql`${table.status} IN ('ready', 'running', 'paused', 'completed')`),
+]);
+
+export const lingoCourseCertificatesV2 = sqliteTable("smartlingo_course_certificates_v2", {
+  id: text("id").primaryKey(),
+  certificateNumber: text("certificate_number").notNull().unique(),
+  verificationCode: text("verification_code").notNull().unique(),
+  enrollmentId: text("enrollment_id").notNull().unique().references(() => lingoCourseEnrollmentsV3.id, { onDelete: "restrict" }),
+  offeringId: text("offering_id").notNull().references(() => lingoCourseOfferingsV3.id, { onDelete: "restrict" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "restrict" }),
+  memberName: text("member_name").notNull(),
+  courseTitleZh: text("course_title_zh").notNull(),
+  courseTitleEn: text("course_title_en").notNull(),
+  targetLanguage: text("target_language").notNull(),
+  level: text("level").notNull(),
+  durationDays: integer("duration_days").notNull(),
+  startDay: integer("start_day").notNull().default(1),
+  completedDays: integer("completed_days").notNull(),
+  finalScore: integer("final_score").notNull(),
+  passScore: integer("pass_score").notNull().default(60),
+  completionReason: text("completion_reason").notNull(),
+  curriculumVersion: text("curriculum_version").notNull(),
+  issuedAt: integer("issued_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_certificate_v2_member_ck", sql`length(trim(${table.memberName})) BETWEEN 1 AND 120`),
+  check("smartlingo_certificate_v2_language_ck", sql`${table.targetLanguage} IN ('zh', 'en', 'es', 'ja', 'ko', 'fr', 'de', 'ru', 'it', 'pt', 'ar', 'hi')`),
+  check("smartlingo_certificate_v2_level_ck", sql`${table.level} IN ('beginner', 'intermediate', 'advanced')`),
+  check("smartlingo_certificate_v2_duration_ck", sql`${table.durationDays} IN (7, 14, 30, 60, 90, 180, 365)`),
+  check("smartlingo_certificate_v2_score_ck", sql`${table.finalScore} BETWEEN 60 AND 100 AND ${table.passScore} = 60`),
+  check("smartlingo_certificate_v2_reason_ck", sql`${table.completionReason} IN ('course_complete', 'early_mastery', 'exam_pass')`),
+  index("smartlingo_certificate_v2_user_issued_idx").on(table.userId, table.issuedAt),
+  index("smartlingo_certificate_v2_class_score_idx").on(table.classId, table.finalScore, table.issuedAt),
+  index("smartlingo_certificate_v2_rank_idx").on(table.finalScore, table.issuedAt),
+]);
+
 /**
  * A placement attempt belongs to one active member of one platform-provided
  * language community. Self-selected entry levels intentionally keep the five

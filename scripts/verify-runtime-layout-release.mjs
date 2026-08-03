@@ -175,15 +175,15 @@ INSERT INTO smartlingo_placement_attempts
 INSERT INTO smartlingo_placement_attempts
  (id,user_id,class_id,path_id,entry_mode,status,current_difficulty,active_seconds,last_resumed_at,started_at,created_at,updated_at)
  VALUES ('layout-placement-active','layout-user','class_official_es','path_es_a1','adaptive','in_progress',3,45,1785682000,1785681900,1785681900,1785682000);
-INSERT INTO smartlingo_quick_course_enrollments_v2
- (id,offering_id,user_id,class_id,access_type,status,current_day,started_at,completed_at,created_at,updated_at)
- VALUES ('layout-enrollment','sl-quick-en-beginner-7d-v1','layout-user','class_official_en','free','completed',1,1785682100,1785682200,1785682100,1785682200);
-INSERT INTO smartlingo_quick_course_daily_scores
- (id,enrollment_id,user_id,class_id,course_day,local_date,score,skill_scores,quiz_score,is_complete,created_at,updated_at)
- VALUES ('layout-daily-score','layout-enrollment','layout-user','class_official_en',1,'2026-08-02',95,'{"vocabulary":95,"listening":95,"dialogue":95}',95,1,1785682150,1785682150);
-INSERT INTO smartlingo_course_certificates
- (id,certificate_number,verification_code,enrollment_id,offering_id,user_id,class_id,member_name,course_title_zh,course_title_en,target_language,level,duration_days,completed_days,final_score,pass_score,completion_reason,curriculum_version,issued_at,created_at)
- VALUES ('layout-certificate','SL-2026-LAYOUT','LAYOUT95','layout-enrollment','sl-quick-en-beginner-7d-v1','layout-user','class_official_en','Layout Learner','英语 7 天旅行入门课','English 7-day travel beginner course','en','beginner',7,1,95,60,'early_mastery','2026-08-02.2',1785682200,1785682200);
+INSERT INTO smartlingo_course_enrollments_v3
+ (id,offering_id,user_id,class_id,access_type,status,start_day,current_day,daily_seconds,started_at,completed_at,created_at,updated_at)
+ VALUES ('layout-enrollment','sl-course-en-beginner-7d-v1','layout-user','class_official_en','free','completed',1,1,3600,1785682100,1785682200,1785682100,1785682200);
+INSERT INTO smartlingo_course_day_progress_v2
+ (id,enrollment_id,user_id,class_id,course_day,started_date,last_activity_date,score,skill_scores,quiz_score,is_complete,started_at,completed_at,updated_at)
+ VALUES ('layout-daily-score','layout-enrollment','layout-user','class_official_en',1,'2026-08-02','2026-08-02',95,'{"vocabulary":95,"listening":95,"dialogue":95}',95,1,1785682150,1785682150,1785682150);
+INSERT INTO smartlingo_course_certificates_v2
+ (id,certificate_number,verification_code,enrollment_id,offering_id,user_id,class_id,member_name,course_title_zh,course_title_en,target_language,level,duration_days,start_day,completed_days,final_score,pass_score,completion_reason,curriculum_version,issued_at,created_at)
+ VALUES ('layout-certificate','SL-2026-LAYOUT','LAYOUT95','layout-enrollment','sl-course-en-beginner-7d-v1','layout-user','class_official_en','Layout Learner','英语 7 天旅行入门课','English 7-day travel beginner course','en','beginner',7,1,1,95,60,'early_mastery','2026-08-02.3',1785682200,1785682200);
 INSERT INTO community_topics (id,user_id,category,title,body,created_at,updated_at) VALUES
  ('layout-topic','layout-peer','learning','Practice together / 一起练习','Share one phrase used today. / 分享一句今天使用的表达。',1785681100,1785681200);
 INSERT INTO community_replies (id,topic_id,user_id,body,created_at) VALUES

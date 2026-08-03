@@ -13,7 +13,7 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
     count("SELECT COUNT(DISTINCT subscriber_user_id) AS count FROM smartlingo_platform_subscription_payments WHERE status = 'paid'"),
     count("SELECT COUNT(*) AS count FROM smartlingo_language_classes"),
     count("SELECT COUNT(*) AS count FROM smartlingo_language_classes WHERE status = 'open'"),
-    count("SELECT COUNT(*) AS count FROM smartlingo_course_certificates"),
+    count("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2"),
   ]);
   const zh = lang === "zh";
   return (

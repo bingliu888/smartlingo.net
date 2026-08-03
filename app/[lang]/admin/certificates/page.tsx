@@ -27,10 +27,11 @@ export default async function AdminCertificatesPage({ params, searchParams }: { 
     cert.user_id AS userId, cert.class_id AS classId, cert.member_name AS memberName,
     u.email AS memberEmail, cert.course_title_zh AS courseTitleZh,
     cert.course_title_en AS courseTitleEn, cert.target_language AS targetLanguage,
-    cert.duration_days AS durationDays, cert.completed_days AS completedDays,
+    cert.level AS level, cert.duration_days AS durationDays, cert.start_day AS startDay,
+    cert.completed_days AS completedDays,
     cert.final_score AS finalScore, cert.pass_score AS passScore,
     cert.completion_reason AS completionReason, cert.curriculum_version AS curriculumVersion,
-    cert.issued_at AS issuedAt FROM smartlingo_course_certificates cert
+    cert.issued_at AS issuedAt FROM smartlingo_course_certificates_v2 cert
     JOIN users u ON u.id = cert.user_id ${filter} ORDER BY ${order} LIMIT 200`);
   const pattern = searchPattern(query);
   const result = query ? await statement.bind(pattern, pattern).run<AdminCertificateRow>() : await statement.run<AdminCertificateRow>();

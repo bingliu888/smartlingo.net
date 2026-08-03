@@ -15,9 +15,10 @@ import {
 import type { SmartLingoLevel } from "../lib/smartlingo-learning";
 import type { SmartLingoCommunityLanguage } from "../lib/smartlingo-language-communities";
 import {
-  SMARTLINGO_QUICK_COURSE_DAYS,
+  SMARTLINGO_COURSE_DURATIONS,
   buildQuickCourse,
-  type SmartLingoQuickCourseDays,
+  type SmartLingoCourseDays,
+  type SmartLingoCourseLevel,
 } from "../lib/smartlingo-quick-courses";
 
 type SavedPlan = {
@@ -62,8 +63,8 @@ const copy = {
     useCase: "使用场景",
     minutes: "每日时长",
     level: "自报水平",
-    course: "旅行入门课程",
-    courseIntro: "初级课程按一周、两周、四周组织：七天免费开放；十四天加入阅读；二十八天加入写作和完整五项技能。可以暂停并从原处继续。",
+    course: "选择等级与累进课程",
+    courseIntro: "入门为 7、14、30 天；中级为 1、2、3 个月；高级为 3、6、12 个月。已有同级较短课程证书会自动承接下一天；每个课程日为可跨日续学的 60 分钟。",
     free: "免费",
     paidLater: "付费开放前可保存选择",
     daily: "每天约",
@@ -112,8 +113,8 @@ const copy = {
     useCase: "Use case",
     minutes: "Daily time",
     level: "Self-reported level",
-    course: "Beginner travel course",
-    courseIntro: "Beginner courses follow one-, two-, and four-week paths. The 7-day course is free; 14 days adds reading; 28 days adds writing and the complete five-skill loop. Pause anytime and continue where you stopped.",
+    course: "Choose a level and cumulative course",
+    courseIntro: "Beginner offers 7, 14, and 30 days; intermediate offers 1, 2, and 3 months; advanced offers 3, 6, and 12 months. A shorter certificate continues at the next day. Every course day is a resumable 60-minute session.",
     free: "Free",
     paidLater: "Save choice before paid access opens",
     daily: "About",
@@ -152,7 +153,8 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
   const [dailyMinutes, setDailyMinutes] = useState<SmartLingoDailyMinutes>(10);
   const [selfReportedLevel, setSelfReportedLevel] = useState<SmartLingoLevel>("beginner");
   const [entryMode, setEntryMode] = useState<SmartLingoEntryMode>("fundamentals");
-  const [courseDays, setCourseDays] = useState<SmartLingoQuickCourseDays>(7);
+  const [courseLevel, setCourseLevel] = useState<SmartLingoCourseLevel>("beginner");
+  const [courseDays, setCourseDays] = useState<SmartLingoCourseDays>(7);
   const [currentUnitId, setCurrentUnitId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -216,7 +218,7 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
       const quickCourse = await fetch("/api/quick-courses", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({ targetLanguage, durationDays: courseDays }),
+        body: JSON.stringify({ targetLanguage, level: courseLevel, durationDays: courseDays }),
       });
       if (!quickCourse.ok) throw new Error(t.saveOnly);
       const quickCoursePayload = await quickCourse.json() as { enrollment?: { status?: string } };
@@ -293,9 +295,22 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
         <fieldset>
           <legend>{t.course}</legend>
           <p className="sl-course-intro">{t.courseIntro}</p>
+          <div className="sl-course-levels" role="group" aria-label={t.level} style={{width:"100%",margin:"0 0 10px",display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
+            {(["beginner", "intermediate", "advanced"] as const).map(level => <button
+              type="button"
+              className={courseLevel === level ? "selected" : ""}
+              aria-pressed={courseLevel === level}
+              style={{minWidth:0,minHeight:46,padding:"9px 12px",border:`1px solid ${courseLevel === level ? "#63deb7" : "rgba(255,255,255,.28)"}`,borderRadius:12,background:courseLevel === level ? "#63deb7" : "rgba(255,255,255,.07)",color:courseLevel === level ? "#113a31" : "#fff",font:"850 15px/1.25 inherit",cursor:"pointer"}}
+              onClick={() => {
+                setCourseLevel(level);
+                setCourseDays(SMARTLINGO_COURSE_DURATIONS[level][0]);
+              }}
+              key={level}
+            >{t.levels[level]}</button>)}
+          </div>
           <div className="sl-course-grid" data-layout-fill="quick-course-options">
-            {SMARTLINGO_QUICK_COURSE_DAYS.map(days => {
-              const course = buildQuickCourse(targetLanguage, days);
+            {SMARTLINGO_COURSE_DURATIONS[courseLevel].map(days => {
+              const course = buildQuickCourse(targetLanguage, days, courseLevel);
               return <label className={courseDays === days ? "selected" : ""} data-layout-track={`quick-course-${days}`} key={days}>
                 <input type="radio" name="courseDays" value={days} checked={courseDays === days} onChange={() => setCourseDays(days)}/>
                 <span><b>{course.title[lang]}</b><small>{course.summary[lang]}</small><em>{course.isFreeDefault ? t.free : t.paidLater} · {t.daily} {course.schedule[0].estimatedMinutes} {lang === "zh" ? "分钟" : "minutes"}</em></span>

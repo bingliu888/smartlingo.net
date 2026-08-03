@@ -10,7 +10,7 @@ export type CourseDailyScoreInput = {
 };
 
 export type CourseOutcomeInput = {
-  durationDays: 7 | 14 | 28;
+  durationDays: number;
   completedDayScores: readonly number[];
 };
 
@@ -61,4 +61,3 @@ export function calculateCourseOutcome(input: CourseOutcomeInput) {
     completionReason: passed ? earlyMastery ? "early_mastery" as const : "course_complete" as const : null,
   };
 }
-

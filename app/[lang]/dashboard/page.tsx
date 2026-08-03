@@ -66,7 +66,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   if (user.role === "admin") {
     return <main className="dashboard-page"><SiteHeader lang={lang} /><AdminDashboard lang={lang} user={user} /><SiteFooter lang={lang} /></main>;
   }
-  const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates WHERE user_id = ?")
+  const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2 WHERE user_id = ?")
     .bind(user.id).first<{ count: number }>())?.count ?? 0;
   return (
     <main className="dashboard-page">

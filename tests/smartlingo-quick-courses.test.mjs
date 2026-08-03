@@ -14,7 +14,7 @@ import {
   getVocabularyVisualCue,
 } from "../lib/smartlingo-learning.ts";
 
-test("all twelve languages publish one-, two-, and four-week beginner fast tracks", () => {
+test("all twelve languages publish 7-, 14-, and 30-day beginner courses", () => {
   const courses = SMARTLINGO_COMMUNITY_LANGUAGE_CODES.flatMap(language =>
     SMARTLINGO_QUICK_COURSE_DAYS.map(days => buildQuickCourse(language, days)));
   assert.equal(courses.length, 36);
@@ -28,13 +28,25 @@ test("all twelve languages publish one-, two-, and four-week beginner fast track
   }
 });
 
-test("reading begins in the 14-day path and writing begins in the 28-day path", () => {
+test("reading begins in the 14-day path and writing begins in the 30-day path", () => {
   const fourteen = buildQuickCourse("it", 14);
-  const fourWeeks = buildQuickCourse("it", 28);
+  const fourWeeks = buildQuickCourse("it", 30);
   assert.ok(fourteen.schedule.slice(3).every(day => day.skills.includes("reading")));
   assert.ok(fourteen.schedule.every(day => !day.skills.includes("writing")));
   assert.ok(fourWeeks.schedule.slice(7).every(day => day.skills.includes("writing")));
   assert.deepEqual(fourWeeks.schedule.at(-1)?.skills, ["vocabulary", "reading", "writing", "listening", "dialogue"]);
+});
+
+test("intermediate and advanced levels expose cumulative month courses with fixed 60-minute days", () => {
+  for (const [level, durations] of [["intermediate", [30, 60, 90]], ["advanced", [90, 180, 365]]]) {
+    for (const days of durations) {
+      const course = buildQuickCourse("zh", days, level);
+      assert.equal(course.level, level);
+      assert.equal(course.schedule.length, days);
+      assert.ok(course.schedule.every(day => day.estimatedMinutes === 60));
+      assert.ok(course.schedule.every(day => day.skills.length === 5));
+    }
+  }
 });
 
 test("test1 is an English-interface beginner learning Chinese on the free path", () => {

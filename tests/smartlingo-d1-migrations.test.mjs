@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 30);
-  assert.equal(result.firstRunApplied, 30);
+  assert.equal(result.migrationCount, 31);
+  assert.equal(result.firstRunApplied, 31);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0029_calm_deathstrike");
+  assert.equal(result.newestMigration, "0030_dear_jocasta");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -171,8 +171,25 @@ test("0024 introduces the four-week catalog without deleting legacy enrollment e
   assert.match(migration, /CHECK\(`duration_days` IN \(7,14,28\)\)/);
   assert.match(migration, /CASE WHEN o\.`duration_days` = 30 THEN 28/);
   assert.match(schema, /sqliteTable\("smartlingo_quick_course_offerings_v2"/);
-  assert.match(route, /FROM smartlingo_quick_course_offerings_v2/);
+  assert.match(route, /FROM smartlingo_course_offerings_v3/);
   assert.match(journal, /"tag": "0024_smartlingo_four_week_courses"/);
+});
+
+test("0030 unifies cumulative level courses, cross-day sessions, and certificates", async () => {
+  const [schema, migration, route, catalog] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0030_dear_jocasta.sql"),
+    read("../app/api/quick-courses/route.ts"),
+    read("../lib/smartlingo-quick-courses.ts"),
+  ]);
+  assert.match(schema, /sqliteTable\("smartlingo_course_offerings_v3"/);
+  assert.match(schema, /sqliteTable\("smartlingo_course_session_state"/);
+  assert.match(schema, /remainingSeconds: integer\("remaining_seconds"\)/);
+  assert.match(migration, /\('advanced',365,3\)/);
+  assert.match(migration, /duration_seconds`,`remaining_seconds`/);
+  assert.match(route, /startDay = Number\(prior\.durationDays\) \+ 1/);
+  assert.match(catalog, /beginner: \[7, 14, 30\]/);
+  assert.match(catalog, /advanced: \[90, 180, 365\]/);
 });
 
 test("0025 stores daily session preferences and server-graded quiz history", async () => {
