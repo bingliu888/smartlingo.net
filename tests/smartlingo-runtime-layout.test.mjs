@@ -30,6 +30,7 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/programs",
     "/classes/class_official_es/placement",
     "/classes/class_official_en/learn",
+    "/classes/class_official_en/learn/session",
     "/community",
     "/messages",
     "/messages/live/layout-check",
@@ -107,7 +108,7 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {
-  for (const page of ["home", "classes", "programs", "placement", "learning", "community", "messages", "live-chat", "assistant", "project", "auth"]) {
+  for (const page of ["home", "classes", "programs", "placement", "learning", "learning-session", "community", "messages", "live-chat", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
   }
   assert.match(runnerSource, /requiredHooks/);
@@ -120,6 +121,7 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
     "/classes",
     "/classes/class_official_es/placement",
     "/classes/class_official_en/learn",
+    "/classes/class_official_en/learn/session",
     "/community",
     "/messages",
     "/messages/live/layout-check",

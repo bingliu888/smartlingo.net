@@ -22,6 +22,7 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/programs",
   "/classes/class_official_es/placement",
   "/classes/class_official_en/learn",
+  "/classes/class_official_en/learn/session",
   "/community",
   "/messages",
   "/messages/live/layout-check",
@@ -36,6 +37,7 @@ export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
   "/classes",
   "/classes/class_official_es/placement",
   "/classes/class_official_en/learn",
+  "/classes/class_official_en/learn/session",
   "/community",
   "/messages",
   "/messages/live/layout-check",
@@ -47,6 +49,7 @@ const expectedPageNames = Object.freeze({
   "/programs": "programs",
   "/classes/class_official_es/placement": "placement",
   "/classes/class_official_en/learn": "learning",
+  "/classes/class_official_en/learn/session": "learning-session",
   "/community": "community",
   "/messages": "messages",
   "/messages/live/layout-check": "live-chat",
@@ -63,6 +66,7 @@ const requiredHooks = Object.freeze({
   "/programs": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
   "/classes/class_official_es/placement": { fills: 2, readableCopy: 1, textFits: 1 },
   "/classes/class_official_en/learn": { fills: 2, readableCopy: 1, textFits: 1 },
+  "/classes/class_official_en/learn/session": { fills: 3, readableCopy: 1, textFits: 1 },
   "/community": { fills: 1, tracks: 3, readableCopy: 1, textFits: 1 },
   "/messages": { fills: 1, textFits: 1 },
   "/messages/live/layout-check": { fills: 1, textFits: 1 },
@@ -630,7 +634,7 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
         routes: routes.map(route => ({
           route,
           loadPath: route,
-          readySelector: route === "/classes/class_official_en/learn"
+          readySelector: route.startsWith("/classes/class_official_en/learn")
             ? '[data-layout-fill="five-skill-workspace"][data-layout-ready="true"]'
             : SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)
               ? '[data-layout-ready="true"]'

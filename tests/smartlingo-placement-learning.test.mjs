@@ -43,19 +43,31 @@ test("every beginner timed session assigns ten unique vocabulary cards", () => {
   }
 });
 
-test("learning UI explains five skills plus quiz before time selection and starts a controllable timer", async () => {
+test("class dashboard starts a focused tabbed session with a compact bottom-right timer", async () => {
   const workspace = await read("../components/LearningWorkspace.tsx");
-  assert.ok(workspace.indexOf('className="sl-feature-overview"') < workspace.indexOf('className="sl-session-planner"'));
-  for (const skill of ["vocabulary", "reading", "writing", "listening", "dialogue"]) {
-    assert.match(workspace, new RegExp(`skillDetails\\.${skill}|skillDetails\\[skill\\]`));
-  }
-  assert.match(workspace, /skillDetails\.quiz/);
+  const sessionPage = await read("../app/[lang]/classes/[classId]/learn/session/page.tsx");
   assert.match(workspace, /className="sl-session-start"/);
+  assert.match(workspace, /learn\/session\?minutes=/);
+  assert.match(sessionPage, /view="session"/);
+  assert.match(workspace, /className="sl-skill-tabs"/);
+  assert.match(workspace, /activeSkill === "vocabulary"/);
+  assert.match(workspace, /PRACTICE_SKILLS\.filter\(skill => skill === activeSkill\)/);
   assert.match(workspace, /className=\{`sl-session-timer/);
   assert.match(workspace, /setSessionStatus\("paused"\)|status === "paused" \? "running" : "paused"/);
   assert.match(workspace, /quitSession/);
   assert.match(workspace, /vocabularyItems: "10 vocabulary items"/);
-  assert.match(workspace, /position:fixed;left:max\(16px,env\(safe-area-inset-left\)\)/);
+  assert.match(workspace, /position:fixed;right:max\(18px,env\(safe-area-inset-right\)\)/);
+});
+
+test("repetition records a local preview and returns AI feedback in the interface language", async () => {
+  const workspace = await read("../components/LearningWorkspace.tsx");
+  const route = await read("../app/api/classes/[classId]/learning/route.ts");
+  assert.match(workspace, /new MediaRecorder\(stream\)/);
+  assert.match(workspace, /recordingPrivacy/);
+  assert.match(workspace, /<audio controls preload="metadata"/);
+  assert.match(route, /reviewSmartAiLearningContent/);
+  assert.match(route, /language: uiLanguage/);
+  assert.match(route, /do not claim direct acoustic analysis/);
 });
 
 test("pronunciation feedback is conservative, transcript-based, and never infers identity", () => {

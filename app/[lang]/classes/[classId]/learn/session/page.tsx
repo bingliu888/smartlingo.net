@@ -1,0 +1,44 @@
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
+import { LearningWorkspace } from "../../../../../../components/LearningWorkspace";
+import { SiteFooter } from "../../../../../../components/SiteFooter";
+import { SiteHeader } from "../../../../../../components/SiteHeader";
+import { requestUser } from "../../../../../../lib/request-user";
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  return { title: lang === "zh" ? "五项技能训练 · SmartLingo" : "Five-skill training · SmartLingo" };
+}
+
+function sessionMinutes(value: string | undefined): 15 | 30 | 45 | 60 {
+  const parsed = Number(value);
+  return parsed === 30 || parsed === 45 || parsed === 60 ? parsed : 15;
+}
+
+export default async function LearningSessionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string; classId: string }>;
+  searchParams: Promise<{ minutes?: string }>;
+}) {
+  const { lang, classId } = await params;
+  if (lang !== "zh" && lang !== "en") notFound();
+  const query = await searchParams;
+  if (!await requestUser()) {
+    const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session?minutes=${sessionMinutes(query.minutes)}`;
+    redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+  return (
+    <main className="learning-page" data-layout-page="learning-session">
+      <SiteHeader lang={lang} />
+      <LearningWorkspace
+        lang={lang}
+        classId={classId}
+        view="session"
+        initialMinutes={sessionMinutes(query.minutes)}
+      />
+      <SiteFooter lang={lang} />
+    </main>
+  );
+}

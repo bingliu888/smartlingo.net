@@ -34,6 +34,7 @@ import {
   type OfficialClassAccess,
 } from "../../../../../lib/smartlingo-learning-access";
 import { buildQuickCourse, isQuickCourseDays } from "../../../../../lib/smartlingo-quick-courses";
+import { reviewSmartAiLearningContent } from "../../../../../lib/smartlingo-ai-gateway";
 
 export const dynamic = "force-dynamic";
 
@@ -537,7 +538,23 @@ export async function POST(
     const currentState = await learningState(auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage);
     const assigned = currentState.vocabularyDeck.find(item => item.sampleId === sampleId);
     if (!assigned) return Response.json({ error: "This is not today's server-assigned vocabulary item" }, { status: 409 });
-    const feedback = scorePronunciationTranscript(assigned.form, transcript);
+    const baseFeedback = scorePronunciationTranscript(assigned.form, transcript);
+    const aiReview = await reviewSmartAiLearningContent({
+      feature: "speaking_feedback",
+      subject: `user:${auth.user.id}`,
+      language: uiLanguage,
+      instructions: "The audio was transcribed by the learner's device. Explain the transcript match score in one or two short sentences, give one concrete retry cue, and do not claim direct acoustic analysis.",
+      content: JSON.stringify({
+        targetLanguage: auth.access.targetLanguage,
+        target: assigned.form,
+        deviceTranscript: transcript,
+        transcriptMatchScore: baseFeedback.score,
+      }),
+    }).catch(() => null);
+    const feedback = aiReview && !aiReview.fallback ? {
+      ...baseFeedback,
+      feedback: { ...baseFeedback.feedback, [uiLanguage]: aiReview.value },
+    } : baseFeedback;
     const sourceId = `${auth.classId}:${today}:${sampleId}:pronunciation`;
     const now = Math.floor(Date.now() / 1000);
     const inserted = await auth.database.prepare(`INSERT OR IGNORE INTO smartlingo_learning_activity_events
