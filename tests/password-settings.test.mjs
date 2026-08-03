@@ -9,7 +9,8 @@ test("account supports setting and updating a Clerk password", async () => {
   assert.match(form, /useReverification/);
   assert.match(form, /user\?\.passwordEnabled/);
   assert.match(form, /user\.updatePassword/);
-  assert.match(form, /currentPassword/);
+  assert.doesNotMatch(form, /currentPassword/);
+  assert.match(form, /recent email-code verification/);
   assert.match(form, /newPassword/);
   assert.match(account, /<PasswordSettings lang=\{lang\}\/>/);
   assert.match(account, /Manage your SmartLingo profile/);

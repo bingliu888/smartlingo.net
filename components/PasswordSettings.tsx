@@ -19,16 +19,15 @@ function readableError(issue: unknown, zh: boolean) {
 export function PasswordSettings({ lang }: { lang: "en" | "zh" }) {
   const zh = lang === "zh";
   const { isLoaded, user } = useUser();
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const passwordEnabled = Boolean(user?.passwordEnabled);
-  const changePassword = useReverification(async (values: { currentPassword?: string; newPassword: string }) => {
+  const changePassword = useReverification(async (value: string) => {
     if (!user) throw new Error(zh ? "账户尚未载入。" : "Your account is not ready.");
-    await user.updatePassword({ ...(values.currentPassword ? { currentPassword: values.currentPassword } : {}), newPassword: values.newPassword, signOutOfOtherSessions: false });
+    await user.updatePassword({ newPassword: value, signOutOfOtherSessions: false });
     await user.reload();
   });
 
@@ -38,18 +37,17 @@ export function PasswordSettings({ lang }: { lang: "en" | "zh" }) {
     if (newPassword !== confirmPassword) return setError(zh ? "两次输入的新密码不一致。" : "The new passwords do not match.");
     setBusy(true);
     try {
-      await changePassword({ ...(passwordEnabled ? { currentPassword } : {}), newPassword });
-      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
-      setSuccess(passwordEnabled ? (zh ? "密码已更新。" : "Password updated.") : (zh ? "密码已设置。以后可使用密码或邮箱验证码登录。" : "Password set. You can now sign in with a password or an email code."));
+      await changePassword(newPassword);
+      setNewPassword(""); setConfirmPassword("");
+      setSuccess(zh ? "密码已保存。以后可使用密码或邮箱验证码登录。" : "Password saved. You can sign in with a password or an email code.");
     } catch (issue) { setError(readableError(issue, zh)); } finally { setBusy(false); }
   }
 
   return <div className={styles.wrap}>
     <p className={styles.kicker}>{zh ? "账户安全" : "ACCOUNT SECURITY"}</p>
     <h2>{passwordEnabled ? (zh ? "更新密码" : "Update password") : (zh ? "设置密码" : "Set password")}</h2>
-    <p>{passwordEnabled ? (zh ? "输入当前密码并设置新密码；邮箱验证码登录仍然可用。" : "Enter your current password and choose a new one; email-code sign-in remains available.") : (zh ? "为现有账户添加密码；以后密码和邮箱验证码都可以登录。" : "Add a password to your account; both password and email-code sign-in will work.")}</p>
+    <p>{passwordEnabled ? (zh ? "近期邮箱验证码验证仍有效时，无需输入旧密码；若已过期，系统会安全地要求再次验证。" : "A recent email-code verification lets you update without the old password. If it has expired, you will be asked to verify again.") : (zh ? "为现有账户添加密码；以后密码和邮箱验证码都可以登录。" : "Add a password to your account; both password and email-code sign-in will work.")}</p>
     {!isLoaded ? <p className={styles.notice}>{zh ? "正在读取账户…" : "Loading account…"}</p> : <form className={styles.form} onSubmit={submit}>
-      {passwordEnabled && <label>{zh ? "当前密码" : "Current password"}<input type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>}
       <label>{zh ? "新密码" : "New password"}<input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /><small>{zh ? "至少 8 个字符，请勿使用已泄露的密码。" : "At least 8 characters. Avoid passwords exposed in data breaches."}</small></label>
       <label>{zh ? "确认新密码" : "Confirm new password"}<input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label>
       {error && <p className={styles.error} role="alert">{error}</p>}{success && <p className={styles.success} role="status">{success}</p>}
