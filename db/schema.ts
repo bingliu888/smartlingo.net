@@ -278,6 +278,24 @@ export const messageParticipants = sqliteTable("message_participants", {
   uniqueIndex("smartcert_message_participant_unique_idx").on(table.threadId, table.userId),
 ]);
 
+// A scheduled community meeting owns one durable group-chat thread. The partial
+// unique index is the server-side guarantee that a host has at most one meeting
+// that has not been cancelled or ended.
+export const communityMeetings = sqliteTable("community_meetings", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  threadId: text("thread_id").notNull().unique().references(() => messageThreads.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  scheduledAt: integer("scheduled_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  endedAt: integer("ended_at"),
+}, (table) => [
+  check("smartlingo_community_meeting_title_ck", sql`length(trim(${table.title})) BETWEEN 3 AND 80`),
+  uniqueIndex("smartlingo_community_meeting_active_owner_uq").on(table.ownerUserId).where(sql`${table.endedAt} IS NULL`),
+  index("smartlingo_community_meeting_schedule_idx").on(table.endedAt, table.scheduledAt),
+]);
+
 export const messages = sqliteTable("messages", {
   id: text("id").primaryKey(),
   threadId: text("thread_id").notNull().references(() => messageThreads.id, { onDelete: "cascade" }),

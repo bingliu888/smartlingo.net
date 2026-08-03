@@ -17,7 +17,12 @@ export async function GET() {
   const db = getDatabase();
   const memberRows = (await db.prepare("SELECT id, display_name AS displayName, created_at AS createdAt FROM users ORDER BY created_at DESC LIMIT 60").run<{ id: string; displayName: string; createdAt: number }>()).results || [];
   const avatars = await avatarsById();
-  const members = memberRows.map(member => ({ ...member, imageUrl: avatars.get(member.id) || "" }));
+  const meetingRows = (await db.prepare(`SELECT id, owner_user_id AS ownerUserId, thread_id AS threadId,
+    title, scheduled_at AS scheduledAt FROM community_meetings WHERE ended_at IS NULL`).run<{
+      id: string; ownerUserId: string; threadId: string; title: string; scheduledAt: number;
+    }>()).results || [];
+  const meetingByOwner = new Map(meetingRows.map(meeting => [meeting.ownerUserId, meeting]));
+  const members = memberRows.map(member => ({ ...member, imageUrl: avatars.get(member.id) || "", meeting: meetingByOwner.get(member.id) || null }));
   const topics = (await db.prepare("SELECT t.id, t.category, t.title, t.body, t.created_at AS createdAt, u.id AS authorId, u.display_name AS authorName FROM community_topics t JOIN users u ON u.id = t.user_id ORDER BY t.updated_at DESC LIMIT 80").run()).results || [];
   const replies = (await db.prepare("SELECT r.id, r.topic_id AS topicId, r.body, r.created_at AS createdAt, u.id AS authorId, u.display_name AS authorName FROM community_replies r JOIN users u ON u.id = r.user_id ORDER BY r.created_at ASC LIMIT 400").run()).results || [];
   return NextResponse.json({ currentUserId: user.id, members, topics, replies });

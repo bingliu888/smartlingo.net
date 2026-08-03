@@ -260,6 +260,13 @@
       "when": 1785766948120,
       "tag": "0036_numerous_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1785768103388,
+      "tag": "0037_bright_champions",
+      "breakpoints": true
     }
   ]
 }
