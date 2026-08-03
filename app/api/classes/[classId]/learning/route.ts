@@ -34,7 +34,7 @@ import {
   type OfficialClassAccess,
 } from "../../../../../lib/smartlingo-learning-access";
 import { buildQuickCourse, isQuickCourseDays } from "../../../../../lib/smartlingo-quick-courses";
-import { reviewSmartAiLearningContent } from "../../../../../lib/smartlingo-ai-gateway";
+import { reviewSmartAiLearningContent, smartAiRequestCountry } from "../../../../../lib/smartlingo-ai-gateway";
 
 export const dynamic = "force-dynamic";
 
@@ -550,6 +550,10 @@ export async function POST(
         deviceTranscript: transcript,
         transcriptMatchScore: baseFeedback.score,
       }),
+      deps: {
+        providerPreference: auth.user.aiProviderPreference,
+        country: smartAiRequestCountry(request),
+      },
     }).catch(() => null);
     const feedback = aiReview && !aiReview.fallback ? {
       ...baseFeedback,

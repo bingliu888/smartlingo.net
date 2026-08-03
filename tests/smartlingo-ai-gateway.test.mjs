@@ -113,14 +113,14 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
 });
 
-test("OpenAI origin and secret name exist only in the unified gateway across runtime and client artifacts", async () => {
+test("AI provider origins and secret names exist only in the unified gateway across runtime and client artifacts", async () => {
   const runtimeRoots = ["app", "build", "components", "db", "lib", "worker"];
   const files = (await Promise.all(runtimeRoots.map(directory => sourceFiles(path.join(root, directory))))).flat();
   const offenders = [];
   for (const file of files) {
     const source = await readFile(file, "utf8");
     if (file.endsWith("lib/smartlingo-ai-gateway.ts")) continue;
-    if (/api\.openai\.com|OPENAI_API_KEY/.test(source)) offenders.push(path.relative(root, file));
+    if (/api\.(?:openai|deepseek)\.com|(?:OPENAI|DEEPSEEK)_API_KEY/.test(source)) offenders.push(path.relative(root, file));
   }
   assert.deepEqual(offenders, []);
 
@@ -128,13 +128,52 @@ test("OpenAI origin and secret name exist only in the unified gateway across run
   const clientOffenders = [];
   for (const file of clientFiles) {
     const source = await readFile(file, "utf8");
-    if (/api\.openai\.com|OPENAI_API_KEY/.test(source)) clientOffenders.push(path.relative(root, file));
+    if (/api\.(?:openai|deepseek)\.com|(?:OPENAI|DEEPSEEK)_API_KEY/.test(source)) clientOffenders.push(path.relative(root, file));
   }
   assert.deepEqual(clientOffenders, []);
   const scanner = await read("scripts/scan-sensitive-data.mjs");
   assert.match(scanner, /forbiddenClientMarkers/);
   assert.match(scanner, /OpenAI server environment name/);
   assert.match(scanner, /direct OpenAI provider origin/);
+  assert.match(scanner, /DeepSeek server environment name/);
+  assert.match(scanner, /direct DeepSeek provider origin/);
+});
+
+test("text provider selection is deterministic and DeepSeek uses its official chat contract", async () => {
+  const gateway = await importGateway();
+  assert.equal(gateway.resolveSmartAiTextProvider({ providerPreference: "auto", country: "CN" }), "deepseek");
+  assert.equal(gateway.resolveSmartAiTextProvider({ providerPreference: "auto", country: "US" }), "openai");
+  assert.equal(gateway.resolveSmartAiTextProvider({ providerPreference: "deepseek", country: "US" }), "deepseek");
+  assert.equal(gateway.resolveSmartAiTextProvider({ providerPreference: "openai", country: "CN" }), "openai");
+  assert.equal(gateway.smartAiRequestCountry(new Request("https://smartlingo.net", { headers: { "cf-ipcountry": "cn" } })), "CN");
+
+  let providerUrl = "";
+  let providerRequest;
+  const result = await gateway.askSmartAi({
+    feature: "public_guru",
+    subject: "visitor:deepseek-test",
+    language: "zh",
+    instructions: "Answer safely.",
+    content: "你好",
+    deps: {
+      apiKey: "openai-test-only",
+      deepSeekApiKey: "deepseek-test-only",
+      providerPreference: "deepseek",
+      country: "US",
+      database: fakeDatabase(),
+      fetch: async (url, init) => {
+        providerUrl = String(url);
+        providerRequest = { headers: new Headers(init.headers), body: JSON.parse(init.body) };
+        return Response.json({ choices: [{ message: { content: "您好！" } }] });
+      },
+    },
+  });
+  assert.deepEqual(result, { value: "您好！", fallback: false });
+  assert.equal(providerUrl, "https://api.deepseek.com/chat/completions");
+  assert.equal(providerRequest.body.model, "deepseek-v4-flash");
+  assert.deepEqual(providerRequest.body.thinking, { type: "disabled" });
+  assert.deepEqual(providerRequest.body.messages.map(message => message.role), ["system", "user"]);
+  assert.equal(providerRequest.headers.has("OpenAI-Safety-Identifier"), false);
 });
 
 test("missing key returns an original localized Guru fallback without auditing raw text", async () => {
@@ -494,8 +533,10 @@ test("assistant routes expose bounded public, authenticated polish, chat, and li
   const route = await read("app/api/assistant/route.ts");
   assert.match(route, /readSmartAiJsonRequest/);
   assert.match(route, /"public_guru" \| "message_polish" \| "chat_guru"/);
-  assert.match(route, /feature === "public_guru" \? null : await requestUser\(\)/);
+  assert.match(route, /const user = await requestUser\(\)/);
   assert.match(route, /feature !== "public_guru" && !user/);
+  assert.match(route, /providerPreference: user\?\.aiProviderPreference \?\? "auto"/);
+  assert.match(route, /country: smartAiRequestCountry\(request\)/);
   assert.doesNotMatch(route, /request\.json\(/);
 
   const live = await read("app/api/assistant/live/route.ts");

@@ -58,6 +58,7 @@ const activeServerOnlyEnvironmentNames = [
   "CLERK_SECRET_KEY",
   "EDITORIAL_SYNC_SECRET",
   "OPENAI_API_KEY",
+  "DEEPSEEK_API_KEY",
 ];
 
 // Reserved for the future Stripe Connect checkout implementation. The current
@@ -74,6 +75,8 @@ const serverOnlyEnvironmentNames = [
 const forbiddenClientMarkers = [
   { label: "OpenAI server environment name", pattern: /\bOPENAI_API_KEY\b/g },
   { label: "direct OpenAI provider origin", pattern: /\bapi\.openai\.com\b/g },
+  { label: "DeepSeek server environment name", pattern: /\bDEEPSEEK_API_KEY\b/g },
+  { label: "direct DeepSeek provider origin", pattern: /\bapi\.deepseek\.com\b/g },
 ];
 
 async function filesBelow(directory) {

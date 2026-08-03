@@ -23,6 +23,7 @@ export type SessionUser = {
   email: string;
   displayName: string;
   preferredLanguage: "en" | "zh";
+  aiProviderPreference: "auto" | "openai" | "deepseek";
   role: "member" | "admin";
 };
 
@@ -257,7 +258,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
     try {
       const now = Math.floor(Date.now() / 1000);
       user = await db().prepare(
-        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.role FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN platform_member_access a ON a.user_id = u.id WHERE s.id = ? AND COALESCE(a.status, 'active') = 'active' AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
+        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.ai_provider_preference AS aiProviderPreference, u.role FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN platform_member_access a ON a.user_id = u.id WHERE s.id = ? AND COALESCE(a.status, 'active') = 'active' AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
       ).bind(await sha256(token), now).first<SessionUser>();
     } catch {
       // A stale legacy session cookie must not turn a public page into an error page.
@@ -288,7 +289,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
           "zh",
         );
         user = await db().prepare(
-          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage, role FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
+          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage, ai_provider_preference AS aiProviderPreference, role FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
         ).bind(clerkUser.id).first<SessionUser>();
       } catch {
         // Identity conflicts fail closed and must be resolved by an Admin.

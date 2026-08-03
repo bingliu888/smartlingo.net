@@ -2,6 +2,7 @@ import {
   askSmartAi,
   readSmartAiJsonRequest,
   safeSmartAiError,
+  smartAiRequestCountry,
   type SmartAiFeature,
 } from "../../../lib/smartlingo-ai-gateway";
 import { requestUser } from "../../../lib/request-user";
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     return Response.json({ error: language === "zh" ? "人工智能功能无效。" : "The AI feature is invalid." }, { status: 400 });
   }
   const feature = explicitFeature ?? featureFor(messages);
-  const user = feature === "public_guru" ? null : await requestUser();
+  const user = await requestUser();
   if (feature !== "public_guru" && !user) {
     return Response.json({ error: language === "zh" ? "请先登录。" : "Sign in is required." }, { status: 401 });
   }
@@ -64,6 +65,10 @@ export async function POST(request: Request) {
       instructions: `${GURU_INSTRUCTIONS}\nAnswer in ${language === "zh" ? "Simplified Chinese" : "English"}.`,
       content: messages.join("\n"),
       preserveOnFailure: feature === "message_polish" ? originalPolishText(messages.at(-1) ?? "") : undefined,
+      deps: {
+        providerPreference: user?.aiProviderPreference ?? "auto",
+        country: smartAiRequestCountry(request),
+      },
     });
     return Response.json({ reply: answer.value, fallback: answer.fallback });
   } catch (error) {

@@ -8,11 +8,13 @@ export const users = sqliteTable("users", {
   displayName: text("display_name").notNull(),
   passwordHash: text("password_hash").notNull(),
   preferredLanguage: text("preferred_language").notNull().default("en"),
+  aiProviderPreference: text("ai_provider_preference").notNull().default("auto"),
   role: text("role").notNull().default("member"),
   walletAddress: text("wallet_address"),
   createdAt: integer("created_at").notNull(),
 }, (table) => [
   check("smartlingo_user_role_ck", sql`${table.role} IN ('member', 'admin')`),
+  check("smartlingo_user_ai_provider_ck", sql`${table.aiProviderPreference} IN ('auto', 'openai', 'deepseek')`),
   index("smartlingo_users_role_created_idx").on(table.role, table.createdAt),
 ]);
 

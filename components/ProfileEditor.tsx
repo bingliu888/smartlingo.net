@@ -6,11 +6,12 @@ import { TextSizeControl } from "./TextSizeControl";
 
 type Introducer = { displayName: string; status: string } | null;
 
-export function ProfileEditor({ lang, email, initialName, initialWalletAddress = "", initialIntroducer, initialImageUrl = "" }: { lang: "en" | "zh"; email: string; initialName: string; initialWalletAddress?: string; initialIntroducer: Introducer; initialImageUrl?: string }) {
+export function ProfileEditor({ lang, email, initialName, initialWalletAddress = "", initialAiProviderPreference = "auto", initialIntroducer, initialImageUrl = "" }: { lang: "en" | "zh"; email: string; initialName: string; initialWalletAddress?: string; initialAiProviderPreference?: "auto" | "openai" | "deepseek"; initialIntroducer: Introducer; initialImageUrl?: string }) {
   const zh = lang === "zh";
   const [displayName, setDisplayName] = useState(initialName);
   const [walletAddress, setWalletAddress] = useState(initialWalletAddress);
   const [walletEditing, setWalletEditing] = useState(!initialWalletAddress);
+  const [aiProviderPreference, setAiProviderPreference] = useState(initialAiProviderPreference);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [photoInputKey, setPhotoInputKey] = useState(0);
@@ -40,7 +41,7 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
     setBusy(true);
     setMessage("");
     try {
-      const response = await fetch("/api/profile", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName, preferredLanguage: lang, walletAddress: normalizedWallet }) });
+      const response = await fetch("/api/profile", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ displayName, preferredLanguage: lang, aiProviderPreference, walletAddress: normalizedWallet }) });
       if (!response.ok) throw new Error();
       setWalletAddress(normalizedWallet);
       setWalletEditing(false);
@@ -91,6 +92,13 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
         <small>{zh ? "JPG、PNG 或 WebP，最大 5 MB" : "JPG, PNG, or WebP · 5 MB maximum"}</small>
       </div>
       <label>{zh ? "显示名称" : "Display name"}<input required minLength={2} maxLength={60} value={displayName} onChange={event => setDisplayName(event.target.value)}/></label>
+      <fieldset className="ai-provider-field">
+        <legend>{zh ? "默认文字人工智能模型" : "Default text AI model"}</legend>
+        <label><input type="radio" name="ai-provider" value="auto" checked={aiProviderPreference === "auto"} onChange={() => setAiProviderPreference("auto")}/><span><b>{zh ? "自动（推荐）" : "Automatic (recommended)"}</b><small>{zh ? "中国优先使用 DeepSeek V4 Flash；其他地区优先使用 OpenAI。" : "Prefer DeepSeek V4 Flash in China and OpenAI in other supported regions."}</small></span></label>
+        <label><input type="radio" name="ai-provider" value="openai" checked={aiProviderPreference === "openai"} onChange={() => setAiProviderPreference("openai")}/><span><b>OpenAI</b><small>{zh ? "始终使用 OpenAI 文字模型；在不支持地区可能不可用。" : "Always use the OpenAI text model; it may be unavailable in unsupported regions."}</small></span></label>
+        <label><input type="radio" name="ai-provider" value="deepseek" checked={aiProviderPreference === "deepseek"} onChange={() => setAiProviderPreference("deepseek")}/><span><b>DeepSeek V4 Flash</b><small>{zh ? "始终使用 DeepSeek，可在美国等地区进行对比测试。" : "Always use DeepSeek, including for comparison testing in the United States."}</small></span></label>
+        <p>{zh ? "此选择只影响文字导师、消息润色和学习反馈。图片、安全审核与实时语音继续使用各自兼容的专用模型。" : "This choice affects text Guru, message polishing, and learning feedback only. Images, moderation, and live voice keep their compatible specialist models."}</p>
+      </fieldset>
       <div className="wallet-profile-field">
         <div><label htmlFor="profile-wallet">{zh ? "EVM 钱包" : "EVM wallet"}</label><button type="button" onClick={() => setWalletEditing(value => !value)}>{walletEditing ? (zh ? "取消" : "Cancel") : (walletAddress ? (zh ? "修改" : "Edit") : (zh ? "添加" : "Add"))}</button></div>
         <input id="profile-wallet" inputMode="text" autoComplete="off" readOnly={!walletEditing} placeholder="0x…" value={walletAddress} onChange={event => setWalletAddress(event.target.value)} />

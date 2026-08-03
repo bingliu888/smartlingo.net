@@ -162,6 +162,9 @@ export type SmartAiDatabase = { prepare(query: string): SmartAiStatement };
 
 export type SmartAiGatewayDependencies = {
   apiKey?: string | null;
+  deepSeekApiKey?: string | null;
+  providerPreference?: SmartAiProviderPreference;
+  country?: string | null;
   subjectHashKey?: string | null;
   database?: SmartAiDatabase | null;
   fetch?: typeof fetch;
@@ -169,6 +172,10 @@ export type SmartAiGatewayDependencies = {
   randomUUID?: () => string;
   policyOverrides?: Partial<Record<SmartAiFeature, Partial<SmartAiFeaturePolicy>>>;
 };
+
+export type SmartAiProvider = "openai" | "deepseek";
+export type SmartAiProviderPreference = "auto" | SmartAiProvider;
+export const SMARTAI_DEEPSEEK_TEXT_MODEL = "deepseek-v4-flash";
 
 export type SmartAiGatewayErrorCode =
   | "invalid_request"
@@ -224,18 +231,32 @@ function globalDatabase() {
 
 function dependencies(input: SmartAiGatewayDependencies = {}) {
   const apiKey = input.apiKey === undefined ? process.env.OPENAI_API_KEY || "" : input.apiKey || "";
+  const deepSeekApiKey = input.deepSeekApiKey === undefined ? process.env.DEEPSEEK_API_KEY || "" : input.deepSeekApiKey || "";
   return {
     apiKey,
+    deepSeekApiKey,
+    providerPreference: input.providerPreference ?? "auto",
+    country: input.country?.trim().toUpperCase() || "",
     // The provider credential is already server-only and gives the audit hash
     // a keyed, non-enumerable identity without adding another hosted secret.
     // Tests may inject an independent key while deliberately omitting apiKey.
-    subjectHashKey: input.subjectHashKey === undefined ? apiKey : input.subjectHashKey || "",
+    subjectHashKey: input.subjectHashKey === undefined ? apiKey || deepSeekApiKey : input.subjectHashKey || "",
     database: input.database === undefined ? globalDatabase() : input.database,
     fetch: input.fetch ?? fetch,
     now: input.now ?? Date.now,
     randomUUID: input.randomUUID ?? crypto.randomUUID.bind(crypto),
     policyOverrides: input.policyOverrides ?? {},
   };
+}
+
+export function smartAiRequestCountry(request: Request) {
+  const cloudflareCountry = (request as Request & { cf?: { country?: string } }).cf?.country;
+  return (cloudflareCountry || request.headers.get("cf-ipcountry") || "").trim().toUpperCase();
+}
+
+export function resolveSmartAiTextProvider(input: Pick<SmartAiGatewayDependencies, "providerPreference" | "country">): SmartAiProvider {
+  if (input.providerPreference === "openai" || input.providerPreference === "deepseek") return input.providerPreference;
+  return input.country?.trim().toUpperCase() === "CN" ? "deepseek" : "openai";
 }
 
 function policyFor(feature: SmartAiFeature, input: SmartAiGatewayDependencies) {
@@ -320,6 +341,7 @@ async function beginAudit(input: {
   subject: string;
   inputUnits: number;
   deps: SmartAiGatewayDependencies;
+  model?: string;
 }) {
   const deps = dependencies(input.deps);
   const policy = policyFor(input.feature, input.deps);
@@ -368,7 +390,7 @@ async function beginAudit(input: {
     window.id,
     input.feature,
     subjectHash,
-    policy.model,
+    input.model ?? policy.model,
     input.inputUnits,
     now,
   ).run();
@@ -468,6 +490,7 @@ async function executeGateway<T>(input: {
   request(apiKey: string, subjectHash: string, signal: AbortSignal, model: string): Promise<Response>;
   read(response: Response): Promise<GatewayValue<T>>;
   fallback?(error: SmartAiGatewayError): GatewayValue<T> | null;
+  credential?: { apiKey: string; model: string; provider: SmartAiProvider };
 }) {
   const suppliedDeps = input.deps ?? {};
   const deps = dependencies(suppliedDeps);
@@ -479,8 +502,11 @@ async function executeGateway<T>(input: {
       subject: input.subject,
       inputUnits: input.inputUnits,
       deps: suppliedDeps,
+      model: input.credential?.model,
     });
-    if (!deps.apiKey) throw new SmartAiGatewayError("missing_key");
+    const apiKey = input.credential?.apiKey ?? deps.apiKey;
+    const model = input.credential?.model ?? policy.model;
+    if (!apiKey) throw new SmartAiGatewayError("missing_key");
     const controller = new AbortController();
     let cancelResponseBody: (() => void) | null = null;
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -495,7 +521,7 @@ async function executeGateway<T>(input: {
     try {
       result = await Promise.race([
         (async () => {
-          const response = await input.request(deps.apiKey, reservation.subjectHash, controller.signal, policy.model);
+          const response = await input.request(apiKey, reservation.subjectHash, controller.signal, model);
           if (response.status === 429) throw new SmartAiGatewayError("upstream_rate_limited");
           if (response.status >= 500) throw new SmartAiGatewayError("upstream_unavailable");
           if (!response.ok) throw new SmartAiGatewayError("upstream_rejected");
@@ -544,6 +570,10 @@ async function executeGateway<T>(input: {
 type ResponsesData = {
   output_text?: string;
   output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+};
+
+type ChatCompletionsData = {
+  choices?: Array<{ message?: { content?: string } }>;
 };
 
 function responseText(data: ResponsesData) {
@@ -600,14 +630,33 @@ export async function askSmartAi(input: {
   deps?: SmartAiGatewayDependencies;
 }) {
   const fallbackText = preservedTextFallback(input);
+  const deps = dependencies(input.deps);
+  const provider = resolveSmartAiTextProvider(deps);
+  const credential = provider === "deepseek"
+    ? { apiKey: deps.deepSeekApiKey, model: SMARTAI_DEEPSEEK_TEXT_MODEL, provider }
+    : { apiKey: deps.apiKey, model: policyFor(input.feature, input.deps ?? {}).model, provider };
   return executeGateway({
     feature: input.feature,
     subject: input.subject,
     inputUnits: input.content.length,
     deps: input.deps,
-    request: (apiKey, subjectHash, signal, model) => dependencies(input.deps).fetch(
-      "https://api.openai.com/v1/responses",
-      {
+    credential,
+    request: (apiKey, subjectHash, signal, model) => {
+      if (provider === "deepseek") return deps.fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: input.instructions },
+            { role: "user", content: input.content },
+          ],
+          thinking: { type: "disabled" },
+          max_tokens: policyFor(input.feature, input.deps ?? {}).maxOutputUnits,
+        }),
+        signal,
+      });
+      return deps.fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
           authorization: `Bearer ${apiKey}`,
@@ -623,11 +672,13 @@ export async function askSmartAi(input: {
           max_output_tokens: policyFor(input.feature, input.deps ?? {}).maxOutputUnits,
         }),
         signal,
-      },
-    ),
+      });
+    },
     read: async response => {
-      const data = await response.json().catch(() => null) as ResponsesData | null;
-      const value = data ? responseText(data) : "";
+      const data = await response.json().catch(() => null) as ResponsesData | ChatCompletionsData | null;
+      const value = provider === "deepseek"
+        ? (data as ChatCompletionsData | null)?.choices?.[0]?.message?.content?.trim() ?? ""
+        : data ? responseText(data as ResponsesData) : "";
       if (!value) throw new SmartAiGatewayError("invalid_response");
       return { value, outputUnits: value.length };
     },

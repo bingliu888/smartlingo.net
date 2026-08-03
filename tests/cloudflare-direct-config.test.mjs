@@ -18,7 +18,7 @@ test("direct Cloudflare deployment uses isolated SmartLingo resources", () => {
 
 test("direct config contains no runtime secrets", () => {
   const serialized = JSON.stringify(config);
-  for (const key of ["CLERK_SECRET_KEY", "CLERK_JWT_KEY", "OPENAI_API_KEY", "MIGRATION_EXPORT_SECRET"]) {
+  for (const key of ["CLERK_SECRET_KEY", "CLERK_JWT_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY", "MIGRATION_EXPORT_SECRET"]) {
     assert.doesNotMatch(serialized, new RegExp(key));
   }
 });
