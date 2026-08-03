@@ -1462,6 +1462,152 @@ export const lingoDailyLearningPreferences = sqliteTable("smartlingo_daily_learn
   index("smartlingo_daily_preference_user_updated_idx").on(table.userId, table.updatedAt),
 ]);
 
+/**
+ * One immutable composition and one revisioned draft checkpoint per course day.
+ * The server plan is authoritative; `draft_json` may contain unfinished client
+ * text but can never mark a task or course day complete.
+ */
+export const lingoDailySessionCheckpoints = sqliteTable("smartlingo_daily_session_checkpoints", {
+  id: text("id").primaryKey(),
+  enrollmentId: text("enrollment_id").notNull().references(() => lingoCourseEnrollmentsV3.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  courseDay: integer("course_day").notNull(),
+  localDate: text("local_date").notNull(),
+  timeZone: text("time_zone").notNull(),
+  contentVersion: text("content_version").notNull(),
+  planJson: text("plan_json").notNull().default("{}"),
+  draftJson: text("draft_json").notNull().default("{}"),
+  activeStep: text("active_step").notNull().default("vocabulary"),
+  revision: integer("revision").notNull().default(1),
+  lastOperationId: text("last_operation_id"),
+  lastOperationFingerprint: text("last_operation_fingerprint"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_daily_checkpoint_day_ck", sql`${table.courseDay} BETWEEN 1 AND 365`),
+  check("smartlingo_daily_checkpoint_date_ck", sql`length(${table.localDate}) = 10`),
+  check("smartlingo_daily_checkpoint_timezone_ck", sql`length(trim(${table.timeZone})) BETWEEN 1 AND 64`),
+  check("smartlingo_daily_checkpoint_version_ck", sql`length(trim(${table.contentVersion})) BETWEEN 1 AND 48`),
+  check("smartlingo_daily_checkpoint_plan_ck", sql`json_valid(${table.planJson}) AND json_type(${table.planJson}) = 'object' AND length(${table.planJson}) <= 24000`),
+  check("smartlingo_daily_checkpoint_draft_ck", sql`json_valid(${table.draftJson}) AND json_type(${table.draftJson}) = 'object' AND length(${table.draftJson}) <= 12000`),
+  check("smartlingo_daily_checkpoint_step_ck", sql`${table.activeStep} IN ('vocabulary', 'reading', 'writing', 'listening', 'dialogue', 'exam', 'recap')`),
+  check("smartlingo_daily_checkpoint_revision_ck", sql`${table.revision} >= 1`),
+  uniqueIndex("smartlingo_daily_checkpoint_enrollment_day_uq").on(table.enrollmentId, table.courseDay),
+  uniqueIndex("smartlingo_daily_checkpoint_last_operation_uq").on(table.lastOperationId)
+    .where(sql`${table.lastOperationId} IS NOT NULL`),
+  index("smartlingo_daily_checkpoint_user_date_idx").on(table.userId, table.localDate, table.updatedAt),
+  index("smartlingo_daily_checkpoint_class_date_idx").on(table.classId, table.localDate, table.updatedAt),
+]);
+
+/** Client mutation receipts make checkpoint retries idempotent across devices. */
+export const lingoDailySyncOperations = sqliteTable("smartlingo_daily_sync_operations", {
+  id: text("id").primaryKey(),
+  checkpointId: text("checkpoint_id").notNull().references(() => lingoDailySessionCheckpoints.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  operation: text("operation").notNull(),
+  requestFingerprint: text("request_fingerprint"),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_daily_sync_operation_ck", sql`${table.operation} IN ('save_draft', 'select_step')`),
+  index("smartlingo_daily_sync_checkpoint_idx").on(table.checkpointId, table.createdAt),
+  index("smartlingo_daily_sync_user_idx").on(table.userId, table.createdAt),
+]);
+
+/**
+ * Server-owned draft snapshots provide the real base for a three-way merge.
+ * Client-supplied base content is never trusted to reconstruct prior state.
+ */
+export const lingoDailyCheckpointRevisions = sqliteTable("smartlingo_daily_checkpoint_revisions", {
+  checkpointId: text("checkpoint_id").notNull().references(() => lingoDailySessionCheckpoints.id, { onDelete: "cascade" }),
+  revision: integer("revision").notNull(),
+  draftJson: text("draft_json").notNull(),
+  activeStep: text("active_step").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.checkpointId, table.revision] }),
+  check("smartlingo_daily_checkpoint_history_revision_ck", sql`${table.revision} >= 1`),
+  check("smartlingo_daily_checkpoint_history_draft_ck", sql`json_valid(${table.draftJson}) AND json_type(${table.draftJson}) = 'object' AND length(${table.draftJson}) <= 12000`),
+  check("smartlingo_daily_checkpoint_history_step_ck", sql`${table.activeStep} IN ('vocabulary', 'reading', 'writing', 'listening', 'dialogue', 'exam', 'recap')`),
+  index("smartlingo_daily_checkpoint_history_created_idx").on(table.checkpointId, table.createdAt),
+]);
+
+/**
+ * Every graded answer keeps the exact content version and original bilingual
+ * explanation that the learner saw. These are practice records, not teacher or
+ * official-exam judgments.
+ */
+export const lingoDailyAnswerFeedback = sqliteTable("smartlingo_daily_answer_feedback", {
+  id: text("id").primaryKey(),
+  checkpointId: text("checkpoint_id").notNull().references(() => lingoDailySessionCheckpoints.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  taskId: text("task_id").notNull(),
+  skill: text("skill").notNull(),
+  clientOperationId: text("client_operation_id").notNull().unique(),
+  answerText: text("answer_text").notNull().default(""),
+  score: integer("score"),
+  correct: integer("correct", { mode: "boolean" }).notNull().default(false),
+  skipped: integer("skipped", { mode: "boolean" }).notNull().default(false),
+  explanationZh: text("explanation_zh").notNull(),
+  explanationEn: text("explanation_en").notNull(),
+  hintZh: text("hint_zh").notNull(),
+  hintEn: text("hint_en").notNull(),
+  contentVersion: text("content_version").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_daily_feedback_skill_ck", sql`${table.skill} IN ('vocabulary', 'reading', 'writing', 'listening', 'dialogue', 'quiz')`),
+  check("smartlingo_daily_feedback_score_ck", sql`${table.score} IS NULL OR ${table.score} BETWEEN 0 AND 100`),
+  check("smartlingo_daily_feedback_flags_ck", sql`${table.correct} IN (0, 1) AND ${table.skipped} IN (0, 1)`),
+  check("smartlingo_daily_feedback_skip_ck", sql`(${table.skipped} = 1 AND ${table.score} IS NULL AND ${table.correct} = 0) OR (${table.skipped} = 0 AND ${table.score} IS NOT NULL)`),
+  check("smartlingo_daily_feedback_answer_ck", sql`length(${table.answerText}) <= 1200`),
+  check("smartlingo_daily_feedback_copy_ck", sql`length(trim(${table.explanationZh})) BETWEEN 1 AND 1200 AND length(trim(${table.explanationEn})) BETWEEN 1 AND 1200 AND length(trim(${table.hintZh})) BETWEEN 1 AND 600 AND length(trim(${table.hintEn})) BETWEEN 1 AND 600`),
+  check("smartlingo_daily_feedback_version_ck", sql`length(trim(${table.contentVersion})) BETWEEN 1 AND 48`),
+  index("smartlingo_daily_feedback_checkpoint_task_idx").on(table.checkpointId, table.taskId, table.createdAt),
+  index("smartlingo_daily_feedback_user_created_idx").on(table.userId, table.createdAt),
+]);
+
+/** Learning XP is motivational, server-authored, and has no cash value. */
+export const lingoLearningXpLedger = sqliteTable("smartlingo_learning_xp_ledger", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  activityEventId: text("activity_event_id").notNull().unique().references(() => lingoLearningActivityEvents.id, { onDelete: "restrict" }),
+  xp: integer("xp").notNull(),
+  reason: text("reason").notNull(),
+  localDate: text("local_date").notNull(),
+  timeZone: text("time_zone").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  check("smartlingo_learning_xp_amount_ck", sql`${table.xp} BETWEEN 1 AND 100`),
+  check("smartlingo_learning_xp_reason_ck", sql`${table.reason} IN ('daily_practice', 'vocabulary_review', 'daily_quiz', 'pronunciation_review')`),
+  check("smartlingo_learning_xp_date_ck", sql`length(${table.localDate}) = 10`),
+  check("smartlingo_learning_xp_timezone_ck", sql`length(trim(${table.timeZone})) BETWEEN 1 AND 64`),
+  index("smartlingo_learning_xp_user_date_idx").on(table.userId, table.localDate, table.createdAt),
+  index("smartlingo_learning_xp_class_date_idx").on(table.classId, table.localDate, table.createdAt),
+]);
+
+/** One global learning streak per member, intentionally separate from rewards. */
+export const lingoLearningStreaks = sqliteTable("smartlingo_learning_streaks", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  timeZone: text("time_zone").notNull(),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastQualifiedDate: text("last_qualified_date"),
+  repairedDate: text("repaired_date"),
+  repairWindowStartedDate: text("repair_window_started_date"),
+  repairCredits: integer("repair_credits").notNull().default(1),
+  revision: integer("revision").notNull().default(0),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_learning_streak_timezone_ck", sql`length(trim(${table.timeZone})) BETWEEN 1 AND 64`),
+  check("smartlingo_learning_streak_counts_ck", sql`${table.currentStreak} >= 0 AND ${table.longestStreak} >= ${table.currentStreak}`),
+  check("smartlingo_learning_streak_date_ck", sql`(${table.lastQualifiedDate} IS NULL OR length(${table.lastQualifiedDate}) = 10) AND (${table.repairedDate} IS NULL OR length(${table.repairedDate}) = 10) AND (${table.repairWindowStartedDate} IS NULL OR length(${table.repairWindowStartedDate}) = 10)`),
+  check("smartlingo_learning_streak_credit_ck", sql`${table.repairCredits} IN (0, 1)`),
+  check("smartlingo_learning_streak_revision_ck", sql`${table.revision} >= 0`),
+  index("smartlingo_learning_streak_last_date_idx").on(table.lastQualifiedDate, table.updatedAt),
+]);
+
 /** Daily quiz results are graded and retained by the server; answer keys never leave it. */
 export const lingoDailyQuizAttempts = sqliteTable("smartlingo_daily_quiz_attempts", {
   id: text("id").primaryKey(),

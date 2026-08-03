@@ -31,8 +31,8 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/admin/certificates",
   "/assistant",
   "/project",
-  "/project/day/2026-08-02",
-  "/project/report/2026-08-02",
+  "/project/day/2026-08-03",
+  "/project/report/2026-08-03",
   "/auth/login",
 ]);
 
@@ -64,8 +64,8 @@ const expectedPageNames = Object.freeze({
   "/admin/certificates": "admin-certificates",
   "/assistant": "assistant",
   "/project": "project",
-  "/project/day/2026-08-02": "project",
-  "/project/report/2026-08-02": "project",
+  "/project/day/2026-08-03": "project",
+  "/project/report/2026-08-03": "project",
   "/auth/login": "auth",
 });
 
@@ -84,8 +84,8 @@ const requiredHooks = Object.freeze({
   "/admin/certificates": { fills: 1 },
   "/assistant": { fills: 2, readableCopy: 1 },
   "/project": { fills: 2, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/project/day/2026-08-02": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/project/report/2026-08-02": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
+  "/project/day/2026-08-03": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
+  "/project/report/2026-08-03": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
   "/auth/login": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
 });
 

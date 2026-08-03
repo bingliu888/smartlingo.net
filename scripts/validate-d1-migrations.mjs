@@ -1224,6 +1224,361 @@ function runD1Smoke(database) {
       'zh','beginner',7,1,95,60,'early_mastery','2026-08-02.2',?,?)`)
     .run(now, now);
 
+  database.prepare(`INSERT INTO smartlingo_course_enrollments_v3
+    (id, offering_id, user_id, class_id, access_type, status, start_day,
+     current_day, daily_seconds, started_at, created_at, updated_at)
+    VALUES ('d1-smoke-course-enrollment','sl-course-zh-beginner-7d-v1',
+      'd1-smoke-learner','class_official_zh','free','active',1,1,3600,?,?,?)`)
+    .run(now, now, now);
+  database.prepare(`INSERT INTO smartlingo_course_session_state
+    (enrollment_id, course_day, duration_seconds, remaining_seconds, status,
+     last_started_at, updated_at)
+    VALUES ('d1-smoke-course-enrollment',1,3600,2700,'running',?,?)`)
+    .run(now, now);
+  database.prepare(`INSERT INTO smartlingo_course_day_progress_v2
+    (id, enrollment_id, user_id, class_id, course_day, started_date,
+     last_activity_date, score, skill_scores, quiz_score, is_complete,
+     started_at, updated_at)
+    VALUES ('d1-smoke-course-day','d1-smoke-course-enrollment',
+      'd1-smoke-learner','class_official_zh',1,'2026-08-03','2026-08-03',92,
+      '{"vocabulary":94,"reading":91,"writing":89,"listening":93,"dialogue":90}',
+      90,0,?,?)`)
+    .run(now, now);
+  const courseLoop = database.prepare(`
+    SELECT enrollment.id AS enrollmentId, session.course_day AS courseDay,
+      session.duration_seconds AS durationSeconds,
+      session.remaining_seconds AS remainingSeconds, session.status,
+      progress.id AS progressId, progress.score,
+      progress.skill_scores AS skillScores
+    FROM smartlingo_course_enrollments_v3 AS enrollment
+    JOIN smartlingo_course_session_state AS session
+      ON session.enrollment_id = enrollment.id
+    JOIN smartlingo_course_day_progress_v2 AS progress
+      ON progress.enrollment_id = enrollment.id AND progress.course_day = session.course_day
+    WHERE enrollment.id = 'd1-smoke-course-enrollment'
+  `).get();
+  assert.deepEqual(
+    { ...courseLoop, skillScores: JSON.parse(courseLoop.skillScores) },
+    {
+      enrollmentId: "d1-smoke-course-enrollment",
+      courseDay: 1,
+      durationSeconds: 3600,
+      remainingSeconds: 2700,
+      status: "running",
+      progressId: "d1-smoke-course-day",
+      score: 92,
+      skillScores: {
+        vocabulary: 94,
+        reading: 91,
+        writing: 89,
+        listening: 93,
+        dialogue: 90,
+      },
+    },
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_course_session_state
+      SET duration_seconds = 1800 WHERE enrollment_id = 'd1-smoke-course-enrollment'`).run(),
+    /CHECK constraint failed: smartlingo_course_session_duration_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_course_session_state
+      SET remaining_seconds = -1 WHERE enrollment_id = 'd1-smoke-course-enrollment'`).run(),
+    /CHECK constraint failed: smartlingo_course_session_remaining_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_course_day_progress_v2
+      SET skill_scores = '[]' WHERE id = 'd1-smoke-course-day'`).run(),
+    /CHECK constraint failed: smartlingo_course_day_v2_skills_ck/,
+  );
+
+  database.prepare(`INSERT INTO smartlingo_daily_session_checkpoints
+    (id, enrollment_id, user_id, class_id, course_day, local_date, time_zone,
+     content_version, plan_json, draft_json, active_step, revision,
+     created_at, updated_at)
+    VALUES ('d1-smoke-daily-checkpoint','d1-smoke-course-enrollment',
+      'd1-smoke-learner','class_official_zh',1,'2026-08-03',
+      'America/Los_Angeles','2026-08-03.1',
+      '{"minutes":60,"skills":["vocabulary","reading","writing","listening","dialogue"]}',
+      '{"writing":"初稿 / first draft"}','writing',1,?,?)`)
+    .run(now, now);
+  const checkpointBeforeSync = database.prepare(`
+    SELECT id, active_step AS activeStep, revision, draft_json AS draftJson
+    FROM smartlingo_daily_session_checkpoints
+    WHERE id = 'd1-smoke-daily-checkpoint'
+  `).get();
+  assert.deepEqual(
+    { ...checkpointBeforeSync, draftJson: JSON.parse(checkpointBeforeSync.draftJson) },
+    {
+      id: "d1-smoke-daily-checkpoint",
+      activeStep: "writing",
+      revision: 1,
+      draftJson: { writing: "初稿 / first draft" },
+    },
+  );
+  const checkpointAfterSync = database.prepare(`
+    UPDATE smartlingo_daily_session_checkpoints
+    SET draft_json = ?, active_step = 'listening', revision = revision + 1,
+      last_operation_id = 'd1-smoke-sync-operation',
+      last_operation_fingerprint = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+      updated_at = ?
+    WHERE id = 'd1-smoke-daily-checkpoint' AND revision = ?
+    RETURNING revision, active_step AS activeStep, draft_json AS draftJson
+  `).get('{"writing":"修订稿 / revised draft"}', now + 1, 1);
+  assert.deepEqual(
+    { ...checkpointAfterSync, draftJson: JSON.parse(checkpointAfterSync.draftJson) },
+    {
+      revision: 2,
+      activeStep: "listening",
+      draftJson: { writing: "修订稿 / revised draft" },
+    },
+  );
+  const staleCheckpointUpdate = database.prepare(`
+    UPDATE smartlingo_daily_session_checkpoints
+    SET draft_json = '{}', revision = revision + 1, updated_at = ?
+    WHERE id = 'd1-smoke-daily-checkpoint' AND revision = 1
+    RETURNING revision
+  `).get(now + 2);
+  assert.equal(staleCheckpointUpdate, undefined, "stale checkpoint revisions must not overwrite newer drafts");
+  const checkpointRevisions = database.prepare(`SELECT revision, draft_json AS draftJson,
+    active_step AS activeStep FROM smartlingo_daily_checkpoint_revisions
+    WHERE checkpoint_id = 'd1-smoke-daily-checkpoint' ORDER BY revision`).all();
+  assert.deepEqual(checkpointRevisions.map(row => ({
+    ...row,
+    draftJson: JSON.parse(row.draftJson),
+  })), [
+    { revision: 1, draftJson: { writing: "初稿 / first draft" }, activeStep: "writing" },
+    { revision: 2, draftJson: { writing: "修订稿 / revised draft" }, activeStep: "listening" },
+  ]);
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_daily_session_checkpoints
+      SET revision = 0 WHERE id = 'd1-smoke-daily-checkpoint'`).run(),
+    /checkpoint revisions must advance exactly once|smartlingo_daily_checkpoint_revision_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_daily_session_checkpoints
+      SET draft_json = '{"writing":"missing operation evidence"}',
+        last_operation_id = 'd1-smoke-sync-missing-fingerprint',
+        last_operation_fingerprint = NULL, revision = revision + 1, updated_at = ?
+      WHERE id = 'd1-smoke-daily-checkpoint' AND revision = 2`).run(now + 2),
+    /checkpoint updates require operation evidence/,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_daily_session_checkpoints
+      SET plan_json = '[]' WHERE id = 'd1-smoke-daily-checkpoint'`).run(),
+    /CHECK constraint failed: smartlingo_daily_checkpoint_plan_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`INSERT INTO smartlingo_daily_session_checkpoints
+      (id, enrollment_id, user_id, class_id, course_day, local_date, time_zone,
+       content_version, created_at, updated_at)
+      VALUES ('d1-smoke-checkpoint-duplicate','d1-smoke-course-enrollment',
+        'd1-smoke-learner','class_official_zh',1,'2026-08-03','UTC',
+        '2026-08-03.1',?,?)`).run(now, now),
+    /UNIQUE constraint failed/,
+  );
+
+  const insertSyncOperation = database.prepare(`
+    INSERT OR IGNORE INTO smartlingo_daily_sync_operations
+      (id, checkpoint_id, user_id, operation, request_fingerprint, created_at)
+    VALUES (?, 'd1-smoke-daily-checkpoint', 'd1-smoke-learner', 'save_draft',
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', ?)
+  `);
+  insertSyncOperation.run("d1-smoke-sync-operation", now);
+  insertSyncOperation.run("d1-smoke-sync-operation", now + 1);
+  const syncOperationCount = database.prepare(`
+    SELECT COUNT(*) AS count, MIN(request_fingerprint) AS requestFingerprint
+    FROM smartlingo_daily_sync_operations
+    WHERE id = 'd1-smoke-sync-operation'
+  `).get();
+  assert.equal(syncOperationCount.count, 1, "replayed draft operations must stay idempotent");
+  assert.equal(
+    syncOperationCount.requestFingerprint,
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "checkpoint receipts must atomically bind the request fingerprint",
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_daily_session_checkpoints
+      SET draft_json = '{"writing":"must roll back"}', revision = revision + 1,
+        last_operation_id = 'd1-smoke-sync-operation',
+        last_operation_fingerprint = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        updated_at = ?
+      WHERE id = 'd1-smoke-daily-checkpoint' AND revision = 2`).run(now + 2),
+    /UNIQUE constraint failed: smartlingo_daily_sync_operations.id/,
+  );
+  const checkpointAfterReceiptCollision = database.prepare(`SELECT revision, draft_json AS draftJson
+    FROM smartlingo_daily_session_checkpoints WHERE id = 'd1-smoke-daily-checkpoint'`).get();
+  assert.deepEqual(
+    { ...checkpointAfterReceiptCollision, draftJson: JSON.parse(checkpointAfterReceiptCollision.draftJson) },
+    { revision: 2, draftJson: { writing: "修订稿 / revised draft" } },
+    "a receipt collision must roll back the checkpoint update and its revision snapshot",
+  );
+  assert.throws(
+    () => database.prepare(`INSERT INTO smartlingo_daily_sync_operations
+      (id, checkpoint_id, user_id, operation, created_at)
+      VALUES ('d1-smoke-sync-invalid','d1-smoke-daily-checkpoint',
+        'd1-smoke-learner','complete_course',?)`).run(now),
+    /CHECK constraint failed: smartlingo_daily_sync_operation_ck/,
+  );
+
+  database.prepare(`INSERT INTO smartlingo_daily_answer_feedback
+    (id, checkpoint_id, user_id, class_id, task_id, skill,
+     client_operation_id, answer_text, score, correct, skipped,
+     explanation_zh, explanation_en, hint_zh, hint_en, content_version, created_at)
+    VALUES ('d1-smoke-answer-feedback','d1-smoke-daily-checkpoint',
+      'd1-smoke-learner','class_official_zh','sl-day-1-writing','writing',
+      'd1-smoke-feedback-operation','I need a train ticket.',92,1,0,
+      '回答清楚表达了购票需求。','The answer clearly expresses the ticket request.',
+      '下一次可补充目的地。','Add the destination next time.',
+      '2026-08-03.1',?)`)
+    .run(now);
+  database.prepare(`INSERT OR IGNORE INTO smartlingo_daily_answer_feedback
+    (id, checkpoint_id, user_id, class_id, task_id, skill,
+     client_operation_id, answer_text, score, correct, skipped,
+     explanation_zh, explanation_en, hint_zh, hint_en, content_version, created_at)
+    VALUES ('d1-smoke-answer-feedback-replay','d1-smoke-daily-checkpoint',
+      'd1-smoke-learner','class_official_zh','sl-day-1-writing','writing',
+      'd1-smoke-feedback-operation','I need a train ticket.',92,1,0,
+      '回答清楚表达了购票需求。','The answer clearly expresses the ticket request.',
+      '下一次可补充目的地。','Add the destination next time.',
+      '2026-08-03.1',?)`).run(now + 1);
+  const answerFeedbackCount = database.prepare(`
+    SELECT COUNT(*) AS count FROM smartlingo_daily_answer_feedback
+    WHERE client_operation_id = 'd1-smoke-feedback-operation'
+  `).get();
+  assert.equal(answerFeedbackCount.count, 1, "replayed answer operations must not duplicate feedback");
+  assert.throws(
+    () => database.prepare(`INSERT INTO smartlingo_daily_answer_feedback
+      (id, checkpoint_id, user_id, class_id, task_id, skill,
+       client_operation_id, score, correct, skipped, explanation_zh,
+       explanation_en, hint_zh, hint_en, content_version, created_at)
+      VALUES ('d1-smoke-answer-feedback-invalid','d1-smoke-daily-checkpoint',
+        'd1-smoke-learner','class_official_zh','sl-day-1-reading','reading',
+        'd1-smoke-feedback-invalid',80,0,1,'说明','Explanation','提示','Hint',
+        '2026-08-03.1',?)`).run(now),
+    /CHECK constraint failed: smartlingo_daily_feedback_skip_ck/,
+  );
+
+  let quizTransactionFailed = false;
+  database.exec("BEGIN");
+  try {
+    database.prepare(`INSERT INTO smartlingo_daily_answer_feedback
+      (id, checkpoint_id, user_id, class_id, task_id, skill,
+       client_operation_id, answer_text, score, correct, skipped,
+       explanation_zh, explanation_en, hint_zh, hint_en, content_version, created_at)
+      VALUES ('d1-smoke-quiz-receipt','d1-smoke-daily-checkpoint','d1-smoke-learner',
+        'class_official_zh','daily-quiz:2026-08-03','quiz','d1-smoke-quiz-operation',
+        '{"fingerprint":"transaction-smoke"}',90,1,0,'测验说明','Quiz explanation',
+        '测验提示','Quiz hint','2026-08-03.1',?)`).run(now);
+    database.prepare(`INSERT INTO smartlingo_daily_quiz_attempts
+      (id,user_id,class_id,local_date,target_language,content_version,attempt_number,
+       score,correct_count,question_count,created_at)
+      VALUES ('d1-smoke-quiz-attempt','d1-smoke-learner','class_official_zh',
+        '2026-08-03','zh','2026-08-03.1',1,90,4,5,?)`).run(now);
+    database.prepare(`INSERT INTO smartlingo_learning_activity_events
+      (id,user_id,class_id,domain,activity_type,duration_seconds,units,score,
+       source_type,source_id,created_at)
+      VALUES ('d1-smoke-quiz-activity','d1-smoke-learner','class_official_zh',
+        'vocabulary','practice',180,5,90,'daily_quiz','d1-smoke-quiz-attempt',?)`).run(now);
+    database.prepare(`INSERT INTO smartlingo_learning_xp_ledger
+      (id,user_id,class_id,activity_event_id,xp,reason,local_date,time_zone,created_at)
+      VALUES ('d1-smoke-quiz-xp-invalid','d1-smoke-learner','class_official_zh',
+        'd1-smoke-quiz-activity',0,'daily_quiz','2026-08-03','America/Los_Angeles',?)`).run(now);
+    database.exec("COMMIT");
+  } catch {
+    quizTransactionFailed = true;
+    database.exec("ROLLBACK");
+  }
+  assert.equal(quizTransactionFailed, true, "the forced final quiz write must fail");
+  const rolledBackQuiz = database.prepare(`SELECT
+    (SELECT COUNT(*) FROM smartlingo_daily_answer_feedback WHERE id = 'd1-smoke-quiz-receipt') AS receipts,
+    (SELECT COUNT(*) FROM smartlingo_daily_quiz_attempts WHERE id = 'd1-smoke-quiz-attempt') AS attempts,
+    (SELECT COUNT(*) FROM smartlingo_learning_activity_events WHERE id = 'd1-smoke-quiz-activity') AS activities,
+    (SELECT COUNT(*) FROM smartlingo_learning_xp_ledger WHERE id = 'd1-smoke-quiz-xp-invalid') AS xp`).get();
+  assert.deepEqual(
+    { ...rolledBackQuiz },
+    { receipts: 0, attempts: 0, activities: 0, xp: 0 },
+    "a failed final quiz write must roll back every earlier evidence row",
+  );
+
+  database.prepare(`INSERT INTO smartlingo_learning_activity_events
+    (id, user_id, class_id, domain, activity_type, duration_seconds, units,
+     score, source_type, source_id, created_at)
+    VALUES ('d1-smoke-loop-activity','d1-smoke-learner','class_official_zh',
+      'writing','practice',60,1,92,'daily_session','d1-smoke-answer-feedback',?)`)
+    .run(now);
+  const insertXp = database.prepare(`
+    INSERT OR IGNORE INTO smartlingo_learning_xp_ledger
+      (id, user_id, class_id, activity_event_id, xp, reason, local_date,
+       time_zone, created_at)
+    VALUES (?, 'd1-smoke-learner', 'class_official_zh',
+      'd1-smoke-loop-activity', 12, 'daily_practice', '2026-08-03',
+      'America/Los_Angeles', ?)
+  `);
+  insertXp.run("d1-smoke-xp", now);
+  insertXp.run("d1-smoke-xp-replay", now + 1);
+  const xpLedgerCount = database.prepare(`
+    SELECT COUNT(*) AS count, SUM(xp) AS totalXp
+    FROM smartlingo_learning_xp_ledger
+    WHERE activity_event_id = 'd1-smoke-loop-activity'
+  `).get();
+  assert.deepEqual(
+    { ...xpLedgerCount },
+    { count: 1, totalXp: 12 },
+    "replayed learning activity must award XP exactly once",
+  );
+  assert.throws(
+    () => database.prepare(`INSERT INTO smartlingo_learning_xp_ledger
+      (id, user_id, class_id, activity_event_id, xp, reason, local_date,
+       time_zone, created_at)
+      VALUES ('d1-smoke-xp-zero','d1-smoke-learner','class_official_zh',
+        'd1-smoke-learning-activity',0,'daily_practice','2026-08-03','UTC',?)`).run(now),
+    /CHECK constraint failed: smartlingo_learning_xp_amount_ck/,
+  );
+
+  database.prepare(`INSERT INTO smartlingo_learning_streaks
+    (user_id, time_zone, current_streak, longest_streak, last_qualified_date,
+     repaired_date, repair_window_started_date, repair_credits, updated_at)
+    VALUES ('d1-smoke-learner','America/Los_Angeles',2,3,'2026-08-03',
+      '2026-08-02','2026-07-05',0,?)`)
+    .run(now);
+  const streak = database.prepare(`
+    SELECT user_id AS userId, current_streak AS currentStreak,
+      longest_streak AS longestStreak, repaired_date AS repairedDate,
+      repair_credits AS repairCredits, revision
+    FROM smartlingo_learning_streaks WHERE user_id = 'd1-smoke-learner'
+  `).get();
+  assert.deepEqual(
+    { ...streak },
+    {
+      userId: "d1-smoke-learner",
+      currentStreak: 2,
+      longestStreak: 3,
+      repairedDate: "2026-08-02",
+      repairCredits: 0,
+      revision: 0,
+    },
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_learning_streaks
+      SET longest_streak = 1 WHERE user_id = 'd1-smoke-learner'`).run(),
+    /CHECK constraint failed: smartlingo_learning_streak_counts_ck/,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE smartlingo_learning_streaks
+      SET repair_credits = 2 WHERE user_id = 'd1-smoke-learner'`).run(),
+    /CHECK constraint failed: smartlingo_learning_streak_credit_ck/,
+  );
+  const streakCas = database.prepare(`UPDATE smartlingo_learning_streaks
+    SET current_streak = 3, longest_streak = 3, last_qualified_date = '2026-08-04',
+      revision = revision + 1, updated_at = ?
+    WHERE user_id = 'd1-smoke-learner' AND revision = 0 RETURNING revision`).get(now + 1);
+  assert.deepEqual({ ...streakCas }, { revision: 1 });
+  const staleStreakCas = database.prepare(`UPDATE smartlingo_learning_streaks
+    SET current_streak = 1, revision = revision + 1, updated_at = ?
+    WHERE user_id = 'd1-smoke-learner' AND revision = 0 RETURNING revision`).get(now + 2);
+  assert.equal(staleStreakCas, undefined, "a stale streak materialization must not overwrite a newer revision");
+
   assertDatabaseIntegrity(database);
   return {
     userId: "d1-smoke-user",
@@ -1253,12 +1608,20 @@ function runD1Smoke(database) {
     quickCourseEnrollmentId: "d1-smoke-quick-enrollment",
     quickCourseDailyScoreId: "d1-smoke-quick-score",
     certificateId: "d1-smoke-certificate",
+    courseEnrollmentId: courseLoop.enrollmentId,
+    courseSessionProgressId: courseLoop.progressId,
+    dailyCheckpointId: checkpointBeforeSync.id,
+    checkpointRevisionCount: checkpointRevisions.length,
+    syncOperationId: "d1-smoke-sync-operation",
+    answerFeedbackId: "d1-smoke-answer-feedback",
+    learningXpId: "d1-smoke-xp",
+    learningStreakUserId: streak.userId,
   };
 }
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0031_yielding_lady_bullseye");
+  assert.equal(migrations.at(-1)?.tag, "0035_class_live_audio");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1314,6 +1677,13 @@ export function validateD1Migrations() {
       "smartlingo_quick_daily_enrollment_date_uq",
       "smartlingo_quick_daily_enrollment_day_uq",
       "smartlingo_course_certificates_enrollment_id_unique",
+      "smartlingo_course_v3_path_level_duration_uq",
+      "smartlingo_course_enrollment_v3_user_offering_uq",
+      "smartlingo_course_day_v2_enrollment_day_uq",
+      "smartlingo_course_certificates_v2_enrollment_id_unique",
+      "smartlingo_daily_checkpoint_enrollment_day_uq",
+      "smartlingo_daily_answer_feedback_client_operation_id_unique",
+      "smartlingo_learning_xp_ledger_activity_event_id_unique",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1343,6 +1713,16 @@ export function validateD1Migrations() {
       "smartlingo_daily_quiz_attempts",
       "smartlingo_quick_course_daily_scores",
       "smartlingo_course_certificates",
+      "smartlingo_course_offerings_v3",
+      "smartlingo_course_enrollments_v3",
+      "smartlingo_course_day_progress_v2",
+      "smartlingo_course_session_state",
+      "smartlingo_course_certificates_v2",
+      "smartlingo_daily_session_checkpoints",
+      "smartlingo_daily_sync_operations",
+      "smartlingo_daily_answer_feedback",
+      "smartlingo_learning_xp_ledger",
+      "smartlingo_learning_streaks",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     const smoke = runD1Smoke(database);

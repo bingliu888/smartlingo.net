@@ -6,7 +6,7 @@ import {
   type SmartLingoBeginnerScene,
 } from "./smartlingo-beginner-vocabulary.ts";
 
-export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-02.2" as const;
+export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-03.1" as const;
 
 export const SMARTLINGO_LEARNING_LANGUAGE_CODES = [
   "zh",
@@ -899,6 +899,7 @@ function buildDailyQuizInternal(
       } satisfies SmartLingoDailyQuizQuestion,
       correctOptionId: options.find(option => option.correct)!.id,
       acceptedForm: sample.form,
+      meaning: sample.meaning,
     };
   });
 }
@@ -920,16 +921,41 @@ export function gradeDailyVocabularyQuiz(
   answers: Readonly<Record<string, string>>,
 ) {
   const items = buildDailyQuizInternal(language, day, date, uiLang);
-  const correctCount = items.filter(item => {
-    const answer = answers[item.question.id] || "";
-    if (item.question.responseMode === "image_free") {
-      return answer.startsWith("free:") && normalizeSpeech(answer.slice(5)) === normalizeSpeech(item.acceptedForm);
-    }
-    return answer === item.correctOptionId;
-  }).length;
+  const correctCount = items.filter(item => dailyQuizAnswerIsCorrect(item, answers[item.question.id] || "")).length;
   return {
     score: Math.round((correctCount / Math.max(1, items.length)) * 100),
     correctCount,
     questionCount: items.length,
   };
+}
+
+function dailyQuizAnswerIsCorrect(
+  item: ReturnType<typeof buildDailyQuizInternal>[number],
+  answer: string,
+) {
+  if (item.question.responseMode === "image_free") {
+    return answer.startsWith("free:") && normalizeSpeech(answer.slice(5)) === normalizeSpeech(item.acceptedForm);
+  }
+  return answer === item.correctOptionId;
+}
+
+/** Server-only post-submission evidence; no private option key is exposed. */
+export function gradeDailyVocabularyQuizResponses(
+  language: SmartLingoLearningLanguage,
+  day: number,
+  date: string,
+  uiLang: SmartLingoInterfaceLanguage,
+  answers: Readonly<Record<string, string>>,
+) {
+  return buildDailyQuizInternal(language, day, date, uiLang).map(item => {
+    const correct = dailyQuizAnswerIsCorrect(item, answers[item.question.id] || "");
+    return {
+      questionId: item.question.id,
+      correct,
+      score: correct ? 100 : 0,
+      targetForm: item.acceptedForm,
+      meaning: item.meaning,
+      contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
+    };
+  });
 }

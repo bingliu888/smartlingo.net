@@ -39,8 +39,8 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/admin/certificates",
     "/assistant",
     "/project",
-    "/project/day/2026-08-02",
-    "/project/report/2026-08-02",
+    "/project/day/2026-08-03",
+    "/project/report/2026-08-03",
     "/auth/login",
   ]);
   assert.match(swiftSource, /return "\/\\\(language\)\\\(suffix\)"/);

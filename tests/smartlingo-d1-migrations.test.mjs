@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 32);
-  assert.equal(result.firstRunApplied, 32);
+  assert.equal(result.migrationCount, 36);
+  assert.equal(result.firstRunApplied, 36);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0031_yielding_lady_bullseye");
+  assert.equal(result.newestMigration, "0035_class_live_audio");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -41,6 +41,14 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     quickCourseEnrollmentId: "d1-smoke-quick-enrollment",
     quickCourseDailyScoreId: "d1-smoke-quick-score",
     certificateId: "d1-smoke-certificate",
+    courseEnrollmentId: "d1-smoke-course-enrollment",
+    courseSessionProgressId: "d1-smoke-course-day",
+    dailyCheckpointId: "d1-smoke-daily-checkpoint",
+    checkpointRevisionCount: 2,
+    syncOperationId: "d1-smoke-sync-operation",
+    answerFeedbackId: "d1-smoke-answer-feedback",
+    learningXpId: "d1-smoke-xp",
+    learningStreakUserId: "d1-smoke-learner",
   });
 });
 
@@ -190,6 +198,89 @@ test("0030 unifies cumulative level courses, cross-day sessions, and certificate
   assert.match(route, /startDay = Number\(prior\.durationDays\) \+ 1/);
   assert.match(catalog, /beginner: \[7, 14, 30\]/);
   assert.match(catalog, /advanced: \[90, 180, 365\]/);
+});
+
+test("0032 stores resumable daily drafts, answer feedback, XP, and streak state additively", async () => {
+  const [schema, migration, journal] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0032_tiny_invisible_woman.sql"),
+    read("../drizzle/meta/_journal.json"),
+  ]);
+
+  assert.doesNotMatch(
+    migration,
+    /\b(?:DROP\s+(?:TABLE|INDEX)|DELETE\s+FROM|ALTER\s+TABLE\b[\s\S]*?\bDROP\b)/i,
+  );
+  for (const tableName of [
+    "smartlingo_daily_session_checkpoints",
+    "smartlingo_daily_sync_operations",
+    "smartlingo_daily_answer_feedback",
+    "smartlingo_learning_xp_ledger",
+    "smartlingo_learning_streaks",
+  ]) {
+    assert.ok(migration.includes(`CREATE TABLE \`${tableName}\``));
+    assert.ok(schema.includes(`sqliteTable("${tableName}"`));
+  }
+  for (const constraintName of [
+    "smartlingo_daily_checkpoint_revision_ck",
+    "smartlingo_daily_checkpoint_plan_ck",
+    "smartlingo_daily_checkpoint_draft_ck",
+    "smartlingo_daily_sync_operation_ck",
+    "smartlingo_daily_feedback_skip_ck",
+    "smartlingo_learning_xp_amount_ck",
+    "smartlingo_learning_streak_counts_ck",
+    "smartlingo_learning_streak_credit_ck",
+  ]) assert.match(migration, new RegExp(constraintName));
+  assert.match(migration, /smartlingo_daily_answer_feedback_client_operation_id_unique/);
+  assert.match(migration, /smartlingo_learning_xp_ledger_activity_event_id_unique/);
+  assert.match(journal, /"tag": "0032_tiny_invisible_woman"/);
+});
+
+test("0033 makes checkpoint history and streak reconciliation concurrency-safe", async () => {
+  const [schema, migration, journal, route] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0033_salty_meggan.sql"),
+    read("../drizzle/meta/_journal.json"),
+    read("../app/api/classes/[classId]/learning/route.ts"),
+  ]);
+  assert.doesNotMatch(migration, /\b(?:DROP\s+(?:TABLE|INDEX)|DELETE\s+FROM)\b/i);
+  assert.match(schema, /sqliteTable\("smartlingo_daily_checkpoint_revisions"/);
+  assert.match(migration, /CREATE TABLE `smartlingo_daily_checkpoint_revisions`/);
+  assert.match(migration, /smartlingo_daily_checkpoint_revision_insert_trg/);
+  assert.match(migration, /smartlingo_daily_checkpoint_revision_update_trg/);
+  assert.match(migration, /INSERT INTO `smartlingo_daily_sync_operations`/);
+  assert.match(migration, /ADD `revision` integer DEFAULT 0 NOT NULL CHECK \(`revision` >= 0\)/);
+  assert.match(route, /FROM smartlingo_daily_checkpoint_revisions/);
+  assert.match(route, /last_operation_id = \?/);
+  assert.match(route, /WHERE user_id = \? AND revision = \? AND time_zone = \? RETURNING revision/);
+  assert.match(journal, /"tag": "0033_salty_meggan"/);
+});
+
+test("0034 binds retry identities to request evidence and proves atomic rollback", async () => {
+  const [schema, migration, journal, route, validator] = await Promise.all([
+    read("../db/schema.ts"),
+    read("../drizzle/0034_naive_karma.sql"),
+    read("../drizzle/meta/_journal.json"),
+    read("../app/api/classes/[classId]/learning/route.ts"),
+    read("../scripts/validate-d1-migrations.mjs"),
+  ]);
+  assert.doesNotMatch(migration, /\b(?:DROP\s+(?:TABLE|INDEX)|DELETE\s+FROM)\b/i);
+  assert.match(schema, /lastOperationFingerprint: text\("last_operation_fingerprint"\)/);
+  assert.match(schema, /requestFingerprint: text\("request_fingerprint"\)/);
+  assert.match(migration, /smartlingo_daily_checkpoint_operation_evidence_guard_trg/);
+  assert.match(migration, /NEW\.`last_operation_fingerprint`/);
+  assert.match(migration, /`request_fingerprint`/);
+  assert.match(route, /checkpointOperationFingerprint/);
+  assert.match(route, /last_operation_fingerprint = \?/);
+  assert.match(route, /request_fingerprint AS requestFingerprint/);
+  assert.match(route, /const existingReceipt = await readReceipt\(\);[\s\S]*?const state = await learningState/);
+  assert.match(route, /checkpointId: evidence\.checkpointId/);
+  assert.match(route, /responses: questionReceipts\.map/);
+  assert.match(validator, /database\.exec\("BEGIN"\)/);
+  assert.match(validator, /d1-smoke-quiz-xp-invalid/);
+  assert.match(validator, /database\.exec\("ROLLBACK"\)/);
+  assert.match(validator, /a failed final quiz write must roll back every earlier evidence row/);
+  assert.match(journal, /"tag": "0034_naive_karma"/);
 });
 
 test("0025 stores daily session preferences and server-graded quiz history", async () => {

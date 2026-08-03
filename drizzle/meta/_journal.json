@@ -225,6 +225,27 @@
       "when": 1785741970722,
       "tag": "0031_yielding_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1785759298970,
+      "tag": "0032_tiny_invisible_woman",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1785762119946,
+      "tag": "0033_salty_meggan",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1785763326597,
+      "tag": "0034_naive_karma",
+      "breakpoints": true
     }
   ]
 }

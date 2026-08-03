@@ -15,6 +15,7 @@ import {
   generateAdaptivePlacementQuestions,
   gradeDailyPracticeItem,
   gradeDailyVocabularyQuiz,
+  gradeDailyVocabularyQuizResponses,
   getBeginnerSessionVocabularyDeck,
   scheduleVocabularyReview,
   scorePlacementAnswer,
@@ -95,6 +96,13 @@ test("daily vocabulary quiz exposes no answer key and is graded server-side", ()
     [questions[0].id]: `free:${questions[0].prompt}`,
   });
   assert.deepEqual(spokenOrWritten, { score: 25, correctCount: 1, questionCount: 4 });
+  const responses = gradeDailyVocabularyQuizResponses("it", 1, "2026-08-02", "en", {
+    [questions[0].id]: `free:${questions[0].prompt}`,
+  });
+  assert.equal(responses.length, 4);
+  assert.deepEqual(responses.map(item => item.correct), [true, false, false, false]);
+  assert.ok(responses.every(item => item.targetForm && item.meaning.zh && item.meaning.en));
+  assert.ok(responses.every(item => !JSON.stringify(item).includes("correctOptionId")));
 });
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");

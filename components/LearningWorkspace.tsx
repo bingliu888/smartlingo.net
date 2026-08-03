@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
 
 type Lang = "zh" | "en";
@@ -10,7 +10,31 @@ type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
 type TrainingTab = Skill | "exam";
 type VocabularyMode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
 type VocabularyGrade = "again" | "hard" | "good" | "easy" | "suspend";
-type SessionStatus = "idle" | "running" | "paused";
+type SessionStatus = "idle" | "running" | "paused" | "completing";
+type BilingualText = { zh: string; en: string };
+type CheckpointDraft = {
+  answers?: Partial<Record<Skill, string>>;
+  quizAnswers?: Record<string, string>;
+  vocabularyMode?: VocabularyMode;
+  vocabularyIndex?: number;
+};
+type StoredCheckpointDraft = {
+  checkpointId: string | null;
+  enrollmentId: string;
+  courseDay: number;
+  sessionDate: string;
+  contentVersion: string;
+  clientOperationId: string;
+  baseRevision: number;
+  baseDraft: CheckpointDraft;
+  draft: CheckpointDraft;
+  activeStep: TrainingTab;
+  conflict?: boolean;
+  serverRevision?: number;
+  serverDraft?: CheckpointDraft;
+  serverActiveStep?: TrainingTab;
+  savedAt: number;
+};
 
 type Placement = {
   status: "in_progress" | "paused" | "completed" | "abandoned";
@@ -61,6 +85,14 @@ type PracticeTask = {
   estimatedMinutes?: number;
   status?: "available" | "completed" | "skipped";
   score?: number | null;
+  feedback?: {
+    correctness: "correct" | "partial" | "incorrect" | "skipped" | string;
+    score: number | null;
+    explanation: BilingualText;
+    hint: BilingualText;
+    disclaimer: BilingualText;
+    contentVersion: string;
+  } | null;
 };
 
 type LearningPayload = {
@@ -101,6 +133,42 @@ type LearningPayload = {
     certificate: { id: string; certificateNumber: string; finalScore: number; issuedAt: number } | null;
   } | null;
   sessionPreference?: { minutes: 15 | 30 | 45 | 60 };
+  preferredDailyMinutes?: number;
+  dailySessionPlan?: {
+    id: string;
+    date: string;
+    contentVersion: string;
+    totalMinutes: number;
+    useCase: BilingualText;
+    stage: BilingualText;
+    dueVocabularyCount: number;
+    blocks: {
+      id: string;
+      kind: string;
+      minutes: number;
+      skill?: Skill;
+      rationale: BilingualText;
+    }[];
+  } | null;
+  motivation?: {
+    todayXp: number;
+    totalXp: number;
+    currentStreak: number;
+    longestStreak: number;
+    repairedDate?: string | null;
+    notice: BilingualText;
+  } | null;
+  checkpoint?: {
+    id: string | null;
+    enrollmentId: string;
+    courseDay: number;
+    localDate: string;
+    revision: number;
+    drafts: CheckpointDraft;
+    activeStep: string;
+    contentVersion: string;
+    syncStatus?: string;
+  } | null;
   sessionState?: {
     enrollmentId: string;
     courseDay: number;
@@ -114,7 +182,21 @@ type LearningPayload = {
     questions: { id: string; prompt: string; pronunciation?: string; responseMode: "choice" | "image_free"; imageUrl?: string; options: { id: string; label: string }[] }[];
   };
   dailyQuizStatus?: { attemptNumber: number; score: number; correctCount: number; questionCount: number } | null;
-  dailyQuizResult?: { attemptNumber: number; score: number; correctCount: number; questionCount: number };
+  dailyQuizResult?: {
+    attemptNumber: number;
+    score: number;
+    correctCount: number;
+    questionCount: number;
+    responses?: {
+      questionId: string;
+      correctness: string;
+      score: number;
+      explanation: BilingualText;
+      hint: BilingualText;
+      disclaimer: BilingualText;
+      contentVersion: string;
+    }[];
+  };
   pronunciationFeedback?: {
     score: number;
     target: string;
@@ -151,6 +233,7 @@ type SpeechRecognitionLike = {
 
 const PRACTICE_SKILLS: Skill[] = ["reading", "writing", "listening", "dialogue"];
 const SMART_SKILLS: Skill[] = ["vocabulary", "reading", "writing", "listening", "dialogue"];
+const TRAINING_TABS: TrainingTab[] = ["vocabulary", "reading", "writing", "listening", "dialogue", "exam"];
 const VOCABULARY_MODES: VocabularyMode[] = ["recognition", "recall", "listening", "spelling", "cloze"];
 const VOCABULARY_GRADES: VocabularyGrade[] = ["again", "hard", "good", "easy", "suspend"];
 
@@ -205,6 +288,33 @@ const COPY = {
     timeLeft: "剩余时间",
     sessionPaused: "已暂停",
     sessionComplete: "本次计时学习已完成。",
+    sessionConfirming: "计时结束，正在由服务器核验本次学习…",
+    planKicker: "原创双语学习编排",
+    planTitle: "今天的新学、复习与结束回顾",
+    planIntro: "系统结合学习目标、当前阶段、薄弱技能与到期复习，编排五项技能；每个模块都说明学习理由。",
+    useCase: "学习目标",
+    stage: "当前阶段",
+    dueReviews: "到期词汇",
+    preferredMinutes: "偏好时长",
+    planKinds: { new: "新学", review: "间隔复习", practice: "技能练习", recap: "结束回顾" },
+    motivationKicker: "学习动力",
+    motivationTitle: "经验值与连续学习",
+    todayXp: "今日 XP",
+    totalXp: "累计 XP",
+    currentStreak: "当前连续",
+    longestStreak: "最长连续",
+    streakDays: "天",
+    xpNoCash: "XP 只用于展示学习进度，没有现金价值，也不能兑换、转让或提现。",
+    repairedDate: "已使用一次连续学习修复",
+    syncSaved: "草稿已跨设备同步",
+    syncSaving: "正在同步草稿…",
+    syncOffline: "网络暂不可用；草稿已保存在本设备，恢复后会重试。",
+    syncConflict: "另一台设备已更新本课。本地草稿仍被保留，请检查后再次编辑以重试同步。",
+    feedbackTitle: "本题人工智能练习反馈",
+    correctness: "判定",
+    explanation: "讲解",
+    hint: "下一步提示",
+    contentVersion: "内容版本",
     vocabularyItems: "10 个词汇",
     teachingPlan: "今日连续学习安排",
     quickCourse: "语言课程",
@@ -261,6 +371,7 @@ const COPY = {
     quizIntro: "题目来自今天的词汇闪卡，由服务器判分并保存成绩。",
     quizSubmit: "提交每日测验",
     quizResult: "本次测验成绩",
+    quizFeedbackTitle: "每日测验逐题反馈",
     quizRequired: "请先完成全部题目。",
     noTask: "今天暂时没有可用任务，请稍后再试。",
     response: "输入您的回答",
@@ -323,6 +434,33 @@ const COPY = {
     timeLeft: "Time left",
     sessionPaused: "Paused",
     sessionComplete: "This timed learning session is complete.",
+    sessionConfirming: "Time is up. The server is verifying this learning session…",
+    planKicker: "ORIGINAL BILINGUAL LEARNING PLAN",
+    planTitle: "New learning, spaced review, and a closing recap",
+    planIntro: "SmartLingo combines your goal, current stage, weaker skills, and due reviews across all five skills, with a reason for every block.",
+    useCase: "Learning goal",
+    stage: "Current stage",
+    dueReviews: "Due vocabulary",
+    preferredMinutes: "Preferred duration",
+    planKinds: { new: "New material", review: "Spaced review", practice: "Skill practice", recap: "Closing recap" },
+    motivationKicker: "LEARNING MOTIVATION",
+    motivationTitle: "XP and learning streak",
+    todayXp: "XP today",
+    totalXp: "Total XP",
+    currentStreak: "Current streak",
+    longestStreak: "Longest streak",
+    streakDays: "days",
+    xpNoCash: "XP only represents learning progress. It has no cash value and cannot be redeemed, transferred, or withdrawn.",
+    repairedDate: "One streak repair was used",
+    syncSaved: "Draft synced across devices",
+    syncSaving: "Syncing draft…",
+    syncOffline: "The network is unavailable. This draft remains on this device and will retry after you edit again.",
+    syncConflict: "Another device updated this lesson. Your local draft is preserved; review it and edit again to retry sync.",
+    feedbackTitle: "AI practice feedback for this answer",
+    correctness: "Result",
+    explanation: "Explanation",
+    hint: "Next-step hint",
+    contentVersion: "Content version",
     vocabularyItems: "10 vocabulary items",
     teachingPlan: "Today's continuous learning plan",
     quickCourse: "LANGUAGE COURSE",
@@ -379,6 +517,7 @@ const COPY = {
     quizIntro: "Questions come from today's flashcards. The server grades and saves each score.",
     quizSubmit: "Submit daily quiz",
     quizResult: "Quiz result",
+    quizFeedbackTitle: "Answer-by-answer quiz feedback",
     quizRequired: "Answer every question first.",
     noTask: "No task is available right now. Please try again shortly.",
     response: "Enter your response",
@@ -444,6 +583,40 @@ function clozeText(example: string | undefined, word: string | undefined) {
   return example.replace(new RegExp(escapedWord, "giu"), "_____");
 }
 
+function isTrainingTab(value: unknown): value is TrainingTab {
+  return typeof value === "string" && TRAINING_TABS.includes(value as TrainingTab);
+}
+
+function normalizeCheckpointDraft(value: CheckpointDraft | null | undefined): CheckpointDraft {
+  const answers = value?.answers && typeof value.answers === "object" ? value.answers : {};
+  const quizAnswers = value?.quizAnswers && typeof value.quizAnswers === "object" ? value.quizAnswers : {};
+  return {
+    answers: Object.fromEntries(SMART_SKILLS.map(skill => [skill, typeof answers[skill] === "string" ? answers[skill]!.slice(0, 1200) : ""])),
+    quizAnswers: Object.fromEntries(Object.entries(quizAnswers).filter((entry): entry is [string, string] => typeof entry[1] === "string")),
+    vocabularyMode: value?.vocabularyMode && VOCABULARY_MODES.includes(value.vocabularyMode) ? value.vocabularyMode : "recognition",
+    vocabularyIndex: Number.isInteger(value?.vocabularyIndex) ? Math.max(0, Number(value?.vocabularyIndex)) : 0,
+  };
+}
+
+function createClientOperationId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function planKindLabel(kind: string, lang: Lang) {
+  if (kind === "new" || kind === "new_material") return lang === "zh" ? "新学" : "New material";
+  if (kind === "review" || kind === "spaced_review") return lang === "zh" ? "间隔复习" : "Spaced review";
+  if (kind === "recap" || kind === "closing_recap") return lang === "zh" ? "结束回顾" : "Closing recap";
+  return lang === "zh" ? "技能练习" : "Skill practice";
+}
+
+function feedbackCorrectnessLabel(value: string, lang: Lang) {
+  if (value === "correct") return lang === "zh" ? "正确" : "Correct";
+  if (value === "partial" || value === "partially_correct") return lang === "zh" ? "部分正确" : "Partially correct";
+  if (value === "skipped") return lang === "zh" ? "已跳过" : "Skipped";
+  return lang === "zh" ? "需要再练习" : "Needs more practice";
+}
+
 export function LearningWorkspace({ lang, classId = "", calendarOnly = false, view = "dashboard" }: {
   lang: Lang;
   classId?: string;
@@ -483,8 +656,29 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState(view === "session" ? 3600 : 0);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
   const [activeSkill, setActiveSkill] = useState<TrainingTab>("vocabulary");
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [checkpointSyncStatus, setCheckpointSyncStatus] = useState<"synced" | "saving" | "offline" | "conflict">("synced");
+  const [draftRetryNonce, setDraftRetryNonce] = useState(0);
+  const checkpointBaseRef = useRef<{ revision: number; draft: CheckpointDraft }>({ revision: 0, draft: {} });
+  const hydratedCheckpointRef = useRef("");
+  const lastDraftJsonRef = useRef("");
+  const currentDraftRef = useRef<CheckpointDraft>({});
+  const currentDraftStateJsonRef = useRef("");
+  const conflictDraftJsonRef = useRef("");
+  const checkpointConflictRef = useRef(false);
+  const draftSaveTimerRef = useRef<number | null>(null);
+  const draftSaveInFlightRef = useRef(false);
+  const pendingOperationIdRef = useRef("");
+  const pendingCheckpointIdRef = useRef<string | null | undefined>(undefined);
+  const quizOperationIdRef = useRef("");
+  const checkpointSyncStatusRef = useRef(checkpointSyncStatus);
   const logRequestKey = `${calendarMonth}:${classId || "all"}:${timeZone}`;
   const logLoaded = loadedLogKey === logRequestKey;
+  const checkpointScopeKey = learning?.sessionState && learning.dailySessionPlan
+    ? `${learning.sessionState.enrollmentId}:${learning.sessionState.courseDay}:${learning.dailySessionPlan.date}:${learning.dailySessionPlan.contentVersion}`
+    : "pending";
+  const checkpointScopeKeyRef = useRef("pending");
+  const checkpointStorageKey = `smartlingo:learning-draft:${classId || "none"}:${checkpointScopeKey}`;
 
   const placementComplete = placement?.status === "completed";
   const trainingView = view === "session";
@@ -499,26 +693,58 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     },
     [learning],
   );
+  const currentCheckpointDraft = useMemo<CheckpointDraft>(() => ({
+    answers,
+    quizAnswers,
+    vocabularyMode,
+    vocabularyIndex,
+  }), [answers, quizAnswers, vocabularyIndex, vocabularyMode]);
+
+  useEffect(() => {
+    currentDraftRef.current = currentCheckpointDraft;
+    currentDraftStateJsonRef.current = JSON.stringify({ draft: currentCheckpointDraft, activeStep: activeSkill });
+    checkpointSyncStatusRef.current = checkpointSyncStatus;
+    checkpointScopeKeyRef.current = checkpointScopeKey;
+  }, [activeSkill, checkpointScopeKey, checkpointSyncStatus, currentCheckpointDraft]);
 
   useEffect(() => {
     if (sessionStatus !== "running") return undefined;
     const timer = window.setTimeout(() => {
       if (sessionRemainingSeconds <= 1) {
         setSessionRemainingSeconds(0);
-        setSessionStatus("idle");
-        setSessionPanelOpen(false);
-        setNotice(t.sessionComplete);
-        void fetch(`/api/classes/${encodeURIComponent(classId)}/learning`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "complete_session", remainingSeconds: 0, date: today, lang, timeZone }),
-        });
+        setSessionStatus("completing");
+        setNotice(t.sessionConfirming);
+        void (async () => {
+          try {
+            const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/learning`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ action: "complete_session", remainingSeconds: 0, date: today, lang, timeZone }),
+            });
+            const result = await response.json().catch(() => ({})) as LearningPayload;
+            if (!response.ok || !result.sessionState) throw new Error(result.error || t.saveError);
+            setLearning(result);
+            setSessionRemainingSeconds(Math.max(0, Math.min(3600, Number(result.sessionState.remainingSeconds))));
+            if (result.sessionState.status === "completed") {
+              setSessionStatus("idle");
+              setSessionPanelOpen(false);
+              setNotice(t.sessionComplete);
+            } else {
+              setSessionStatus(result.sessionState.status === "running" ? "running" : result.sessionState.status === "paused" ? "paused" : "idle");
+              setNotice(t.sessionSaved);
+            }
+          } catch (cause) {
+            setSessionStatus("paused");
+            setLearningError(cause instanceof Error ? cause.message : t.saveError);
+            setNotice("");
+          }
+        })();
         return;
       }
       setSessionRemainingSeconds(sessionRemainingSeconds - 1);
     }, 1_000);
     return () => window.clearTimeout(timer);
-  }, [classId, lang, sessionRemainingSeconds, sessionStatus, t.sessionComplete, timeZone, today]);
+  }, [classId, lang, sessionRemainingSeconds, sessionStatus, t.saveError, t.sessionComplete, t.sessionConfirming, t.sessionSaved, timeZone, today]);
 
   useEffect(() => () => {
     pronunciationRecorder.current?.stop();
@@ -586,7 +812,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
           setSessionRemainingSeconds(Math.max(0, Math.min(3600, Number(result.learningResult.sessionState.remainingSeconds))));
           setSessionStatus(result.learningResult.sessionState.status === "running" ? "running" : result.learningResult.sessionState.status === "paused" ? "paused" : "idle");
         }
-        setVocabularyIndex(result.learningResult?.vocabularyDeckMeta?.activeIndex ?? 0);
+        if (!result.learningResult?.checkpoint) setVocabularyIndex(result.learningResult?.vocabularyDeckMeta?.activeIndex ?? 0);
         setPlacementChecked(true);
         setLearningError("");
       })
@@ -597,6 +823,208 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       });
     return () => { cancelled = true; };
   }, [calendarOnly, classId, lang, t.loadError, timeZone, today, vocabularyMode]);
+
+  useEffect(() => {
+    const checkpoint = learning?.checkpoint;
+    const sessionState = learning?.sessionState;
+    const dailyPlan = learning?.dailySessionPlan;
+    if (!dailyPlan || !sessionState) return;
+    const hydrationKey = `${checkpointScopeKey}:${checkpoint?.id || "pending"}:${checkpoint?.contentVersion || learning.dailyQuiz?.contentVersion || dailyPlan.id}`;
+    if (hydratedCheckpointRef.current === hydrationKey) return;
+    const serverRawDraft = checkpoint?.drafts ?? {};
+    const serverDraft = normalizeCheckpointDraft(serverRawDraft);
+    const serverStep = isTrainingTab(checkpoint?.activeStep) ? checkpoint.activeStep : "vocabulary";
+    let stored: StoredCheckpointDraft | null = null;
+    try {
+      const raw = window.sessionStorage.getItem(checkpointStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<StoredCheckpointDraft>;
+        if (
+          typeof parsed.clientOperationId === "string"
+          && typeof parsed.baseRevision === "number"
+          && parsed.draft
+          && parsed.enrollmentId === sessionState.enrollmentId
+          && parsed.courseDay === sessionState.courseDay
+          && parsed.sessionDate === dailyPlan.date
+          && parsed.contentVersion === dailyPlan.contentVersion
+          && (parsed.checkpointId === (checkpoint?.id ?? null) || parsed.checkpointId === null)
+          && (!parsed.conflict || (
+            Number.isInteger(parsed.serverRevision)
+            && Number(parsed.serverRevision) >= 1
+            && parsed.serverDraft
+            && isTrainingTab(parsed.serverActiveStep)
+          ))
+        ) stored = parsed as StoredCheckpointDraft;
+      }
+    } catch {
+      stored = null;
+    }
+    const selectedDraft = normalizeCheckpointDraft(stored?.draft ?? serverDraft);
+    const selectedStep = stored && isTrainingTab(stored.activeStep) ? stored.activeStep : serverStep;
+    setAnswers(selectedDraft.answers ?? {});
+    setQuizAnswers(selectedDraft.quizAnswers ?? {});
+    setVocabularyMode(selectedDraft.vocabularyMode ?? "recognition");
+    setVocabularyIndex(selectedDraft.vocabularyIndex ?? 0);
+    setActiveSkill(selectedStep);
+    const storedConflict = Boolean(stored?.conflict);
+    checkpointBaseRef.current = storedConflict
+      ? { revision: stored!.serverRevision!, draft: stored!.serverDraft! }
+      : stored
+        ? { revision: stored.baseRevision, draft: stored.baseDraft }
+      : { revision: checkpoint?.revision ?? 0, draft: serverRawDraft };
+    pendingOperationIdRef.current = storedConflict ? "" : stored?.clientOperationId ?? "";
+    pendingCheckpointIdRef.current = storedConflict ? undefined : stored ? stored.checkpointId : undefined;
+    checkpointConflictRef.current = storedConflict;
+    conflictDraftJsonRef.current = storedConflict
+      ? JSON.stringify({ draft: selectedDraft, activeStep: selectedStep })
+      : "";
+    lastDraftJsonRef.current = JSON.stringify({ draft: serverDraft, activeStep: serverStep });
+    hydratedCheckpointRef.current = hydrationKey;
+    setCheckpointSyncStatus(storedConflict ? "conflict" : stored ? "offline" : checkpoint?.syncStatus === "conflict" ? "conflict" : "synced");
+    setDraftHydrated(true);
+  }, [checkpointScopeKey, checkpointStorageKey, learning?.checkpoint, learning?.dailyQuiz?.contentVersion, learning?.dailySessionPlan, learning?.sessionState]);
+
+  useEffect(() => {
+    if (checkpointSyncStatus !== "offline") return undefined;
+    const retry = () => setDraftRetryNonce(value => value + 1);
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, [checkpointSyncStatus]);
+
+  useEffect(() => {
+    const checkpoint = learning?.checkpoint;
+    if (!draftHydrated || !learning?.dailySessionPlan || !learning.sessionState) return undefined;
+    const requestEnrollmentId = learning.sessionState.enrollmentId;
+    const requestCourseDay = learning.sessionState.courseDay;
+    const requestSessionDate = learning.dailySessionPlan.date;
+    const requestContentVersion = learning.dailySessionPlan.contentVersion;
+    const requestScopeKey = checkpointScopeKey;
+    const serialized = JSON.stringify({ draft: currentCheckpointDraft, activeStep: activeSkill });
+    if (serialized === lastDraftJsonRef.current) return undefined;
+    if (checkpointConflictRef.current && serialized === conflictDraftJsonRef.current) return undefined;
+    if (checkpointConflictRef.current) checkpointConflictRef.current = false;
+    if (!pendingOperationIdRef.current) {
+      pendingOperationIdRef.current = createClientOperationId();
+      pendingCheckpointIdRef.current = checkpoint?.id ?? null;
+    }
+    const operationId = pendingOperationIdRef.current;
+    const requestCheckpointId = pendingCheckpointIdRef.current === undefined
+      ? checkpoint?.id ?? null
+      : pendingCheckpointIdRef.current;
+    const baseRevision = checkpointBaseRef.current.revision;
+    const baseDraft = checkpointBaseRef.current.draft;
+    const stored: StoredCheckpointDraft = {
+      checkpointId: requestCheckpointId,
+      enrollmentId: requestEnrollmentId,
+      courseDay: requestCourseDay,
+      sessionDate: requestSessionDate,
+      contentVersion: requestContentVersion,
+      clientOperationId: operationId,
+      baseRevision,
+      baseDraft,
+      draft: currentCheckpointDraft,
+      activeStep: activeSkill,
+      savedAt: Date.now(),
+    };
+    try {
+      window.sessionStorage.setItem(checkpointStorageKey, JSON.stringify(stored));
+    } catch {
+      // Session storage is only a weak-network backup; server sync still proceeds.
+    }
+    setCheckpointSyncStatus("saving");
+    if (draftSaveTimerRef.current !== null) window.clearTimeout(draftSaveTimerRef.current);
+    draftSaveTimerRef.current = window.setTimeout(() => {
+      if (draftSaveInFlightRef.current) {
+        setDraftRetryNonce(value => value + 1);
+        return;
+      }
+      draftSaveInFlightRef.current = true;
+      void (async () => {
+        try {
+          const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/learning`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              action: "save_checkpoint",
+              checkpointId: requestCheckpointId,
+              enrollmentId: requestEnrollmentId,
+              courseDay: requestCourseDay,
+              checkpointDate: requestSessionDate,
+              checkpointContentVersion: requestContentVersion,
+              clientOperationId: operationId,
+              baseRevision,
+              baseDraft,
+              draft: currentCheckpointDraft,
+              activeStep: activeSkill,
+              date: today,
+              lang,
+              timeZone,
+            }),
+          });
+          const result = await response.json().catch(() => ({})) as LearningPayload;
+          const nextCheckpoint = result.checkpoint;
+          if (checkpointScopeKeyRef.current !== requestScopeKey) {
+            if (response.ok) window.sessionStorage.removeItem(checkpointStorageKey);
+            return;
+          }
+          if (nextCheckpoint && (nextCheckpoint.enrollmentId !== requestEnrollmentId
+            || nextCheckpoint.courseDay !== requestCourseDay
+            || nextCheckpoint.localDate !== requestSessionDate
+            || nextCheckpoint.contentVersion !== requestContentVersion)) {
+            throw new Error(t.saveError);
+          }
+          if (response.status === 409 && nextCheckpoint) {
+            const latestDraft = nextCheckpoint.drafts ?? {};
+            checkpointBaseRef.current = { revision: nextCheckpoint.revision, draft: latestDraft };
+            pendingOperationIdRef.current = "";
+            pendingCheckpointIdRef.current = undefined;
+            checkpointConflictRef.current = true;
+            conflictDraftJsonRef.current = currentDraftStateJsonRef.current;
+            setLearning(current => current ? { ...current, checkpoint: nextCheckpoint } : current);
+            setCheckpointSyncStatus("conflict");
+            try {
+              window.sessionStorage.setItem(checkpointStorageKey, JSON.stringify({
+                ...stored,
+                checkpointId: nextCheckpoint.id,
+                clientOperationId: "",
+                conflict: true,
+                serverRevision: nextCheckpoint.revision,
+                serverDraft: latestDraft,
+                serverActiveStep: isTrainingTab(nextCheckpoint.activeStep) ? nextCheckpoint.activeStep : "vocabulary",
+                draft: currentDraftRef.current,
+                savedAt: Date.now(),
+              } satisfies StoredCheckpointDraft));
+            } catch {
+              // The in-memory local draft remains intact even when storage is blocked.
+            }
+            return;
+          }
+          if (!response.ok || !nextCheckpoint) throw new Error(result.error || t.saveError);
+          const latestDraft = nextCheckpoint.drafts ?? {};
+          checkpointBaseRef.current = { revision: nextCheckpoint.revision, draft: latestDraft };
+          pendingOperationIdRef.current = "";
+          pendingCheckpointIdRef.current = undefined;
+          checkpointConflictRef.current = false;
+          conflictDraftJsonRef.current = "";
+          setLearning(current => current ? { ...current, ...result, checkpoint: nextCheckpoint } : result);
+          if (currentDraftStateJsonRef.current === serialized) {
+            lastDraftJsonRef.current = serialized;
+            window.sessionStorage.removeItem(checkpointStorageKey);
+            setCheckpointSyncStatus("synced");
+          } else {
+            setDraftRetryNonce(value => value + 1);
+          }
+        } catch {
+          setCheckpointSyncStatus("offline");
+        } finally {
+          draftSaveInFlightRef.current = false;
+        }
+      })();
+    }, 750);
+    return () => {
+      if (draftSaveTimerRef.current !== null) window.clearTimeout(draftSaveTimerRef.current);
+    };
+  }, [activeSkill, checkpointScopeKey, checkpointStorageKey, classId, currentCheckpointDraft, draftHydrated, draftRetryNonce, lang, learning?.checkpoint, learning?.dailySessionPlan, learning?.sessionState, t.saveError, timeZone, today]);
 
   async function postLearning(payload: Record<string, unknown>, key: string) {
     if (!classId || !placementComplete || busyKey) return null;
@@ -613,6 +1041,12 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       if (!response.ok) throw new Error(result.error || t.saveError);
       setNotice(t.saved);
       setLearning(result);
+      if (result.checkpoint) {
+        checkpointBaseRef.current = {
+          revision: result.checkpoint.revision,
+          draft: result.checkpoint.drafts ?? {},
+        };
+      }
       if (result.sessionState) {
         setSessionRemainingSeconds(Math.max(0, Math.min(3600, Number(result.sessionState.remainingSeconds))));
         setSessionStatus(result.sessionState.status === "running" ? "running" : result.sessionState.status === "paused" ? "paused" : "idle");
@@ -740,14 +1174,34 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
+  function selectTrainingTab(nextTab: TrainingTab, focus = false) {
+    setActiveSkill(nextTab);
+    if (focus) window.requestAnimationFrame(() => document.getElementById(`sl-learning-tab-${nextTab}`)?.focus());
+  }
+
+  function handleTrainingTabKey(event: ReactKeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % TRAINING_TABS.length;
+    if (event.key === "ArrowLeft") nextIndex = (index - 1 + TRAINING_TABS.length) % TRAINING_TABS.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = TRAINING_TABS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    selectTrainingTab(TRAINING_TABS[nextIndex], true);
+  }
+
   async function submitDailyQuiz() {
     const questions = learning?.dailyQuiz?.questions || [];
     if (!questions.length || questions.some(question => !quizAnswers[question.id])) {
       setNotice(t.quizRequired);
       return;
     }
-    const result = await postLearning({ action: "submit_daily_quiz", answers: quizAnswers }, "daily-quiz");
-    if (result?.dailyQuizResult) setQuizAnswers({});
+    if (!quizOperationIdRef.current) quizOperationIdRef.current = crypto.randomUUID();
+    const result = await postLearning({ action: "submit_daily_quiz", answers: quizAnswers, clientOperationId: quizOperationIdRef.current }, "daily-quiz");
+    if (result?.dailyQuizResult) {
+      quizOperationIdRef.current = "";
+      setQuizAnswers({});
+    }
   }
 
   function startQuizSpeech(questionId: string) {
@@ -855,6 +1309,50 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
           {learning.courseProgress.certificate ? <Link href={`/${lang}/certificates/${encodeURIComponent(learning.courseProgress.certificate.id)}`} className="sl-certificate-link">{t.passedCourse} · {t.viewCertificate} →</Link> : null}
         </div> : null}
       </aside> : null}
+      {learning?.motivation ? <section className="sl-motivation-card" data-layout-fill="learning-motivation" aria-labelledby="sl-motivation-title">
+        <header>
+          <p className="sl-eyebrow">{t.motivationKicker}</p>
+          <h2 id="sl-motivation-title">{t.motivationTitle}</h2>
+          <p>{learning.motivation.notice.zh}</p>
+          <p lang="en">{learning.motivation.notice.en}</p>
+        </header>
+        <dl>
+          <div><dt>{t.todayXp}</dt><dd>{learning.motivation.todayXp} XP</dd></div>
+          <div><dt>{t.totalXp}</dt><dd>{learning.motivation.totalXp} XP</dd></div>
+          <div><dt>{t.currentStreak}</dt><dd>{learning.motivation.currentStreak} {t.streakDays}</dd></div>
+          <div><dt>{t.longestStreak}</dt><dd>{learning.motivation.longestStreak} {t.streakDays}</dd></div>
+        </dl>
+        {learning.motivation.repairedDate ? <p className="sl-streak-repair">{t.repairedDate} · {learning.motivation.repairedDate}</p> : null}
+        <small>{t.xpNoCash}</small>
+        <small lang={lang === "zh" ? "en" : "zh"}>{lang === "zh" ? COPY.en.xpNoCash : COPY.zh.xpNoCash}</small>
+      </section> : null}
+      {learning?.dailySessionPlan ? <section className="sl-daily-plan" data-layout-fill="daily-learning-plan" aria-labelledby="sl-daily-plan-title">
+        <header>
+          <p className="sl-eyebrow">{t.planKicker}</p>
+          <h2 id="sl-daily-plan-title">{t.planTitle}</h2>
+          <p>{t.planIntro}</p>
+        </header>
+        <dl className="sl-plan-context">
+          <div><dt>{t.useCase}</dt><dd><strong>{learning.dailySessionPlan.useCase.zh}</strong><span lang="en">{learning.dailySessionPlan.useCase.en}</span></dd></div>
+          <div><dt>{t.stage}</dt><dd><strong>{learning.dailySessionPlan.stage.zh}</strong><span lang="en">{learning.dailySessionPlan.stage.en}</span></dd></div>
+          <div><dt>{t.dueReviews}</dt><dd><strong>{learning.dailySessionPlan.dueVocabularyCount}</strong></dd></div>
+          <div><dt>{t.preferredMinutes}</dt><dd><strong>{learning.preferredDailyMinutes ?? learning.dailySessionPlan.totalMinutes} {t.minutes}</strong></dd></div>
+        </dl>
+        <ol className="sl-plan-blocks">
+          {learning.dailySessionPlan.blocks.map((block, index) => <li className={block.kind.toLowerCase().includes("recap") ? "recap" : ""} key={block.id}>
+            <span className="sl-plan-number">{String(index + 1).padStart(2, "0")}</span>
+            <div>
+              <p><strong>{planKindLabel(block.kind, lang)}</strong>{block.skill ? <span>{t[block.skill]}</span> : null}<b>{block.minutes} {t.minutes}</b></p>
+              <p>{block.rationale.zh}</p>
+              <p lang="en">{block.rationale.en}</p>
+            </div>
+          </li>)}
+        </ol>
+        <p className={`sl-checkpoint-status ${checkpointSyncStatus}`} aria-live="polite">
+          {checkpointSyncStatus === "saving" ? t.syncSaving : checkpointSyncStatus === "offline" ? t.syncOffline : checkpointSyncStatus === "conflict" ? t.syncConflict : t.syncSaved}
+          <small>{t.contentVersion} {learning.checkpoint?.contentVersion || learning.dailyQuiz?.contentVersion || learning.dailySessionPlan.id} · r{learning.checkpoint?.revision ?? 0}</small>
+        </p>
+      </section> : null}
       {!trainingView && learning ? <section className="sl-session-planner" data-layout-fill="daily-session-planner">
         <header><p className="sl-eyebrow">{t.teachingPlan}</p><h2>{t.sessionTitle}</h2><p>{lang === "zh" ? "每个课程日固定 60 分钟。未完成会保存剩余时间，明天从同一课程日继续；考试标签始终开放。" : "Every course day is a fixed 60-minute session. Unfinished time is saved across days, and the Exam tab always remains available."}</p></header>
         <div className="sl-fixed-duration" style={{ width: "100%", padding: 18, display: "grid", gridTemplateColumns: "auto auto minmax(0,1fr)", alignItems: "baseline", gap: 8, border: "1px solid #c8ddd4", borderRadius: 16, background: "#fff" }}><strong style={{ fontSize: 38, color: "#087d62" }}>60</strong><span>{t.minutes}</span><small style={{ justifySelf: "end", color: "#60716b" }}>{learning.sessionState?.remainingSeconds === 3600 ? (lang === "zh" ? "尚未开始" : "Not started") : `${lang === "zh" ? "剩余" : "Remaining"} ${Math.ceil((learning.sessionState?.remainingSeconds ?? 3600) / 60)} ${t.minutes}`}</small></div>
@@ -866,12 +1364,29 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         <p data-readable-copy="five-skill-intro">{t.trainingIntro}</p>
       </header>
       <nav className="sl-skill-tabs" role="tablist" aria-label={t.trainingTitle}>
-        {(["vocabulary", "reading", "writing", "listening", "dialogue", "exam"] as const).map((skill, index) => <button type="button" role="tab" aria-selected={activeSkill === skill} className={activeSkill === skill ? "active" : ""} onClick={() => setActiveSkill(skill)} key={skill}><span>0{index + 1}</span>{skill === "exam" ? (lang === "zh" ? "考试" : "Exam") : t[skill]}</button>)}
+        {TRAINING_TABS.map((skill, index) => <button
+          type="button"
+          role="tab"
+          id={`sl-learning-tab-${skill}`}
+          aria-controls={`sl-learning-panel-${skill}`}
+          aria-selected={activeSkill === skill}
+          tabIndex={activeSkill === skill ? 0 : -1}
+          className={activeSkill === skill ? "active" : ""}
+          onClick={() => selectTrainingTab(skill)}
+          onKeyDown={event => handleTrainingTabKey(event, index)}
+          key={skill}
+        ><span>0{index + 1}</span>{skill === "exam" ? (lang === "zh" ? "考试" : "Exam") : t[skill]}</button>)}
       </nav></> : null}
 
       {!learning && !learningError ? <p className="sl-loading" aria-live="polite">{t.loading}</p> : null}
 
-      {trainingView && learning ? <div className="sl-skill-stack">
+      {trainingView && learning && activeSkill !== "exam" ? <div
+        className="sl-skill-stack"
+        role="tabpanel"
+        id={`sl-learning-panel-${activeSkill}`}
+        aria-labelledby={`sl-learning-tab-${activeSkill}`}
+        tabIndex={0}
+      >
         {activeSkill === "vocabulary" ? <article className="sl-skill-card sl-vocabulary-card" style={{ "--skill-accent": ACCENTS.vocabulary } as CSSProperties} data-layout-fill="skill-vocabulary">
           <header className="sl-skill-card-head">
             <div><span>01</span><h3>{t.vocabulary}</h3></div>
@@ -958,10 +1473,20 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               <h4>{task.prompt}</h4>
               {task.context ? <div className="sl-task-context"><span>{t.context}</span><p>{task.context}</p></div> : null}
               {task.audioText ? <button className="sl-audio-action" type="button" onClick={() => playText(task.audioText || "", task.speechLocale)}>▶ {t.play}</button> : null}
-              {done ? <p className={`sl-task-status ${task.status}`}>
-                {task.status === "completed" ? t.completed : t.skipped}
-                {finiteScore(task.score) !== null ? ` · ${t.score} ${finiteScore(task.score)}` : ""}
-              </p> : <>
+              {done ? <>
+                <p className={`sl-task-status ${task.status}`}>
+                  {task.status === "completed" ? t.completed : t.skipped}
+                  {finiteScore(task.score) !== null ? ` · ${t.score} ${finiteScore(task.score)}` : ""}
+                </p>
+                {task.feedback ? <section className={`sl-answer-feedback ${task.feedback.correctness === "partially_correct" ? "partial" : task.feedback.correctness}`} aria-label={t.feedbackTitle} aria-live="polite">
+                  <header><p className="sl-eyebrow">{t.feedbackTitle}</p><strong>{t.correctness}：{feedbackCorrectnessLabel(task.feedback.correctness, lang)} · {t.score} {finiteScore(task.feedback.score) ?? 0} / 100</strong></header>
+                  <div><b>{t.explanation}</b><p>{task.feedback.explanation.zh}</p><p lang="en">{task.feedback.explanation.en}</p></div>
+                  <div><b>{t.hint}</b><p>{task.feedback.hint.zh}</p><p lang="en">{task.feedback.hint.en}</p></div>
+                  <small>{task.feedback.disclaimer.zh}</small>
+                  <small lang="en">{task.feedback.disclaimer.en}</small>
+                  <small>{t.contentVersion} {task.feedback.contentVersion}</small>
+                </section> : null}
+              </> : <>
                 {task.options?.length ? <div className="sl-task-options">
                   {task.options.map(option => {
                     const value = taskOptionValue(option);
@@ -982,13 +1507,20 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
             </div> : <p className="sl-empty-task">{t.noTask}</p>}
           </article>;
         })}
-        {activeSkill !== "exam" ? <nav className="sl-skill-stepper" aria-label={t.trainingTitle}>
+        <nav className="sl-skill-stepper" aria-label={t.trainingTitle}>
           <button type="button" disabled={activeSkill === "vocabulary"} onClick={() => setActiveSkill(SMART_SKILLS[Math.max(0, SMART_SKILLS.indexOf(activeSkill as Skill) - 1)])}>← {t.previousSkill}</button>
           <Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{t.backToPlan}</Link>
           <button type="button" onClick={() => setActiveSkill(activeSkill === "dialogue" ? "exam" : SMART_SKILLS[Math.min(SMART_SKILLS.length - 1, SMART_SKILLS.indexOf(activeSkill as Skill) + 1)])}>{activeSkill === "dialogue" ? (lang === "zh" ? "前往考试" : "Go to exam") : t.nextSkill} →</button>
-        </nav> : null}
+        </nav>
       </div> : null}
-      {trainingView && activeSkill === "exam" && learning?.dailyQuiz?.questions?.length ? <section className="sl-daily-quiz" data-layout-fill="daily-vocabulary-quiz">
+      {trainingView && activeSkill === "exam" && learning?.dailyQuiz?.questions?.length ? <section
+        className="sl-daily-quiz"
+        data-layout-fill="daily-vocabulary-quiz"
+        role="tabpanel"
+        id="sl-learning-panel-exam"
+        aria-labelledby="sl-learning-tab-exam"
+        tabIndex={0}
+      >
         <header><p className="sl-eyebrow">{t.quizKicker}</p><h2>{t.quizTitle}</h2><p>{t.quizIntro}</p></header>
         {learning.dailyQuizStatus ? <p className="sl-quiz-status">{t.quizResult}：{learning.dailyQuizStatus.score} / 100 · {learning.dailyQuizStatus.correctCount} / {learning.dailyQuizStatus.questionCount}</p> : null}
         <div className="sl-quiz-questions">{learning.dailyQuiz.questions.map((question, index) => <fieldset key={question.id}>
@@ -996,8 +1528,26 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
           {question.imageUrl ? <figure className="sl-quiz-image"><img src={question.imageUrl} alt={lang === "zh" ? "本题情境图" : "Visual prompt for this question"} /><figcaption>{lang === "zh" ? "观察图片后，选择、说出或写出最合适的答案。" : "Study the image, then choose, say, or write the best answer."}</figcaption></figure> : null}
           {question.responseMode === "image_free" ? <div className="sl-quiz-free-answer"><label><span>{lang === "zh" ? "用所学语言说出或写出图片内容" : "Say or write the image answer in the language you are learning"}</span><input value={(quizAnswers[question.id] || "").replace(/^free:/, "")} maxLength={75} autoComplete="off" onChange={event => setQuizAnswers(current => ({ ...current, [question.id]: `free:${event.target.value}` }))}/></label><button type="button" className={quizListeningId === question.id ? "selected" : ""} onClick={() => startQuizSpeech(question.id)}>{quizListeningId === question.id ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "使用麦克风回答" : "Answer by microphone")}</button></div> : <div>{question.options.map(option => <button type="button" className={quizAnswers[question.id] === option.id ? "selected" : ""} aria-pressed={quizAnswers[question.id] === option.id} key={option.id} onClick={() => setQuizAnswers(current => ({ ...current, [question.id]: option.id }))}>{option.label}</button>)}</div>}
         </fieldset>)}</div>
+        {learning.dailyQuizResult?.responses?.length ? <section className="sl-quiz-feedback" aria-live="polite">
+          <h3>{t.quizFeedbackTitle}</h3>
+          <ol>{learning.dailyQuizResult.responses.map((feedback, index) => <li className={feedback.correctness === "partially_correct" ? "partial" : feedback.correctness} key={feedback.questionId}>
+            <header><strong>{index + 1}. {feedbackCorrectnessLabel(feedback.correctness, lang)}</strong><span>{t.score} {finiteScore(feedback.score) ?? 0} / 100</span></header>
+            <div><b>{t.explanation}</b><p>{feedback.explanation.zh}</p><p lang="en">{feedback.explanation.en}</p></div>
+            <div><b>{t.hint}</b><p>{feedback.hint.zh}</p><p lang="en">{feedback.hint.en}</p></div>
+            <small>{feedback.disclaimer.zh}</small><small lang="en">{feedback.disclaimer.en}</small>
+            <small>{t.contentVersion} {feedback.contentVersion}</small>
+          </li>)}</ol>
+        </section> : null}
         <button type="button" className="sl-primary-action" disabled={Boolean(busyKey)} onClick={submitDailyQuiz}>{t.quizSubmit} →</button>
       </section> : null}
+      {trainingView && activeSkill === "exam" && learning && !learning.dailyQuiz?.questions?.length ? <section
+        className="sl-daily-quiz"
+        data-layout-fill="daily-vocabulary-quiz-empty"
+        role="tabpanel"
+        id="sl-learning-panel-exam"
+        aria-labelledby="sl-learning-tab-exam"
+        tabIndex={0}
+      ><p className="sl-empty-task">{t.noTask}</p></section> : null}
     </section> : null}
 
     {!calendarOnly ? <section className="sl-community-entry" data-layout-fill="learning-community-entry">
@@ -1013,10 +1563,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     </section> : null}
 
     {trainingView && sessionStatus !== "idle" ? <aside className={`sl-session-timer ${sessionStatus}`} data-layout-allow-overlap="intentional" aria-label={`${t.timeLeft} ${formattedSessionTime()}`}>
-      <button type="button" className="sl-session-timer-summary" onClick={() => setSessionPanelOpen(open => !open)} aria-expanded={sessionPanelOpen}>
-        <strong>{formattedSessionTime()}</strong>
+      <button type="button" className="sl-session-timer-summary" disabled={sessionStatus === "completing"} onClick={() => setSessionPanelOpen(open => !open)} aria-expanded={sessionPanelOpen}>
+        <strong>{sessionStatus === "completing" ? "•••" : formattedSessionTime()}</strong>
       </button>
-      {sessionPanelOpen ? <div className="sl-session-timer-controls">
+      {sessionPanelOpen && sessionStatus !== "completing" ? <div className="sl-session-timer-controls">
         <button type="button" onClick={toggleSession}>{sessionStatus === "paused" ? `▶ ${t.resumeSession}` : `Ⅱ ${t.pauseSession}`}</button>
         <button type="button" onClick={quitSession}>× {t.quitSession}</button>
       </div> : null}
@@ -1048,8 +1598,10 @@ function LearningWorkspaceStyles() {
     .sl-vocabulary-cue{width:100%;min-width:0;margin:0 0 14px;padding:16px 20px;display:flex;align-items:center;gap:14px;border:1px solid #c9ded5;border-radius:18px;background:#fff}.sl-vocabulary-cue>span{flex:0 0 auto;font-size:clamp(38px,6vw,62px);line-height:1}.sl-vocabulary-cue>div{min-width:0;display:grid;gap:3px}.sl-vocabulary-cue small{color:#5c7169;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.sl-vocabulary-cue strong{font-size:clamp(18px,3vw,25px);overflow-wrap:anywhere}
     .sl-feature-overview,.sl-session-planner,.sl-daily-quiz{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;gap:20px;border:1px solid #cfded7;border-radius:24px;background:#f6fbf8}.sl-feature-overview{background:#fffdf8}.sl-feature-overview header,.sl-session-planner header,.sl-daily-quiz header{width:100%;min-width:0;display:grid;gap:8px}.sl-feature-overview h2,.sl-session-planner h2,.sl-daily-quiz h2{width:100%;margin:0;font:820 clamp(27px,4vw,43px)/1.1 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-feature-overview header>p:last-child,.sl-session-planner header>p:last-child,.sl-daily-quiz header>p:last-child{max-width:76ch;margin:0;color:#5f706a;line-height:1.65}.sl-feature-overview>ol{width:100%;min-width:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;list-style:none}.sl-feature-overview li{min-width:0;padding:18px;display:flex;align-items:flex-start;gap:13px;border:1px solid #d8e1dc;border-top:4px solid var(--skill-accent);border-radius:15px;background:#fff}.sl-feature-overview li>span{flex:0 0 auto;color:var(--skill-accent);font-size:12px;font-weight:950}.sl-feature-overview li>div{min-width:0}.sl-feature-overview strong{display:block;font-size:19px;overflow-wrap:anywhere}.sl-feature-overview li p{max-width:60ch;margin:7px 0 0;color:#5f706a;line-height:1.55;overflow-wrap:anywhere}.sl-duration-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.sl-duration-picker button{min-width:0;min-height:48px;padding:10px;border:1px solid #afc7bc;border-radius:13px;background:#fff;color:var(--ink);font:850 15px/1.2 inherit;cursor:pointer}.sl-duration-picker button.active{border-color:#087d62;background:#087d62;color:#fff}.sl-session-start{width:100%;min-height:54px;padding:12px 20px;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:14px;background:#087d62;color:#fff;font:900 17px/1.2 inherit;cursor:pointer}.sl-session-start:disabled{cursor:not-allowed;opacity:.48}.sl-session-start span{font-size:15px}.sl-section-heading#today-five-skills{scroll-margin-top:120px}.sl-skill-tabs{width:100%;min-width:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.sl-skill-tabs button{min-width:0;min-height:62px;padding:10px 8px;display:grid;place-items:center;gap:3px;border:1px solid #c5d3cd;border-radius:14px;background:#fff;color:#30423c;font:850 15px/1.2 inherit;cursor:pointer}.sl-skill-tabs button span{font-size:10px;color:#75847f}.sl-skill-tabs button.active{border-color:#087d62;background:#087d62;color:#fff}.sl-skill-tabs button.active span{color:#c8efe2}.sl-skill-stepper{width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}.sl-skill-stepper button,.sl-skill-stepper a{min-height:46px;padding:10px 15px;border:1px solid #b9cbc3;border-radius:999px;background:#fff;color:#173d34;font:800 14px/1.2 inherit;text-align:center;text-decoration:none;cursor:pointer}.sl-skill-stepper button:last-child{background:#087d62;color:#fff;border-color:#087d62}.sl-skill-stepper button:disabled{cursor:not-allowed;opacity:.4}.sl-session-timer{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(94px,calc(env(safe-area-inset-bottom) + 76px));z-index:170;width:auto;min-width:92px;padding:5px;border:1px solid rgba(255,255,255,.75);border-radius:999px;background:#0d4138;color:#fff;box-shadow:0 18px 42px rgba(11,45,39,.3)}.sl-session-timer.paused{background:#755d23}.sl-session-timer-summary{width:100%;min-height:48px;padding:6px 14px;border:0;background:transparent;color:inherit;cursor:pointer}.sl-session-timer-summary strong{font-size:20px;font-variant-numeric:tabular-nums}.sl-session-timer-controls{position:absolute;right:0;bottom:calc(100% + 9px);width:210px;padding:8px;display:grid;gap:7px;border-radius:15px;background:#0d4138;box-shadow:0 14px 36px rgba(11,45,39,.3)}.sl-session-timer.paused .sl-session-timer-controls{background:#755d23}.sl-session-timer-controls button{min-height:42px;padding:8px 12px;border:1px solid rgba(255,255,255,.32);border-radius:11px;background:rgba(255,255,255,.1);color:#fff;font:800 14px/1.2 inherit;cursor:pointer}.sl-session-timer-controls button:last-child{background:#fff;color:#7d332e}.sl-repeat-help{max-width:76ch;margin:14px 0 0;color:#536760;line-height:1.6}.sl-pronunciation-feedback{width:100%;min-width:0;margin-top:16px;padding:17px;border-radius:14px;background:#fff6d8}.sl-pronunciation-feedback strong{font-size:20px}.sl-pronunciation-feedback p{max-width:76ch;margin:8px 0;line-height:1.55;overflow-wrap:anywhere}.sl-pronunciation-feedback small{display:block;color:#6f6448;line-height:1.5}.sl-quiz-status{margin:0;padding:14px;border-radius:12px;background:#e2f5ed;color:#08745e;font-weight:850}.sl-quiz-questions{width:100%;min-width:0;display:grid;gap:12px}.sl-quiz-questions fieldset{min-width:0;margin:0;padding:18px;border:1px solid #cfdbd5;border-radius:16px;background:#fff}.sl-quiz-questions legend{max-width:100%;padding:0 5px;font:800 clamp(18px,2.5vw,25px)/1.35 inherit;overflow-wrap:anywhere}.sl-quiz-questions legend small{display:block;color:#64736e;font-size:14px;font-weight:600}.sl-quiz-questions fieldset>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sl-quiz-questions button{min-width:0;min-height:48px;padding:10px 13px;border:1px solid #cbd7d1;border-radius:12px;background:#fff;color:var(--ink);font:750 15px/1.35 inherit;text-align:left;overflow-wrap:anywhere;cursor:pointer}.sl-quiz-questions button.selected{border-color:#0b9473;background:#e7f7f0;box-shadow:inset 0 0 0 1px #0b9473}
     .sl-flashcard-progress{width:100%;min-width:0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.sl-flashcard-progress>strong{color:#08745e;font-size:15px}.sl-flashcard-progress>div{display:flex;gap:7px}.sl-flashcard-progress button{min-height:40px;padding:8px 13px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 14px/1.2 inherit;cursor:pointer}.sl-flashcard-progress button:disabled{cursor:not-allowed;opacity:.45}.sl-recording-preview{width:100%;min-width:0;margin-top:14px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid #d4dfda;border-radius:14px;background:#fff}.sl-recording-preview>strong,.sl-recording-preview>small{grid-column:1/-1}.sl-recording-preview audio{width:100%;min-width:0}.sl-recording-preview button{min-height:42px;padding:8px 13px;border:1px solid #d1aaa5;border-radius:999px;background:#fff;color:#8e3730;font:800 14px/1.2 inherit;cursor:pointer}.sl-recording-preview small{color:#61716b;line-height:1.5}
-    @media(max-width:760px){.sl-workspace{padding-inline:16px}.sl-placement-gate,.sl-community-entry{display:grid;grid-template-columns:minmax(0,1fr)}.sl-placement-gate>.sl-primary-action,.sl-community-entry nav,.sl-community-entry nav a{width:100%}.sl-feature-overview>ol,.sl-task-options,.sl-quiz-questions fieldset>div{grid-template-columns:minmax(0,1fr)}.sl-duration-picker{grid-template-columns:1fr 1fr}.sl-skill-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.sl-skill-stepper{grid-template-columns:1fr 1fr}.sl-skill-stepper a{grid-column:1/-1;grid-row:2}.sl-task-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-task-actions button,.sl-inline-actions button,.sl-grade-actions button{width:100%}.sl-mode-picker{display:grid;grid-template-columns:1fr 1fr;width:100%}.sl-mode-picker button:last-child{grid-column:1/-1}.sl-skill-card{padding:20px 16px}.sl-skill-card-head{display:grid;grid-template-columns:minmax(0,1fr)}.sl-word-stage{padding:28px 16px}.sl-community-entry nav{display:grid;grid-template-columns:minmax(0,1fr)}}
-    @media(max-width:430px){.sl-workspace-heading h1{font-size:40px}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{font-size:16px}.sl-placement-gate,.sl-community-entry{padding:22px 17px}.sl-mode-picker button{padding-inline:8px}.sl-grade-actions{display:grid;grid-template-columns:minmax(0,1fr)}}
+    .sl-motivation-card,.sl-daily-plan{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;gap:20px;border:1px solid #cfded7;border-radius:24px;background:#fff}.sl-motivation-card{background:linear-gradient(135deg,#123f36,#17584a);color:#fff}.sl-motivation-card header,.sl-daily-plan header{width:100%;min-width:0;display:grid;gap:8px}.sl-motivation-card h2,.sl-daily-plan h2{width:100%;margin:0;font:820 clamp(27px,4vw,43px)/1.1 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-motivation-card h2{color:#fff}.sl-motivation-card header>p:not(.sl-eyebrow),.sl-daily-plan header>p:last-child{max-width:76ch;margin:0;line-height:1.65;overflow-wrap:anywhere}.sl-motivation-card header>p:not(.sl-eyebrow){color:#d6ebe4}.sl-motivation-card dl{width:100%;min-width:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.sl-motivation-card dl>div{min-width:0;padding:16px;border-radius:15px;background:rgba(255,255,255,.1)}.sl-motivation-card dt{color:#bfe1d6;font-size:12px;font-weight:850}.sl-motivation-card dd{margin:6px 0 0;font-size:clamp(21px,3vw,31px);font-weight:900;overflow-wrap:anywhere}.sl-motivation-card>small{max-width:76ch;color:#c8ddd6;line-height:1.55}.sl-streak-repair{width:100%;margin:0;padding:12px 14px;border-radius:12px;background:#f8d981;color:#2c443c;font-weight:850}.sl-plan-context{width:100%;min-width:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sl-plan-context>div{min-width:0;padding:16px;border-radius:15px;background:#edf7f2}.sl-plan-context dt{color:#4f6a62;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.sl-plan-context dd{min-width:0;margin:7px 0 0;display:grid;gap:4px}.sl-plan-context dd strong,.sl-plan-context dd span{overflow-wrap:anywhere}.sl-plan-context dd span{color:#5d7069;line-height:1.45}.sl-plan-blocks{width:100%;min-width:0;margin:0;padding:0;display:grid;gap:10px;list-style:none}.sl-plan-blocks li{width:100%;min-width:0;padding:18px;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:14px;border:1px solid #d5e0db;border-radius:16px;background:#fffdf8}.sl-plan-blocks li.recap{border-color:#97cdbb;background:#e6f6ef}.sl-plan-number{width:34px;height:34px;display:grid;place-items:center;border-radius:999px;background:#173f36;color:#fff;font-size:11px;font-weight:900}.sl-plan-blocks li>div{min-width:0}.sl-plan-blocks p{max-width:76ch;margin:0;color:#536760;line-height:1.55;overflow-wrap:anywhere}.sl-plan-blocks p:first-child{max-width:none;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink)}.sl-plan-blocks p:first-child strong{font-size:18px}.sl-plan-blocks p:first-child span{padding:4px 8px;border-radius:999px;background:#e8f0ec;color:#276052;font-size:12px;font-weight:850}.sl-plan-blocks p:first-child b{margin-left:auto;color:#08745e;font-size:13px}.sl-checkpoint-status{width:100%;min-width:0;margin:0;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-radius:13px;background:#e4f6ed;color:#08745e;font-weight:850;overflow-wrap:anywhere}.sl-checkpoint-status small{font-weight:700}.sl-checkpoint-status.saving{background:#fff5d8;color:#735b1d}.sl-checkpoint-status.offline,.sl-checkpoint-status.conflict{background:#fff0ee;color:#923c35}.sl-answer-feedback{width:100%;min-width:0;margin-top:14px;padding:18px;display:grid;gap:14px;border:1px solid #bdd8cd;border-radius:15px;background:#eef8f3}.sl-answer-feedback header,.sl-answer-feedback>div{width:100%;min-width:0;display:grid;gap:5px}.sl-answer-feedback header strong,.sl-answer-feedback p,.sl-answer-feedback small{max-width:76ch;margin:0;line-height:1.55;overflow-wrap:anywhere}.sl-answer-feedback>div>b{color:#315c50}.sl-answer-feedback>small{display:block;color:#5e706a}.sl-answer-feedback.incorrect{border-color:#e4b4ae;background:#fff2ef}.sl-answer-feedback.partial,.sl-answer-feedback.partially_correct{border-color:#e0cb91;background:#fff9e7}.sl-session-timer.completing{background:#315b52}.sl-session-timer-summary:disabled{cursor:wait}
+    .sl-quiz-feedback{width:100%;min-width:0;padding:18px;border:1px solid #bdd8cd;border-radius:16px;background:#edf8f3}.sl-quiz-feedback h3{width:100%;margin:0 0 14px;font-size:clamp(21px,3vw,29px);overflow-wrap:anywhere}.sl-quiz-feedback ol{width:100%;min-width:0;margin:0;padding:0;display:grid;gap:10px;list-style:none}.sl-quiz-feedback li{width:100%;min-width:0;padding:16px;display:grid;gap:10px;border-radius:13px;background:#fff}.sl-quiz-feedback li.incorrect{background:#fff2ef}.sl-quiz-feedback li.partial,.sl-quiz-feedback li.partially_correct{background:#fff9e7}.sl-quiz-feedback li header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.sl-quiz-feedback li>div{display:grid;gap:4px}.sl-quiz-feedback p,.sl-quiz-feedback small{max-width:76ch;margin:0;line-height:1.5;overflow-wrap:anywhere}.sl-quiz-feedback small{display:block;color:#5e706a}
+    @media(max-width:760px){.sl-workspace{padding-inline:16px}.sl-placement-gate,.sl-community-entry{display:grid;grid-template-columns:minmax(0,1fr)}.sl-placement-gate>.sl-primary-action,.sl-community-entry nav,.sl-community-entry nav a{width:100%}.sl-feature-overview>ol,.sl-task-options,.sl-quiz-questions fieldset>div,.sl-plan-context{grid-template-columns:minmax(0,1fr)}.sl-motivation-card dl{grid-template-columns:1fr 1fr}.sl-duration-picker{grid-template-columns:1fr 1fr}.sl-skill-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.sl-skill-stepper{grid-template-columns:1fr 1fr}.sl-skill-stepper a{grid-column:1/-1;grid-row:2}.sl-task-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-task-actions button,.sl-inline-actions button,.sl-grade-actions button{width:100%}.sl-mode-picker{display:grid;grid-template-columns:1fr 1fr;width:100%}.sl-mode-picker button:last-child{grid-column:1/-1}.sl-skill-card{padding:20px 16px}.sl-skill-card-head{display:grid;grid-template-columns:minmax(0,1fr)}.sl-word-stage{padding:28px 16px}.sl-community-entry nav{display:grid;grid-template-columns:minmax(0,1fr)}}
+    @media(max-width:430px){.sl-workspace-heading h1{font-size:40px}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{font-size:16px}.sl-placement-gate,.sl-community-entry{padding:22px 17px}.sl-mode-picker button{padding-inline:8px}.sl-grade-actions{display:grid;grid-template-columns:minmax(0,1fr)}.sl-motivation-card dl{grid-template-columns:minmax(0,1fr)}.sl-plan-blocks li{padding:15px;grid-template-columns:minmax(0,1fr)}.sl-plan-number{width:30px;height:30px}.sl-plan-blocks p:first-child b{width:100%;margin-left:0}}
     .sl-course-day{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;border-radius:24px;background:#102f2a;color:#fff}.sl-course-day h2{width:100%;margin:8px 0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-course-day p{margin:0;color:#cce0d9}.sl-course-day>div{min-width:0}.sl-course-day>div:not(:first-child){padding:18px;border-radius:16px;background:rgba(255,255,255,.08)}.sl-course-day strong{display:block;font-size:clamp(21px,3vw,31px);line-height:1.25;overflow-wrap:anywhere}.sl-course-day ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:7px;list-style:none}.sl-course-day li{padding:7px 10px;border-radius:999px;background:#dff5ec;color:#075d4a;font-size:12px;font-weight:850}.sl-course-score{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sl-course-score>div span{display:block;color:#bad5cc;font-size:12px;font-weight:800;text-transform:uppercase}.sl-course-score>div strong{margin-top:5px;font-size:clamp(28px,4vw,42px)}.sl-course-score small{font-size:13px}.sl-course-score>p,.sl-certificate-link{grid-column:1/-1}.sl-certificate-link{display:block;padding:11px 13px;border-radius:11px;background:#f3c969;color:#173d34;font-weight:900;text-decoration:none}@media(max-width:980px){.sl-course-day{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sl-course-score{grid-column:1/-1}}@media(max-width:760px){.sl-course-day{grid-template-columns:minmax(0,1fr)}.sl-course-score{grid-column:auto}}
   `}</style>;
 }

@@ -35,7 +35,7 @@ export function RealtimeCallStage({ session, lang, currentUserId, onClose }: {
     if (!meeting) return;
     const handleLeft = () => onClose();
     meeting.self.on("roomLeft", handleLeft);
-    return () => meeting.self.removeListener("roomLeft", handleLeft);
+    return () => { meeting.self.removeListener("roomLeft", handleLeft); };
   }, [meeting, onClose]);
 
   async function leave(endForEveryone = false) {

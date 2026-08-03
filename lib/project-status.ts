@@ -32,8 +32,8 @@ export type ProjectReport = {
 };
 
 export const projectStats = {
-  editionDate: "2026-08-02",
-  today: 15,
+  editionDate: "2026-08-03",
+  today: 20,
   total: 100,
 };
 
@@ -221,6 +221,54 @@ export const projectReports: ProjectReport[] = [
     next: {
       zh: "推进 8 月 3 日五项：每日练习编排、即时反馈与讲解、学习经验值与连续学习、中断恢复与跨设备同步、每日学习循环测试。",
       en: "Continue with the five August 3 tasks: daily session composition, instant feedback and explanations, learning XP and streaks, resume and cross-device sync, and daily-loop tests.",
+    },
+  },
+  {
+    date: "2026-08-03",
+    title: {
+      zh: "SmartLingo 每日学习循环日报",
+      en: "SmartLingo daily learning loop report",
+    },
+    beta: {
+      zh: "体验五技能编排、反馈与跨设备恢复",
+      en: "Try five-skill composition, feedback, and cross-device resume",
+    },
+    completed: 5,
+    summary: {
+      zh: "当天恰好完成五项：每日练习编排、即时反馈与讲解、学习经验值与连续学习、中断恢复与跨设备同步，以及每日学习循环测试。学习页现在把会员目标、阶段、近三十日技能证据和到期词汇编成完整六十分钟课程日；每项练习都有可追溯讲解，草稿可以安全恢复，但任何客户端草稿或计时声明都不能伪造完成。",
+      en: "Exactly five tasks are complete: daily session composition, instant feedback and explanations, learning XP and streaks, resume and cross-device sync, and daily-loop tests. The learning surface now composes the member goal, stage, recent 30-day skill evidence, and due vocabulary into a complete 60-minute course day; every practice response has traceable explanation, drafts can resume safely, and no client draft or timer claim can fabricate completion.",
+    },
+    validation: {
+      zh: [
+        "确定性编排器固定总计六十分钟，始终包含原创新课、到期间隔复习、词汇、阅读、写作、听力、对话和结束回顾；当前弱项获得额外时间，会员五至二十分钟目标作为节奏提示而不是完成证据",
+        "普通练习与每日测验均由服务器重建版本化内容后判分；逐题正确性、原创中英文讲解、提示与内容版本在提交后保存和显示，并明确不是真人教师评价或正式、官方考试结果",
+        "迁移 0032、0033 与 0034 增量加入课程日检查点、服务端修订快照、带请求指纹的同步操作收据、作答反馈、学习 XP 账本与连续学习状态；不可变课程日范围阻止过期离线草稿污染新课程日，测验五类证据使用单个 D1 事务，失败回滚不遗留半完成回执",
+        "学习 XP 只来自成功保存且有服务器分数的学习活动，独立于介绍人奖励与所有班级资金流并明确不具现金价值；连续学习锁定权威 IANA 时区并使用修订号 CAS 对账，每滚动三十天最多修复一个被学习日包围的单日空档",
+        "检查点保存不可变课程编排、答案草稿、当前标签与修订号；三方合并的基线只读取服务器历史快照，客户端会话级弱网备份使用操作编号重放，同字段冲突返回 409 并保留本地与服务器两边内容",
+        "学习状态 GET 现在只读；课程日完成必须同时满足五技能、每日测验和服务器六十分钟计时，暂停、检查点或客户端零秒都不能提前完成课程",
+        "发布门槛执行全部三十四个 D1 迁移、全量二百零九项测试、TypeScript、ESLint、vinext 生产构建、产物验证和敏感信息扫描；依赖与锁文件未修改",
+        "中英文首页、当天新增学习编排与反馈界面、课程、社区、消息与实时聊天、智能导师和项目中心在五个指定视口完成一百七十项运行时布局回归，要求无横向溢出、满宽内框、自然换行、裁切、重叠或关键省略",
+        "唯一站点托管项目与代码仓库主分支使用同一候选提交发布；正式域名仍由独立边缘运行服务提供，未列入该站点托管项目，因此本日报不新增三方一致的经核验项目发布记录，也不越权改域名解析、远程仓库或域名路由",
+      ],
+      en: [
+        "The deterministic composer totals exactly 60 minutes and always includes original new material, due spaced review, vocabulary, reading, writing, listening, dialogue, and a recap; the current weak area receives extra time, while the member's 5–20 minute goal is pacing guidance rather than completion evidence",
+        "Regular practice and the daily quiz are graded only after the server reconstructs versioned content; per-response correctness, original Chinese and English explanations, hints, and content versions are stored and shown after submission, explicitly neither human-teacher judgment nor a formal or official exam result",
+        "Migrations 0032, 0033, and 0034 additively store course-day checkpoints, server revision snapshots, request-fingerprinted sync-operation receipts, answer feedback, the learning-XP ledger, and streak state; immutable course-day scope prevents stale offline drafts from contaminating a new day, and all five quiz evidence classes share one D1 transaction so a failed write rolls back without a poisoned receipt",
+        "Learning XP comes only from successfully saved server-scored learning activities, remains separate from introducer rewards and every class-money flow, and has no cash value; streaks lock an authoritative IANA timezone, reconcile with revision CAS, and repair at most one surrounded single-day gap per rolling 30 days",
+        "Checkpoints preserve the immutable course composition, answer drafts, active tab, and revision; three-way merge reads its base only from server history, session-scoped weak-network backup replays with operation IDs, and same-field conflicts return 409 while retaining local and server values",
+        "Learning-state GET is now read-only; a course day completes only when all five skills, the daily quiz, and the server's 60-minute timer agree, so a pause, checkpoint, or client-reported zero cannot finish it early",
+        "The release gate runs all 34 D1 migrations, all 209 tests, TypeScript, ESLint, the vinext production build, artifact validation, and sensitive-data scanning; dependencies and the lockfile remain unchanged",
+        "Chinese and English Home, the new learning-composition and feedback surfaces, Classes, Community, Messages and Live Chat, Guru, and Project complete 170 runtime layout cases across all five required viewports, requiring no horizontal overflow, incomplete inner width, unnatural wrapping, clipping, overlap, or meaningful ellipsis",
+        "The sole Sites project and GitHub main publish the same candidate commit; the production domain remains on a separate Worker and is not attached to that Sites project, so this report adds no three-way verified Project release and makes no unauthorized DNS, remote, or domain-route change",
+      ],
+    },
+    rollback: {
+      zh: "0032、0033 与 0034 只增加学习状态、修订快照和并发控制，不改写旧学习记录；如候选出现问题，可回退 Sites 版本，旧课程活动与词汇进度保持可读。真实收费、Stripe Connect、税务、退款、争议与付款 Webhook 继续关闭。",
+      en: "Migrations 0032, 0033, and 0034 add learning state, revision snapshots, and concurrency controls without rewriting prior learning records; if the candidate fails, the Sites version can roll back while prior course activity and vocabulary progress remain readable. Live charging, Stripe Connect, tax, refunds, disputes, and payment webhooks remain off.",
+    },
+    next: {
+      zh: "推进 8 月 4 日五项：版本化词汇记录、多模式词汇卡、间隔复习引擎、错题与重点词本、词汇学习质量测试。",
+      en: "Continue with the five August 4 tasks: versioned vocabulary records, multimodal flashcards, the spaced-review engine, mistake and focus lists, and vocabulary-learning quality tests.",
     },
   },
 ];
