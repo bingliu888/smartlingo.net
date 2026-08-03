@@ -278,13 +278,15 @@ test("learning workspace restores weak-network drafts and exposes accessible fee
   assert.match(workspace, /checkpointDate: requestSessionDate/);
   assert.match(workspace, /checkpointContentVersion: requestContentVersion/);
   assert.match(workspace, /checkpointScopeKeyRef\.current !== requestScopeKey/);
-  assert.match(workspace, /pendingCheckpointIdRef\.current = storedConflict \? undefined : stored \? stored\.checkpointId : undefined/);
+  assert.match(workspace, /pendingCheckpointIdRef\.current = storedConflict \|\| storedAlreadyAligned \? undefined : stored \? stored\.checkpointId : undefined/);
   assert.match(workspace, /pendingCheckpointIdRef\.current === undefined[\s\S]*?pendingCheckpointIdRef\.current/);
   assert.match(workspace, /conflict\?: boolean/);
   assert.match(workspace, /serverRevision\?: number/);
   assert.match(workspace, /checkpointConflictRef\.current && serialized === conflictDraftJsonRef\.current/);
   assert.match(workspace, /conflict: true,[\s\S]*?serverRevision: nextCheckpoint\.revision[\s\S]*?serverDraft: latestDraft/);
   assert.match(workspace, /setCheckpointSyncStatus\(storedConflict \? "conflict"/);
+  assert.match(workspace, /const storedAlreadyAligned = Boolean\(stored && !storedConflict && selectedSerialized === serverSerialized\)/);
+  assert.match(workspace, /if \(storedAlreadyAligned\) window\.sessionStorage\.removeItem\(checkpointStorageKey\)/);
   assert.match(workspace, /checkpoint\?\.revision \?\? 0/);
   assert.match(workspace, /SMARTLINGO_CHECKPOINT_CONFLICT|checkpointSyncStatus.*conflict/s);
   assert.match(workspace, /aria-controls=\{`sl-learning-panel-/);

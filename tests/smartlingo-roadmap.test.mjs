@@ -139,7 +139,7 @@ test("Project status records the fourth-day evidence without fabricating a verif
   assert.match(projectStatus, /does not add a Project release record claiming three-way Sites, GitHub, and production-domain parity/);
   assert.match(projectStatus, /date: "2026-08-03"/);
   assert.match(projectStatus, /Exactly five tasks are complete: daily session composition/);
-  assert.match(projectStatus, /Migrations 0032 and 0033 additively store course-day checkpoints/);
+  assert.match(projectStatus, /Migrations 0032, 0033, and 0034 additively store course-day checkpoints/);
   assert.match(projectStatus, /production domain remains on a separate Worker/);
   assert.match(runtime, /PROJECT_RUNTIME_KEY = "smartlingo-project-status"/);
 

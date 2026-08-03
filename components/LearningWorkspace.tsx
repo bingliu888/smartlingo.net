@@ -861,26 +861,30 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     }
     const selectedDraft = normalizeCheckpointDraft(stored?.draft ?? serverDraft);
     const selectedStep = stored && isTrainingTab(stored.activeStep) ? stored.activeStep : serverStep;
+    const selectedSerialized = JSON.stringify({ draft: selectedDraft, activeStep: selectedStep });
+    const serverSerialized = JSON.stringify({ draft: serverDraft, activeStep: serverStep });
+    const storedConflict = Boolean(stored?.conflict);
+    const storedAlreadyAligned = Boolean(stored && !storedConflict && selectedSerialized === serverSerialized);
     setAnswers(selectedDraft.answers ?? {});
     setQuizAnswers(selectedDraft.quizAnswers ?? {});
     setVocabularyMode(selectedDraft.vocabularyMode ?? "recognition");
     setVocabularyIndex(selectedDraft.vocabularyIndex ?? 0);
     setActiveSkill(selectedStep);
-    const storedConflict = Boolean(stored?.conflict);
     checkpointBaseRef.current = storedConflict
       ? { revision: stored!.serverRevision!, draft: stored!.serverDraft! }
-      : stored
+      : stored && !storedAlreadyAligned
         ? { revision: stored.baseRevision, draft: stored.baseDraft }
       : { revision: checkpoint?.revision ?? 0, draft: serverRawDraft };
-    pendingOperationIdRef.current = storedConflict ? "" : stored?.clientOperationId ?? "";
-    pendingCheckpointIdRef.current = storedConflict ? undefined : stored ? stored.checkpointId : undefined;
+    pendingOperationIdRef.current = storedConflict || storedAlreadyAligned ? "" : stored?.clientOperationId ?? "";
+    pendingCheckpointIdRef.current = storedConflict || storedAlreadyAligned ? undefined : stored ? stored.checkpointId : undefined;
     checkpointConflictRef.current = storedConflict;
     conflictDraftJsonRef.current = storedConflict
-      ? JSON.stringify({ draft: selectedDraft, activeStep: selectedStep })
+      ? selectedSerialized
       : "";
-    lastDraftJsonRef.current = JSON.stringify({ draft: serverDraft, activeStep: serverStep });
+    lastDraftJsonRef.current = serverSerialized;
     hydratedCheckpointRef.current = hydrationKey;
-    setCheckpointSyncStatus(storedConflict ? "conflict" : stored ? "offline" : checkpoint?.syncStatus === "conflict" ? "conflict" : "synced");
+    if (storedAlreadyAligned) window.sessionStorage.removeItem(checkpointStorageKey);
+    setCheckpointSyncStatus(storedConflict ? "conflict" : stored && !storedAlreadyAligned ? "offline" : checkpoint?.syncStatus === "conflict" ? "conflict" : "synced");
     setDraftHydrated(true);
   }, [checkpointScopeKey, checkpointStorageKey, learning?.checkpoint, learning?.dailyQuiz?.contentVersion, learning?.dailySessionPlan, learning?.sessionState]);
 
