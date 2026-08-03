@@ -10,6 +10,7 @@ import {
   composeDailyLearningSession,
   mergeCheckpointDrafts,
   mergeDailyCheckpointDrafts,
+  reconcileCheckpointQueue,
 } from "../lib/smartlingo-daily-loop.ts";
 
 const sessionInput = minutes => ({
@@ -206,6 +207,34 @@ test("offline checkpoint drafts three-way merge disjoint edits and retain both c
   assert.deepEqual(mergeDailyCheckpointDrafts({ base, server, client }), result);
 });
 
+test("an immutable in-flight checkpoint request confirms before queued typing receives a new operation", () => {
+  const requestA = { draft: { answers: { writing: "A" } }, activeStep: "writing" };
+  const queuedAb = { draft: { answers: { writing: "AB" } }, activeStep: "writing" };
+  assert.deepEqual(reconcileCheckpointQueue({
+    server: requestA,
+    queued: queuedAb,
+    pending: requestA,
+  }), {
+    pendingAlreadyApplied: true,
+    queuedAlreadyAligned: false,
+    pendingRequestRemains: false,
+    needsAnotherOperation: true,
+    canClearLocalStorage: false,
+  });
+  assert.deepEqual(reconcileCheckpointQueue({
+    server: { draft: {}, activeStep: "vocabulary" },
+    queued: queuedAb,
+    pending: requestA,
+  }), {
+    pendingAlreadyApplied: false,
+    queuedAlreadyAligned: false,
+    pendingRequestRemains: true,
+    needsAnotherOperation: false,
+    canClearLocalStorage: false,
+  });
+  assert.equal(reconcileCheckpointQueue({ server: queuedAb, queued: queuedAb, pending: null }).canClearLocalStorage, true);
+});
+
 test("daily learning API keeps GET read-only and the server authoritative for time and completion", async () => {
   const route = await readFile(new URL("../app/api/classes/[classId]/learning/route.ts", import.meta.url), "utf8");
   assert.match(route, /refreshProgress = false/);
@@ -272,21 +301,26 @@ test("learning workspace restores weak-network drafts and exposes accessible fee
   const workspace = await readFile(new URL("../components/LearningWorkspace.tsx", import.meta.url), "utf8");
   assert.match(workspace, /window\.sessionStorage\.setItem\(checkpointStorageKey/);
   assert.match(workspace, /action: "save_checkpoint"/);
-  assert.match(workspace, /checkpointId: requestCheckpointId/);
+  assert.match(workspace, /checkpointId: pendingRequest\.checkpointId/);
   assert.match(workspace, /enrollmentId: requestEnrollmentId/);
   assert.match(workspace, /courseDay: requestCourseDay/);
   assert.match(workspace, /checkpointDate: requestSessionDate/);
   assert.match(workspace, /checkpointContentVersion: requestContentVersion/);
   assert.match(workspace, /checkpointScopeKeyRef\.current !== requestScopeKey/);
-  assert.match(workspace, /pendingCheckpointIdRef\.current = storedConflict \|\| storedAlreadyAligned \? undefined : stored \? stored\.checkpointId : undefined/);
-  assert.match(workspace, /pendingCheckpointIdRef\.current === undefined[\s\S]*?pendingCheckpointIdRef\.current/);
+  assert.match(workspace, /type PendingCheckpointRequest =/);
+  assert.match(workspace, /requestDraft: CheckpointDraft/);
+  assert.match(workspace, /requestActiveStep: TrainingTab/);
+  assert.match(workspace, /pendingCheckpointRequestRef\.current/);
+  assert.match(workspace, /draft: pendingRequest\.requestDraft/);
+  assert.match(workspace, /activeStep: pendingRequest\.requestActiveStep/);
   assert.match(workspace, /conflict\?: boolean/);
   assert.match(workspace, /serverRevision\?: number/);
   assert.match(workspace, /checkpointConflictRef\.current && serialized === conflictDraftJsonRef\.current/);
   assert.match(workspace, /conflict: true,[\s\S]*?serverRevision: nextCheckpoint\.revision[\s\S]*?serverDraft: latestDraft/);
   assert.match(workspace, /setCheckpointSyncStatus\(storedConflict \? "conflict"/);
-  assert.match(workspace, /const storedAlreadyAligned = Boolean\(stored && !storedConflict && selectedSerialized === serverSerialized\)/);
-  assert.match(workspace, /if \(storedAlreadyAligned\) window\.sessionStorage\.removeItem\(checkpointStorageKey\)/);
+  assert.match(workspace, /reconcileCheckpointQueue\(\{/);
+  assert.match(workspace, /const \{ pendingAlreadyApplied, queuedAlreadyAligned \} = reconciliation/);
+  assert.match(workspace, /currentDraftStateJsonRef\.current === latestSerialized/);
   assert.match(workspace, /checkpoint\?\.revision \?\? 0/);
   assert.match(workspace, /SMARTLINGO_CHECKPOINT_CONFLICT|checkpointSyncStatus.*conflict/s);
   assert.match(workspace, /aria-controls=\{`sl-learning-panel-/);

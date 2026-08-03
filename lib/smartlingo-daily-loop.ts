@@ -514,6 +514,45 @@ function valuesEqual(left: unknown, right: unknown): boolean {
   return false;
 }
 
+export interface CheckpointQueueState<TDraft extends object, TStep extends string> {
+  readonly draft: TDraft;
+  readonly activeStep: TStep;
+}
+
+export interface CheckpointQueueReconciliation {
+  readonly pendingAlreadyApplied: boolean;
+  readonly queuedAlreadyAligned: boolean;
+  readonly pendingRequestRemains: boolean;
+  readonly needsAnotherOperation: boolean;
+  readonly canClearLocalStorage: boolean;
+}
+
+/**
+ * Reconciles an immutable in-flight request with the latest queued editor state.
+ * A response-lost request is cleared only when its exact evidence is visible on
+ * the server; later typing then requires a distinct operation identity.
+ */
+export function reconcileCheckpointQueue<TDraft extends object, TStep extends string>(input: {
+  readonly server: CheckpointQueueState<TDraft, TStep>;
+  readonly queued: CheckpointQueueState<TDraft, TStep>;
+  readonly pending: CheckpointQueueState<TDraft, TStep> | null;
+}): CheckpointQueueReconciliation {
+  const statesEqual = (
+    left: CheckpointQueueState<TDraft, TStep>,
+    right: CheckpointQueueState<TDraft, TStep>,
+  ) => left.activeStep === right.activeStep && valuesEqual(left.draft, right.draft);
+  const pendingAlreadyApplied = input.pending ? statesEqual(input.pending, input.server) : false;
+  const queuedAlreadyAligned = statesEqual(input.queued, input.server);
+  const pendingRequestRemains = Boolean(input.pending && !pendingAlreadyApplied);
+  return {
+    pendingAlreadyApplied,
+    queuedAlreadyAligned,
+    pendingRequestRemains,
+    needsAnotherOperation: !pendingRequestRemains && !queuedAlreadyAligned,
+    canClearLocalStorage: !pendingRequestRemains && queuedAlreadyAligned,
+  };
+}
+
 function cloneValue<T>(value: T): T {
   if (Array.isArray(value)) return value.map(cloneValue) as T;
   if (isRecord(value)) {

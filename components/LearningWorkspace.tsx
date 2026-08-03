@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
 
 type Lang = "zh" | "en";
@@ -27,6 +28,8 @@ type StoredCheckpointDraft = {
   clientOperationId: string;
   baseRevision: number;
   baseDraft: CheckpointDraft;
+  requestDraft: CheckpointDraft;
+  requestActiveStep: TrainingTab;
   draft: CheckpointDraft;
   activeStep: TrainingTab;
   conflict?: boolean;
@@ -34,6 +37,14 @@ type StoredCheckpointDraft = {
   serverDraft?: CheckpointDraft;
   serverActiveStep?: TrainingTab;
   savedAt: number;
+};
+type PendingCheckpointRequest = {
+  checkpointId: string | null;
+  clientOperationId: string;
+  baseRevision: number;
+  baseDraft: CheckpointDraft;
+  requestDraft: CheckpointDraft;
+  requestActiveStep: TrainingTab;
 };
 
 type Placement = {
@@ -663,13 +674,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   const hydratedCheckpointRef = useRef("");
   const lastDraftJsonRef = useRef("");
   const currentDraftRef = useRef<CheckpointDraft>({});
+  const currentActiveStepRef = useRef<TrainingTab>("vocabulary");
   const currentDraftStateJsonRef = useRef("");
   const conflictDraftJsonRef = useRef("");
   const checkpointConflictRef = useRef(false);
   const draftSaveTimerRef = useRef<number | null>(null);
   const draftSaveInFlightRef = useRef(false);
-  const pendingOperationIdRef = useRef("");
-  const pendingCheckpointIdRef = useRef<string | null | undefined>(undefined);
+  const pendingCheckpointRequestRef = useRef<PendingCheckpointRequest | null>(null);
   const quizOperationIdRef = useRef("");
   const checkpointSyncStatusRef = useRef(checkpointSyncStatus);
   const logRequestKey = `${calendarMonth}:${classId || "all"}:${timeZone}`;
@@ -702,6 +713,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
 
   useEffect(() => {
     currentDraftRef.current = currentCheckpointDraft;
+    currentActiveStepRef.current = activeSkill;
     currentDraftStateJsonRef.current = JSON.stringify({ draft: currentCheckpointDraft, activeStep: activeSkill });
     checkpointSyncStatusRef.current = checkpointSyncStatus;
     checkpointScopeKeyRef.current = checkpointScopeKey;
@@ -842,7 +854,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         if (
           typeof parsed.clientOperationId === "string"
           && typeof parsed.baseRevision === "number"
+          && parsed.baseDraft
           && parsed.draft
+          && isTrainingTab(parsed.activeStep)
+          && (!parsed.clientOperationId || (parsed.requestDraft && isTrainingTab(parsed.requestActiveStep)))
           && parsed.enrollmentId === sessionState.enrollmentId
           && parsed.courseDay === sessionState.courseDay
           && parsed.sessionDate === dailyPlan.date
@@ -864,7 +879,23 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     const selectedSerialized = JSON.stringify({ draft: selectedDraft, activeStep: selectedStep });
     const serverSerialized = JSON.stringify({ draft: serverDraft, activeStep: serverStep });
     const storedConflict = Boolean(stored?.conflict);
-    const storedAlreadyAligned = Boolean(stored && !storedConflict && selectedSerialized === serverSerialized);
+    let pendingRequest: PendingCheckpointRequest | null = stored?.clientOperationId ? {
+      checkpointId: stored.checkpointId,
+      clientOperationId: stored.clientOperationId,
+      baseRevision: stored.baseRevision,
+      baseDraft: stored.baseDraft,
+      requestDraft: normalizeCheckpointDraft(stored.requestDraft),
+      requestActiveStep: stored.requestActiveStep,
+    } : null;
+    const reconciliation = reconcileCheckpointQueue({
+      server: { draft: serverDraft, activeStep: serverStep },
+      queued: { draft: selectedDraft, activeStep: selectedStep },
+      pending: pendingRequest
+        ? { draft: pendingRequest.requestDraft, activeStep: pendingRequest.requestActiveStep }
+        : null,
+    });
+    const { pendingAlreadyApplied, queuedAlreadyAligned } = reconciliation;
+    if (pendingAlreadyApplied) pendingRequest = null;
     setAnswers(selectedDraft.answers ?? {});
     setQuizAnswers(selectedDraft.quizAnswers ?? {});
     setVocabularyMode(selectedDraft.vocabularyMode ?? "recognition");
@@ -872,19 +903,32 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     setActiveSkill(selectedStep);
     checkpointBaseRef.current = storedConflict
       ? { revision: stored!.serverRevision!, draft: stored!.serverDraft! }
-      : stored && !storedAlreadyAligned
-        ? { revision: stored.baseRevision, draft: stored.baseDraft }
+      : pendingRequest
+        ? { revision: stored!.baseRevision, draft: stored!.baseDraft }
       : { revision: checkpoint?.revision ?? 0, draft: serverRawDraft };
-    pendingOperationIdRef.current = storedConflict || storedAlreadyAligned ? "" : stored?.clientOperationId ?? "";
-    pendingCheckpointIdRef.current = storedConflict || storedAlreadyAligned ? undefined : stored ? stored.checkpointId : undefined;
+    pendingCheckpointRequestRef.current = storedConflict ? null : pendingRequest;
     checkpointConflictRef.current = storedConflict;
     conflictDraftJsonRef.current = storedConflict
       ? selectedSerialized
       : "";
     lastDraftJsonRef.current = serverSerialized;
     hydratedCheckpointRef.current = hydrationKey;
-    if (storedAlreadyAligned) window.sessionStorage.removeItem(checkpointStorageKey);
-    setCheckpointSyncStatus(storedConflict ? "conflict" : stored && !storedAlreadyAligned ? "offline" : checkpoint?.syncStatus === "conflict" ? "conflict" : "synced");
+    if (stored && !storedConflict && !pendingRequest && queuedAlreadyAligned) {
+      window.sessionStorage.removeItem(checkpointStorageKey);
+    } else if (stored && pendingAlreadyApplied) {
+      window.sessionStorage.setItem(checkpointStorageKey, JSON.stringify({
+        ...stored,
+        checkpointId: checkpoint?.id ?? stored.checkpointId,
+        clientOperationId: "",
+        baseRevision: checkpoint?.revision ?? stored.baseRevision,
+        baseDraft: serverRawDraft,
+        requestDraft: serverDraft,
+        requestActiveStep: serverStep,
+        savedAt: Date.now(),
+      } satisfies StoredCheckpointDraft));
+    }
+    const storedNeedsSync = Boolean(stored && !storedConflict && (pendingRequest || !queuedAlreadyAligned));
+    setCheckpointSyncStatus(storedConflict ? "conflict" : storedNeedsSync ? "offline" : checkpoint?.syncStatus === "conflict" ? "conflict" : "synced");
     setDraftHydrated(true);
   }, [checkpointScopeKey, checkpointStorageKey, learning?.checkpoint, learning?.dailyQuiz?.contentVersion, learning?.dailySessionPlan, learning?.sessionState]);
 
@@ -904,28 +948,32 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     const requestContentVersion = learning.dailySessionPlan.contentVersion;
     const requestScopeKey = checkpointScopeKey;
     const serialized = JSON.stringify({ draft: currentCheckpointDraft, activeStep: activeSkill });
-    if (serialized === lastDraftJsonRef.current) return undefined;
     if (checkpointConflictRef.current && serialized === conflictDraftJsonRef.current) return undefined;
     if (checkpointConflictRef.current) checkpointConflictRef.current = false;
-    if (!pendingOperationIdRef.current) {
-      pendingOperationIdRef.current = createClientOperationId();
-      pendingCheckpointIdRef.current = checkpoint?.id ?? null;
+    let pendingRequest = pendingCheckpointRequestRef.current;
+    if (!pendingRequest && serialized === lastDraftJsonRef.current) return undefined;
+    if (!pendingRequest) {
+      pendingRequest = {
+        checkpointId: checkpoint?.id ?? null,
+        clientOperationId: createClientOperationId(),
+        baseRevision: checkpointBaseRef.current.revision,
+        baseDraft: checkpointBaseRef.current.draft,
+        requestDraft: currentCheckpointDraft,
+        requestActiveStep: activeSkill,
+      };
+      pendingCheckpointRequestRef.current = pendingRequest;
     }
-    const operationId = pendingOperationIdRef.current;
-    const requestCheckpointId = pendingCheckpointIdRef.current === undefined
-      ? checkpoint?.id ?? null
-      : pendingCheckpointIdRef.current;
-    const baseRevision = checkpointBaseRef.current.revision;
-    const baseDraft = checkpointBaseRef.current.draft;
     const stored: StoredCheckpointDraft = {
-      checkpointId: requestCheckpointId,
+      checkpointId: pendingRequest.checkpointId,
       enrollmentId: requestEnrollmentId,
       courseDay: requestCourseDay,
       sessionDate: requestSessionDate,
       contentVersion: requestContentVersion,
-      clientOperationId: operationId,
-      baseRevision,
-      baseDraft,
+      clientOperationId: pendingRequest.clientOperationId,
+      baseRevision: pendingRequest.baseRevision,
+      baseDraft: pendingRequest.baseDraft,
+      requestDraft: pendingRequest.requestDraft,
+      requestActiveStep: pendingRequest.requestActiveStep,
       draft: currentCheckpointDraft,
       activeStep: activeSkill,
       savedAt: Date.now(),
@@ -950,16 +998,16 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               action: "save_checkpoint",
-              checkpointId: requestCheckpointId,
+              checkpointId: pendingRequest.checkpointId,
               enrollmentId: requestEnrollmentId,
               courseDay: requestCourseDay,
               checkpointDate: requestSessionDate,
               checkpointContentVersion: requestContentVersion,
-              clientOperationId: operationId,
-              baseRevision,
-              baseDraft,
-              draft: currentCheckpointDraft,
-              activeStep: activeSkill,
+              clientOperationId: pendingRequest.clientOperationId,
+              baseRevision: pendingRequest.baseRevision,
+              baseDraft: pendingRequest.baseDraft,
+              draft: pendingRequest.requestDraft,
+              activeStep: pendingRequest.requestActiveStep,
               date: today,
               lang,
               timeZone,
@@ -980,8 +1028,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
           if (response.status === 409 && nextCheckpoint) {
             const latestDraft = nextCheckpoint.drafts ?? {};
             checkpointBaseRef.current = { revision: nextCheckpoint.revision, draft: latestDraft };
-            pendingOperationIdRef.current = "";
-            pendingCheckpointIdRef.current = undefined;
+            pendingCheckpointRequestRef.current = null;
             checkpointConflictRef.current = true;
             conflictDraftJsonRef.current = currentDraftStateJsonRef.current;
             setLearning(current => current ? { ...current, checkpoint: nextCheckpoint } : current);
@@ -1005,21 +1052,39 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
           }
           if (!response.ok || !nextCheckpoint) throw new Error(result.error || t.saveError);
           const latestDraft = nextCheckpoint.drafts ?? {};
+          const normalizedLatestDraft = normalizeCheckpointDraft(latestDraft);
+          const latestStep = isTrainingTab(nextCheckpoint.activeStep) ? nextCheckpoint.activeStep : "vocabulary";
+          const latestSerialized = JSON.stringify({ draft: normalizedLatestDraft, activeStep: latestStep });
           checkpointBaseRef.current = { revision: nextCheckpoint.revision, draft: latestDraft };
-          pendingOperationIdRef.current = "";
-          pendingCheckpointIdRef.current = undefined;
+          pendingCheckpointRequestRef.current = null;
           checkpointConflictRef.current = false;
           conflictDraftJsonRef.current = "";
           setLearning(current => current ? { ...current, ...result, checkpoint: nextCheckpoint } : result);
-          if (currentDraftStateJsonRef.current === serialized) {
-            lastDraftJsonRef.current = serialized;
+          lastDraftJsonRef.current = latestSerialized;
+          if (currentDraftStateJsonRef.current === latestSerialized) {
             window.sessionStorage.removeItem(checkpointStorageKey);
             setCheckpointSyncStatus("synced");
           } else {
+            window.sessionStorage.setItem(checkpointStorageKey, JSON.stringify({
+              checkpointId: nextCheckpoint.id,
+              enrollmentId: requestEnrollmentId,
+              courseDay: requestCourseDay,
+              sessionDate: requestSessionDate,
+              contentVersion: requestContentVersion,
+              clientOperationId: "",
+              baseRevision: nextCheckpoint.revision,
+              baseDraft: latestDraft,
+              requestDraft: normalizedLatestDraft,
+              requestActiveStep: latestStep,
+              draft: currentDraftRef.current,
+              activeStep: currentActiveStepRef.current,
+              savedAt: Date.now(),
+            } satisfies StoredCheckpointDraft));
+            setCheckpointSyncStatus("offline");
             setDraftRetryNonce(value => value + 1);
           }
         } catch {
-          setCheckpointSyncStatus("offline");
+          if (checkpointScopeKeyRef.current === requestScopeKey) setCheckpointSyncStatus("offline");
         } finally {
           draftSaveInFlightRef.current = false;
         }

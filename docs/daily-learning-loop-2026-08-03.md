@@ -31,8 +31,10 @@ Each course day has an immutable composition, server-owned per-revision draft sn
 
 - D1 迁移 `0032`、`0033` 与 `0034` 增量增加检查点、服务器修订快照、带请求指纹的同步收据、作答反馈、学习 XP 和连续学习状态；请求指纹绑定不可变课程日范围，过期离线草稿不会写入新课程日；测验回执、attempt、逐题反馈、学习活动与 XP 使用同一 D1 事务，并验证失败全量回滚。
 - 专项测试覆盖精确分钟分配、弱项加权、双语错误讲解、XP 无现金价值、跨月与时区日期、滚动 30 天修复、离线三方合并、重复测验写入、服务端计时和修订号冲突。
+- 完整门禁覆盖 36 个可重复 D1 迁移与 214 项测试；在途请求与后续输入分离的纯状态机测试验证丢响应后先确认旧操作、再为排队草稿生成新操作 ID。
 - 训练标签支持左右方向键、`aria-controls` 与单一 `tabpanel`；响应式发布门槛继续覆盖中英文和五个指定视口。
 
 - D1 migrations `0032`, `0033`, and `0034` additively introduce checkpoints, server revision snapshots, request-fingerprinted sync receipts, answer feedback, learning XP, and streak state. Fingerprints bind an immutable course-day scope so a stale offline draft cannot land in a new day. Quiz receipts, attempts, per-response feedback, learning activity, and XP share one D1 transaction, with a forced-failure rollback check.
 - Focused tests cover exact minute allocation, weak-skill weighting, bilingual incorrect-answer explanations, non-cash XP, month and timezone boundaries, rolling-30-day repair, offline three-way merge, duplicate quiz writes, server timers, and revision conflicts.
+- The complete gate covers 36 repeatable D1 migrations and 214 tests. A pure state-machine regression separates an immutable in-flight request from later typing, confirming the old operation after a lost response before assigning the queued draft a new operation ID.
 - Training tabs support Left/Right Arrow keys, `aria-controls`, and one `tabpanel`; the responsive release gate continues across Chinese, English, and all five required viewports.
