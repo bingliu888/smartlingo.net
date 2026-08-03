@@ -93,7 +93,7 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
       </div>
       <label>{zh ? "显示名称" : "Display name"}<input required minLength={2} maxLength={60} value={displayName} onChange={event => setDisplayName(event.target.value)}/></label>
       <fieldset className="ai-provider-field">
-        <legend>{zh ? "默认文字人工智能模型" : "Default text AI model"}</legend>
+        <legend>{zh ? "默认文本模型" : "Default text model"}</legend>
         <label><input type="radio" name="ai-provider" value="auto" checked={aiProviderPreference === "auto"} onChange={() => setAiProviderPreference("auto")}/><span><b>{zh ? "自动（推荐）" : "Automatic (recommended)"}</b><small>{zh ? "中国优先使用 DeepSeek V4 Flash；其他地区优先使用 OpenAI。" : "Prefer DeepSeek V4 Flash in China and OpenAI in other supported regions."}</small></span></label>
         <label><input type="radio" name="ai-provider" value="openai" checked={aiProviderPreference === "openai"} onChange={() => setAiProviderPreference("openai")}/><span><b>OpenAI</b><small>{zh ? "始终使用 OpenAI 文字模型；在不支持地区可能不可用。" : "Always use the OpenAI text model; it may be unavailable in unsupported regions."}</small></span></label>
         <label><input type="radio" name="ai-provider" value="deepseek" checked={aiProviderPreference === "deepseek"} onChange={() => setAiProviderPreference("deepseek")}/><span><b>DeepSeek V4 Flash</b><small>{zh ? "始终使用 DeepSeek，可在美国等地区进行对比测试。" : "Always use DeepSeek, including for comparison testing in the United States."}</small></span></label>

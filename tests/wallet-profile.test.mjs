@@ -32,7 +32,7 @@ test("account profile stores a validated server-side text AI provider preference
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0028_wise_baron_strucker.sql", import.meta.url), "utf8"),
   ]);
-  assert.match(editor, /Default text AI model/);
+  assert.match(editor, /Default text model/);
   assert.match(editor, /DeepSeek V4 Flash/);
   assert.match(editor, /value="auto"/);
   assert.match(editor, /value="openai"/);
