@@ -28,3 +28,15 @@ test("the scheduled Live Chat attachment fixture stays below the limit", async (
   assert.ok(fixture.size > 0);
   assert.ok(fixture.size < 900 * 1024);
 });
+
+test("chat files have explicit browser View and Download actions while URL messages are links", async () => {
+  const client = await readFile(new URL("../components/LiveChatRoom.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/api/message-media/route.ts", import.meta.url), "utf8");
+  const media = await readFile(new URL("../lib/smartlingo-media.ts", import.meta.url), "utf8");
+  assert.match(client, /disposition=attachment/);
+  assert.match(client, /target="_blank"/);
+  assert.match(client, /URL_PATTERN/);
+  assert.match(client, /chat-url-link/);
+  assert.match(route, /searchParams\.get\("disposition"\)/);
+  assert.match(media, /disposition \|\| "inline"/);
+});

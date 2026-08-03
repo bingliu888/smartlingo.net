@@ -18,12 +18,12 @@ test("each active class exposes one durable Live Chat room with online presence"
   assert.match(learningPage, /ClassLiveChatPanel/);
 });
 
-test("class audio remains compact beside text chat and auto-ends after one solo minute", () => {
+test("class audio remains beside text chat and standard calls auto-end after one solo or silent minute", () => {
   const calls = read("app/api/messages/calls/route.ts");
   const room = read("components/LiveChatRoom.tsx");
   const dock = read("components/ClassAudioCallDock.tsx");
   const migration = read("drizzle/0035_class_live_audio.sql");
-  assert.match(calls, /threadKind !== "class"/);
+  assert.match(calls, /reconcileCall/);
   assert.match(calls, /60 - \(now - soloSinceAt\)/);
   assert.match(calls, /participantCount === 0/);
   assert.match(calls, /status = 'ended', ended_at = \?/);
@@ -31,9 +31,8 @@ test("class audio remains compact beside text chat and auto-ends after one solo 
   assert.match(migration, /solo_since_at/);
   assert.match(migration, /last_seen_at/);
   assert.match(room, /Join audio call/);
-  assert.match(room, /ClassAudioCallDock/);
+  assert.match(room, /usePersistentCall/);
   assert.match(dock, /text chat stays available/);
-  assert.match(dock, /meeting\.join\(\)/);
 });
 
 test("class membership, not arbitrary chat invites, controls room access", () => {

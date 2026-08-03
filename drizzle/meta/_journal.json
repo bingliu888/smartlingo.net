@@ -253,6 +253,13 @@
       "when": 1785766000000,
       "tag": "0035_class_live_audio",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1785766948120,
+      "tag": "0036_numerous_madame_masque",
+      "breakpoints": true
     }
   ]
 }

@@ -138,7 +138,7 @@ test("certificate uploads are server-only and object keys cannot contain user in
   assert.equal(media.sanitizeMediaFileName("../../evil\r\nname.html"), "_.._evil__name.html");
 });
 
-test("media response headers prevent sniffing and sandbox document downloads", async () => {
+test("media response headers prevent sniffing while documents support browser view and explicit download", async () => {
   const media = await loadMediaModule();
   const pdfHeaders = media.privateMediaResponseHeaders({
     mimeType: "application/pdf",
@@ -146,8 +146,15 @@ test("media response headers prevent sniffing and sandbox document downloads", a
     name: "lesson.pdf",
   });
   assert.equal(pdfHeaders["x-content-type-options"], "nosniff");
-  assert.match(pdfHeaders["content-disposition"], /^attachment;/);
+  assert.match(pdfHeaders["content-disposition"], /^inline;/);
   assert.equal(pdfHeaders["content-security-policy"], "sandbox; default-src 'none'");
+  const downloadHeaders = media.privateMediaResponseHeaders({
+    mimeType: "application/pdf",
+    sizeBytes: 42,
+    name: "lesson.pdf",
+    disposition: "attachment",
+  });
+  assert.match(downloadHeaders["content-disposition"], /^attachment;/);
 
   const imageHeaders = media.privateMediaResponseHeaders({
     mimeType: "image/png",

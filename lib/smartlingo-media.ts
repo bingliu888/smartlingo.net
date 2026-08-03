@@ -262,17 +262,17 @@ export function sanitizeMediaFileName(value: string, fallback = "media") {
   return cleaned || fallback.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
 }
 
-export function privateMediaResponseHeaders(input: { mimeType: string; sizeBytes: number; name: string }) {
-  const forceDownload = DOCUMENT_MIME_TYPES.includes(input.mimeType as (typeof DOCUMENT_MIME_TYPES)[number]);
+export function privateMediaResponseHeaders(input: { mimeType: string; sizeBytes: number; name: string; disposition?: "inline" | "attachment" }) {
+  const disposition = input.disposition || "inline";
   const headers: Record<string, string> = {
     "cache-control": "private, max-age=300",
-    "content-disposition": `${forceDownload ? "attachment" : "inline"}; filename="${sanitizeMediaFileName(input.name).replace(/["\\]/g, "_")}"`,
+    "content-disposition": `${disposition}; filename="${sanitizeMediaFileName(input.name).replace(/["\\]/g, "_")}"`,
     "content-length": String(input.sizeBytes),
     "content-type": input.mimeType,
     "cross-origin-resource-policy": "same-origin",
     "x-content-type-options": "nosniff",
   };
-  if (forceDownload) headers["content-security-policy"] = "sandbox; default-src 'none'";
+  if (DOCUMENT_MIME_TYPES.includes(input.mimeType as (typeof DOCUMENT_MIME_TYPES)[number])) headers["content-security-policy"] = "sandbox; default-src 'none'";
   return headers;
 }
 

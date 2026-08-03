@@ -28,7 +28,8 @@ export async function GET(request: Request) {
   ).bind(id, threadId).first<{ objectKey: string; mimeType: string; sizeBytes: number }>();
   if (!asset) return Response.json({ error: "Attachment not found" }, { status: 404 });
   const object = await bucket().get(asset.objectKey); if (!object) return Response.json({ error: "Attachment unavailable" }, { status: 404 });
-  return new Response(object.body, { headers: privateMediaResponseHeaders({ mimeType: asset.mimeType, sizeBytes: asset.sizeBytes, name: meta.name || "attachment" }) });
+  const disposition = url.searchParams.get("disposition") === "attachment" ? "attachment" : "inline";
+  return new Response(object.body, { headers: privateMediaResponseHeaders({ mimeType: asset.mimeType, sizeBytes: asset.sizeBytes, name: meta.name || "attachment", disposition }) });
 }
 
 export async function POST(request: Request) {

@@ -94,7 +94,10 @@ export async function addRealtimeParticipant(
       method: "POST",
       body: JSON.stringify({
         name: input.displayName.slice(0, 80) || "SmartLingo member",
-        preset_name: input.mode === "audio" ? config.voicePreset : config.videoPreset,
+        // Every standard chat call starts with the camera off, but uses the
+        // video-capable preset so an admitted participant may enable video
+        // later without leaving the room. The app enforces the four-camera cap.
+        preset_name: config.videoPreset,
         custom_participant_id: `${input.userId}:${crypto.randomUUID()}`,
       }),
     },

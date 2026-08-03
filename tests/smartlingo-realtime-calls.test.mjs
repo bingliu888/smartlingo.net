@@ -16,11 +16,11 @@ test("RealtimeKit credentials stay server-side and participant tokens are epheme
   assert.doesNotMatch(route, /auth_token|authToken[^\n]*INSERT/i);
 });
 
-test("audio and video calls use distinct presets and durable invite state", () => {
+test("standard calls use a video-capable preset with camera off by default and durable invite state", () => {
   const provider = read("lib/realtimekit.ts");
   const room = read("components/LiveChatRoom.tsx");
   const migration = read("drizzle/0031_yielding_lady_bullseye.sql");
-  assert.match(provider, /mode === "audio" \? config\.voicePreset : config\.videoPreset/);
+  assert.match(provider, /preset_name: config\.videoPreset/);
   assert.match(provider, /payload\?\.data \?\? payload\?\.result/);
   assert.match(provider, /title: "SmartLingo member call"/);
   assert.doesNotMatch(provider, /record_on_start|session_keep_alive_time_in_secs/);
@@ -30,4 +30,22 @@ test("audio and video calls use distinct presets and durable invite state", () =
   assert.match(migration, /CREATE TABLE `message_calls`/);
   assert.match(migration, /CREATE TABLE `message_call_participants`/);
   assert.match(migration, /WHERE "message_calls"\."status" = 'active'/);
+});
+
+test("persistent calls survive route navigation, expose mic state, and enforce silence and camera limits", () => {
+  const provider = read("components/PersistentCallProvider.tsx");
+  const layout = read("app/[lang]/layout.tsx");
+  const route = read("app/api/messages/calls/route.ts");
+  const migration = read("drizzle/0036_numerous_madame_masque.sql");
+  assert.match(layout, /PersistentCallProvider/);
+  assert.match(provider, /floating-active-call/);
+  assert.match(provider, /Mic off|麦克风已关/);
+  assert.match(provider, /audioActivity/);
+  assert.match(provider, /camera_on/);
+  assert.match(route, /60 - \(now - lastAudioAt\)/);
+  assert.match(route, /cameraCount >= 4/);
+  assert.match(route, /input\.action === "camera_on"/);
+  assert.match(migration, /last_audio_at/);
+  assert.match(migration, /microphone_on/);
+  assert.match(migration, /camera_on/);
 });
