@@ -86,8 +86,15 @@ test("daily vocabulary quiz exposes no answer key and is graded server-side", ()
   const questions = buildDailyVocabularyQuiz("it", 1, "2026-08-02", "en");
   assert.equal(questions.length, 4);
   assert.ok(questions.every(question => !JSON.stringify(question).includes("correctOptionId")));
+  assert.equal(questions[0].responseMode, "image_free");
+  assert.equal(questions.slice(1).every(question => question.responseMode === "choice"), true);
+  assert.ok(questions.every(question => !JSON.stringify(question).includes("acceptedForm")));
   const blank = gradeDailyVocabularyQuiz("it", 1, "2026-08-02", "en", {});
   assert.deepEqual(blank, { score: 0, correctCount: 0, questionCount: 4 });
+  const spokenOrWritten = gradeDailyVocabularyQuiz("it", 1, "2026-08-02", "en", {
+    [questions[0].id]: `free:${questions[0].prompt}`,
+  });
+  assert.deepEqual(spokenOrWritten, { score: 25, correctCount: 1, questionCount: 4 });
 });
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");

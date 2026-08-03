@@ -167,7 +167,7 @@ function isVocabularyGrade(value: unknown): value is VocabularyReviewGrade {
 function quizAnswers(value: unknown): Record<string, string> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const entries = Object.entries(value as Record<string, unknown>);
-  if (entries.length > 8 || entries.some(([key, answer]) => key.length > 120 || typeof answer !== "string" || answer.length > 80)) return null;
+  if (entries.length > 20 || entries.some(([key, answer]) => key.length > 120 || typeof answer !== "string" || answer.length > 80)) return null;
   return Object.fromEntries(entries) as Record<string, string>;
 }
 
@@ -606,6 +606,10 @@ async function learningState(
       contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
       questions: buildDailyVocabularyQuiz(targetLanguage, vocabularyDay, date, uiLanguage).map((question, index) => ({
         ...question,
+        prompt: index === 0
+          ? (uiLanguage === "zh" ? "看图后，用所学语言回答。" : "Study the image and answer in the language you are learning.")
+          : question.prompt,
+        pronunciation: index === 0 ? "" : question.pronunciation,
         imageUrl: index === 0
           ? `/api/classes/${encodeURIComponent(access.classId)}/learning/quiz-image?date=${encodeURIComponent(date)}&day=${vocabularyDay}&questionId=${encodeURIComponent(question.id)}&lang=${uiLanguage}`
           : undefined,

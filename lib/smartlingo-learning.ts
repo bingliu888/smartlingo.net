@@ -871,6 +871,7 @@ export type SmartLingoDailyQuizQuestion = {
   readonly id: string;
   readonly prompt: string;
   readonly pronunciation: string;
+  readonly responseMode: "choice" | "image_free";
   readonly options: readonly { readonly id: string; readonly label: string }[];
 };
 
@@ -893,9 +894,11 @@ function buildDailyQuizInternal(
         id: `daily-quiz:${date}:${language}:${questionIndex + 1}`,
         prompt: sample.form,
         pronunciation: sample.pronunciation,
+        responseMode: questionIndex === 0 ? "image_free" : "choice",
         options: options.map(({ id, label }) => ({ id, label })),
       } satisfies SmartLingoDailyQuizQuestion,
       correctOptionId: options.find(option => option.correct)!.id,
+      acceptedForm: sample.form,
     };
   });
 }
@@ -917,7 +920,13 @@ export function gradeDailyVocabularyQuiz(
   answers: Readonly<Record<string, string>>,
 ) {
   const items = buildDailyQuizInternal(language, day, date, uiLang);
-  const correctCount = items.filter(item => answers[item.question.id] === item.correctOptionId).length;
+  const correctCount = items.filter(item => {
+    const answer = answers[item.question.id] || "";
+    if (item.question.responseMode === "image_free") {
+      return answer.startsWith("free:") && normalizeSpeech(answer.slice(5)) === normalizeSpeech(item.acceptedForm);
+    }
+    return answer === item.correctOptionId;
+  }).length;
   return {
     score: Math.round((correctCount / Math.max(1, items.length)) * 100),
     correctCount,
