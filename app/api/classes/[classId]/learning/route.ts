@@ -604,7 +604,12 @@ async function learningState(
     teachingPlan: buildDailyTeachingPlan(sessionMinutes),
     dailyQuiz: {
       contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
-      questions: buildDailyVocabularyQuiz(targetLanguage, vocabularyDay, date, uiLanguage),
+      questions: buildDailyVocabularyQuiz(targetLanguage, vocabularyDay, date, uiLanguage).map((question, index) => ({
+        ...question,
+        imageUrl: index === 0
+          ? `/api/classes/${encodeURIComponent(access.classId)}/learning/quiz-image?date=${encodeURIComponent(date)}&day=${vocabularyDay}&questionId=${encodeURIComponent(question.id)}&lang=${uiLanguage}`
+          : undefined,
+      })),
     },
     dailyQuizStatus: latestQuiz ? {
       attemptNumber: Number(latestQuiz.attemptNumber),

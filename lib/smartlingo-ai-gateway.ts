@@ -131,7 +131,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "quarantine",
   },
   image: {
-    model: "gpt-image-1-mini",
+    model: "gpt-image-2",
     maxInputUnits: 5_000,
     maxOutputUnits: 1,
     windowSeconds: 3_600,
@@ -683,6 +683,60 @@ export async function askSmartAi(input: {
       return { value, outputUnits: value.length };
     },
     fallback: fallbackText ? () => ({ value: fallbackText, outputUnits: fallbackText.length }) : undefined,
+  });
+}
+
+/**
+ * Image questions always use OpenAI vision even when a member selected the
+ * text-only DeepSeek route. The image is transient input and is never logged.
+ */
+export async function askSmartAiVision(input: {
+  subject: string;
+  language: "zh" | "en";
+  instructions: string;
+  content: string;
+  imageDataUrl: string;
+  imageBytes: number;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  const deps = dependencies(input.deps);
+  const model = policyFor("public_guru", input.deps ?? {}).model;
+  return executeGateway({
+    feature: "public_guru",
+    subject: input.subject,
+    inputUnits: input.content.length + Math.ceil(input.imageBytes / 256),
+    deps: input.deps,
+    credential: { apiKey: deps.apiKey, model, provider: "openai" },
+    request: (apiKey, subjectHash, signal) => deps.fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+        "OpenAI-Safety-Identifier": subjectHash,
+      },
+      body: JSON.stringify({
+        model,
+        instructions: input.instructions,
+        input: [{
+          role: "user",
+          content: [
+            { type: "input_text", text: input.content },
+            { type: "input_image", image_url: input.imageDataUrl, detail: "auto" },
+          ],
+        }],
+        reasoning: { effort: "low" },
+        text: { verbosity: "low" },
+        max_output_tokens: policyFor("public_guru", input.deps ?? {}).maxOutputUnits,
+      }),
+      signal,
+    }),
+    read: async response => {
+      const data = await response.json().catch(() => null) as ResponsesData | null;
+      const value = data ? responseText(data) : "";
+      if (!value) throw new SmartAiGatewayError("invalid_response");
+      return { value, outputUnits: value.length };
+    },
+    fallback: () => ({ value: PUBLIC_GURU_FALLBACK[input.language], outputUnits: PUBLIC_GURU_FALLBACK[input.language].length }),
   });
 }
 

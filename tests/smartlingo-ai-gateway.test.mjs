@@ -109,7 +109,7 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
     assert.equal(gateway.SMARTAI_FEATURE_POLICIES[feature].model, "gpt-5.6-luna");
   }
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.model, "omni-moderation-latest");
-  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-1-mini");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-2");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
 });
 
@@ -486,6 +486,34 @@ test("image failure is fail-safe and never returns an upstream error body", asyn
   assert.doesNotMatch(JSON.stringify(safe), /raw-provider-error/);
 });
 
+test("vision questions stay on Luna and send one transient image input", async () => {
+  const gateway = await importGateway();
+  let providerRequest;
+  const result = await gateway.askSmartAiVision({
+    subject: "visitor:vision-test",
+    language: "en",
+    instructions: "Describe only visible facts.",
+    content: "What is shown?",
+    imageDataUrl: "data:image/png;base64,iVBORw0KGgo=",
+    imageBytes: 8,
+    deps: {
+      apiKey: "openai-test-only",
+      deepSeekApiKey: "deepseek-test-only",
+      providerPreference: "deepseek",
+      database: fakeDatabase(),
+      fetch: async (url, init) => {
+        providerRequest = { url: String(url), body: JSON.parse(init.body) };
+        return Response.json({ output_text: "A visible object." });
+      },
+    },
+  });
+  assert.deepEqual(result, { value: "A visible object.", fallback: false });
+  assert.equal(providerRequest.url, "https://api.openai.com/v1/responses");
+  assert.equal(providerRequest.body.model, "gpt-5.6-luna");
+  assert.deepEqual(providerRequest.body.input[0].content.map(item => item.type), ["input_text", "input_image"]);
+  assert.equal(providerRequest.body.input[0].content[1].detail, "auto");
+});
+
 test("free live voice atomically reserves all 600 seconds and blocks a concurrent duplicate", async () => {
   const gateway = await importGateway();
   const database = fakeDatabase({ allowanceSuccesses: 1 });
@@ -537,6 +565,8 @@ test("assistant routes expose bounded public, authenticated polish, chat, and li
   assert.match(route, /feature !== "public_guru" && !user/);
   assert.match(route, /providerPreference: user\?\.aiProviderPreference \?\? "auto"/);
   assert.match(route, /country: smartAiRequestCountry\(request\)/);
+  assert.match(route, /askSmartAiVision/);
+  assert.match(route, /validateSmartLingoMedia/);
   assert.doesNotMatch(route, /request\.json\(/);
 
   const live = await read("app/api/assistant/live/route.ts");
@@ -547,8 +577,23 @@ test("assistant routes expose bounded public, authenticated polish, chat, and li
   const messageClient = await read("components/MessageCenter.tsx");
   const chatClient = await read("components/LiveChatRoom.tsx");
   assert.match(publicClient, /feature: "public_guru"/);
+  assert.match(publicClient, /capture="environment"/);
+  assert.match(publicClient, /image\/jpeg,image\/png,image\/webp/);
   assert.match(messageClient, /feature: "message_polish"/);
   assert.match(chatClient, /feature: "chat_guru"/);
+});
+
+test("official vocabulary quizzes expose one private cached visual prompt", async () => {
+  const learning = await read("app/api/classes/[classId]/learning/route.ts");
+  const imageRoute = await read("app/api/classes/[classId]/learning/quiz-image/route.ts");
+  const workspace = await read("components/LearningWorkspace.tsx");
+  assert.match(learning, /learning\/quiz-image/);
+  assert.match(imageRoute, /requireOfficialClassMembership/);
+  assert.match(imageRoute, /generateSmartAiImage/);
+  assert.match(imageRoute, /generated\/vocabulary-quiz/);
+  assert.match(imageRoute, /storage\.get\(key\)/);
+  assert.match(imageRoute, /storage\.put\(key/);
+  assert.match(workspace, /className="sl-quiz-image"/);
 });
 
 test("client voice usage POST can no longer influence the allowance", async () => {

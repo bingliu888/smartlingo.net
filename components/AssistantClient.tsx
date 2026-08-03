@@ -3,7 +3,8 @@
 import { useUser } from "@clerk/nextjs";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChatMessage = { role: "user" | "assistant"; content: string; imageUrl?: string };
+type PendingImage = { file: File; dataUrl: string; previewUrl: string };
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
 type RecognitionEvent = { resultIndex: number; results: { length: number; [index: number]: RecognitionResult } };
 type RecognitionError = { error: string };
@@ -68,6 +69,8 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
   const [speechMessage, setSpeechMessage] = useState<number | null>(null);
   const [speechPaused, setSpeechPaused] = useState(false);
   const [speechElapsed, setSpeechElapsed] = useState(0);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const chatLog = useRef<HTMLDivElement | null>(null);
   const composer = useRef<HTMLTextAreaElement | null>(null);
   const faqMenu = useRef<HTMLDivElement | null>(null);
@@ -75,6 +78,8 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
   const recognitionBase = useRef("");
   const speechTimer = useRef<number | null>(null);
   const speechSession = useRef(0);
+  const cameraInput = useRef<HTMLInputElement | null>(null);
+  const photoInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const updateViewportHeight = () => {
@@ -99,6 +104,10 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
     if (speechTimer.current) window.clearInterval(speechTimer.current);
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
+
+  useEffect(() => () => {
+    if (pendingImage?.previewUrl) URL.revokeObjectURL(pendingImage.previewUrl);
+  }, [pendingImage]);
 
   useEffect(() => {
     const log = chatLog.current;
@@ -218,12 +227,19 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     const content = draft.trim();
-    if (!content || busy) return;
+    if ((!content && !pendingImage) || busy) return;
     if (listening) recognition.current?.stop();
-    const next = [...messages, { role: "user" as const, content }].slice(-12);
-    setMessages(next); setDraft(""); setComposerFocused(false); composer.current?.blur(); setBusy(true); setError("");
+    const visibleContent = content || (zh ? "请分析这张图片。" : "Please analyze this image.");
+    const attachment = pendingImage;
+    const next = [...messages, { role: "user" as const, content: visibleContent, imageUrl: attachment?.dataUrl }].slice(-12);
+    setMessages(next); setDraft(""); setPendingImage(null); setAttachOpen(false); setComposerFocused(false); composer.current?.blur(); setBusy(true); setError("");
     try {
-      const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ feature: "public_guru", language: lang, messages: next }) });
+      const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
+        feature: "public_guru",
+        language: lang,
+        messages: next.map(({ role, content: messageContent }) => ({ role, content: messageContent })),
+        image: attachment ? { dataUrl: attachment.dataUrl, mimeType: attachment.file.type, size: attachment.file.size, name: attachment.file.name } : undefined,
+      }) });
       const data = await response.json() as { reply?: string; error?: string };
       if (!response.ok || !data.reply) throw new Error(zh ? "助手暂时不可用，请稍后重试。" : data.error || "The assistant is temporarily unavailable.");
       setMessages(current => [...current, { role: "assistant", content: data.reply! }]);
@@ -232,6 +248,34 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
       setError(zh && !/[\u3400-\u9fff]/.test(detail) ? "助手暂时不可用，请稍后重试。" : detail);
     }
     finally { setBusy(false); }
+  }
+
+  function chooseImage(file?: File) {
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size <= 0 || file.size > 900 * 1024) {
+      setError(zh ? "请选择小于 900 KB 的 JPEG、PNG 或 WebP 图片。" : "Choose a JPEG, PNG, or WebP image under 900 KB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") return;
+      setPendingImage(current => {
+        if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+        return { file, dataUrl: reader.result as string, previewUrl: URL.createObjectURL(file) };
+      });
+      setAttachOpen(false);
+      setError("");
+      requestAnimationFrame(() => composer.current?.focus());
+    };
+    reader.onerror = () => setError(zh ? "无法读取这张图片。" : "The image could not be read.");
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage() {
+    setPendingImage(current => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      return null;
+    });
   }
 
   function toggleVoiceInput() {
@@ -301,5 +345,5 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
     ? ["我应该从哪个职业英语阶段开始？", "如何练习英语面试和客户沟通？", "专业英语与岗位技能证书有什么区别？", "雇主如何在人才库联系候选人？"]
     : ["Which Career English stage should I start with?", "How can I practice an English interview or customer conversation?", "How are Professional English and Job Skills certificates different?", "How do employers contact candidates in Talent?"];
 
-  return <>{speechMessage !== null && <div className="speech-player" role="region" aria-label={zh ? "朗读控制" : "Read-aloud controls"}><button type="button" onClick={toggleReading} aria-label={speechPaused ? (zh ? "继续朗读" : "Resume reading") : (zh ? "暂停朗读" : "Pause reading")} title={speechPaused ? (zh ? "继续" : "Resume") : (zh ? "暂停" : "Pause")}><PlaybackIcon name={speechPaused ? "play" : "pause"}/></button><time>{formatElapsed(speechElapsed)}</time><span>{zh ? "正在朗读" : "Reading aloud"}</span><button className="speech-player-close" type="button" onClick={stopReading} aria-label={zh ? "停止朗读" : "Stop reading"} title={zh ? "停止并关闭" : "Stop and close"}><PlaybackIcon name="close"/></button></div>}<section className="assistant-main assistant-chat-only"><section className="chat-panel" data-layout-fill="assistant-chat-panel"><div className="chat-log" data-layout-fill="assistant-chat-log" aria-live="polite" ref={chatLog}>{messages.map((message, index) => <article className={message.role} key={`${message.role}-${index}`}><strong>{message.role === "user" ? (zh ? "您" : "You") : (zh ? "智能导师" : "Guru")}</strong><p data-layout-text-fit={`assistant-message-${index}`}>{message.content}</p>{message.role === "assistant" && <div className="answer-tools" aria-label={zh ? "回答工具" : "Answer tools"}><button type="button" onClick={() => copyAnswer(message.content, index)} aria-label={zh ? "复制回答" : "Copy answer"} title={zh ? "复制" : "Copy"}><ToolIcon name="copy"/></button><button type="button" className={speechMessage === index ? "active" : ""} onClick={() => readAnswer(message.content, index)} aria-label={zh ? "朗读回答" : "Read answer aloud"} title={zh ? "朗读" : "Listen"}><ToolIcon name="listen"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "up" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "up" })} aria-label={zh ? "有帮助" : "Helpful"} title={zh ? "有帮助" : "Helpful"}><ToolIcon name="up"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "down" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "down" })} aria-label={zh ? "没有帮助" : "Not helpful"} title={zh ? "没有帮助" : "Not helpful"}><ToolIcon name="down"/></button><button type="button" onClick={() => shareAnswer(message.content)} aria-label={zh ? "分享回答" : "Share answer"} title={zh ? "分享" : "Share"}><ToolIcon name="share"/></button><span aria-live="polite">{copiedMessage === index ? (zh ? "已复制" : "Copied") : ""}</span></div>}</article>)}{busy && <article className="assistant"><strong>{zh ? "智能导师" : "Guru"}</strong><p>{zh ? "正在思考…" : "Thinking…"}</p></article>}</div><form className={`chat-compose chat-compose-stacked${composerFocused || draft ? " expanded" : " compact"}`} data-layout-fill="assistant-composer" onSubmit={submit} onFocus={() => setComposerFocused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setComposerFocused(false); }}><label className="chat-compose-field" data-readable-copy="assistant-composer-copy"><span className="sr-only">{zh ? "输入问题" : "Your question"}</span><textarea ref={composer} value={draft} onChange={event => setDraft(event.target.value)} maxLength={2000} rows={1} placeholder={zh ? "给智能导师发消息…" : "Message Guru…"}/></label><div className="chat-toolbar"><div className="faq-control" ref={faqMenu}><button className="icon-button faq-button" type="button" aria-label={zh ? "常见问题" : "Frequently asked questions"} aria-expanded={faqOpen} onClick={() => setFaqOpen(value => !value)}>?</button>{faqOpen && <div className="faq-popover" role="menu"><strong>{zh ? "常见问题" : "Try asking"}</strong>{questions.map(question => <button type="button" role="menuitem" key={question} onClick={() => chooseQuestion(question)}>{question}</button>)}</div>}</div>{voiceStatus && <span className="composer-status" aria-live="polite">{voiceStatus}</span>}<div className="toolbar-actions"><button className={`icon-button mic-button${listening ? " active" : ""}`} type="button" aria-label={listening ? (zh ? "停止语音输入" : "Stop voice input") : (zh ? "开始语音输入" : "Start voice input")} title={listening ? (zh ? "停止语音输入" : "Stop voice input") : (zh ? "开始语音输入" : "Start voice input")} onClick={toggleVoiceInput}><span aria-hidden="true"/></button><button className="icon-button send-button" aria-label={zh ? "发送消息" : "Send message"} disabled={busy || !draft.trim()}><span aria-hidden="true">↑</span></button></div></div></form></section>{error && <p className="assistant-error" role="alert">{error}</p>}</section></>;
+  return <>{speechMessage !== null && <div className="speech-player" role="region" aria-label={zh ? "朗读控制" : "Read-aloud controls"}><button type="button" onClick={toggleReading} aria-label={speechPaused ? (zh ? "继续朗读" : "Resume reading") : (zh ? "暂停朗读" : "Pause reading")} title={speechPaused ? (zh ? "继续" : "Resume") : (zh ? "暂停" : "Pause")}><PlaybackIcon name={speechPaused ? "play" : "pause"}/></button><time>{formatElapsed(speechElapsed)}</time><span>{zh ? "正在朗读" : "Reading aloud"}</span><button className="speech-player-close" type="button" onClick={stopReading} aria-label={zh ? "停止朗读" : "Stop reading"} title={zh ? "停止并关闭" : "Stop and close"}><PlaybackIcon name="close"/></button></div>}<section className="assistant-main assistant-chat-only"><section className="chat-panel" data-layout-fill="assistant-chat-panel"><div className="chat-log" data-layout-fill="assistant-chat-log" aria-live="polite" ref={chatLog}>{messages.map((message, index) => <article className={message.role} key={`${message.role}-${index}`}><strong>{message.role === "user" ? (zh ? "您" : "You") : (zh ? "智能导师" : "Guru")}</strong>{message.imageUrl ? <img className="assistant-message-image" src={message.imageUrl} alt={zh ? "用户提供给智能导师分析的图片" : "Image supplied by the user for Guru analysis"}/> : null}<p data-layout-text-fit={`assistant-message-${index}`}>{message.content}</p>{message.role === "assistant" && <div className="answer-tools" aria-label={zh ? "回答工具" : "Answer tools"}><button type="button" onClick={() => copyAnswer(message.content, index)} aria-label={zh ? "复制回答" : "Copy answer"} title={zh ? "复制" : "Copy"}><ToolIcon name="copy"/></button><button type="button" className={speechMessage === index ? "active" : ""} onClick={() => readAnswer(message.content, index)} aria-label={zh ? "朗读回答" : "Read answer aloud"} title={zh ? "朗读" : "Listen"}><ToolIcon name="listen"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "up" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "up" })} aria-label={zh ? "有帮助" : "Helpful"} title={zh ? "有帮助" : "Helpful"}><ToolIcon name="up"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "down" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "down" })} aria-label={zh ? "没有帮助" : "Not helpful"} title={zh ? "没有帮助" : "Not helpful"}><ToolIcon name="down"/></button><button type="button" onClick={() => shareAnswer(message.content)} aria-label={zh ? "分享回答" : "Share answer"} title={zh ? "分享" : "Share"}><ToolIcon name="share"/></button><span aria-live="polite">{copiedMessage === index ? (zh ? "已复制" : "Copied") : ""}</span></div>}</article>)}{busy && <article className="assistant"><strong>{zh ? "智能导师" : "Guru"}</strong><p>{zh ? "正在思考…" : "Thinking…"}</p></article>}</div><form className={`chat-compose chat-compose-stacked${composerFocused || draft || pendingImage ? " expanded" : " compact"}`} data-layout-fill="assistant-composer" onSubmit={submit} onFocus={() => setComposerFocused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setComposerFocused(false); }}>{pendingImage ? <div className="assistant-image-preview"><img src={pendingImage.previewUrl} alt={zh ? "待发送图片" : "Image ready to send"}/><span>{pendingImage.file.name}</span><button type="button" onClick={removeImage} aria-label={zh ? "移除图片" : "Remove image"}>×</button></div> : null}<label className="chat-compose-field" data-readable-copy="assistant-composer-copy"><span className="sr-only">{zh ? "输入问题" : "Your question"}</span><textarea ref={composer} value={draft} onChange={event => setDraft(event.target.value)} maxLength={2000} rows={1} placeholder={zh ? "给智能导师发消息…" : "Message Guru…"}/></label><div className="chat-toolbar"><div className="assistant-attach-control"><button className="icon-button assistant-add-button" type="button" aria-label={zh ? "添加图片" : "Add image"} aria-expanded={attachOpen} onClick={() => setAttachOpen(value => !value)}>+</button>{attachOpen ? <div className="assistant-attach-menu"><button type="button" onClick={() => cameraInput.current?.click()}>{zh ? "拍照" : "Camera"}</button><button type="button" onClick={() => photoInput.current?.click()}>{zh ? "照片" : "Photos"}</button></div> : null}<input ref={cameraInput} hidden type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={event => { chooseImage(event.target.files?.[0]); event.target.value = ""; }}/><input ref={photoInput} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { chooseImage(event.target.files?.[0]); event.target.value = ""; }}/></div><div className="faq-control" ref={faqMenu}><button className="icon-button faq-button" type="button" aria-label={zh ? "常见问题" : "Frequently asked questions"} aria-expanded={faqOpen} onClick={() => setFaqOpen(value => !value)}>?</button>{faqOpen && <div className="faq-popover" role="menu"><strong>{zh ? "常见问题" : "Try asking"}</strong>{questions.map(question => <button type="button" role="menuitem" key={question} onClick={() => chooseQuestion(question)}>{question}</button>)}</div>}</div>{voiceStatus && <span className="composer-status" aria-live="polite">{voiceStatus}</span>}<div className="toolbar-actions"><button className={`icon-button mic-button${listening ? " active" : ""}`} type="button" aria-label={listening ? (zh ? "停止语音输入" : "Stop voice input") : (zh ? "开始语音输入" : "Start voice input")} title={listening ? (zh ? "停止语音输入" : "Stop voice input") : (zh ? "开始语音输入" : "Start voice input")} onClick={toggleVoiceInput}><span aria-hidden="true"/></button><button className="icon-button send-button" aria-label={zh ? "发送消息" : "Send message"} disabled={busy || (!draft.trim() && !pendingImage)}><span aria-hidden="true">↑</span></button></div></div></form></section>{error && <p className="assistant-error" role="alert">{error}</p>}</section></>;
 }

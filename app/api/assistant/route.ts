@@ -1,15 +1,18 @@
 import {
   askSmartAi,
+  askSmartAiVision,
   readSmartAiJsonRequest,
   safeSmartAiError,
   smartAiRequestCountry,
   type SmartAiFeature,
 } from "../../../lib/smartlingo-ai-gateway";
+import { validateSmartLingoMedia } from "../../../lib/smartlingo-media";
 import { requestUser } from "../../../lib/request-user";
 
 type ChatMessage = { role?: unknown; content?: unknown };
 type AssistantFeature = Extract<SmartAiFeature, "public_guru" | "message_polish" | "chat_guru">;
-type AssistantRequest = { feature?: unknown; language?: unknown; messages?: ChatMessage[] };
+type AssistantImage = { dataUrl?: unknown; mimeType?: unknown; size?: unknown; name?: unknown };
+type AssistantRequest = { feature?: unknown; language?: unknown; messages?: ChatMessage[]; image?: AssistantImage };
 
 const GURU_INSTRUCTIONS = `You are Guru, the bilingual public language-learning and class assistant for SmartLingo.net. Match the requested language. Be clear, concise, encouraging, and practical. Help people choose among Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi; practice the five product skills of vocabulary, reading, writing, listening, and dialogue; create or join a member-led private class; and use Community, messages, group Live Chat, and site navigation. Native speakers and existing learners may also join a community for their own language. Every signed-in member may prepare a private class as teacher or coordinator. Do not invent lesson completion, assessment, payment, payout, connected-account, or public-directory status. AI corrections and scores support practice only and are not official examination results. Platform referrals are single-level: only a verified successful platform subscription payment may create published introducer points; signup and member-created class payments never qualify. Never promise fluency, education, employment, visa, income, or other outcomes. Protect personal data, identify uncertainty, and refer high-stakes questions to appropriate official or qualified sources.`;
 
@@ -28,10 +31,23 @@ function originalPolishText(value: string) {
   return value.split(/\n\s*\n/).slice(1).join("\n\n").trim() || value.replace(/^User:\s*/, "").trim();
 }
 
+function decodeImageDataUrl(value: unknown, mimeType: unknown) {
+  if (typeof value !== "string" || typeof mimeType !== "string") return null;
+  const match = value.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match || match[1] !== mimeType || match[2].length > 1_300_000) return null;
+  try {
+    const binary = atob(match[2]);
+    const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+    return { bytes, dataUrl: value, mimeType };
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   let body: AssistantRequest;
   try {
-    body = await readSmartAiJsonRequest<AssistantRequest>(request);
+    body = await readSmartAiJsonRequest<AssistantRequest>(request, 1_400_000);
   } catch (error) {
     const language = request.headers.get("accept-language")?.toLowerCase().startsWith("zh") ? "zh" : "en";
     const safe = safeSmartAiError(error, language, "guru");
@@ -58,6 +74,32 @@ export async function POST(request: Request) {
     || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || "anonymous";
   try {
+    const decodedImage = body.image ? decodeImageDataUrl(body.image.dataUrl, body.image.mimeType) : null;
+    if (body.image && !decodedImage) {
+      return Response.json({ error: language === "zh" ? "图片格式无效。" : "The image is invalid." }, { status: 400 });
+    }
+    if (decodedImage) {
+      if (feature !== "public_guru") {
+        return Response.json({ error: language === "zh" ? "图片仅支持智能导师问答。" : "Images are supported only in Ask Guru." }, { status: 400 });
+      }
+      await validateSmartLingoMedia({
+        size: decodedImage.bytes.byteLength,
+        type: decodedImage.mimeType,
+        arrayBuffer: async () => decodedImage.bytes.buffer.slice(
+          decodedImage.bytes.byteOffset,
+          decodedImage.bytes.byteOffset + decodedImage.bytes.byteLength,
+        ) as ArrayBuffer,
+      }, "chat_attachment");
+      const answer = await askSmartAiVision({
+        subject: user ? `user:${user.id}` : `visitor:${visitor}`,
+        language,
+        instructions: `${GURU_INSTRUCTIONS}\nAnalyze only the attached image and the supplied question. Answer in ${language === "zh" ? "Simplified Chinese" : "English"}. Do not infer sensitive traits or identity.`,
+        content: messages.join("\n"),
+        imageDataUrl: decodedImage.dataUrl,
+        imageBytes: decodedImage.bytes.byteLength,
+      });
+      return Response.json({ reply: answer.value, fallback: answer.fallback, provider: "openai", modality: "vision" });
+    }
     const answer = await askSmartAi({
       feature,
       subject: user ? `user:${user.id}` : `visitor:${visitor}`,
