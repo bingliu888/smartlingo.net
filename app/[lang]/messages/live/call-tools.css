@@ -1,0 +1,83 @@
+.live-call-button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #bac9c1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #17483b;
+  font-size: 21px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.live-call-button:hover,
+.live-call-button:focus-visible {
+  background: #edf5f0;
+  border-color: #17634f;
+}
+
+.live-call-button:disabled { opacity: .45; }
+.live-chat-log article.call-message { width: min(430px, 88%); padding: 8px; background: transparent !important; border: 0; box-shadow: none; color: #17372f; }
+.call-invite-card { width: 100%; min-width: 0; padding: 13px; border: 1px solid #b9cec4; border-radius: 16px; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 11px; background: #fffdf8; color: #17372f; box-shadow: 0 7px 20px rgba(18, 54, 44, .1); }
+.call-invite-card > span { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: #dceee6; color: #12614b; font-size: 22px; }
+.call-invite-card b,
+.call-invite-card small { display: block; color: inherit !important; }
+.call-invite-card small { margin-top: 3px; overflow-wrap: anywhere; }
+.call-invite-card > button { min-height: 40px; padding: 0 15px; border: 0; border-radius: 999px; background: #14624d; color: #fff; font-weight: 850; cursor: pointer; }
+.call-invite-card.ended { opacity: .7; }
+
+.realtime-call-stage {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  background: #081b18;
+  color: #fff;
+}
+
+/* RealtimeKit renders its meeting UI above ordinary page layers. Keep the
+   app-owned leave/end controls in a compact, always-accessible overlay. */
+.realtime-call-stage > header {
+  position: fixed;
+  z-index: 2147483646;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  min-width: 0;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(16, 45, 39, .94);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .3);
+  backdrop-filter: blur(14px);
+}
+
+.realtime-call-stage > header b,
+.realtime-call-stage > header small { display: block; }
+.realtime-call-stage > header small { margin-top: 3px; color: #bad0c9; }
+.realtime-call-stage > header > div:last-child { display: flex; gap: 8px; }
+.realtime-call-stage > header button { min-height: 42px; padding: 0 16px; border: 1px solid rgba(255, 255, 255, .22); border-radius: 999px; background: #fff; color: #163b31; font-weight: 850; cursor: pointer; }
+.realtime-call-stage > header button.danger { background: #c8473b; color: #fff; border-color: #c8473b; }
+.realtime-call-stage rtk-meeting { width: 100%; height: 100%; min-width: 0; min-height: 0; display: block; }
+.realtime-call-loading,
+.realtime-call-error { display: grid; place-items: center; padding: 24px; text-align: center; }
+.realtime-call-error { color: #ffcdc8; }
+
+@media (max-width: 680px) {
+  .live-call-button { width: 40px; height: 40px; min-height: 40px; }
+  .guru-live-toggle span { font-size: 12px; }
+  .call-invite-card { grid-template-columns: 38px minmax(0, 1fr); }
+  .call-invite-card > button { grid-column: 1 / 3; width: 100%; }
+  .realtime-call-stage > header { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); align-items: flex-start; flex-direction: column; }
+  .realtime-call-stage > header > div:last-child { width: 100%; }
+  .realtime-call-stage > header button { flex: 1; }
+}

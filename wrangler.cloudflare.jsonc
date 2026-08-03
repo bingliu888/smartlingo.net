@@ -19,7 +19,11 @@
   ],
   "vars": {
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuc21hcnRsaW5nby5uZXQk",
-    "GITHUB_REPOSITORY_URL": "https://github.com/bingliu888/smartlingo.net"
+    "GITHUB_REPOSITORY_URL": "https://github.com/bingliu888/smartlingo.net",
+    "CLOUDFLARE_ACCOUNT_ID": "7222b9842bcee7196ba3aca03d45f4b7",
+    "REALTIMEKIT_APP_ID": "0014a311-12d8-402c-a5e1-efd83de14869",
+    "REALTIMEKIT_VOICE_PRESET": "smartlingo_voice",
+    "REALTIMEKIT_VIDEO_PRESET": "group_call_participant"
   },
   "no_bundle": true,
   "find_additional_modules": true,

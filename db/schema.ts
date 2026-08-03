@@ -287,6 +287,35 @@ export const messages = sqliteTable("messages", {
   deletedAt: integer("deleted_at"),
 }, (table) => [index("smartcert_messages_thread_created_idx").on(table.threadId, table.createdAt)]);
 
+export const messageCalls = sqliteTable("message_calls", {
+  id: text("id").primaryKey(),
+  threadId: text("thread_id").notNull().references(() => messageThreads.id, { onDelete: "cascade" }),
+  providerMeetingId: text("provider_meeting_id").notNull().unique(),
+  startedBy: text("started_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+  mode: text("mode").notNull(),
+  status: text("status").notNull().default("active"),
+  createdAt: integer("created_at").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  endedAt: integer("ended_at"),
+}, (table) => [
+  check("smartlingo_message_call_mode_ck", sql`${table.mode} IN ('audio', 'video')`),
+  check("smartlingo_message_call_status_ck", sql`${table.status} IN ('active', 'ended', 'expired')`),
+  uniqueIndex("smartlingo_message_call_active_thread_uq").on(table.threadId).where(sql`${table.status} = 'active'`),
+  index("smartlingo_message_call_expiry_idx").on(table.status, table.expiresAt),
+]);
+
+export const messageCallParticipants = sqliteTable("message_call_participants", {
+  id: text("id").primaryKey(),
+  callId: text("call_id").notNull().references(() => messageCalls.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  providerParticipantId: text("provider_participant_id").notNull(),
+  joinedAt: integer("joined_at").notNull(),
+  leftAt: integer("left_at"),
+}, (table) => [
+  uniqueIndex("smartlingo_message_call_participant_uq").on(table.callId, table.userId),
+  index("smartlingo_message_call_participant_user_idx").on(table.userId, table.joinedAt),
+]);
+
 export const userPresence = sqliteTable("user_presence", {
   userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   lastSeenAt: integer("last_seen_at").notNull(),

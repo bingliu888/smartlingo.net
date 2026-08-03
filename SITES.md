@@ -59,6 +59,8 @@ Every recorded daily and course score uses a 1–100 scale. A completed course p
 - Clerk is the only identity provider. Its verified production session is bridged to the site-owned application session so D1-backed features use one stable user ID.
 - OpenAI-supported features run through server-side gateways with limits, usage records, timeouts, content safeguards, and local fallbacks.
 - D1 stores structured state. R2 stores private, user-owned media and never exposes a bucket directly.
+- Direct and group Live Chat use Cloudflare RealtimeKit for explicit audio or video calls. Starting a call creates a durable invitation message; conversation members join from that invitation. Audio calls use a voice-only preset, video calls use a separate video preset, camera activation remains explicit, and only the caller may end the shared room.
+- RealtimeKit meeting and participant credentials are created server-side, scoped to the current D1 conversation membership, returned only to that signed-in participant, and never stored in D1 or exposed in client configuration. Browser foreground alerts do not claim native lock-screen ringing.
 
 ## Responsive and quality contract
 
@@ -91,7 +93,7 @@ Every recorded daily and course score uses a 1–100 scale. A completed course p
 - `.openai/hosting.json` is the authoritative binding to the one existing Sites project after a project ID is assigned.
 - The production domain is `smartlingo.net`; `www.smartlingo.net` must resolve consistently with the apex.
 - Runtime secrets belong in the Sites environment and are never committed, copied into client code, or printed in reports.
-- The active runtime names are `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_JWT_KEY`, `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `ADMIN_EMAILS`, and `EDITORIAL_SYNC_SECRET`; `GITHUB_REPOSITORY_URL` is public configuration. `DEEPSEEK_API_KEY` is server-only and powers text features when automatic China routing or a member's explicit DeepSeek preference selects it. Keep documentation, `.env.example`, hosted configuration, and the sensitive-data scanner aligned with these exact names.
+- The active runtime names are `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_JWT_KEY`, `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `ADMIN_EMAILS`, `EDITORIAL_SYNC_SECRET`, `CLOUDFLARE_REALTIME_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `REALTIMEKIT_APP_ID`, `REALTIMEKIT_VOICE_PRESET`, and `REALTIMEKIT_VIDEO_PRESET`; `GITHUB_REPOSITORY_URL` is public configuration. `DEEPSEEK_API_KEY` and `CLOUDFLARE_REALTIME_API_TOKEN` are server-only. Keep documentation, `.env.example`, hosted configuration, and the sensitive-data scanner aligned with these exact names.
 - `DB` and `BUCKET` are Sites-managed bindings. Stripe variables in `.env.example` are future-only placeholders: the current runtime does not consume them, and setting them does not enable or prove checkout, charges, transfers, refunds, or payouts.
 - The same validated commit must synchronize to the existing Sites source and GitHub `main`; never create a second Sites project, replace a remote, force-push, or create a no-op release.
 - After deployment, verify HTTPS, both languages, sign-in, profile, learning, classes, Community, messages, Live Chat, Ask Guru, Project, payment-off or sandbox state, and Worker error logs on the formal domain.
