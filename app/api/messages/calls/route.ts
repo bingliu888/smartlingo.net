@@ -50,6 +50,11 @@ async function reconcileClassAudio(call: CallRow, runtime: RealtimeKitConfig, no
     WHERE call_id = ? AND left_at IS NULL AND COALESCE(last_seen_at, joined_at) >= ?`)
     .bind(call.id, now - 35).first<{ value: number }>();
   const participantCount = Number(count?.value || 0);
+  if (participantCount === 0) {
+    await deactivateRealtimeMeeting(runtime, call.providerMeetingId);
+    await db.prepare("UPDATE message_calls SET status = 'ended', ended_at = ? WHERE id = ? AND status = 'active'").bind(now, call.id).run();
+    return { ended: true, participantCount, soloSecondsRemaining: 0 };
+  }
   if (participantCount >= 2) {
     await db.prepare("UPDATE message_calls SET solo_since_at = NULL WHERE id = ? AND status = 'active'").bind(call.id).run();
     return { ended: false, participantCount, soloSecondsRemaining: null };

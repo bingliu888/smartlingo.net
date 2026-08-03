@@ -25,6 +25,8 @@ test("class audio remains compact beside text chat and auto-ends after one solo 
   const migration = read("drizzle/0035_class_live_audio.sql");
   assert.match(calls, /threadKind !== "class"/);
   assert.match(calls, /60 - \(now - soloSinceAt\)/);
+  assert.match(calls, /participantCount === 0/);
+  assert.match(calls, /status = 'ended', ended_at = \?/);
   assert.match(calls, /action === "heartbeat"/);
   assert.match(migration, /solo_since_at/);
   assert.match(migration, /last_seen_at/);
