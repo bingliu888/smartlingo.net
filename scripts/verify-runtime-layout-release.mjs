@@ -214,7 +214,12 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
       cwd: projectRoot,
       env: isolatedEnv,
     });
-    process.stdout.write(verified.stdout);
+    const evidence = verified.stdout.match(/WebKit runtime layout verified: 170\/170[^\n]*/)?.[0];
+    if (!evidence) {
+      throw new Error(`Full 170/170 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+    }
+    await writeFile(join(tmpdir(), "smartlingo-layout-release-evidence.txt"), `${evidence}\n`, { mode: 0o600 });
+    process.stderr.write(`${evidence}\n`);
   } finally {
     await stopChild(worker);
     await rm(work, { recursive: true, force: true });
