@@ -9,7 +9,7 @@ import {
 } from "../../../../lib/realtimekit";
 
 export const dynamic = "force-dynamic";
-type CallRow = { id: string; threadId: string; providerMeetingId: string; startedBy: string; mode: "audio" | "video"; status: string; expiresAt: number };
+type CallRow = { id: string; threadId: string; threadKind: string; providerMeetingId: string; startedBy: string; mode: "audio" | "video"; status: string; expiresAt: number; soloSinceAt: number | null };
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 async function config(): Promise<RealtimeKitConfig | null> {
@@ -31,9 +31,40 @@ async function participant(threadId: string, userId: string) {
 }
 
 async function activeCall(callId: string) {
-  return getDatabase().prepare(`SELECT id, thread_id AS threadId, provider_meeting_id AS providerMeetingId,
-    started_by AS startedBy, mode, status, expires_at AS expiresAt
-    FROM message_calls WHERE id = ? LIMIT 1`).bind(callId).first<CallRow>();
+  return getDatabase().prepare(`SELECT calls.id, calls.thread_id AS threadId, threads.kind AS threadKind,
+    calls.provider_meeting_id AS providerMeetingId, calls.started_by AS startedBy, calls.mode,
+    calls.status, calls.expires_at AS expiresAt, calls.solo_since_at AS soloSinceAt
+    FROM message_calls calls JOIN message_threads threads ON threads.id = calls.thread_id
+    WHERE calls.id = ? LIMIT 1`).bind(callId).first<CallRow>();
+}
+
+async function reconcileClassAudio(call: CallRow, runtime: RealtimeKitConfig, now: number) {
+  if (call.threadKind !== "class" || call.mode !== "audio" || call.status !== "active") {
+    return { ended: false, participantCount: 0, soloSecondsRemaining: null as number | null };
+  }
+  const db = getDatabase();
+  await db.prepare(`UPDATE message_call_participants SET left_at = ?
+    WHERE call_id = ? AND left_at IS NULL AND COALESCE(last_seen_at, joined_at) < ?`)
+    .bind(now, call.id, now - 35).run();
+  const count = await db.prepare(`SELECT COUNT(*) AS value FROM message_call_participants
+    WHERE call_id = ? AND left_at IS NULL AND COALESCE(last_seen_at, joined_at) >= ?`)
+    .bind(call.id, now - 35).first<{ value: number }>();
+  const participantCount = Number(count?.value || 0);
+  if (participantCount >= 2) {
+    await db.prepare("UPDATE message_calls SET solo_since_at = NULL WHERE id = ? AND status = 'active'").bind(call.id).run();
+    return { ended: false, participantCount, soloSecondsRemaining: null };
+  }
+  const state = await db.prepare("SELECT solo_since_at AS soloSinceAt FROM message_calls WHERE id = ?").bind(call.id).first<{ soloSinceAt: number | null }>();
+  const soloSinceAt = Number(state?.soloSinceAt || 0);
+  if (!soloSinceAt) {
+    await db.prepare("UPDATE message_calls SET solo_since_at = ? WHERE id = ? AND status = 'active'").bind(now, call.id).run();
+    return { ended: false, participantCount, soloSecondsRemaining: 60 };
+  }
+  const remaining = Math.max(0, 60 - (now - soloSinceAt));
+  if (remaining > 0) return { ended: false, participantCount, soloSecondsRemaining: remaining };
+  await deactivateRealtimeMeeting(runtime, call.providerMeetingId);
+  await db.prepare("UPDATE message_calls SET status = 'ended', ended_at = ? WHERE id = ? AND status = 'active'").bind(now, call.id).run();
+  return { ended: true, participantCount, soloSecondsRemaining: 0 };
 }
 
 async function joinCall(call: CallRow, user: { id: string; displayName: string }, runtime: RealtimeKitConfig) {
@@ -47,12 +78,13 @@ async function joinCall(call: CallRow, user: { id: string; displayName: string }
     mode: call.mode,
   });
   await getDatabase().prepare(`INSERT INTO message_call_participants
-    (id, call_id, user_id, provider_participant_id, joined_at, left_at)
-    VALUES (?, ?, ?, ?, ?, NULL)
+    (id, call_id, user_id, provider_participant_id, joined_at, last_seen_at, left_at)
+    VALUES (?, ?, ?, ?, ?, ?, NULL)
     ON CONFLICT(call_id, user_id) DO UPDATE SET provider_participant_id = excluded.provider_participant_id,
-      joined_at = excluded.joined_at, left_at = NULL`)
-    .bind(createId(), call.id, user.id, provider.id, now).run();
-  return { callId: call.id, mode: call.mode, authToken: provider.token, expiresAt: call.expiresAt, startedBy: call.startedBy };
+      joined_at = excluded.joined_at, last_seen_at = excluded.last_seen_at, left_at = NULL`)
+    .bind(createId(), call.id, user.id, provider.id, now, now).run();
+  const presence = await reconcileClassAudio(call, runtime, now);
+  return { callId: call.id, mode: call.mode, authToken: provider.token, expiresAt: call.expiresAt, startedBy: call.startedBy, threadKind: call.threadKind, ...presence };
 }
 
 export async function GET(request: Request) {
@@ -79,10 +111,14 @@ export async function POST(request: Request) {
     if (input.action === "start") {
       const threadId = String(input.threadId || ""); const mode = input.mode === "video" ? "video" : "audio";
       if (!threadId || !await participant(threadId, user.id)) return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+      const thread = await db.prepare("SELECT kind FROM message_threads WHERE id = ?").bind(threadId).first<{ kind: string }>();
+      if (thread?.kind === "class" && mode !== "audio") return NextResponse.json({ error: "Class rooms use audio calls" }, { status: 400 });
       await db.prepare("UPDATE message_calls SET status = 'expired', ended_at = ? WHERE thread_id = ? AND status = 'active' AND expires_at <= ?").bind(now, threadId, now).run();
-      let call = await db.prepare(`SELECT id, thread_id AS threadId, provider_meeting_id AS providerMeetingId,
-        started_by AS startedBy, mode, status, expires_at AS expiresAt FROM message_calls
-        WHERE thread_id = ? AND status = 'active' LIMIT 1`).bind(threadId).first<CallRow>();
+      let call = await db.prepare(`SELECT calls.id, calls.thread_id AS threadId, threads.kind AS threadKind,
+        calls.provider_meeting_id AS providerMeetingId, calls.started_by AS startedBy, calls.mode,
+        calls.status, calls.expires_at AS expiresAt, calls.solo_since_at AS soloSinceAt
+        FROM message_calls calls JOIN message_threads threads ON threads.id = calls.thread_id
+        WHERE calls.thread_id = ? AND calls.status = 'active' LIMIT 1`).bind(threadId).first<CallRow>();
       if (!call) {
         const meeting = await createRealtimeMeeting(runtime); const callId = createId(); const expiresAt = now + 14400;
         await db.prepare(`INSERT INTO message_calls
@@ -92,7 +128,7 @@ export async function POST(request: Request) {
         await db.prepare("INSERT INTO messages (id, thread_id, sender_id, body, created_at) VALUES (?, ?, ?, ?, ?)")
           .bind(createId(), threadId, user.id, `__CALL_INVITE__|${callId}|${mode}|${expiresAt}`, now).run();
         await db.prepare("UPDATE message_threads SET updated_at = ? WHERE id = ?").bind(now, threadId).run();
-        call = { id: callId, threadId, providerMeetingId: meeting.id, startedBy: user.id, mode, status: "active", expiresAt };
+        call = { id: callId, threadId, threadKind: thread?.kind || "group", providerMeetingId: meeting.id, startedBy: user.id, mode, status: "active", expiresAt, soloSinceAt: null };
       }
       return NextResponse.json(await joinCall(call, user, runtime));
     }
@@ -104,8 +140,14 @@ export async function POST(request: Request) {
     if (input.action === "leave") {
       const call = await activeCall(String(input.callId || ""));
       if (!call || !await participant(call.threadId, user.id)) return NextResponse.json({ error: "Call not found" }, { status: 404 });
-      await db.prepare("UPDATE message_call_participants SET left_at = ? WHERE call_id = ? AND user_id = ?").bind(now, call.id, user.id).run();
-      return NextResponse.json({ ok: true });
+      await db.prepare("UPDATE message_call_participants SET left_at = ?, last_seen_at = ? WHERE call_id = ? AND user_id = ?").bind(now, now, call.id, user.id).run();
+      return NextResponse.json({ ok: true, ...(await reconcileClassAudio(call, runtime, now)) });
+    }
+    if (input.action === "heartbeat") {
+      const call = await activeCall(String(input.callId || ""));
+      if (!call || !await participant(call.threadId, user.id)) return NextResponse.json({ error: "Call not found" }, { status: 404 });
+      await db.prepare("UPDATE message_call_participants SET last_seen_at = ?, left_at = NULL WHERE call_id = ? AND user_id = ?").bind(now, call.id, user.id).run();
+      return NextResponse.json(await reconcileClassAudio(call, runtime, now));
     }
     if (input.action === "end") {
       const call = await activeCall(String(input.callId || ""));

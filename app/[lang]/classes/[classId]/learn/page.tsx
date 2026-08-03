@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { LearningWorkspace } from "../../../../../components/LearningWorkspace";
+import { ClassLiveChatPanel } from "../../../../../components/ClassLiveChatPanel";
 import { SiteFooter } from "../../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../../components/SiteHeader";
 import { requestUser } from "../../../../../lib/request-user";
@@ -21,6 +22,7 @@ export default async function LearnPage({ params }: { params: Promise<{ lang: st
     <main className="learning-page" data-layout-page="learning">
       <SiteHeader lang={lang} />
       <LearningWorkspace lang={lang} classId={classId} />
+      <ClassLiveChatPanel lang={lang} classId={classId} compact />
       <SiteFooter lang={lang} />
     </main>
   );

@@ -297,6 +297,7 @@ export const messageCalls = sqliteTable("message_calls", {
   createdAt: integer("created_at").notNull(),
   expiresAt: integer("expires_at").notNull(),
   endedAt: integer("ended_at"),
+  soloSinceAt: integer("solo_since_at"),
 }, (table) => [
   check("smartlingo_message_call_mode_ck", sql`${table.mode} IN ('audio', 'video')`),
   check("smartlingo_message_call_status_ck", sql`${table.status} IN ('active', 'ended', 'expired')`),
@@ -310,6 +311,7 @@ export const messageCallParticipants = sqliteTable("message_call_participants", 
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   providerParticipantId: text("provider_participant_id").notNull(),
   joinedAt: integer("joined_at").notNull(),
+  lastSeenAt: integer("last_seen_at"),
   leftAt: integer("left_at"),
 }, (table) => [
   uniqueIndex("smartlingo_message_call_participant_uq").on(table.callId, table.userId),

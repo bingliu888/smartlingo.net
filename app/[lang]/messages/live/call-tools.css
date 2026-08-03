@@ -21,6 +21,7 @@
 }
 
 .live-call-button:disabled { opacity: .45; }
+.live-call-button.class-audio-join { width: auto; padding: 0 16px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
 .live-chat-log article.call-message { width: min(430px, 88%); padding: 8px; background: transparent !important; border: 0; box-shadow: none; color: #17372f; }
 .call-invite-card { width: 100%; min-width: 0; padding: 13px; border: 1px solid #b9cec4; border-radius: 16px; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 11px; background: #fffdf8; color: #17372f; box-shadow: 0 7px 20px rgba(18, 54, 44, .1); }
 .call-invite-card > span { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: #dceee6; color: #12614b; font-size: 22px; }
@@ -74,6 +75,7 @@
 
 @media (max-width: 680px) {
   .live-call-button { width: 40px; height: 40px; min-height: 40px; }
+  .live-call-button.class-audio-join { width: auto; max-width: 150px; padding-inline: 12px; }
   .guru-live-toggle span { font-size: 12px; }
   .call-invite-card { grid-template-columns: 38px minmax(0, 1fr); }
   .call-invite-card > button { grid-column: 1 / 3; width: 100%; }
