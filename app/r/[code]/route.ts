@@ -16,12 +16,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
   } catch {
     return Response.redirect(new URL(`/${lang}/auth/sign-up?referral=unavailable`, request.url), 302);
   }
-  const location = new URL(`/${lang}/auth/sign-up?referral=recorded`, request.url);
+  // Keep the real code in the URL as well as the HttpOnly cookie.  Social-app
+  // hand-offs often open Safari/Chrome with a separate cookie jar.
+  const location = new URL(`/${lang}/auth/sign-up?referral=${encodeURIComponent(normalized)}`, request.url);
   return new Response(null, {
     status: 302,
     headers: {
       Location: location.toString(),
       "Set-Cookie": setReferralCookie(normalized),
+      "Cache-Control": "private, no-store, max-age=0",
     },
   });
 }
