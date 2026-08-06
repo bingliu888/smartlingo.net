@@ -6,7 +6,6 @@ import { TextSizeControl } from "../../../components/TextSizeControl";
 import { getDatabase, getSessionUser } from "../../../lib/auth";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
-import { AdminDashboard } from "../../../components/AdminDashboard";
 import "./dashboard-tuneup.css";
 
 export const dynamic = "force-dynamic";
@@ -63,9 +62,6 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
   const t = copy[lang];
-  if (user.role === "admin") {
-    return <main className="dashboard-page"><SiteHeader lang={lang} /><AdminDashboard lang={lang} user={user} /><SiteFooter lang={lang} /></main>;
-  }
   const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2 WHERE user_id = ?")
     .bind(user.id).first<{ count: number }>())?.count ?? 0;
   return (
