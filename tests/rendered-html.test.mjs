@@ -76,7 +76,6 @@ test("renders localized, non-duplicated titles across public routes", async () =
   const { default: worker } = await import(workerUrl.href);
   const expected = new Map([
     ["/zh", /SmartLingo — 从第一天开口/],
-    ["/zh/project", /项目进展/],
     ["/zh/programs", /语言学习路径/],
     ["/zh/auth/login", /登录或加入/],
   ]);
@@ -94,6 +93,14 @@ test("renders localized, non-duplicated titles across public routes", async () =
     assert.doesNotMatch(title, /SmartLingo\s*\|\s*SmartLingo/);
     assert.doesNotMatch(title, /SmartAICert|21 天人工智能实操/);
   }
+
+  const project = await worker.fetch(
+    new Request("http://localhost/zh/project", { headers: { accept: "*/*" } }),
+    testEnv,
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(project.status, 307, "/zh/project is administrator-only");
+  assert.match(project.headers.get("location") ?? "", /\/zh\/auth\/login/);
 });
 
 test("renders the bilingual Clerk login shell with inert bindings", async () => {

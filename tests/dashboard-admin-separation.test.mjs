@@ -11,7 +11,7 @@ test("member and admin dashboards stay separate", async () => {
   assert.match(admin, /AdminDashboard/);
   assert.match(admin, /SiteHeader/);
   assert.match(admin, /SiteFooter/);
-  assert.match(admin, /isAdmin(?:User)?/);
+  assert.match(admin, /isBootstrapAdminEmail|isPermanentAdmin|bingliu@cybeye\.com/);
 });
 
 test("admin menu visibility comes from server role context", async () => {
@@ -19,6 +19,6 @@ test("admin menu visibility comes from server role context", async () => {
   const menu = await read("components/AdminMenuLink.tsx");
   const context = await read("app/api/account-context/route.ts");
   assert.match(header, /AdminMenuLink/);
-  assert.match(menu, /isAdmin/);
-  assert.match(context, /isAdmin(?:User)?/);
+  assert.match(menu, /isPermanentAdmin/);
+  assert.match(context, /isPermanentAdmin/);
 });

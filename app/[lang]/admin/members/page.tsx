@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AdminMemberActions, AdminMemberDelete } from "../../../../components/AdminMemberActions";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
-import { isAdmin, isBootstrapAdminEmail } from "../../../../lib/admin-access";
+import { isBootstrapAdminEmail } from "../../../../lib/admin-access";
 import { getDatabase, getSessionUser } from "../../../../lib/auth";
 import "../admin.css";
 
@@ -15,7 +15,7 @@ function searchPattern(value:string){return `%${value.toLowerCase().replaceAll("
 export default async function AdminMembersPage({params,searchParams}:{params:Promise<{lang:string}>;searchParams:Promise<{tab?:string;q?:string}>}){
   const [{lang},{tab,q}]=await Promise.all([params,searchParams]); if(lang!=="en"&&lang!=="zh")notFound();
   const incoming=await headers(); const user=await getSessionUser(new Request("https://smartlingo.net",{headers:{cookie:incoming.get("cookie")??""}}));
-  if(!user)redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/members`); if(!isAdmin(user))redirect(`/${lang}/dashboard`);
+  if(!user)redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/members`); if(!isBootstrapAdminEmail(user.email))redirect(`/${lang}/dashboard`);
   const active:Tab=tab==="subscribers"?"subscribers":tab==="admins"?"admins":"recent"; const zh=lang==="zh"; const query=(q??"").trim().slice(0,80); const filters=["COALESCE(a.status,'active')='active'"];
   if(active==="subscribers")filters.push("(COALESCE(a.subscriber_override,0)=1 OR EXISTS (SELECT 1 FROM smartlingo_platform_subscription_payments p2 WHERE p2.subscriber_user_id=u.id AND p2.status='paid'))");
   if(active==="admins")filters.push("u.role='admin'"); if(query)filters.push("(lower(u.email) LIKE ? ESCAPE '\\' OR lower(u.display_name) LIKE ? ESCAPE '\\')");

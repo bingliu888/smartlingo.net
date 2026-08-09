@@ -10,5 +10,5 @@ export function isBootstrapAdminEmail(email: string) {
 
 export async function getAdminUser(request?: Request) {
   const user = await getSessionUser(request);
-  return isAdmin(user) ? user : null;
+  return user && isBootstrapAdminEmail(user.email) ? user : null;
 }
