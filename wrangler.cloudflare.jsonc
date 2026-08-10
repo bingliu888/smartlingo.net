@@ -21,9 +21,13 @@
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuc21hcnRsaW5nby5uZXQk",
     "GITHUB_REPOSITORY_URL": "https://github.com/bingliu888/smartlingo.net",
     "CLOUDFLARE_ACCOUNT_ID": "7222b9842bcee7196ba3aca03d45f4b7",
-    "REALTIMEKIT_APP_ID": "0014a311-12d8-402c-a5e1-efd83de14869",
+    "REALTIMEKIT_APP_ID": "816eb53a-1dc8-4939-9716-500747e385db",
     "REALTIMEKIT_VOICE_PRESET": "smartlingo_voice",
-    "REALTIMEKIT_VIDEO_PRESET": "group_call_participant"
+    "REALTIMEKIT_VIDEO_PRESET": "group_call_participant",
+    "REALTIMEKIT_GUEST_PRESET": "group_call_guest",
+    "REALTIMEKIT_MEMBER_PRESET": "group_call_participant",
+    "REALTIMEKIT_HOST_PRESET": "group_call_host",
+    "REALTIMEKIT_VIEWER_PRESET": "group_call_guest"
   },
   "no_bundle": true,
   "find_additional_modules": true,
@@ -52,6 +56,10 @@
     {
       "binding": "BUCKET",
       "bucket_name": "smartlingo-net-cutover-20260801-media"
+    },
+    {
+      "binding": "CLASS_FILES",
+      "bucket_name": "smartlingo-net-class-files"
     }
   ],
   "observability": {

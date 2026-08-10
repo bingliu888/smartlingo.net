@@ -6,6 +6,7 @@ import { TextSizeControl } from "../../../components/TextSizeControl";
 import { getDatabase, getSessionUser } from "../../../lib/auth";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
+import { isAdminUser } from "../../../lib/admin-access";
 import "./dashboard-tuneup.css";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
   const t = copy[lang];
+  const isAdmin = await isAdminUser(user);
   const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2 WHERE user_id = ?")
     .bind(user.id).first<{ count: number }>())?.count ?? 0;
   return (
@@ -75,6 +77,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
           <a className="dashboard-voice-cta" href={`/${lang}/assistant`}>{t.voiceAction} <span aria-hidden="true">→</span></a>
         </section>
         <MembershipPanel lang={lang} />
+        {isAdmin && <section className="dashboard-voice-panel"><span className="dashboard-voice-icon" aria-hidden="true"/><div><p className="section-kicker">LIVE CLASSES</p><h2>{lang === "zh" ? "我的课堂" : "My Classes"}</h2><p>{lang === "zh" ? "创建、管理并进入本网站独立的实时课堂。" : "Create, manage, and enter this site's independent live classrooms."}</p></div><a className="dashboard-voice-cta" href={`/${lang}/classrooms?view=mine`}>{lang === "zh" ? "进入课堂" : "Open classes"} →</a></section>}
         <div className="dashboard-grid">
           <section className="progress-card"><div className="card-top"><span>{t.progress}</span><strong>{lang === "zh" ? "开始" : "START"}</strong></div><div className="progress-track"><i style={{ width: "0%" }} /></div><div className="lesson-preview"><span>语</span><div><h2>{t.next}</h2><p>{t.nextBody}</p><a className="primary-button" href={`/${lang}/classes?mine=1`}>{t.action} <span>→</span></a></div></div></section>
           <section className="dashboard-cert-card"><div className="dashboard-cert-count"><span aria-hidden="true">SL</span><strong>{certificateCount.toLocaleString()}</strong></div><div><p className="section-kicker">SMARTLINGO CERTS</p><h2>{t.certs}</h2><p>{t.certsBody}</p><a className="primary-button" href={`/${lang}/certificates`}>{t.certsAction} <span>→</span></a></div></section>
