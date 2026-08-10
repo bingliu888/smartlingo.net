@@ -48,6 +48,7 @@ export function LiveClassCreateForm({ basePath = "/classrooms" }: { basePath?: s
       <div>
         <label>Class type<select name="classType" defaultValue="public"><option value="public">Public</option><option value="trial">Trial</option><option value="private">Private</option></select></label>
         <label>Streaming<select name="streamingMode" defaultValue="video"><option value="video">Audio / Video</option><option value="audio">Audio only</option></select></label>
+        <label>Interaction<select name="realtimeMode" defaultValue="group_call"><option value="group_call">Group call · up to 100 interactive participants</option><option value="webinar">Webinar · viewers raise hand, 9 on stage</option><option value="livestream">Livestream · invited speakers, 9 on stage</option></select></label>
       </div>
       <div>
         <label>Start time<input name="startsAt" type="datetime-local" required value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></label>

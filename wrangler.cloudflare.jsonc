@@ -27,7 +27,13 @@
     "REALTIMEKIT_GUEST_PRESET": "group_call_guest",
     "REALTIMEKIT_MEMBER_PRESET": "group_call_participant",
     "REALTIMEKIT_HOST_PRESET": "group_call_host",
-    "REALTIMEKIT_VIEWER_PRESET": "group_call_guest"
+    "REALTIMEKIT_VIEWER_PRESET": "group_call_guest",
+    "REALTIMEKIT_WEBINAR_HOST_PRESET": "webinar_presenter",
+    "REALTIMEKIT_WEBINAR_SPEAKER_PRESET": "webinar_presenter",
+    "REALTIMEKIT_WEBINAR_VIEWER_PRESET": "webinar_viewer",
+    "REALTIMEKIT_LIVESTREAM_HOST_PRESET": "livestream_host",
+    "REALTIMEKIT_LIVESTREAM_SPEAKER_PRESET": "livestream_host",
+    "REALTIMEKIT_LIVESTREAM_VIEWER_PRESET": "livestream_viewer"
   },
   "no_bundle": true,
   "find_additional_modules": true,

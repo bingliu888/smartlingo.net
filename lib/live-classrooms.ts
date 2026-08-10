@@ -3,17 +3,18 @@ import { isAdminUser } from "@/lib/admin-access";
 
 export type ClassType = "public" | "trial" | "private";
 export type StreamingMode = "audio" | "video";
+export type RealtimeMode = "group_call" | "webinar" | "livestream";
 export type ClassRoom = {
   id: string; code: string; hostUserId: string; hostEmail: string; hostName: string;
   title: string; description: string; subject: string; classType: ClassType;
-  streamingMode: StreamingMode; startsAt: number; durationMinutes: number;
+  streamingMode: StreamingMode; realtimeMode: RealtimeMode; startsAt: number; durationMinutes: number;
   trialMinutes: number; tuitionCents: number; hasPassword: number;
   providerMeetingId: string | null; streamActive: number; muteAll: number;
   status: "active" | "archived"; createdAt: number; updatedAt: number;
 };
 
 const selection = `SELECT r.id,r.code,r.host_user_id AS hostUserId,r.host_email AS hostEmail,r.host_name AS hostName,
-  r.title,r.description,r.subject,r.class_type AS classType,r.streaming_mode AS streamingMode,r.starts_at AS startsAt,
+  r.title,r.description,r.subject,r.class_type AS classType,r.streaming_mode AS streamingMode,r.realtime_mode AS realtimeMode,r.starts_at AS startsAt,
   r.duration_minutes AS durationMinutes,r.trial_minutes AS trialMinutes,r.tuition_cents AS tuitionCents,
   CASE WHEN r.password_hash IS NULL THEN 0 ELSE 1 END AS hasPassword,r.provider_meeting_id AS providerMeetingId,
   r.stream_active AS streamActive,r.mute_all AS muteAll,r.status,r.created_at AS createdAt,r.updated_at AS updatedAt
@@ -60,6 +61,7 @@ export async function createClassRoom(user: SessionUser, input: Record<string,un
   const subject=String(input.subject||"").trim().slice(0,80);
   const classType:ClassType=input.classType==="private"?"private":input.classType==="trial"?"trial":"public";
   const streamingMode:StreamingMode=input.streamingMode==="audio"?"audio":"video";
+  const realtimeMode:RealtimeMode=input.realtimeMode==="webinar"?"webinar":input.realtimeMode==="livestream"?"livestream":"group_call";
   const startsAt=Math.floor(new Date(String(input.startsAt||new Date().toISOString())).getTime()/1000);
   const durationMinutes=Math.max(15,Math.min(480,Number(input.durationMinutes)||60));
   const trialMinutes=classType==="trial"?Math.max(5,Math.min(1440,Number(input.trialMinutes)||30)):0;
@@ -68,8 +70,8 @@ export async function createClassRoom(user: SessionUser, input: Record<string,un
   if(title.length<3||!Number.isFinite(startsAt))throw new Error("INVALID_CLASS");
   if(password&&(password.length<4||password.length>72))throw new Error("INVALID_PASSWORD");
   const id=createId(),code=await generateClassCode(),now=Math.floor(Date.now()/1000),db=getDatabase();
-  await db.prepare(`INSERT INTO live_class_rooms(id,code,host_user_id,host_email,host_name,title,description,subject,class_type,streaming_mode,starts_at,duration_minutes,trial_minutes,tuition_cents,password_hash,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,code,user.id,user.email,user.displayName,title,description,subject,classType,streamingMode,startsAt,durationMinutes,trialMinutes,tuitionCents,password?await hashPassword(password):null,now,now).run();
+  await db.prepare(`INSERT INTO live_class_rooms(id,code,host_user_id,host_email,host_name,title,description,subject,class_type,streaming_mode,realtime_mode,starts_at,duration_minutes,trial_minutes,tuition_cents,password_hash,created_at,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,code,user.id,user.email,user.displayName,title,description,subject,classType,streamingMode,realtimeMode,startsAt,durationMinutes,trialMinutes,tuitionCents,password?await hashPassword(password):null,now,now).run();
   const invites=String(input.invites||"").split(/[\s,;]+/).map(item=>item.trim().toLowerCase()).filter(item=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
   for(const email of new Set(invites))await db.prepare("INSERT OR IGNORE INTO live_class_invites(id,room_id,email,created_at) VALUES(?,?,?,?)").bind(createId(),id,email,now).run();
   return {id,code};
