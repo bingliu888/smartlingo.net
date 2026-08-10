@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 export default async function ClassesPage({params,searchParams}:{params:Promise<{lang:string}>;searchParams:Promise<{view?:string}>}) {
   const [{lang},{view}]=await Promise.all([params,searchParams]);
   const locale=lang==="zh"?"zh":"en";
-  return <LiveClassSiteFrame lang={locale}><LiveClassDirectory initialView={view||"public"} basePath={`/${locale}/classrooms`}/></LiveClassSiteFrame>;
+  return <LiveClassSiteFrame lang={locale}><LiveClassDirectory lang={locale} initialView={view||"public"} basePath={`/${locale}/classrooms`}/></LiveClassSiteFrame>;
 }
