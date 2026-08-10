@@ -1,0 +1,21 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import test from "node:test";
+const read=(path)=>fs.readFileSync(new URL("../"+path,import.meta.url),"utf8");
+test("live classroom playlist is independently stored and published",()=>{
+  const migrations=fs.readdirSync(new URL("../drizzle",import.meta.url)).filter(name=>name.endsWith("_classroom_playlists.sql"));
+  assert.equal(migrations.length,1);
+  const migration=read("drizzle/"+migrations[0]),route=read("app/api/classrooms/[code]/playlist/route.ts"),room=read("components/live-class-room-client.tsx"),broadcaster=read("components/LiveClassPlaylistBroadcaster.tsx"),config=read("wrangler.cloudflare.jsonc");
+  assert.match(migration,/REFERENCES live_class_rooms/);
+  assert.match(route,/env\.CLASS_FILES/);
+  assert.match(route,/classes\/\$\{room\.id\}\/playlist/);
+  assert.match(config,/"binding":\s*"CLASS_FILES"/);
+  assert.match(room,/LiveClassPlaylistManager/);
+  assert.match(room,/LiveClassPlaylistBroadcaster/);
+  assert.match(room,/__smartClassStopPlaylist/);
+  assert.match(broadcaster,/captureStream\(30\)/);
+  assert.match(broadcaster,/meeting\.self\.enableAudio\(audioTrack\)/);
+  assert.match(broadcaster,/meeting\.self\.enableVideo\(videoTrack\)/);
+  assert.match(broadcaster,/\(index \+ 1\) % items\.length/);
+});
+
