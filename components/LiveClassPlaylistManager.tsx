@@ -273,8 +273,8 @@ export function LiveClassPlaylistManager({
           <h2>{zh ? "课堂播放列表" : "Class playlist"}</h2>
           <p>
             {zh
-              ? "仅支持从文件或相册上传的视频。启用后，教师进入课堂会通过 RealtimeKit 循环播放。"
-              : "Upload videos from Files or Photos. When enabled, the playlist loops through RealtimeKit while the teacher is in the room."}
+              ? "仅支持从文件或相册上传的视频。启用后，教师进入课堂会作为课堂直播循环播放。"
+              : "Upload videos from Files or Photos. When enabled, the playlist loops as live classroom media while the teacher is in the room."}
           </p>
           <label className="playlist-enable">
             <input

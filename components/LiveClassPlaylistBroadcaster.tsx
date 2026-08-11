@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type RTKClient from "@cloudflare/realtimekit";
 type Locale = "en" | "zh";
+import { playlistAudioContext, unlockPlaylistAudio } from "../lib/playlist-audio";
 
 type PlaylistItem = { id: string; title: string; position: number };
 type PlaylistResponse = {
@@ -57,7 +58,7 @@ export function LiveClassPlaylistBroadcaster({
       const response = await fetch(`/api/classrooms/${code}/media`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action, value }),
+        body: JSON.stringify({ action, value, playlistRelay: true }),
       });
       if (!response.ok) {
         const detail = (await response.json().catch(() => ({}))) as {
@@ -84,8 +85,7 @@ export function LiveClassPlaylistBroadcaster({
     setIndex(selected < 0 ? 0 : selected);
   }, [code]);
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    void load();
   }, [load]);
   const stop = useCallback(async () => {
     if (stoppingRef.current) return;
@@ -127,9 +127,7 @@ export function LiveClassPlaylistBroadcaster({
       stoppingRef.current = false;
     }
   }, [meeting, onState, onTrack, postMedia]);
-  useEffect(() => {
-    stopBridgeRef.current = stop;
-  }, [stop]);
+  stopBridgeRef.current = stop;
   useEffect(() => {
     const target = window as PlaylistWindow;
     const bridge = () => stopBridgeRef.current();
@@ -153,13 +151,20 @@ export function LiveClassPlaylistBroadcaster({
     async (kind: "audio" | "video", expectedTrack: MediaStreamTrack) => {
       const deadline = Date.now() + 5000;
       while (Date.now() < deadline) {
-        const producer = meeting.self.producers.find(
-          (candidate) =>
-            candidate.kind === kind &&
-            !candidate.closed &&
-            candidate.track === expectedTrack &&
-            candidate.track?.readyState === "live",
-        );
+        let producer;
+        try {
+          producer = meeting.self.producers.find(
+            (candidate) =>
+              candidate.kind === kind &&
+              !candidate.closed &&
+              candidate.track === expectedTrack &&
+              candidate.track?.readyState === "live",
+          );
+        } catch {
+          // The SDK producer store can lag behind join/stage transitions.
+          // Continue polling instead of letting ERR1100 blank the page.
+          producer = undefined;
+        }
         if (producer) return producer;
         await new Promise<void>((resolve) => window.setTimeout(resolve, 100));
       }
@@ -186,6 +191,21 @@ export function LiveClassPlaylistBroadcaster({
     },
     [],
   );
+  const resumeAudioFromGesture = useCallback(async () => {
+    const audioContext =
+      audioRef.current && audioRef.current.state !== "closed"
+        ? audioRef.current
+        : playlistAudioContext();
+    if (!audioContext) throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
+    audioRef.current = audioContext;
+    // This must be the first awaited browser-media operation in the click
+    // handler. Safari expires transient user activation while the hidden
+    // video/canvas pipeline is being prepared.
+    await withTimeout("AUDIO_CONTEXT_GESTURE_RESUME", audioContext.resume(), 3000);
+    if (audioContext.state !== "running")
+      throw new Error(`AUDIO_CONTEXT_${audioContext.state.toUpperCase()}`);
+    return audioContext;
+  }, [withTimeout]);
   const publish = useCallback(async () => {
     const video = videoRef.current,
       canvas = canvasRef.current;
@@ -234,15 +254,11 @@ export function LiveClassPlaylistBroadcaster({
       draw();
       const canvasStream = canvas.captureStream(30);
       canvasStreamRef.current = canvasStream;
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!AudioContextClass) throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
       const audioContext =
         audioRef.current && audioRef.current.state !== "closed"
           ? audioRef.current
-          : new AudioContextClass();
+          : playlistAudioContext();
+      if (!audioContext) throw new Error("AUDIO_CONTEXT_UNAVAILABLE");
       audioRef.current = audioContext;
       const source =
         audioSourceRef.current || audioContext.createMediaElementSource(video);
@@ -266,11 +282,22 @@ export function LiveClassPlaylistBroadcaster({
       // page has lost its transient user activation. Bound that wait so the
       // teacher receives the branded one-click start control rather than an
       // endless "preparing" banner.
-      await withTimeout(
-        "AUDIO_CONTEXT_RESUME",
-        audioContext.resume(),
-        5000,
-      );
+      let audioNeedsGesture = false;
+      if (audioContext.state !== "running") {
+        try {
+          await withTimeout(
+            "AUDIO_CONTEXT_RESUME",
+            audioContext.resume(),
+            1500,
+          );
+        } catch {
+          // Safari requires a trusted click before Web Audio can produce
+          // sound. Publish the live video and silent audio track now instead
+          // of failing the whole playlist broadcast; the button below resumes
+          // this same context and sound starts flowing immediately.
+          audioNeedsGesture = true;
+        }
+      }
       const videoTrack = canvasStream.getVideoTracks()[0],
         audioTrack = destination.stream.getAudioTracks()[0];
       if (!videoTrack || !audioTrack)
@@ -335,7 +362,7 @@ export function LiveClassPlaylistBroadcaster({
       );
       onState(true);
       onTrack(publishedVideoTrack);
-      setNeedsGesture(false);
+      setNeedsGesture(audioNeedsGesture);
       setStatus("live");
     } catch (cause) {
       setStatus("error");
@@ -347,19 +374,44 @@ export function LiveClassPlaylistBroadcaster({
             ? "Safari 需要教师点击一次才能开始有声播放。"
             : "Safari needs one teacher click to start playback with sound."
           : zh
-            ? `无法将播放列表发布到 RealtimeKit（${detail}）。`
-            : `Could not publish the playlist to RealtimeKit (${detail}).`,
+            ? `无法发布播放列表（${detail}）。`
+            : `Could not publish the playlist (${detail}).`,
       );
     } finally {
       publishingRef.current = false;
     }
-  }, [index, items, meeting, onState, onTrack, postMedia, waitForProducer, withTimeout, zh]);
+  }, [code, index, items, meeting, onState, onTrack, postMedia, waitForProducer, withTimeout, zh]);
+  const startWithSound = useCallback(async () => {
+    try {
+      setError("");
+      setNeedsGesture(false);
+      setStatus("publishing");
+      // Keep both media unlock operations inside the same trusted click.
+      // The video remains muted locally; its pre-mute audio is captured by
+      // Web Audio and published as the RealtimeKit custom audio track.
+      const video = videoRef.current;
+      if (video) {
+        video.muted = true;
+        void video.play().catch(() => undefined);
+      }
+      await unlockPlaylistAudio();
+      await resumeAudioFromGesture();
+      await publishBridgeRef.current();
+    } catch (cause) {
+      const detail = cause instanceof Error ? cause.message : String(cause);
+      setStatus("error");
+      setNeedsGesture(true);
+      setError(
+        zh
+          ? `Safari 无法启动有声播流（${detail}），请再点击一次。`
+          : `Safari could not start the broadcast with sound (${detail}). Please try again.`,
+      );
+    }
+  }, [resumeAudioFromGesture, zh]);
   // RealtimeKit updates its client facade as participants and stage state
   // change. Calling the latest publisher through a ref prevents those facade
   // updates from restarting the HTMLVideoElement load effect mid-buffer.
-  useEffect(() => {
-    publishBridgeRef.current = publish;
-  }, [publish]);
+  publishBridgeRef.current = publish;
   useEffect(() => {
     if (!enabled || !items.length) return;
     const video = videoRef.current;
@@ -450,8 +502,8 @@ export function LiveClassPlaylistBroadcaster({
       <strong>
         {status === "live"
           ? zh
-            ? "播放列表正在通过 RealtimeKit 循环播流"
-            : "Playlist is looping through RealtimeKit"
+            ? "播放列表正在循环直播"
+            : "Playlist is looping live"
           : status === "error"
             ? zh
               ? "播放列表播流失败"
@@ -462,7 +514,7 @@ export function LiveClassPlaylistBroadcaster({
       </strong>
       <small>{items[index]?.title}</small>
       {needsGesture ? (
-        <button type="button" onClick={() => void publish()}>
+        <button type="button" onClick={() => void startWithSound()}>
           {zh ? "开始有声播流" : "Start broadcast with sound"}
         </button>
       ) : null}
