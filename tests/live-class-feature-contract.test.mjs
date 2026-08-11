@@ -46,7 +46,8 @@ test("class entrances exist on home, dashboard, and community", () => {
 test("viewer join is permission-free and video tiles support fullscreen", () => {
   const room = read("components/live-class-room-client.tsx");
   const css = read("app/[lang]/classrooms/classrooms.css");
-  assert.match(room, /mediaState\?\.streamActive\|\|\(manager&&active\).*?!joined&&!joining\.current\)void connect/);
+  assert.match(room, /\(mediaState\?\.streamActive\|\|active\)&&!joined&&!joining\.current\)void connect/);
+  assert.match(room, /asPlaylistRelay:active&&!mediaState\?\.streamActive/);
   assert.match(room, /setInterval\(\(\)=>void check\(\),3000\)/);
   assert.match(room, /class-video-tile\$\{selected\?" selected":""\}/);
   assert.match(css, /class-video-tile\.selected/);
