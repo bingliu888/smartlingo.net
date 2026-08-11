@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 const read=(path)=>fs.readFileSync(new URL("../"+path,import.meta.url),"utf8");
-test("live classroom playlist is independently stored and published",()=>{
+test("live classroom playlist is independently stored, published, and guest-relayed",()=>{
   const migrations=fs.readdirSync(new URL("../drizzle",import.meta.url)).filter(name=>name.endsWith("_classroom_playlists.sql"));
   assert.equal(migrations.length,1);
-  const migration=read("drizzle/"+migrations[0]),route=read("app/api/classrooms/[code]/playlist/route.ts"),room=read("components/live-class-room-client.tsx"),broadcaster=read("components/LiveClassPlaylistBroadcaster.tsx"),config=read("wrangler.cloudflare.jsonc");
+  const migration=read("drizzle/"+migrations[0]),route=read("app/api/classrooms/[code]/playlist/route.ts"),join=read("app/api/classrooms/[code]/join/route.ts"),media=read("app/api/classrooms/[code]/media/route.ts"),room=read("components/live-class-room-client.tsx"),broadcaster=read("components/LiveClassPlaylistBroadcaster.tsx"),config=read("wrangler.cloudflare.jsonc");
   assert.match(migration,/REFERENCES live_class_rooms/);
   assert.match(route,/env\.CLASS_FILES/);
   assert.match(route,/classes\/\$\{room\.id\}\/playlist/);
@@ -17,6 +17,14 @@ test("live classroom playlist is independently stored and published",()=>{
   assert.match(room,/videoTrack\?\.stop\(\)/);
   assert.match(room,/previous\.stop\(\)/);
   assert.match(room,/CAMERA_TRACK_MISSING/);
+  assert.match(room,/asPlaylistRelay/);
+  assert.match(room,/active&&!mediaState\?\.streamActive/);
+  assert.match(room,/playlistRelay:asPlaylistRelay/);
+  assert.match(room,/next\?\.livestream\.start\(\)/);
+  assert.match(join,/playlistRelay/);
+  assert.match(join,/role:playlistRelay\?"viewer":role/);
+  assert.match(media,/body\.playlistRelay/);
+  assert.match(media,/UPDATE live_class_rooms SET stream_active=0/);
   const styles=read("app/[lang]/classrooms/classrooms.css");
   assert.match(styles,/class-video-grid\[data-count="1"\]/);
   assert.match(styles,/max-width:none/);
