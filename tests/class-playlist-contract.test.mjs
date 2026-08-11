@@ -18,9 +18,10 @@ test("live classroom playlist is independently stored, published, and guest-rela
   assert.match(room,/previous\.stop\(\)/);
   assert.match(room,/CAMERA_TRACK_MISSING/);
   assert.match(room,/asPlaylistRelay/);
-  assert.match(room,/active&&!mediaState\?\.streamActive/);
+  assert.match(room,/const mayRelay=active&&!mediaState\?\.streamActive&&\(manager\|\|officialDemo\)/);
   assert.match(room,/playlistRelay:asPlaylistRelay/);
-  assert.match(room,/next\?\.livestream\.start\(\)/);
+  assert.match(room,/playlistPublished/);
+  assert.match(room,/client\.livestream\.start\(\)/);
   assert.match(join,/playlistRelay/);
   assert.match(join,/role:playlistRelay\?"viewer":role/);
   assert.match(media,/body\.playlistRelay/);

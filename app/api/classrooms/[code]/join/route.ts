@@ -1,13 +1,13 @@
-import { classAccess, classByCode } from "@/lib/live-classrooms";
+import { classAccess, classByCode } from "@/lib/classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
-import { createClassParticipant, createClassProviderRoom } from "@/lib/live-class-realtimekit";
+import { createClassParticipant, createClassProviderRoom } from "@/lib/class-realtimekit";
 
 export async function POST(request:Request,{params}:{params:Promise<{code:string}>}){
   try{
     const{code}=await params,room=await classByCode(code);if(!room)return Response.json({error:"Class not found"},{status:404});
     const body=await request.json().catch(()=>({}))as{displayName?:string;identity?:string;publish?:boolean;start?:boolean;playlistRelay?:boolean},user=await getSessionUser(request),access=await classAccess(room,user);if(!access.allowed)return Response.json({error:"Private class invitation required"},{status:403});
     const db=getDatabase(),now=Math.floor(Date.now()/1000),identity=String(body.identity||crypto.randomUUID()).slice(0,100),displayName=String(body.displayName||user?.displayName||"Guest").trim().slice(0,80)||"Guest";
-    const playlistRequested=Boolean(body.playlistRelay&&room.realtimeMode!=="group_call"&&await db.prepare("SELECT 1 FROM live_class_playlist_state s JOIN live_class_playlist_items i ON i.room_id=s.room_id WHERE s.room_id=? AND s.active=1 LIMIT 1").bind(room.id).first());
+    const officialDemo=["889101","889102","889103"].includes(room.code),playlistRequested=Boolean(body.playlistRelay&&(access.manager||officialDemo)&&await db.prepare("SELECT 1 FROM class_playlist_state s JOIN class_playlist_items i ON i.room_id=s.room_id WHERE s.room_id=? AND s.active=1 LIMIT 1").bind(room.id).first());
     let playlistRelay=false;
     let providerMeetingId=room.providerMeetingId;
     if(playlistRequested&&!room.streamActive){const claim=await db.prepare("INSERT INTO class_playlist_relay_claims(room_id,claimed_at) SELECT ?,? WHERE EXISTS(SELECT 1 FROM live_class_rooms WHERE id=? AND stream_active=0) ON CONFLICT(room_id) DO UPDATE SET claimed_at=excluded.claimed_at WHERE class_playlist_relay_claims.claimed_at<? AND EXISTS(SELECT 1 FROM live_class_rooms WHERE id=? AND stream_active=0)").bind(room.id,now,room.id,now-45,room.id).run();playlistRelay=Number(claim.meta?.changes||0)>0;if(playlistRelay){try{const created=await createClassProviderRoom(room.title);providerMeetingId=created.id;await db.prepare("UPDATE live_class_rooms SET provider_meeting_id=?,stream_active=1,mute_all=0,updated_at=? WHERE id=? AND stream_active=0").bind(providerMeetingId,now,room.id).run();}catch(error){await db.prepare("DELETE FROM class_playlist_relay_claims WHERE room_id=?").bind(room.id).run();await db.prepare("UPDATE live_class_rooms SET stream_active=0,provider_meeting_id=NULL,updated_at=? WHERE id=?").bind(now,room.id).run();throw error;}}}
