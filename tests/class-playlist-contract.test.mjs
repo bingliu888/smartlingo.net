@@ -13,9 +13,15 @@ test("live classroom playlist is independently stored and published",()=>{
   assert.match(room,/LiveClassPlaylistManager/);
   assert.match(room,/LiveClassPlaylistBroadcaster/);
   assert.match(room,/__smartClassStopPlaylist/);
+  assert.match(room,/audioTrack\?\.stop\(\)/);
+  assert.match(room,/videoTrack\?\.stop\(\)/);
+  assert.match(room,/previous\.stop\(\)/);
+  assert.match(room,/CAMERA_TRACK_MISSING/);
+  const styles=read("app/[lang]/classrooms/classrooms.css");
+  assert.match(styles,/class-video-grid\[data-count="1"\]/);
+  assert.match(styles,/max-width:none/);
   assert.match(broadcaster,/captureStream\(30\)/);
   assert.match(broadcaster,/meeting\.self\.enableAudio\(audioTrack\)/);
   assert.match(broadcaster,/meeting\.self\.enableVideo\(videoTrack\)/);
   assert.match(broadcaster,/\(index \+ 1\) % items\.length/);
 });
-
