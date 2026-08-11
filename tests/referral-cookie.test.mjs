@@ -14,7 +14,7 @@ const bridgeHandlerSource = await read("../lib/clerk-session-bridge.ts");
 test("a validated platform referral survives sign-up in one secure cookie", () => {
   assert.match(referralRouteSource, /SELECT id FROM referral_codes WHERE code = \? LIMIT 1/);
   assert.match(referralRouteSource, /setReferralCookie\(normalized\)/);
-  assert.match(referralRouteSource, /auth\/sign-up\?referral=recorded/);
+  assert.match(referralRouteSource, /auth\/sign-up\?referral=\$\{encodeURIComponent\(normalized\)\}/);
   assert.match(referralRouteSource, /auth\/sign-up\?referral=invalid/);
   assert.match(authSource, /REFERRAL_COOKIE_NAME = "smartlingo_referral_code"/);
   assert.match(authSource, /HttpOnly; Secure; SameSite=Lax/);
@@ -65,7 +65,7 @@ test("a valid referral returns a cookie-bearing redirect without mutating immuta
 
     assert.equal(boundCode, "SL5512862D0D");
     assert.equal(response.status, 302);
-    assert.equal(response.headers.get("location"), "http://localhost/en/auth/sign-up?referral=recorded");
+    assert.equal(response.headers.get("location"), "http://localhost/en/auth/sign-up?referral=SL5512862D0D");
     assert.match(
       response.headers.get("set-cookie") ?? "",
       /^smartlingo_referral_code=SL5512862D0D; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=/,
