@@ -1,6 +1,6 @@
-import { classAccess, classByCode } from "@/lib/classrooms";
+import { classAccess, classByCode } from "@/lib/live-classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
-import { createClassParticipant, createClassProviderRoom } from "@/lib/class-realtimekit";
+import { createClassParticipant, createClassProviderRoom } from "@/lib/live-class-realtimekit";
 
 export async function POST(request:Request,{params}:{params:Promise<{code:string}>}){
   try{
