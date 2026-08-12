@@ -55,8 +55,8 @@ export function LiveClassCreateForm({ basePath = "/classrooms" }: { basePath?: s
         <label>Duration (minutes)<input name="durationMinutes" type="number" min={15} max={480} defaultValue={60} /></label>
       </div>
       <div>
-        <label>Trial minutes<input name="trialMinutes" type="number" min={5} max={1440} defaultValue={30} /></label>
-        <label>Tuition (USD)<input name="tuition" type="number" min={1} step="0.01" defaultValue={99} /></label>
+        <input type="hidden" name="trialMinutes" value={10080} />
+        <label>Tuition (USD)<input name="tuition" type="number" min={0} step="0.01" defaultValue={0} /></label>
       </div>
       <label>Private invitation emails<textarea name="invites" placeholder="name@example.com, another@example.com" /></label>
       {error && <p role="alert">{error}</p>}

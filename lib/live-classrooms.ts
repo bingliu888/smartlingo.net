@@ -1,5 +1,6 @@
 import { getDatabase, createId, getSessionUser, type SessionUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-access";
+import { canManageClass, paidClassAccess } from "@/lib/class-managers";
 
 export type ClassType = "public" | "trial" | "private";
 export type StreamingMode = "audio" | "video";
@@ -27,8 +28,8 @@ export async function classByCode(code: string) {
 export async function directoryClasses(view: "public" | "trial" | "private" | "mine", user: SessionUser | null) {
   const db = getDatabase();
   if (view === "mine") {
-    if (!user || !await isAdminUser(user)) return [];
-    return (await db.prepare(`${selection} WHERE r.host_user_id=? AND r.status='active' ORDER BY r.updated_at DESC LIMIT 100`).bind(user.id).run<ClassRoom>()).results || [];
+    if (!user) return [];
+    return (await db.prepare(`${selection} LEFT JOIN live_class_cohosts c ON c.room_id=r.id WHERE (r.host_user_id=? OR c.user_id=?) AND r.status='active' ORDER BY r.updated_at DESC LIMIT 100`).bind(user.id,user.id).run<ClassRoom>()).results || [];
   }
   if (view === "private") {
     if (!user) return [];
@@ -64,8 +65,8 @@ export async function createClassRoom(user: SessionUser, input: Record<string,un
   const realtimeMode:RealtimeMode=input.realtimeMode==="webinar"?"webinar":input.realtimeMode==="livestream"?"livestream":"group_call";
   const startsAt=Math.floor(new Date(String(input.startsAt||new Date().toISOString())).getTime()/1000);
   const durationMinutes=Math.max(15,Math.min(480,Number(input.durationMinutes)||60));
-  const trialMinutes=classType==="trial"?Math.max(5,Math.min(1440,Number(input.trialMinutes)||30)):0;
-  const tuitionCents=classType==="trial"?Math.max(100,Math.min(10_000_000,Math.round(Number(input.tuition||0)*100))):0;
+  const trialMinutes=classType==="trial"?7*24*60:0;
+  const tuitionCents=classType==="trial"?Math.max(0,Math.min(10_000_000,Math.round(Number(input.tuition||0)*100))):0;
   const password=classType==="private"?"":String(input.password||"").trim();
   if(title.length<3||!Number.isFinite(startsAt))throw new Error("INVALID_CLASS");
   if(password&&(password.length<4||password.length>72))throw new Error("INVALID_PASSWORD");
@@ -77,11 +78,12 @@ export async function createClassRoom(user: SessionUser, input: Record<string,un
   return {id,code};
 }
 
-export async function classAccess(room: ClassRoom, user: SessionUser | null) {
+export async function classAccess(room: ClassRoom, user: SessionUser | null, startTrial=false) {
   const admin=await isAdminUser(user);
-  const host=Boolean(user&&room.hostUserId===user.id);
-  if(room.classType!=="private")return {allowed:true,admin,host,manager:admin||host};
-  if(admin||host)return {allowed:true,admin,host,manager:true};
+  const host=Boolean(user&&room.hostUserId===user.id),manager=await canManageClass(room,user);
+  if(room.classType==="trial"){const paid=await paidClassAccess(room,user,startTrial);return {...paid,admin,host,manager};}
+  if(room.classType!=="private")return {allowed:true,admin,host,manager};
+  if(manager)return {allowed:true,admin,host,manager:true};
   if(!user)return {allowed:false,admin:false,host:false,manager:false};
   const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND lower(email)=lower(?) LIMIT 1").bind(room.id,user.email).first();
   return {allowed:Boolean(invited),admin:false,host:false,manager:false};

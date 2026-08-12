@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdminUser } from "@/lib/admin-access";
+import { canManageClass } from "@/lib/class-managers";
 import { createId, getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
 import { classAccess, classByCode, type ClassRoom } from "@/lib/live-classrooms";
 
@@ -28,7 +28,7 @@ async function context(request: Request, code: string) {
   if (!room) return null;
   const user = await getSessionUser(request);
   const access = await classAccess(room, user);
-  return { room, user, access, manager: Boolean(user && (user.id === room.hostUserId || await isAdminUser(user))) };
+  return { room, user, access, manager: await canManageClass(room,user) };
 }
 async function managerContext(request: Request, code: string): Promise<{ room: ClassRoom; user: SessionUser } | Response> {
   const value = await context(request, code);
