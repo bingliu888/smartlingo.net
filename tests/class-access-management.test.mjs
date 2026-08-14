@@ -68,6 +68,14 @@ test("only Teachers and platform administrators can create classrooms", () => {
   assert.match(access, /subscriber_override/);
 });
 
+test("classroom dates render in a stable timezone for server hydration", () => {
+  const directoryCandidates = ["../components/class-directory.tsx", "../components/live-class-directory.tsx"];
+  const directoryPath = directoryCandidates.find(item => existsSync(new URL(item, import.meta.url)));
+  assert.ok(directoryPath);
+  assert.match(source(directoryPath), /timeZone:\"America\/Los_Angeles\"/);
+  assert.match(source("../components/class-detail-experience.tsx"), /timeZone:\"America\/Los_Angeles\"/);
+});
+
 test("live class directory uses Teacher terminology without changing its export", () => {
   const directory = source("../components/live-class-directory.tsx");
   assert.match(directory, /export function LiveClassDirectory/);
