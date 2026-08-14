@@ -9,6 +9,7 @@ const client=fs.readFileSync(new URL("../components/live-class-room-client.tsx",
 test("leaving waits for server cleanup and abandoned relay state self-recovers",()=>{
   assert.match(client,/const leave=useCallback\(async\(\)=>\{await disconnect\(true\)/);
   assert.match(client,/navigator\.sendBeacon/);
+  assert.match(client,/participants\.subscribe\(ids,\["audio","video"\]\)/);
   assert.match(media,/SELECT 1 AS active FROM live_class_media_presence/);
   assert.match(media,/updated_at<=\?/);
   assert.match(media,/streamActive=false/);
