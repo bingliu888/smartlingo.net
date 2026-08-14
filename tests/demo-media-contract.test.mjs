@@ -6,7 +6,7 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("demo playlists use real credited open music and video", async () => {
   const [migration, attribution, music, video] = await Promise.all([
-    read("drizzle/0111_real_demo_media.sql"),
+    read("drizzle/0113_clean_official_demo_classes.sql"),
     read("public/demo-media-attribution.txt"),
     readFile(new URL("../public/demo-music-canon-in-d.mp4", import.meta.url)),
     readFile(new URL("../public/demo-video-big-buck-bunny.mp4", import.meta.url)),
@@ -16,6 +16,9 @@ test("demo playlists use real credited open music and video", async () => {
   }
   assert.match(migration, /Canon in D Major — Kevin MacLeod/);
   assert.match(migration, /Big Buck Bunny clip — © Blender Foundation/);
+  assert.match(migration, /WHERE code IN \('889102','889103'\)/);
+  const playlistQueries = migration.match(/FROM (?:live_)?class_rooms WHERE code IN \('889102','889103'\)/g) ?? [];
+  assert.equal(playlistQueries.length, 3);
   assert.match(attribution, /Creative Commons Attribution 3\.0 Unported/);
   assert.match(attribution, /www\.bigbuckbunny\.org/);
   assert.ok(music.length > 1_000_000);
@@ -32,4 +35,3 @@ test("permanent demo classes remain enterable", async () => {
     assert.match(schedule, new RegExp(code));
   }
 });
-
