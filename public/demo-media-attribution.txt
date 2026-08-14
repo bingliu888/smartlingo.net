@@ -1,0 +1,17 @@
+Open demo playlist media
+
+Music
+“Canon in D Major” performed by Kevin MacLeod; original composition by Johann Pachelbel.
+Source: https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_Canon_in_D_Major.ogg
+License: Creative Commons Attribution 3.0 Unported — https://creativecommons.org/licenses/by/3.0/
+Modification: a 90-second excerpt was transcoded to AAC and paired with an audio-wave visualization for browser playback.
+
+Video
+“Big Buck Bunny” by Blender Foundation, excerpt from 00:30 to 00:50.
+Source: https://video.blender.org/w/dmhvQNzwBnrWy1iYzVv5g7
+License: Creative Commons Attribution 3.0 Unported — https://creativecommons.org/licenses/by/3.0/
+Attribution: © copyright Blender Foundation | www.bigbuckbunny.org
+Modification: a 20-second excerpt was resized to 640×360 and transcoded to H.264/AAC stereo for browser playback.
+
+These demo files are provided for playlist and streaming demonstrations. The licensors do not endorse this site.
+
