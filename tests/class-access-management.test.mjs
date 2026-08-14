@@ -33,6 +33,6 @@ test("class item exposes badges, edit, co-host and conditional subscriber contro
   assert.match(detail,/class-entry-badges/);
   assert.match(detail,/ClassEditDialog/);
   assert.match(detail,/showSubscribers=\{room\.tuitionCents>0\}/);
-  assert.match(source("../components/ClassAccessManagers.tsx"),/Co-hosts/);
+  assert.match(source("../components/ClassAccessManagers.tsx"),/Co-directors/);
   assert.match(source("../components/ClassAccessManagers.tsx"),/Subscribers/);
 });

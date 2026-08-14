@@ -1,4 +1,4 @@
-import { classAccess, classByCode } from "@/lib/live-classrooms";
+import { classAccess, classByCode, recordClassJoin } from "@/lib/live-classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
 import { createClassParticipant, createClassProviderRoom } from "@/lib/live-class-realtimekit";
 
@@ -22,6 +22,7 @@ export async function POST(request:Request,{params}:{params:Promise<{code:string
     if(access.manager||playlistRelay)role="host";else if(body.publish){if(!canPublish)return Response.json({error:room.realtimeMode==="webinar"?"Raise your hand and wait for host approval":"The host has not added this member email as a speaker",errorCode:"STAGE_ACCESS_REQUIRED"},{status:403});if(room.realtimeMode!=="group_call"){const count=await db.prepare("SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>?").bind(room.id,now-45).first<{count:number}>();if(Number(count?.count||0)>=9)return Response.json({error:"The 9-speaker stage is full",errorCode:"STAGE_FULL"},{status:409});}role="member";}
     const participant=await createClassParticipant(providerMeetingId,identity,displayName,role,room.realtimeMode);
     await db.prepare(`INSERT INTO live_class_media_presence(id,room_id,identity,user_id,display_name,is_member,mic_on,camera_on,active,last_seen_at) VALUES(?,?,?,?,?,?,0,0,1,?) ON CONFLICT(room_id,identity) DO UPDATE SET user_id=excluded.user_id,display_name=excluded.display_name,is_member=excluded.is_member,active=1,last_seen_at=excluded.last_seen_at`).bind(createId(),room.id,identity,user?.id||null,displayName,user?1:0,now).run();
+    if(user)await recordClassJoin(user.id,room.id,now);
     return Response.json({authToken:participant.token,identity,role:playlistRelay?"viewer":role,playlistRelay,meetingId:providerMeetingId,streamingMode:room.streamingMode,realtimeMode:room.realtimeMode,manager:access.manager,canPublish:playlistRelay?false:canPublish,participantLimit:room.realtimeMode==="group_call"?100:null,publisherLimit:room.realtimeMode==="group_call"?null:9});
   }catch(issue){const message=issue instanceof Error?issue.message:"REALTIMEKIT_REQUEST_FAILED";console.error("Classroom RealtimeKit join failed",message);return Response.json({error:message},{status:502});}
 }

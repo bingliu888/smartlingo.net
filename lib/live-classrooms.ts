@@ -1,5 +1,5 @@
 import { getDatabase, createId, getSessionUser, type SessionUser } from "@/lib/auth";
-import { isAdminUser } from "@/lib/admin-access";
+import { isAdminUser, isBootstrapAdminEmail } from "@/lib/admin-access";
 import { canManageClass, paidClassAccess } from "@/lib/class-managers";
 
 export type ClassType = "public" | "trial" | "private";
@@ -25,11 +25,17 @@ export async function classByCode(code: string) {
   return getDatabase().prepare(`${selection} WHERE code=? LIMIT 1`).bind(code).first<ClassRoom>();
 }
 
-export async function directoryClasses(view: "public" | "trial" | "private" | "mine", user: SessionUser | null) {
+export async function directoryClasses(view: "public" | "trial" | "private" | "mine" | "joined_public" | "joined_trial" | "joined_private", user: SessionUser | null) {
   const db = getDatabase();
   if (view === "mine") {
     if (!user) return [];
-    return (await db.prepare(`${selection} LEFT JOIN live_class_cohosts c ON c.room_id=r.id WHERE (r.host_user_id=? OR c.user_id=?) AND r.status='active' ORDER BY r.updated_at DESC LIMIT 100`).bind(user.id,user.id).run<ClassRoom>()).results || [];
+    if(await isAdminUser(user))return (await db.prepare(`${selection} WHERE r.status='active' ORDER BY r.updated_at DESC LIMIT 200`).run<ClassRoom>()).results||[];
+    return (await db.prepare(`${selection} LEFT JOIN live_class_cohosts c ON c.room_id=r.id WHERE (r.host_user_id=? OR c.user_id=?) AND r.status='active' GROUP BY r.id ORDER BY r.updated_at DESC LIMIT 100`).bind(user.id,user.id).run<ClassRoom>()).results || [];
+  }
+  if(view.startsWith("joined_")){
+    if(!user)return [];
+    const classType=view.slice(7) as ClassType;
+    return (await db.prepare(`${selection} JOIN live_class_join_history h ON h.room_id=r.id WHERE h.user_id=? AND r.class_type=? AND r.status='active' AND r.host_user_id<>? AND NOT EXISTS(SELECT 1 FROM live_class_cohosts c WHERE c.room_id=r.id AND c.user_id=?) ORDER BY h.last_joined_at DESC LIMIT 100`).bind(user.id,classType,user.id,user.id).run<ClassRoom>()).results||[];
   }
   if (view === "private") {
     if (!user) return [];
@@ -57,6 +63,10 @@ export async function verifyClassPassword(value: string, hash: string | null) {
 
 export async function createClassRoom(user: SessionUser, input: Record<string,unknown>) {
   if (!await isAdminUser(user)) throw new Error("ADMIN_REQUIRED");
+  if(!isBootstrapAdminEmail(user.email)){
+    const count=await getDatabase().prepare("SELECT COUNT(*) AS count FROM live_class_rooms WHERE host_user_id=? AND status='active'").bind(user.id).first<{count:number}>();
+    if(Number(count?.count||0)>=5)throw new Error("DIRECTOR_CLASS_LIMIT");
+  }
   const title=String(input.title||"").trim().slice(0,120);
   const description=String(input.description||"").trim().slice(0,2000);
   const subject=String(input.subject||"").trim().slice(0,80);
@@ -76,6 +86,10 @@ export async function createClassRoom(user: SessionUser, input: Record<string,un
   const invites=String(input.invites||"").split(/[\s,;]+/).map(item=>item.trim().toLowerCase()).filter(item=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
   for(const email of new Set(invites))await db.prepare("INSERT OR IGNORE INTO live_class_invites(id,room_id,email,created_at) VALUES(?,?,?,?)").bind(createId(),id,email,now).run();
   return {id,code};
+}
+
+export async function recordClassJoin(userId:string,roomId:string,joinedAt=Math.floor(Date.now()/1000)){
+  await getDatabase().prepare(`INSERT INTO live_class_join_history(user_id,room_id,first_joined_at,last_joined_at) VALUES(?,?,?,?) ON CONFLICT(user_id,room_id) DO UPDATE SET last_joined_at=excluded.last_joined_at`).bind(userId,roomId,joinedAt,joinedAt).run();
 }
 
 export async function classAccess(room: ClassRoom, user: SessionUser | null, startTrial=false) {

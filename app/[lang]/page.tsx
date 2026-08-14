@@ -203,7 +203,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section className="lingo-section lingo-social-section">
         <div className="lingo-heading"><p className="section-kicker">{t.socialKicker}</p><h2>{t.socialTitle}</h2></div>
         <div className="lingo-social-grid">{t.social.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
-        <Link className="primary-button" href={`/${lang}/classrooms`}>{lang === "zh" ? "进入课堂" : "Enter Classes"} →</Link>
+        <Link className="primary-button" href={`/${lang}/classrooms`}>{lang === "zh" ? "进入课堂" : "Enter Classes"} →</Link><Link className="secondary-button" href={`/${lang}/classrooms?view=mine`}>{lang === "zh" ? "我的课程" : "My Classes"} →</Link>
       </section>
 
       <section className="lingo-section lingo-plan-section">
