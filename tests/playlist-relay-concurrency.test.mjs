@@ -10,6 +10,9 @@ test("leaving waits for server cleanup and abandoned relay state self-recovers",
   assert.match(client,/const leave=useCallback\(async\(\)=>\{await disconnect\(true\)/);
   assert.match(client,/navigator\.sendBeacon/);
   assert.match(client,/participants\.subscribe\(ids,\["audio","video"\]\)/);
+  assert.match(client,/setViewMode\.call\(client\.participants,"MANUAL"\)/);
+  assert.match(client,/return <video ref=\{ref\} autoPlay playsInline hidden\/>/);
+  assert.match(client,/playlistEnabled&&!playlistRelay\?<PlaylistViewer/);
   assert.match(media,/SELECT 1 AS active FROM live_class_media_presence/);
   assert.match(media,/updated_at<=\?/);
   assert.match(media,/streamActive=false/);
