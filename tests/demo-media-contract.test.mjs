@@ -29,9 +29,15 @@ test("demo playlists use real credited open music and video", async () => {
 
 test("permanent demo classes remain enterable", async () => {
   const schedule = await read("drizzle/0112_permanent_demo_schedule.sql");
+  const normalize = await read("drizzle/0115_normalize_official_demo_classes.sql");
   assert.match(schedule, /starts_at = 4070908800/);
   assert.match(schedule, /duration_minutes = 480/);
   for (const code of ["889101", "889102", "889103"]) {
     assert.match(schedule, new RegExp(code));
+    assert.match(normalize, new RegExp(code));
   }
+  assert.match(normalize, /Group Call Demo Class/);
+  assert.match(normalize, /Webinar Demo Class/);
+  assert.match(normalize, /Livestream Demo Class/);
+  assert.match(normalize, /WHERE code = '889101'/);
 });
