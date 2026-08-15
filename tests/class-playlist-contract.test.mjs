@@ -1,36 +1,34 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-const read=(path)=>fs.readFileSync(new URL("../"+path,import.meta.url),"utf8");
-test("live classroom playlist is independently stored, published, and guest-relayed",()=>{
-  const migrations=fs.readdirSync(new URL("../drizzle",import.meta.url)).filter(name=>name.endsWith("_classroom_playlists.sql"));
-  assert.equal(migrations.length,1);
-  const migration=read("drizzle/"+migrations[0]),route=read("app/api/classrooms/[code]/playlist/route.ts"),join=read("app/api/classrooms/[code]/join/route.ts"),media=read("app/api/classrooms/[code]/media/route.ts"),room=read("components/live-class-room-client.tsx"),broadcaster=read("components/LiveClassPlaylistBroadcaster.tsx"),config=read("wrangler.cloudflare.jsonc");
-  assert.match(migration,/REFERENCES live_class_rooms/);
-  assert.match(route,/env\.CLASS_FILES/);
-  assert.match(route,/classes\/\$\{room\.id\}\/playlist/);
-  assert.match(config,/"binding":\s*"CLASS_FILES"/);
-  assert.match(room,/LiveClassPlaylistManager/);
-  assert.match(room,/LiveClassPlaylistBroadcaster/);
-  assert.match(room,/__smartClassStopPlaylist/);
-  assert.match(room,/audioTrack\?\.stop\(\)/);
-  assert.match(room,/videoTrack\?\.stop\(\)/);
-  assert.match(room,/previous\.stop\(\)/);
-  assert.match(room,/CAMERA_TRACK_MISSING/);
-  assert.match(room,/asPlaylistRelay/);
-  assert.match(room,/const mayRelay=active&&!mediaState\?\.streamActive&&\(manager\|\|officialDemo\)/);
-  assert.match(room,/playlistRelay:asPlaylistRelay/);
-  assert.match(room,/playlistPublished/);
-  assert.match(room,/client\.livestream\.start\(\)/);
-  assert.match(join,/playlistRelay/);
-  assert.match(join,/role:playlistRelay\?"viewer":role/);
-  assert.match(media,/body\.playlistRelay/);
-  assert.match(media,/UPDATE live_class_rooms SET stream_active=0/);
-  const styles=read("app/[lang]/classrooms/classrooms.css");
-  assert.match(styles,/class-video-grid\[data-count="1"\]/);
-  assert.match(styles,/max-width:none/);
-  assert.match(broadcaster,/captureStream\(30\)/);
-  assert.match(broadcaster,/meeting\.self\.enableAudio\(audioTrack\)/);
-  assert.match(broadcaster,/meeting\.self\.enableVideo\(videoTrack\)/);
-  assert.match(broadcaster,/\(index \+ 1\) % items\.length/);
+
+const read = (path) => fs.readFileSync(new URL("../" + path, import.meta.url), "utf8");
+
+test("live classroom waiting playlists stay local to each visitor", () => {
+  const route = read("app/api/classrooms/[code]/playlist/route.ts");
+  const room = read("components/live-class-room-client.tsx");
+  const player = read("components/ClassPlaylistPlayer.tsx");
+  const manager = read("components/LiveClassPlaylistManager.tsx");
+  const config = read("wrangler.cloudflare.jsonc");
+
+  assert.match(route, /env\.CLASS_FILES/);
+  assert.match(config, /"binding":\s*"CLASS_FILES"/);
+  assert.match(room, /ClassPlaylistPlayer/);
+  assert.match(room, /enabled=\{playlistEnabled&&!humanStreamActive\}/);
+  assert.doesNotMatch(room, /const mayRelay=active/);
+  assert.match(room, /if\(joined\|\|playlistEnabled\)/);
+  assert.match(player, /data-local-playlist="true"/);
+  assert.match(player, /loopsRef\.current >= 5/);
+  assert.match(player, /window\.setTimeout\(finish, 300000\)/);
+  assert.match(player, /playlist-waiting-toggle/);
+  assert.doesNotMatch(player, /RealtimeKit|WebRTC|livestream|captureStream|enableVideo|enableAudio/);
+  assert.doesNotMatch(manager, /Group calls do not use a playlist|小组通话模式不使用播放列表/);
+  assert.match(manager, /each visitor plays|每位访客/);
+
+  const stylePath = [
+    "app/[lang]/classrooms/classrooms.css",
+    "app/[lang]/classrooms/classrooms.css",
+  ].find((path) => fs.existsSync(new URL("../" + path, import.meta.url)));
+  assert.ok(stylePath);
+  assert.match(read(stylePath), /class-local-playlist/);
 });

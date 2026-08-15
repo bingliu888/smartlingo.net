@@ -240,8 +240,8 @@ export function LiveClassPlaylistManager({
       setMessage(
         !enabled
           ? zh
-            ? "自动播放已启用。教师进入课堂后会循环播流。"
-            : "Auto-play enabled. The playlist will loop when the teacher enters the room."
+            ? "候场播放已启用。每位访客将在本机独立循环播放。"
+            : "Waiting playback enabled. Each visitor plays it independently on this device."
           : zh
             ? "自动播放已关闭。"
             : "Auto-play disabled.",
@@ -252,17 +252,6 @@ export function LiveClassPlaylistManager({
           (zh ? "无法更新播放设置。" : "Could not update playback settings."),
       );
   }
-  if (realtimeMode === "group_call")
-    return (
-      <section className="class-playlist-manager">
-        <h2>{zh ? "课堂播放列表" : "Class playlist"}</h2>
-        <p>
-          {zh
-            ? "小组通话模式不使用播放列表。网络研讨会或直播模式可以上传自动播流视频。"
-            : "Group calls do not use a playlist. Upload auto-broadcast videos in Webinar or Live streaming mode."}
-        </p>
-      </section>
-    );
   return (
     <section className="class-playlist-manager">
       <header>
@@ -273,8 +262,8 @@ export function LiveClassPlaylistManager({
           <h2>{zh ? "课堂播放列表" : "Class playlist"}</h2>
           <p>
             {zh
-              ? "仅支持从文件或相册上传的视频。启用后，教师进入课堂会作为课堂直播循环播放。"
-              : "Upload videos from Files or Photos. When enabled, the playlist loops as live classroom media while the teacher is in the room."}
+              ? "仅支持从文件或相册上传的视频。启用后，每位访客会在教师开播前于本机独立循环播放。"
+              : "Upload videos from Files or Photos. When enabled, each visitor plays the waiting playlist locally until the teacher starts streaming."}
           </p>
           <label className="playlist-enable">
             <input
