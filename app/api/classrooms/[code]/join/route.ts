@@ -6,6 +6,7 @@ export async function POST(request:Request,{params}:{params:Promise<{code:string
   try{
     const{code}=await params,room=await classByCode(code);if(!room)return Response.json({error:"Class not found"},{status:404});
     const body=await request.json().catch(()=>({}))as{displayName?:string;identity?:string;publish?:boolean;start?:boolean;playlistRelay?:boolean;screenShareCompanion?:boolean},user=await getSessionUser(request),access=await classAccess(room,user,true);if(!access.allowed)return Response.json({error:"Private class invitation required"},{status:403});
+    body.playlistRelay=false;
     const db=getDatabase(),now=Math.floor(Date.now()/1000),identity=String(body.identity||crypto.randomUUID()).slice(0,100),displayName=String(body.displayName||user?.displayName||"Guest").trim().slice(0,80)||"Guest";
     const officialDemo=["889101","889102","889103"].includes(room.code),playlistRequested=Boolean(body.playlistRelay&&(access.manager||officialDemo)&&await db.prepare("SELECT 1 FROM class_playlist_state s JOIN class_playlist_items i ON i.room_id=s.room_id WHERE s.room_id=? AND s.active=1 LIMIT 1").bind(room.id).first());
     let playlistRelay=false;
