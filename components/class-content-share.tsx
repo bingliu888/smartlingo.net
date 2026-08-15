@@ -6,6 +6,7 @@ type Locale = "en" | "zh";
 
 type Source = "file" | "web" | "whiteboard";
 type Material = { id: string; fileName: string; contentType: string; fileSizeBytes: number };
+type DocumentKind = "pdf" | "docx" | "xlsx" | "pptx" | null;
 
 export function ContentShareStudio({
   code,
@@ -33,6 +34,9 @@ export function ContentShareStudio({
   const [fileName, setFileName] = useState("");
   const [textLines, setTextLines] = useState<string[]>([]);
   const [textOffset, setTextOffset] = useState(0);
+  const [documentKind, setDocumentKind] = useState<DocumentKind>(null);
+  const [pdfPages, setPdfPages] = useState(0);
+  const [pdfPage, setPdfPage] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const drawingRef = useRef(false);
@@ -40,6 +44,7 @@ export function ContentShareStudio({
   const colorRef = useRef("#20d9aa");
   const frameTimerRef = useRef<number | null>(null);
   const framePulseRef = useRef(false);
+  const pdfDocumentRef = useRef<any>(null);
 
   const drawBase = useCallback((title?: string) => {
     const canvas = canvasRef.current;
@@ -67,6 +72,10 @@ export function ContentShareStudio({
       context.fillText(line.slice(0, 96), 48, 140 + index * 31),
     );
   }, [drawBase]);
+  const drawPdfPage = useCallback(async (pageNumber: number, title: string) => {
+    const pdf = pdfDocumentRef.current, canvas = canvasRef.current, context = canvas?.getContext("2d"); if (!pdf || !canvas || !context) return;
+    setBusy(true); try { const page = await pdf.getPage(pageNumber), raw = page.getViewport({ scale: 1 }), viewport = page.getViewport({ scale: Math.min((canvas.width - 56) / raw.width, (canvas.height - 94) / raw.height) }); const pageCanvas = window.document.createElement("canvas"); pageCanvas.width = Math.ceil(viewport.width); pageCanvas.height = Math.ceil(viewport.height); const pageContext = pageCanvas.getContext("2d"); if (!pageContext) throw new Error("PDF_CANVAS"); await page.render({ canvasContext: pageContext, viewport }).promise; drawBase(title); context.drawImage(pageCanvas, (canvas.width - pageCanvas.width) / 2, 104); setPdfPage(pageNumber); } catch { setMessage(zh ? "无法渲染 PDF 页面。" : "Could not render this PDF page."); } finally { setBusy(false); }
+  }, [drawBase, zh]);
 
   useEffect(() => {
     if (open === "whiteboard") drawBase(zh ? "共享白板" : "Shared whiteboard");
@@ -87,6 +96,7 @@ export function ContentShareStudio({
 
   async function openStudio(source: Source) {
     setMessage("");
+    setDocumentKind(null); setPdfPages(0); setPdfPage(1); pdfDocumentRef.current = null;
     setOpen(source);
     if (source === "file") await loadMaterials();
   }
@@ -95,6 +105,7 @@ export function ContentShareStudio({
     setBusy(true);
     setMessage("");
     setFileName(name);
+    setDocumentKind(null); setPdfPages(0); setPdfPage(1); pdfDocumentRef.current = null;
     try {
       if (blob.type.startsWith("image/")) {
         const bitmap = await createImageBitmap(blob);
@@ -115,12 +126,25 @@ export function ContentShareStudio({
         setTextLines(lines);
         setTextOffset(0);
         drawText(lines, 0, name);
+      } else if (blob.type === "application/pdf" || /\.pdf$/i.test(name)) {
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs") as any; const pdf = await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), disableWorker: true }).promise;
+        if (!pdf) throw new Error("PDF_LOAD_FAILED"); pdfDocumentRef.current = pdf; setDocumentKind("pdf"); setPdfPages(pdf.numPages); await drawPdfPage(1, name);
+      } else if (/\.docx$/i.test(name) || /wordprocessingml\.document/i.test(blob.type)) {
+        const mammoth = await import("mammoth") as any; const result = await mammoth.extractRawText({ arrayBuffer: await blob.arrayBuffer() }); const lines = result.value.replace(/\r/g, "").split("\n");
+        if (!lines.some((line: string) => line.trim())) throw new Error("EMPTY_DOCUMENT"); setDocumentKind("docx"); setTextLines(lines); setTextOffset(0); drawText(lines, 0, name);
+      } else if (/\.(?:xlsx|xls)$/i.test(name) || /spreadsheetml|ms-excel/i.test(blob.type)) {
+        const xlsx = await import("xlsx") as any; const workbook = xlsx.read(await blob.arrayBuffer(), { type: "array" }); const sheetName = workbook.SheetNames[0]; const lines = (sheetName ? xlsx.utils.sheet_to_csv(workbook.Sheets[sheetName], { blankrows: false }) : "").replace(/\r/g, "").split("\n");
+        if (!lines.some((line: string) => line.trim())) throw new Error("EMPTY_DOCUMENT"); setDocumentKind("xlsx"); setTextLines(lines); setTextOffset(0); drawText(lines, 0, `${name}${sheetName ? ` · ${sheetName}` : ""}`);
+      } else if (/\.pptx$/i.test(name) || /presentationml/i.test(blob.type)) {
+        const JSZip = (await import("jszip")).default, archive = await JSZip.loadAsync(await blob.arrayBuffer()); const paths = Object.keys(archive.files).filter((path) => /^ppt\/slides\/slide\d+\.xml$/i.test(path)).sort((left, right) => left.localeCompare(right, undefined, { numeric: true })); const lines: string[] = [];
+        for (const [index, path] of paths.entries()) { const xml = await archive.file(path)?.async("text"); const texts = xml ? [...xml.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)].map((match) => match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")) : []; lines.push(`— ${zh ? "幻灯片" : "Slide"} ${index + 1} —`, ...(texts.length ? texts : [zh ? "（无文字）" : "(No text)"])); }
+        if (!lines.length) throw new Error("EMPTY_DOCUMENT"); setDocumentKind("pptx"); setTextLines(lines); setTextOffset(0); drawText(lines, 0, name);
       } else {
         throw new Error("UNSUPPORTED_FILE");
       }
     } catch (error) {
       setMessage(error instanceof Error && error.message === "UNSUPPORTED_FILE"
-        ? (zh ? "当前可直接流式共享图片、照片和文本文件；PDF、演示文稿或其他文件请使用桌面屏幕共享。" : "Images, photos, and text files can stream directly. Use desktop screen sharing for PDFs, presentations, or other files.")
+        ? (zh ? "可直接共享照片、PDF、DOCX、XLSX、PPTX 和文本文件。音频或视频文件请加入播放列表后共享播放。" : "Photos, PDFs, DOCX, XLSX, PPTX, and text files can be shared directly. Add audio or video files to the playlist for synchronized playback.")
         : (zh ? "无法读取这个文件。" : "Could not read this file."));
     } finally {
       setBusy(false);
@@ -215,8 +239,9 @@ export function ContentShareStudio({
     {icon("whiteboard", zh ? "共享白板" : "Share whiteboard", <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m8 14 7-7 2 2-7 7H8zM9 18v3M15 18v3"/></svg>)}
     {open && typeof document !== "undefined" ? createPortal(<div className="content-share-backdrop" role="dialog" aria-modal="true" aria-label={zh ? "共享内容" : "Share content"}><section className="content-share-studio"><header><div><small>{zh ? "共享内容" : "CONTENT SHARE"}</small><h2>{open === "file" ? (zh ? "文件或照片" : "File or photo") : open === "web" ? (zh ? "网页" : "Web page") : (zh ? "白板" : "Whiteboard")}</h2></div><button type="button" onClick={() => setOpen(null)} aria-label={zh ? "关闭" : "Close"}>×</button></header>
       {open === "web" ? <div className="content-share-web"><label><span>{zh ? "网页地址" : "Web address"}</span><input type="url" value={webUrl} onChange={(event) => setWebUrl(event.target.value)} placeholder="https://"/></label><p>{zh ? "外部网站可能禁止嵌入。桌面端可先打开网页，再使用屏幕共享选择该窗口或标签页。" : "External sites may block embedding. On desktop, open the page and then share that window or tab."}</p><button type="button" onClick={() => { try { const url = new URL(webUrl); window.open(url.toString(), "_blank", "noopener,noreferrer"); setMessage(zh ? "网页已打开；返回会议后点击屏幕共享。" : "Page opened. Return to the meeting and choose screen share."); } catch { setMessage(zh ? "请输入有效的网址。" : "Enter a valid URL."); } }}>{zh ? "打开网页" : "Open page"}</button></div> : <>
-        {open === "file" ? <div className="content-share-file-picker"><input ref={inputRef} type="file" accept="image/*,text/plain,.md,.csv,.json" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void renderBlob(file, file.name); }}/><button type="button" onClick={() => inputRef.current?.click()}>{zh ? "选择照片或文件" : "Choose photo or file"}</button>{materials.length ? <div><strong>{zh ? "房间附件" : "Room attachments"}</strong>{materials.map((item) => <button type="button" key={item.id} onClick={() => void selectMaterial(item)}>{item.fileName}</button>)}</div> : null}</div> : <div className="whiteboard-tools"><label>{zh ? "画笔颜色" : "Pen color"}<input type="color" defaultValue="#20d9aa" onChange={(event) => { colorRef.current = event.target.value; }}/></label><button type="button" onClick={() => drawBase(zh ? "共享白板" : "Shared whiteboard")}>{zh ? "清空" : "Clear"}</button></div>}
+        {open === "file" ? <div className="content-share-file-picker"><input ref={inputRef} type="file" accept="image/*,text/plain,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.pptx" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void renderBlob(file, file.name); }}/><button type="button" onClick={() => inputRef.current?.click()}>{zh ? "选择照片或文件" : "Choose photo or file"}</button>{materials.length ? <div><strong>{zh ? "房间附件" : "Room attachments"}</strong>{materials.map((item) => <button type="button" key={item.id} onClick={() => void selectMaterial(item)}>{item.fileName}</button>)}</div> : null}</div> : <div className="whiteboard-tools"><label>{zh ? "画笔颜色" : "Pen color"}<input type="color" defaultValue="#20d9aa" onChange={(event) => { colorRef.current = event.target.value; }}/></label><button type="button" onClick={() => drawBase(zh ? "共享白板" : "Shared whiteboard")}>{zh ? "清空" : "Clear"}</button></div>}
         <canvas ref={canvasRef} width={1280} height={720} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} onWheel={(event) => { if (!textLines.length) return; event.preventDefault(); setTextOffset((value) => Math.max(0, Math.min(Math.max(0, textLines.length - 24), value + (event.deltaY > 0 ? 3 : -3)))); }}/>
+        {open === "file" && documentKind === "pdf" && pdfPages ? <div className="content-scroll-controls"><button type="button" disabled={busy || pdfPage <= 1} onClick={() => void drawPdfPage(pdfPage - 1, fileName)}>←</button><span>{pdfPage} / {pdfPages}</span><button type="button" disabled={busy || pdfPage >= pdfPages} onClick={() => void drawPdfPage(pdfPage + 1, fileName)}>→</button></div> : null}
         {open === "file" && textLines.length ? <div className="content-scroll-controls"><button type="button" onClick={() => setTextOffset((value) => Math.max(0, value - 6))}>↑</button><span>{textOffset + 1} / {textLines.length}</span><button type="button" onClick={() => setTextOffset((value) => Math.min(Math.max(0, textLines.length - 24), value + 6))}>↓</button></div> : null}
         <footer>{activeSource === open ? <button type="button" className="danger" onClick={() => void onStop()}>{zh ? "停止共享" : "Stop sharing"}</button> : <button type="button" disabled={busy || (open === "file" && !fileName)} onClick={() => void publish(open)}>{busy ? (zh ? "正在连接…" : "Connecting…") : (zh ? "开始共享" : "Start sharing")}</button>}</footer>
       </>}
