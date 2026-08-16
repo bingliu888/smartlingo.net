@@ -20,3 +20,12 @@ test("the final manager publisher closes streaming even while viewers remain", (
   assert.match(client, /user\.identity !== identity && !user\.isManager/);
   assert.match(media, /isManager: Boolean\(userId && managerIds\.has\(userId\)\)/);
 });
+
+test("webinar promotion keeps the viewer connected until device permission is ready", () => {
+  const permission = client.indexOf("navigator.mediaDevices.getUserMedia({");
+  const reconnect = client.indexOf("await connect({", permission);
+  assert.ok(permission >= 0);
+  assert.ok(reconnect > permission);
+  assert.match(client, /preparedAudioTrack:\s*permission\?\.getAudioTracks\(\)\[0\]/);
+  assert.match(client, /preparedVideoTrack:\s*permission\?\.getVideoTracks\(\)\[0\]/);
+});

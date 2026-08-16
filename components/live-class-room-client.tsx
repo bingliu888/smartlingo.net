@@ -739,7 +739,7 @@ function ConnectedRoom({
         (nextMic || nextCamera)
       ) {
         const kind = nextCamera ? "video" : "audio";
-        await fetch(`/api/classrooms/${room.code}/media`, {
+        const response = await fetch(`/api/classrooms/${room.code}/media`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -748,6 +748,8 @@ function ConnectedRoom({
             mediaKind: kind,
           }),
         });
+        const result = (await response.json().catch(() => ({}))) as { error?: string };
+        if (!response.ok) throw new Error(result.error || "Unable to request the stage");
         setError("Hand raised. Waiting for the host to approve.");
         await load();
         return;
@@ -1074,11 +1076,15 @@ export function LiveClassRoomClient({
       publish = false,
       nextMic = false,
       nextCamera = false,
+      preparedAudioTrack,
+      preparedVideoTrack,
     }: {
       start?: boolean;
       publish?: boolean;
       nextMic?: boolean;
       nextCamera?: boolean;
+      preparedAudioTrack?: MediaStreamTrack;
+      preparedVideoTrack?: MediaStreamTrack;
     } = {}) => {
       if (joining.current) return;
       joining.current = true;
@@ -1128,13 +1134,15 @@ export function LiveClassRoomClient({
             ((await approval.json().catch(() => ({}))) as { error?: string })
               .error || "Media permission denied",
           );
-        if (nextMic) await next?.self.enableAudio();
-        if (nextCamera) await next?.self.enableVideo();
+        if (nextMic) await next?.self.enableAudio(preparedAudioTrack);
+        if (nextCamera) await next?.self.enableVideo(preparedVideoTrack);
         setRole(data.role || "viewer");
         setMic(nextMic);
         setCamera(nextCamera);
         setJoined(true);
       } catch (issue) {
+        preparedAudioTrack?.stop();
+        preparedVideoTrack?.stop();
         setError(
           issue instanceof Error
             ? issue.message
@@ -1151,7 +1159,9 @@ export function LiveClassRoomClient({
     async (nextMic: boolean, nextCamera: boolean) => {
       if (nextMic || nextCamera) setLocalPublisherStarted(true);
       if (role !== "viewer" || nextMic || nextCamera) {
-        await connect({ publish: true, nextMic, nextCamera });
+        let permission: MediaStream | null = null;
+        if (role === "viewer" && (nextMic || nextCamera)) permission = await navigator.mediaDevices.getUserMedia({ audio: nextMic, video: nextCamera });
+        await connect({ publish: true, nextMic, nextCamera, preparedAudioTrack: permission?.getAudioTracks()[0], preparedVideoTrack: permission?.getVideoTracks()[0] });
         return;
       }
       const response = await fetch(`/api/classrooms/${room.code}/media`, {

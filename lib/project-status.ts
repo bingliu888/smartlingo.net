@@ -32,9 +32,9 @@ export type ProjectReport = {
 };
 
 export const projectStats = {
-  editionDate: "2026-08-03",
-  today: 20,
-  total: 100,
+  editionDate: "2026-08-16",
+  today: 1,
+  total: 101,
 };
 
 // A release appears here only after the same revision has verifiable Sites,
@@ -80,6 +80,7 @@ export const projectBuilds: ProjectBuild[] = [
     },
     commit: "a4389a5edfa6d73cb5471d2c564625d041054a2b",
   },
+  { version: 6, date: "2026-08-16", title: { zh: "实时课堂媒体隔离发布 · 2026-08-16 10:33 PDT", en: "Realtime classroom media isolation release · 2026-08-16 10:33 PDT" }, completed: { zh: ["确认旧候场广播运行时代码已删除", "候场播放列表保持访客本地播放", "修复举手失败误报与设备权限切换时序", "保留幽灵主播、无人观看自动离开及无效网址回首页保护"], en: ["Confirmed obsolete waiting-playlist broadcast runtime code is removed", "Kept waiting playlists in visitor-local playback", "Fixed false hand-raise success and device-permission connection timing", "Preserved ghost-publisher, no-viewer auto-leave, and unknown-URL home redirect safeguards"] }, testable: { zh: ["运行实时课堂契约测试", "构建并验证生产版本"], en: ["Run realtime classroom contract tests", "Build and verify the production bundle"] }, commit: "smartlingo-realtime-media-isolation-2026-08-16" },
 ];
 
 export const projectTasks: ProjectTask[] = smartLingoRoadmapTasks;
@@ -271,6 +272,7 @@ export const projectReports: ProjectReport[] = [
       en: "Continue with the five August 4 tasks: versioned vocabulary records, multimodal flashcards, the spaced-review engine, mistake and focus lists, and vocabulary-learning quality tests.",
     },
   },
+  { date: "2026-08-16", title: { zh: "实时课堂媒体隔离发布 · 2026-08-16 10:33 PDT", en: "Realtime classroom media isolation release · 2026-08-16 10:33 PDT" }, beta: { zh: "查看发布说明", en: "View release notes" }, completed: 4, summary: { zh: "实时课堂候场播放、发布连接与安全保护完成统一。", en: "Realtime classroom waiting playback, publisher connection timing, and safeguards are aligned." }, validation: { zh: ["相关契约测试通过", "生产构建通过"], en: ["Relevant contract tests pass", "Production build passes"] }, rollback: { zh: "可回滚至上一 Cloudflare Worker 版本。", en: "Rollback to the previous Cloudflare Worker release." }, next: { zh: "按需在站点专用任务中执行真实用户测试。", en: "Run real-user testing in the dedicated site task when requested." } },
 ];
 
 export const taskById = (id: string) => projectTasks.find(task => task.id === id);
