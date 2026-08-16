@@ -7,5 +7,5 @@ import { useEffect } from "react";
 // their explicit HTTP errors; this only handles browser page navigation.
 export default function NotFound() {
   useEffect(() => { window.location.replace("/"); }, []);
-  return <main style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}><a href="/">正在返回首页… / Returning home…</a></main>;
+  return <main style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}><a href="/">Returning home…</a></main>;
 }
