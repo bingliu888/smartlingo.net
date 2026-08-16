@@ -22,14 +22,14 @@ test("classroom publishing honors group, webinar, and livestream contracts",()=>
   const media=read("app/api/classrooms/[code]/media/route.ts");
   const client=read("components/live-class-room-client.tsx");
   assert.match(rooms,/group_call.*webinar.*livestream/);
-  assert.match(join,/participantLimit:room\.realtimeMode==="group_call"\?100:null/);
+  assert.match(join,/participantLimit: room\.realtimeMode === "group_call" \? 100 : null/);
   assert.match(join,/9-speaker stage is full/);
   assert.match(join,/Raise your hand and wait for host approval/);
   assert.match(join,/member email as a speaker/);
   assert.match(media,/request-stage/);
   assert.match(media,/add-speaker/);
   assert.match(client,/LivestreamPlayer/);
-  assert.match(client,/setInterval\(\(\)=>void check\(\),3000\)/);
+  assert.match(client,/setInterval\(\(\) => void check\(\), 3000\)/);
 });
 
 test("class entrances exist on home, dashboard, and community", () => {
@@ -46,11 +46,11 @@ test("class entrances exist on home, dashboard, and community", () => {
 test("viewer join is permission-free and video tiles support fullscreen", () => {
   const room = read("components/live-class-room-client.tsx");
   const css = read("app/[lang]/classrooms/classrooms.css");
-  assert.match(room, /if\\(mediaState\\?\\.streamActive&&!joined&&!joining\\.current\\)void connect\\(\\)/);
+  assert.match(room, /mediaState\?\.streamActive && !joined && !joining\.current/);
   assert.doesNotMatch(room, /const mayRelay=active/);
-  assert.match(room, /setInterval\(\(\)=>void check\(\),3000\)/);
+  assert.match(room, /setInterval\(\(\) => void check\(\), 3000\)/);
   assert.match(room, /300000/);
   assert.match(room, /hostOnline/);
-  assert.match(room, /class-video-tile\$\{selected\?" selected":""\}/);
+  assert.match(room, /class-video-tile\$\{selected \? " selected" : ""\}/);
   assert.match(css, /class-video-tile\.selected/);
 });

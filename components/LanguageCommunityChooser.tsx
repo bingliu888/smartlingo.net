@@ -35,6 +35,7 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
   const [context, setContext] = useState<ClassContext | null>(null);
   const [signedOut, setSignedOut] = useState(false);
   const [joining, setJoining] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<SmartLingoCommunityLanguage | null>(null);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -68,11 +69,11 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
       ?? source.find(item => item.targetLanguage === code);
   }
 
-  async function openCommunity(code: SmartLingoCommunityLanguage) {
+  async function openTraining(code: SmartLingoCommunityLanguage, training: "vocabulary" | "dialogue") {
     rememberTargetLanguage(code);
     const joined = classFor(code, classes.joined);
     if (joined) {
-      window.location.assign(`/${lang}/classes/${encodeURIComponent(joined.id)}`);
+      window.location.assign(`/${lang}/classes/${encodeURIComponent(joined.id)}/learn/session?training=${training}`);
       return;
     }
 
@@ -112,16 +113,15 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
       <div className="lingo-community-grid" data-layout-fill="home-language-grid">
         {SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
           const joined = classFor(language.code, classes.joined);
-          const available = classFor(language.code, classes.available);
           const classCount = classes.all.filter(item => item.targetLanguage === language.code).length;
           const isBusy = joining === language.code;
           return (
             <button
               id={`language-community-${language.code}`}
-              className={joined ? "joined" : ""}
+              className={`${joined ? "joined" : ""}${selectedLanguage === language.code ? " selected" : ""}`.trim()}
               key={language.code}
               type="button"
-              onClick={() => openCommunity(language.code)}
+              onClick={() => { rememberTargetLanguage(language.code); setSelectedLanguage(language.code); setNotice(""); }}
               aria-busy={isBusy}
               data-layout-track={`home-language-${language.code}`}
             >
@@ -133,15 +133,37 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
               </span>
               <span className="lingo-community-state">{isBusy
                 ? (zh ? "正在加入…" : "Joining…")
-                : joined
-                  ? (zh ? "已加入 · 进入" : "Joined · Enter")
-                  : available?.canJoin
-                    ? (zh ? "加入社区" : "Join community")
-                    : (zh ? "查看班级" : "View classes")}</span>
+                : selectedLanguage === language.code
+                  ? (zh ? "已选择 · 请选择训练" : "Selected · Choose training")
+                  : joined
+                    ? (zh ? "已加入 · 选择训练" : "Joined · Choose training")
+                    : (zh ? "选择语言" : "Select language")}</span>
             </button>
           );
         })}
       </div>
+      {selectedLanguage ? (() => {
+        const language = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === selectedLanguage)!;
+        return <section className="lingo-training-menu" aria-labelledby="lingo-training-title" data-layout-fill="home-training-menu">
+          <header>
+            <p className="section-kicker">{zh ? "选择训练方式" : "CHOOSE YOUR TRAINING"}</p>
+            <h2 id="lingo-training-title">{language.nativeName} · {zh ? language.nameZh : language.nameEn}</h2>
+            <p>{zh ? "先建立可用词汇，再把它带进真实对话；两种训练共享同一条语言学习路径。" : "Build usable vocabulary, then carry it into real conversation. Both modes belong to the same language path."}</p>
+          </header>
+          <div>
+            <button type="button" onClick={() => openTraining(selectedLanguage, "vocabulary")}>
+              <span aria-hidden="true">Aa</span><strong>Vocab</strong>
+              <small>{zh ? "词卡 · 主动回忆 · 连续掌握" : "Flashcards · active recall · mastery streaks"}</small>
+              <b>{zh ? "开始词汇训练" : "Start vocab"} →</b>
+            </button>
+            <button type="button" onClick={() => openTraining(selectedLanguage, "dialogue")}>
+              <span aria-hidden="true">◉</span><strong>Speaking</strong>
+              <small>{zh ? "人工智能导师 · 情景对话 · 即时反馈" : "AI tutor · role-play · instant feedback"}</small>
+              <b>{zh ? "开始口语训练" : "Start speaking"} →</b>
+            </button>
+          </div>
+        </section>;
+      })() : null}
       {notice && <p className="lingo-community-notice" aria-live="polite">{notice}</p>}
     </section>
   );

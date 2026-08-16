@@ -14,9 +14,9 @@ test("live classroom waiting playlists stay local to each visitor", () => {
   assert.match(route, /env\.CLASS_FILES/);
   assert.match(config, /"binding":\s*"CLASS_FILES"/);
   assert.match(room, /ClassPlaylistPlayer/);
-  assert.match(room, /enabled=\{playlistEnabled&&!humanStreamActive\}/);
+  assert.match(room, /enabled=\{playlistEnabled && !humanStreamActive\}/);
   assert.doesNotMatch(room, /const mayRelay=active/);
-  assert.match(room, /if\(joined\|\|playlistEnabled\)/);
+  assert.match(room, /if \(joined \|\| playlistEnabled\)/);
   assert.match(player, /data-local-playlist="true"/);
   assert.match(player, /loopsRef\.current >= 5/);
   assert.match(player, /window\.setTimeout\(finish, 300000\)/);

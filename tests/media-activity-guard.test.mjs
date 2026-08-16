@@ -9,8 +9,8 @@ test("ghost publishers get a 15-second confirmation after three idle minutes", a
   assert.match(guard, /MEDIA_IDLE_CONFIRM_SECONDS = 15/);
   assert.match(guard, /createMediaStreamSource/);
   assert.match(guard, /getImageData/);
-  assert.match(room, /active=\{joined&&localPublisherStarted&&!playlistRelay\}/);
-  assert.match(room, /onExpire=\{\(\)=>void leave\(\)\}/);
+  assert.match(room, /active=\{joined && localPublisherStarted\}/);
+  assert.match(room, /onExpire=\{\(\) => void leave\(\)\}/);
 });
 
 test("unknown pages recover to the home page", async () => {

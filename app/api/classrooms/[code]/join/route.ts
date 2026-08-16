@@ -1,29 +1,197 @@
-import { classAccess, classByCode, recordClassJoin } from "@/lib/live-classrooms";
+import {
+  classAccess,
+  classByCode,
+  recordClassJoin,
+} from "@/lib/live-classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
-import { createClassParticipant, createClassProviderRoom } from "@/lib/live-class-realtimekit";
+import {
+  createClassParticipant,
+  createClassProviderRoom,
+} from "@/lib/live-class-realtimekit";
 
-export async function POST(request:Request,{params}:{params:Promise<{code:string}>}){
-  try{
-    const{code}=await params,room=await classByCode(code);if(!room)return Response.json({error:"Class not found"},{status:404});
-    const body=await request.json().catch(()=>({}))as{displayName?:string;identity?:string;publish?:boolean;start?:boolean;playlistRelay?:boolean;screenShareCompanion?:boolean},user=await getSessionUser(request),access=await classAccess(room,user,true);if(!access.allowed)return Response.json({error:"Private class invitation required"},{status:403});
-    body.playlistRelay=false;
-    const db=getDatabase(),now=Math.floor(Date.now()/1000),identity=String(body.identity||crypto.randomUUID()).slice(0,100),displayName=String(body.displayName||user?.displayName||"Guest").trim().slice(0,80)||"Guest";
-    const officialDemo=["889101","889102","889103"].includes(room.code),playlistRequested=Boolean(body.playlistRelay&&(access.manager||officialDemo)&&await db.prepare("SELECT 1 FROM class_playlist_state s JOIN class_playlist_items i ON i.room_id=s.room_id WHERE s.room_id=? AND s.active=1 LIMIT 1").bind(room.id).first());
-    let playlistRelay=false;
-    let providerMeetingId=room.providerMeetingId;
-    if(playlistRequested&&!room.streamActive){const claim=await db.prepare("INSERT INTO class_playlist_relay_claims(room_id,claimed_at) SELECT ?,? WHERE EXISTS(SELECT 1 FROM live_class_rooms WHERE id=? AND stream_active=0) ON CONFLICT(room_id) DO UPDATE SET claimed_at=excluded.claimed_at WHERE class_playlist_relay_claims.claimed_at<? AND EXISTS(SELECT 1 FROM live_class_rooms WHERE id=? AND stream_active=0)").bind(room.id,now,room.id,now-45,room.id).run();playlistRelay=Number(claim.meta?.changes||0)>0;if(playlistRelay){try{const created=await createClassProviderRoom(room.title);providerMeetingId=created.id;await db.prepare("UPDATE live_class_rooms SET provider_meeting_id=?,stream_active=1,mute_all=0,updated_at=? WHERE id=? AND stream_active=0").bind(providerMeetingId,now,room.id).run();}catch(error){await db.prepare("DELETE FROM class_playlist_relay_claims WHERE room_id=?").bind(room.id).run();await db.prepare("UPDATE live_class_rooms SET stream_active=0,provider_meeting_id=NULL,updated_at=? WHERE id=?").bind(now,room.id).run();throw error;}}}
-    if(!providerMeetingId&&playlistRequested&&!playlistRelay){for(let attempt=0;attempt<20&&!providerMeetingId;attempt+=1){await new Promise(resolve=>setTimeout(resolve,150));const current=await db.prepare("SELECT provider_meeting_id AS providerMeetingId FROM live_class_rooms WHERE id=?").bind(room.id).first<{providerMeetingId:string|null}>();providerMeetingId=current?.providerMeetingId||null;}}
-    if((body.start||body.publish||playlistRelay)&&(access.manager||playlistRelay)&&!room.streamActive&&!providerMeetingId){const created=await createClassProviderRoom(room.title);providerMeetingId=created.id;await db.prepare("UPDATE live_class_rooms SET provider_meeting_id=?,stream_active=1,mute_all=0,updated_at=? WHERE id=?").bind(providerMeetingId,now,room.id).run();}
-    if(!providerMeetingId||(!room.streamActive&&!body.start&&!body.publish&&!playlistRelay&&!playlistRequested))return Response.json({error:"STREAM_NOT_ACTIVE"},{status:409});if(body.screenShareCompanion){if(room.streamingMode!=="audio"||room.realtimeMode==="livestream")return Response.json({error:"Screen-share companion is unavailable"},{status:409});const participant=await createClassParticipant(providerMeetingId,"screenshare-"+(user?.id||crypto.randomUUID()),displayName+" · Screen",access.manager?"host":"viewer",room.realtimeMode);return Response.json({authToken:participant.token,role:access.manager?"host":"viewer",meetingId:providerMeetingId,screenShareCompanion:true});}
-    const active=await db.prepare("SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND last_seen_at>?").bind(room.id,now-45).first<{count:number}>();
-    if(room.realtimeMode==="group_call"&&Number(active?.count||0)>=100&&!await db.prepare("SELECT 1 FROM live_class_media_presence WHERE room_id=? AND identity=? AND active=1").bind(room.id,identity).first())return Response.json({error:"Too many people in streaming",errorCode:"STREAMING_ROOM_FULL",participantLimit:100},{status:409});
-    let role:"viewer"|"member"|"host"="viewer",canPublish=access.manager||playlistRelay||room.classType==="private"||room.realtimeMode==="group_call";
-    if(room.realtimeMode==="webinar"&&!canPublish){canPublish=Boolean(await db.prepare("SELECT 1 FROM live_class_stage_requests WHERE room_id=? AND identity=? AND status='approved' LIMIT 1").bind(room.id,identity).first());}
-    if(room.realtimeMode==="livestream"&&!canPublish&&user){canPublish=Boolean(await db.prepare("SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?) LIMIT 1").bind(room.id,user.email).first());}
-    if(access.manager||playlistRelay)role="host";else if(body.publish){if(!canPublish)return Response.json({error:room.realtimeMode==="webinar"?"Raise your hand and wait for host approval":"The host has not added this member email as a speaker",errorCode:"STAGE_ACCESS_REQUIRED"},{status:403});if(room.realtimeMode!=="group_call"){const count=await db.prepare("SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>?").bind(room.id,now-45).first<{count:number}>();if(Number(count?.count||0)>=9)return Response.json({error:"The 9-speaker stage is full",errorCode:"STAGE_FULL"},{status:409});}role="member";}
-    const participant=await createClassParticipant(providerMeetingId,identity,displayName,role,room.realtimeMode);
-    await db.prepare(`INSERT INTO live_class_media_presence(id,room_id,identity,user_id,display_name,is_member,mic_on,camera_on,active,last_seen_at) VALUES(?,?,?,?,?,?,0,0,1,?) ON CONFLICT(room_id,identity) DO UPDATE SET user_id=excluded.user_id,display_name=excluded.display_name,is_member=excluded.is_member,active=1,last_seen_at=excluded.last_seen_at`).bind(createId(),room.id,identity,user?.id||null,displayName,user?1:0,now).run();
-    if(user)await recordClassJoin(user.id,room.id,now);
-    return Response.json({authToken:participant.token,identity,role:playlistRelay?"viewer":role,playlistRelay,meetingId:providerMeetingId,streamingMode:room.streamingMode,realtimeMode:room.realtimeMode,manager:access.manager,canPublish:playlistRelay?false:canPublish,participantLimit:room.realtimeMode==="group_call"?100:null,publisherLimit:room.realtimeMode==="group_call"?null:9});
-  }catch(issue){const message=issue instanceof Error?issue.message:"REALTIMEKIT_REQUEST_FAILED";console.error("Classroom RealtimeKit join failed",message);return Response.json({error:message},{status:502});}
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ code: string }> },
+) {
+  try {
+    const { code } = await params,
+      room = await classByCode(code);
+    if (!room)
+      return Response.json({ error: "Class not found" }, { status: 404 });
+    const body = (await request.json().catch(() => ({}))) as {
+        displayName?: string;
+        identity?: string;
+        publish?: boolean;
+        start?: boolean;
+        screenShareCompanion?: boolean;
+      },
+      user = await getSessionUser(request),
+      access = await classAccess(room, user, true);
+    if (!access.allowed)
+      return Response.json(
+        { error: "Private class invitation required" },
+        { status: 403 },
+      );
+    const db = getDatabase(),
+      now = Math.floor(Date.now() / 1000),
+      identity = String(body.identity || crypto.randomUUID()).slice(0, 100),
+      displayName =
+        String(body.displayName || user?.displayName || "Guest")
+          .trim()
+          .slice(0, 80) || "Guest";
+    let providerMeetingId = room.providerMeetingId;
+    if (
+      (body.start || body.publish) &&
+      access.manager &&
+      !room.streamActive &&
+      !providerMeetingId
+    ) {
+      const created = await createClassProviderRoom(room.title);
+      providerMeetingId = created.id;
+      await db
+        .prepare(
+          "UPDATE live_class_rooms SET provider_meeting_id=?,stream_active=1,mute_all=0,updated_at=? WHERE id=?",
+        )
+        .bind(providerMeetingId, now, room.id)
+        .run();
+    }
+    if (!providerMeetingId || (!room.streamActive && !body.start && !body.publish))
+      return Response.json({ error: "STREAM_NOT_ACTIVE" }, { status: 409 });
+    if (body.screenShareCompanion) {
+      if (room.streamingMode !== "audio" || room.realtimeMode === "livestream")
+        return Response.json(
+          { error: "Screen-share companion is unavailable" },
+          { status: 409 },
+        );
+      const participant = await createClassParticipant(
+        providerMeetingId,
+        "screenshare-" + (user?.id || crypto.randomUUID()),
+        displayName + " · Screen",
+        access.manager ? "host" : "viewer",
+        room.realtimeMode,
+      );
+      return Response.json({
+        authToken: participant.token,
+        role: access.manager ? "host" : "viewer",
+        meetingId: providerMeetingId,
+        screenShareCompanion: true,
+      });
+    }
+    const active = await db
+      .prepare(
+        "SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND last_seen_at>?",
+      )
+      .bind(room.id, now - 45)
+      .first<{ count: number }>();
+    if (
+      room.realtimeMode === "group_call" &&
+      Number(active?.count || 0) >= 100 &&
+      !(await db
+        .prepare(
+          "SELECT 1 FROM live_class_media_presence WHERE room_id=? AND identity=? AND active=1",
+        )
+        .bind(room.id, identity)
+        .first())
+    )
+      return Response.json(
+        {
+          error: "Too many people in streaming",
+          errorCode: "STREAMING_ROOM_FULL",
+          participantLimit: 100,
+        },
+        { status: 409 },
+      );
+    let role: "viewer" | "member" | "host" = "viewer",
+      canPublish =
+        access.manager ||
+        room.classType === "private" ||
+        room.realtimeMode === "group_call";
+    if (room.realtimeMode === "webinar" && !canPublish) {
+      canPublish = Boolean(
+        await db
+          .prepare(
+            "SELECT 1 FROM live_class_stage_requests WHERE room_id=? AND identity=? AND status='approved' LIMIT 1",
+          )
+          .bind(room.id, identity)
+          .first(),
+      );
+    }
+    if (room.realtimeMode === "livestream" && !canPublish && user) {
+      canPublish = Boolean(
+        await db
+          .prepare(
+            "SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?) LIMIT 1",
+          )
+          .bind(room.id, user.email)
+          .first(),
+      );
+    }
+    if (access.manager) role = "host";
+    else if (body.publish) {
+      if (!canPublish)
+        return Response.json(
+          {
+            error:
+              room.realtimeMode === "webinar"
+                ? "Raise your hand and wait for host approval"
+                : "The host has not added this member email as a speaker",
+            errorCode: "STAGE_ACCESS_REQUIRED",
+          },
+          { status: 403 },
+        );
+      if (room.realtimeMode !== "group_call") {
+        const count = await db
+          .prepare(
+            "SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>?",
+          )
+          .bind(room.id, now - 45)
+          .first<{ count: number }>();
+        if (Number(count?.count || 0) >= 9)
+          return Response.json(
+            { error: "The 9-speaker stage is full", errorCode: "STAGE_FULL" },
+            { status: 409 },
+          );
+      }
+      role = "member";
+    }
+    const participant = await createClassParticipant(
+      providerMeetingId,
+      identity,
+      displayName,
+      role,
+      room.realtimeMode,
+    );
+    await db
+      .prepare(
+        `INSERT INTO live_class_media_presence(id,room_id,identity,user_id,display_name,is_member,mic_on,camera_on,active,last_seen_at) VALUES(?,?,?,?,?,?,0,0,1,?) ON CONFLICT(room_id,identity) DO UPDATE SET user_id=excluded.user_id,display_name=excluded.display_name,is_member=excluded.is_member,active=1,last_seen_at=excluded.last_seen_at`,
+      )
+      .bind(
+        createId(),
+        room.id,
+        identity,
+        user?.id || null,
+        displayName,
+        user ? 1 : 0,
+        now,
+      )
+      .run();
+    if (user) await recordClassJoin(user.id, room.id, now);
+    return Response.json({
+      authToken: participant.token,
+      identity,
+      role,
+      meetingId: providerMeetingId,
+      streamingMode: room.streamingMode,
+      realtimeMode: room.realtimeMode,
+      manager: access.manager,
+      canPublish,
+      participantLimit: room.realtimeMode === "group_call" ? 100 : null,
+      publisherLimit: room.realtimeMode === "group_call" ? null : 9,
+    });
+  } catch (issue) {
+    const message =
+      issue instanceof Error ? issue.message : "REALTIMEKIT_REQUEST_FAILED";
+    console.error("Classroom RealtimeKit join failed", message);
+    return Response.json({ error: message }, { status: 502 });
+  }
 }

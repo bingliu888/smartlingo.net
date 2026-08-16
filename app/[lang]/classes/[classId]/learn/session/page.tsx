@@ -12,10 +12,13 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function LearningSessionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; classId: string }>;
+  searchParams: Promise<{ training?: string }>;
 }) {
   const { lang, classId } = await params;
+  const query = await searchParams;
   if (lang !== "zh" && lang !== "en") notFound();
   if (!await requestUser()) {
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session`;
@@ -28,6 +31,7 @@ export default async function LearningSessionPage({
         lang={lang}
         classId={classId}
         view="session"
+        initialSkill={query.training === "dialogue" ? "dialogue" : query.training === "vocabulary" ? "vocabulary" : undefined}
       />
       <SiteFooter lang={lang} />
     </main>

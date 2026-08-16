@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Locale = "en" | "zh";
 
 type Source = "file" | "web" | "whiteboard";
+type WhiteboardTool = "pen" | "line" | "circle" | "rectangle" | "text";
 type Material = { id: string; fileName: string; contentType: string; fileSizeBytes: number };
 type DocumentKind = "pdf" | "docx" | "xlsx" | "pptx" | null;
 
@@ -37,10 +38,14 @@ export function ContentShareStudio({
   const [documentKind, setDocumentKind] = useState<DocumentKind>(null);
   const [pdfPages, setPdfPages] = useState(0);
   const [pdfPage, setPdfPage] = useState(1);
+  const [whiteboardTool, setWhiteboardTool] = useState<WhiteboardTool>("pen");
+  const [textEditor, setTextEditor] = useState<{ x: number; y: number; left: number; top: number; value: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const startPointRef = useRef<{ x: number; y: number } | null>(null);
+  const shapeSnapshotRef = useRef<ImageData | null>(null);
   const colorRef = useRef("#20d9aa");
   const frameTimerRef = useRef<number | null>(null);
   const framePulseRef = useRef(false);
@@ -207,18 +212,59 @@ export function ContentShareStudio({
     const rect = canvas.getBoundingClientRect();
     return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
   }
+  function drawShape(context: CanvasRenderingContext2D, tool: WhiteboardTool, start: { x: number; y: number }, end: { x: number; y: number }) {
+    context.strokeStyle = colorRef.current;
+    context.lineWidth = 6;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.beginPath();
+    if (tool === "line") {
+      context.moveTo(start.x, start.y);
+      context.lineTo(end.x, end.y);
+    } else if (tool === "rectangle") {
+      context.rect(start.x, start.y, end.x - start.x, end.y - start.y);
+    } else if (tool === "circle") {
+      const radiusX = Math.abs(end.x - start.x) / 2;
+      const radiusY = Math.abs(end.y - start.y) / 2;
+      context.ellipse((start.x + end.x) / 2, (start.y + end.y) / 2, Math.max(1, radiusX), Math.max(1, radiusY), 0, 0, Math.PI * 2);
+    }
+    context.stroke();
+  }
   function startDraw(event: React.PointerEvent<HTMLCanvasElement>) {
     if (open !== "whiteboard") return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    const next = point(event);
+    if (whiteboardTool === "text") {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setTextEditor({ x: next.x, y: next.y, left: (event.clientX - rect.left) / rect.width * 100, top: (event.clientY - rect.top) / rect.height * 100, value: "" });
+      return;
+    }
     drawingRef.current = true;
-    lastPointRef.current = point(event);
+    lastPointRef.current = next;
+    startPointRef.current = next;
+    if (whiteboardTool !== "pen") {
+      const context = canvasRef.current?.getContext("2d");
+      if (context) shapeSnapshotRef.current = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+    }
+    try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* Safari trackpad fallback */ }
   }
   function moveDraw(event: React.PointerEvent<HTMLCanvasElement>) {
     if (!drawingRef.current || open !== "whiteboard") return;
+    event.preventDefault();
     const next = point(event);
     const previous = lastPointRef.current || next;
     const context = canvasRef.current?.getContext("2d");
     if (!context) return;
+    if (whiteboardTool !== "pen") {
+      const start = startPointRef.current;
+      const snapshot = shapeSnapshotRef.current;
+      if (start && snapshot) {
+        context.putImageData(snapshot, 0, 0);
+        drawShape(context, whiteboardTool, start, next);
+      }
+      lastPointRef.current = next;
+      return;
+    }
     context.strokeStyle = colorRef.current;
     context.lineWidth = 6;
     context.lineCap = "round";
@@ -228,7 +274,25 @@ export function ContentShareStudio({
     context.stroke();
     lastPointRef.current = next;
   }
-  function stopDraw() { drawingRef.current = false; lastPointRef.current = null; }
+  function stopDraw(event?: React.PointerEvent<HTMLCanvasElement>) {
+    if (event && drawingRef.current && whiteboardTool !== "pen") moveDraw(event);
+    drawingRef.current = false;
+    lastPointRef.current = null;
+    startPointRef.current = null;
+    shapeSnapshotRef.current = null;
+  }
+  function commitText() {
+    if (!textEditor) return;
+    const value = textEditor.value.trim();
+    const context = canvasRef.current?.getContext("2d");
+    if (value && context) {
+      context.fillStyle = colorRef.current;
+      context.font = "600 34px system-ui";
+      context.textBaseline = "top";
+      context.fillText(value.slice(0, 80), textEditor.x, textEditor.y);
+    }
+    setTextEditor(null);
+  }
 
   if (!enabled) return null;
   const icon = (source: Source, label: string, path: React.ReactNode) =>
@@ -239,8 +303,8 @@ export function ContentShareStudio({
     {icon("whiteboard", zh ? "共享白板" : "Share whiteboard", <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m8 14 7-7 2 2-7 7H8zM9 18v3M15 18v3"/></svg>)}
     {open && typeof document !== "undefined" ? createPortal(<div className="content-share-backdrop" role="dialog" aria-modal="true" aria-label={zh ? "共享内容" : "Share content"}><section className="content-share-studio"><header><div><small>{zh ? "共享内容" : "CONTENT SHARE"}</small><h2>{open === "file" ? (zh ? "文件或照片" : "File or photo") : open === "web" ? (zh ? "网页" : "Web page") : (zh ? "白板" : "Whiteboard")}</h2></div><button type="button" onClick={() => setOpen(null)} aria-label={zh ? "关闭" : "Close"}>×</button></header>
       {open === "web" ? <div className="content-share-web"><label><span>{zh ? "网页地址" : "Web address"}</span><input type="url" value={webUrl} onChange={(event) => setWebUrl(event.target.value)} placeholder="https://"/></label><p>{zh ? "外部网站可能禁止嵌入。桌面端可先打开网页，再使用屏幕共享选择该窗口或标签页。" : "External sites may block embedding. On desktop, open the page and then share that window or tab."}</p><button type="button" onClick={() => { try { const url = new URL(webUrl); window.open(url.toString(), "_blank", "noopener,noreferrer"); setMessage(zh ? "网页已打开；返回会议后点击屏幕共享。" : "Page opened. Return to the meeting and choose screen share."); } catch { setMessage(zh ? "请输入有效的网址。" : "Enter a valid URL."); } }}>{zh ? "打开网页" : "Open page"}</button></div> : <>
-        {open === "file" ? <div className="content-share-file-picker"><input ref={inputRef} type="file" accept="image/*,text/plain,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.pptx" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void renderBlob(file, file.name); }}/><button type="button" onClick={() => inputRef.current?.click()}>{zh ? "选择照片或文件" : "Choose photo or file"}</button>{materials.length ? <div><strong>{zh ? "房间附件" : "Room attachments"}</strong>{materials.map((item) => <button type="button" key={item.id} onClick={() => void selectMaterial(item)}>{item.fileName}</button>)}</div> : null}</div> : <div className="whiteboard-tools"><label>{zh ? "画笔颜色" : "Pen color"}<input type="color" defaultValue="#20d9aa" onChange={(event) => { colorRef.current = event.target.value; }}/></label><button type="button" onClick={() => drawBase(zh ? "共享白板" : "Shared whiteboard")}>{zh ? "清空" : "Clear"}</button></div>}
-        <canvas ref={canvasRef} width={1280} height={720} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} onWheel={(event) => { if (!textLines.length) return; event.preventDefault(); setTextOffset((value) => Math.max(0, Math.min(Math.max(0, textLines.length - 24), value + (event.deltaY > 0 ? 3 : -3)))); }}/>
+        {open === "file" ? <div className="content-share-file-picker"><input ref={inputRef} type="file" accept="image/*,text/plain,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.pptx" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void renderBlob(file, file.name); }}/><button type="button" onClick={() => inputRef.current?.click()}>{zh ? "选择照片或文件" : "Choose photo or file"}</button>{materials.length ? <div><strong>{zh ? "房间附件" : "Room attachments"}</strong>{materials.map((item) => <button type="button" key={item.id} onClick={() => void selectMaterial(item)}>{item.fileName}</button>)}</div> : null}</div> : <div className="whiteboard-tools" role="toolbar" aria-label={zh ? "白板工具" : "Whiteboard tools"}><label>{zh ? "颜色" : "Color"}<input type="color" defaultValue="#20d9aa" onChange={(event) => { colorRef.current = event.target.value; }}/></label>{([ ["pen", zh ? "自由笔" : "Pen", <path key="pen" d="m4 20 4.5-1 10-10-3.5-3.5-10 10zM13.5 7l3.5 3.5"/>], ["line", zh ? "直线" : "Line", <path key="line" d="M5 19 19 5"/>], ["circle", zh ? "圆形" : "Circle", <circle key="circle" cx="12" cy="12" r="8"/>], ["rectangle", zh ? "矩形" : "Rectangle", <rect key="rectangle" x="4" y="6" width="16" height="12" rx="1"/>], ["text", zh ? "文字" : "Text", <path key="text" d="M5 5h14M12 5v14M8 19h8"/>] ] as [WhiteboardTool, string, React.ReactNode][]).map(([tool, label, path]) => <button key={tool} className={`whiteboard-tool${whiteboardTool === tool ? " is-active" : ""}`} type="button" onClick={() => { setWhiteboardTool(tool); setTextEditor(null); }} aria-label={label} title={label}><svg viewBox="0 0 24 24" aria-hidden="true">{path}</svg></button>)}<button type="button" onClick={() => { drawBase(zh ? "共享白板" : "Shared whiteboard"); setTextEditor(null); }}>{zh ? "清空" : "Clear"}</button></div>}
+        <div className="content-share-canvas-wrap"><canvas ref={canvasRef} width={1280} height={720} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} onLostPointerCapture={stopDraw} onWheel={(event) => { if (!textLines.length) return; event.preventDefault(); setTextOffset((value) => Math.max(0, Math.min(Math.max(0, textLines.length - 24), value + (event.deltaY > 0 ? 3 : -3)))); }}/>{open === "whiteboard" && textEditor ? <input className="whiteboard-text-input" style={{ left: `${textEditor.left}%`, top: `${textEditor.top}%` }} value={textEditor.value} autoFocus onChange={(event) => setTextEditor({ ...textEditor, value: event.target.value })} onBlur={commitText} onKeyDown={(event) => { if (event.key === "Enter") commitText(); else if (event.key === "Escape") setTextEditor(null); }} aria-label={zh ? "输入白板文字" : "Whiteboard text"} placeholder={zh ? "输入文字" : "Type text"}/> : null}</div>
         {open === "file" && documentKind === "pdf" && pdfPages ? <div className="content-scroll-controls"><button type="button" disabled={busy || pdfPage <= 1} onClick={() => void drawPdfPage(pdfPage - 1, fileName)}>←</button><span>{pdfPage} / {pdfPages}</span><button type="button" disabled={busy || pdfPage >= pdfPages} onClick={() => void drawPdfPage(pdfPage + 1, fileName)}>→</button></div> : null}
         {open === "file" && textLines.length ? <div className="content-scroll-controls"><button type="button" onClick={() => setTextOffset((value) => Math.max(0, value - 6))}>↑</button><span>{textOffset + 1} / {textLines.length}</span><button type="button" onClick={() => setTextOffset((value) => Math.min(Math.max(0, textLines.length - 24), value + 6))}>↓</button></div> : null}
         <footer>{activeSource === open ? <button type="button" className="danger" onClick={() => void onStop()}>{zh ? "停止共享" : "Stop sharing"}</button> : <button type="button" disabled={busy || (open === "file" && !fileName)} onClick={() => void publish(open)}>{busy ? (zh ? "正在连接…" : "Connecting…") : (zh ? "开始共享" : "Start sharing")}</button>}</footer>
