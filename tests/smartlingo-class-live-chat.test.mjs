@@ -1,21 +1,25 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("each active class exposes one durable Live Chat room with online presence", () => {
-  const route = read("app/api/classes/[classId]/live-chat/route.ts");
-  const panel = read("components/ClassLiveChatPanel.tsx");
+test("each course exposes one private Webinar A/V classroom", () => {
+  const route = read("app/api/classes/[classId]/classroom/route.ts");
+  const panel = read("components/CourseClassroomTile.tsx");
+  const helper = read("lib/course-classrooms.ts");
+  const migration = read("drizzle/0118_course_classrooms.sql");
   const classStudio = read("components/ClassStudio.tsx");
   const learningPage = read("app/[lang]/classes/[classId]/learn/page.tsx");
-  assert.match(route, /class-chat:\$\{classId\}/);
-  assert.match(route, /status = 'active'/);
-  assert.match(route, /onlineCount/);
-  assert.match(panel, />Live Chat</);
-  assert.match(panel, /online/);
-  assert.match(classStudio, /ClassLiveChatPanel/);
-  assert.match(learningPage, /ClassLiveChatPanel/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS smartlingo_course_classrooms/);
+  assert.match(helper, /'private','video','webinar'/);
+  assert.match(route, /membershipStatus !== "active"/);
+  assert.match(panel, /CourseClassroomTile/);
+  assert.match(panel, /Classroom/);
+  assert.match(classStudio, /CourseClassroomTile/);
+  assert.match(learningPage, /CourseClassroomTile/);
+  assert.equal(existsSync(new URL("../components/ClassLiveChatPanel.tsx", import.meta.url)), false);
+  assert.equal(existsSync(new URL("../app/api/classes/[classId]/live-chat/route.ts", import.meta.url)), false);
 });
 
 test("class audio remains beside text chat and standard calls auto-end after one solo or silent minute", () => {
@@ -35,9 +39,10 @@ test("class audio remains beside text chat and standard calls auto-end after one
   assert.match(dock, /text chat stays available/);
 });
 
-test("class membership, not arbitrary chat invites, controls room access", () => {
-  const classRoute = read("app/api/classes/[classId]/live-chat/route.ts");
-  const messagesRoute = read("app/api/messages/route.ts");
-  assert.match(classRoute, /Active class membership required/);
-  assert.match(messagesRoute, /Class membership controls this room/);
+test("course membership controls the embedded classroom", () => {
+  const classRoute = read("app/api/classes/[classId]/classroom/route.ts");
+  const roomAccess = read("lib/live-classrooms.ts");
+  assert.match(classRoute, /Course membership required/);
+  assert.match(roomAccess, /smartlingo_course_classrooms/);
+  assert.match(roomAccess, /m\.status='active'/);
 });

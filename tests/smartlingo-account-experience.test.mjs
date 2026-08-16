@@ -7,9 +7,10 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 test("signed-in account menu uses the shared six-entry member navigation", async () => {
   const source = await read("components/HeaderAccount.tsx");
 
-  for (const label of ["用户面板", "个人资料", "我的课程", "消息", "社区", "课程"]) assert.match(source, new RegExp(label));
-  for (const label of ["Dashboard", "Profile", "My Classes", "Messages", "Community", "Courses"]) assert.match(source, new RegExp(label));
-  assert.match(source, /\/classrooms\?view=mine/);
+  for (const label of ["用户面板", "个人资料", "我的课程", "消息", "社区", "学习路径"]) assert.match(source, new RegExp(label));
+  for (const label of ["Dashboard", "Profile", "My Courses", "Messages", "Community", "Learning paths"]) assert.match(source, new RegExp(label));
+  assert.match(source, /\/classes\?mine=1/);
+  assert.doesNotMatch(source, /\/classrooms\?view=mine|My Classrooms/);
   assert.doesNotMatch(source, /职业档案|人才库|Gold|Platinum|黄金|铂金|BACC|license/i);
 });
 

@@ -32,15 +32,16 @@ test("classroom publishing honors group, webinar, and livestream contracts",()=>
   assert.match(client,/setInterval\(\(\) => void check\(\), 3000\)/);
 });
 
-test("class entrances exist on home, dashboard, and community", () => {
+test("course entrances replace the standalone classroom directory", () => {
   const home = read("app/[lang]/page.tsx");
   const dashboard = read("app/[lang]/dashboard/page.tsx") + read("app/[lang]/dashboard/page.tsx");
   const community = read("app/[lang]/community/page.tsx");
-  assert.match(home, /classrooms/);
-  assert.match(dashboard, /classrooms/);
+  assert.match(home, /classes/);
+  assert.doesNotMatch(home, /classrooms\?view=mine/);
+  assert.match(dashboard, /classes\?mine=1/);
   assert.match(dashboard, /isAdmin/);
-  assert.match(dashboard, /classrooms/);
-  assert.match(community, /classrooms/);
+  assert.doesNotMatch(dashboard, /classrooms\?view=mine/);
+  assert.match(community, /\/classes/);
 });
 
 test("viewer join is permission-free and video tiles support fullscreen", () => {

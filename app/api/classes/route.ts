@@ -1,6 +1,7 @@
 import { createId, getDatabase, getSessionUser } from "../../../lib/auth";
 import { cleanMultiline, cleanText } from "../../../lib/smartlingo-classes";
 import { quoteClassOrder } from "../../../lib/smartlingo-commerce";
+import { ensureCourseClassroom } from "../../../lib/course-classrooms";
 
 export const dynamic = "force-dynamic";
 
@@ -243,6 +244,15 @@ export async function POST(request: Request) {
     (id, class_id, user_id, role, status, joined_at, updated_at)
     VALUES (?, ?, ?, 'owner', 'active', ?, ?)`)
     .bind(createId(), classId, user.id, now, now).run();
+  const classroom = await ensureCourseClassroom({
+    id: classId,
+    ownerUserId: user.id,
+    ownerEmail: user.email,
+    ownerName: user.displayName,
+    title,
+    summary,
+    targetLanguage: path.targetLanguage,
+  });
 
   return Response.json({
     id: classId,
@@ -255,5 +265,6 @@ export async function POST(request: Request) {
       hasPriorPaidOrderForLearnerAndClass: false,
     }),
     charged: false,
+    classroomCode: classroom?.code,
   }, { status: 201 });
 }

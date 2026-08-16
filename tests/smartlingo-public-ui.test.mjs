@@ -14,7 +14,7 @@ test("SmartLingo branding and bilingual navigation expose learning, classes, com
 
   assert.match(header, /Smart<em>Lingo<\/em>/);
   for (const path of ["programs", "classes", "community", "assistant"]) assert.match(header, new RegExp(`/${path}`));
-  for (const label of ["学习", "班级", "社区", "导师"]) assert.match(header, new RegExp(label));
+  for (const label of ["学习", "课程", "社区", "导师"]) assert.match(header, new RegExp(label));
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["programs", "classes", "community", "pricing", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
   assert.match(layout, /"smartlingo\.net"/);

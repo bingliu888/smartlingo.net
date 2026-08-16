@@ -33,6 +33,7 @@ type MediaUser = {
   isMember: number;
   micOn: number;
   cameraOn: number;
+  isManager: boolean;
 };
 type StageRequest = {
   identity: string;
@@ -1025,12 +1026,17 @@ export function LiveClassRoomClient({
     [playlistEnabled, setPlaylistEnabled] = useState(false),
     [hostOnline, setHostOnline] = useState(manager),
     [humanStreamActive, setHumanStreamActive] = useState(false),
+    [humanStreamSeen, setHumanStreamSeen] = useState(false),
+    [hasAudience, setHasAudience] = useState(true),
     joining = useRef(false),
     idleSince = useRef<number | null>(null);
   const disconnect = useCallback(
     async (report = true) => {
       const audioTrack = client?.self.audioTrack,
-        videoTrack = client?.self.videoTrack;
+        videoTrack = client?.self.videoTrack,
+        wasPublishing = Boolean(
+          client?.self.audioEnabled || client?.self.videoEnabled,
+        );
       try {
         await (window as PlaylistWindow).__smartClassStopPlaylist?.();
         await client?.self.disableScreenShare();
@@ -1040,7 +1046,7 @@ export function LiveClassRoomClient({
         videoTrack?.stop();
         if (
           room.realtimeMode === "livestream" &&
-          Boolean(client?.self.audioEnabled || client?.self.videoEnabled) &&
+          wasPublishing &&
           client?.livestream.state === "LIVESTREAMING"
         )
           await client.livestream.stop();
@@ -1203,6 +1209,11 @@ export function LiveClassRoomClient({
     return () => window.clearTimeout(idle);
   }, [connecting, joined, leave, playlistEnabled]);
   useEffect(() => {
+    if (!joined || room.realtimeMode === "livestream" || hasAudience) return;
+    const idle = window.setTimeout(leave, 60000);
+    return () => window.clearTimeout(idle);
+  }, [hasAudience, joined, leave, room.realtimeMode]);
+  useEffect(() => {
     let alive = true;
     const check = async () => {
       const [mediaResponse, playlistResponse] = await Promise.all([
@@ -1220,13 +1231,20 @@ export function LiveClassRoomClient({
       setPlaylistEnabled(active);
       if (mediaState) {
         setHostOnline(Boolean(mediaState.hostOnline) || manager);
-        setHumanStreamActive(
-          Boolean(
-            mediaState.users?.some((user) =>
-              Boolean(user.micOn || user.cameraOn),
-            ),
+        setHasAudience(
+          manager
+            ? mediaState.users.some(
+                (user) => user.identity !== identity && !user.isManager,
+              )
+            : mediaState.users.some((user) => user.identity !== identity),
+        );
+        const nextHumanStreamActive = Boolean(
+          mediaState.users?.some((user) =>
+            Boolean(user.micOn || user.cameraOn),
           ),
         );
+        setHumanStreamActive(nextHumanStreamActive);
+        if (nextHumanStreamActive) setHumanStreamSeen(true);
       }
       if (mediaState?.streamActive && !joined && !joining.current)
         void connect();
@@ -1249,7 +1267,7 @@ export function LiveClassRoomClient({
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [connect, disconnect, joined, manager, room.code]);
+  }, [connect, disconnect, identity, joined, manager, room.code]);
   useEffect(() => {
     if (!joined || manager || hostOnline) return;
     const timer = window.setTimeout(() => {
@@ -1290,7 +1308,7 @@ export function LiveClassRoomClient({
       code={room.code}
       locale={lang}
       apiBase="/api/classrooms"
-      enabled={playlistEnabled && !humanStreamActive}
+      enabled={playlistEnabled && !humanStreamActive && !humanStreamSeen}
     />
   );
   if (!joined || !client)

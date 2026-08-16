@@ -65,6 +65,17 @@ export async function GET(
     activeUsers = rawUsers.filter(
       (item) => item.identity !== "screenshare:" + room.id,
     ),
+    managerIds = new Set([
+      room.hostUserId,
+      ...(
+        (
+          await db
+            .prepare("SELECT user_id AS userId FROM live_class_cohosts WHERE room_id=?")
+            .bind(room.id)
+            .run<{ userId: string }>()
+        ).results || []
+      ).map((item) => item.userId),
+    ]),
     hostOnline = activeUsers.some((item) => item.userId === room.hostUserId);
   const requests =
     access.manager && room.realtimeMode === "webinar"
@@ -119,7 +130,10 @@ export async function GET(
     hostOnline,
     participantLimit: room.realtimeMode === "group_call" ? 100 : null,
     publisherLimit: room.realtimeMode === "group_call" ? null : 9,
-    users: activeUsers.map(({ userId: _, ...item }) => item),
+    users: activeUsers.map(({ userId, ...item }) => ({
+      ...item,
+      isManager: Boolean(userId && managerIds.has(userId)),
+    })),
     requests,
     speakers,
     screenShareActive,

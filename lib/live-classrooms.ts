@@ -1,5 +1,5 @@
-import { getDatabase, createId, getSessionUser, type SessionUser } from "@/lib/auth";
-import { isAdminUser, isTeacherUser, isBootstrapAdminEmail } from "@/lib/admin-access";
+import { getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
+import { isAdminUser } from "@/lib/admin-access";
 import { canManageClass, paidClassAccess } from "@/lib/class-managers";
 
 export type ClassType = "public" | "trial" | "private";
@@ -25,25 +25,6 @@ export async function classByCode(code: string) {
   return getDatabase().prepare(`${selection} WHERE code=? LIMIT 1`).bind(code).first<ClassRoom>();
 }
 
-export async function directoryClasses(view: "public" | "trial" | "private" | "mine" | "joined_public" | "joined_trial" | "joined_private", user: SessionUser | null) {
-  const db = getDatabase();
-  if (view === "mine") {
-    if (!user) return [];
-    if(await isAdminUser(user))return (await db.prepare(`${selection} WHERE r.status='active' ORDER BY r.updated_at DESC LIMIT 200`).run<ClassRoom>()).results||[];
-    return (await db.prepare(`${selection} LEFT JOIN live_class_cohosts c ON c.room_id=r.id WHERE (r.host_user_id=? OR c.user_id=?) AND r.status='active' GROUP BY r.id ORDER BY r.updated_at DESC LIMIT 100`).bind(user.id,user.id).run<ClassRoom>()).results || [];
-  }
-  if(view.startsWith("joined_")){
-    if(!user)return [];
-    const classType=view.slice(7) as ClassType;
-    return (await db.prepare(`${selection} JOIN live_class_join_history h ON h.room_id=r.id WHERE h.user_id=? AND r.class_type=? AND r.status='active' AND r.host_user_id<>? AND NOT EXISTS(SELECT 1 FROM live_class_cohosts c WHERE c.room_id=r.id AND c.user_id=?) ORDER BY h.last_joined_at DESC LIMIT 100`).bind(user.id,classType,user.id,user.id).run<ClassRoom>()).results||[];
-  }
-  if (view === "private") {
-    if (!user) return [];
-    return (await db.prepare(`${selection} JOIN live_class_invites i ON i.room_id=r.id WHERE r.class_type='private' AND r.status='active' AND (lower(i.email)=lower(?) OR r.host_user_id=?) ORDER BY r.updated_at DESC LIMIT 100`).bind(user.email,user.id).run<ClassRoom>()).results || [];
-  }
-  return (await db.prepare(`${selection} WHERE r.class_type=? AND r.status='active' ORDER BY r.starts_at,r.updated_at DESC LIMIT 100`).bind(view).run<ClassRoom>()).results || [];
-}
-
 export async function generateClassCode() {
   for (let attempt=0; attempt<30; attempt+=1) {
     const code=String(crypto.getRandomValues(new Uint32Array(1))[0]%1_000_000).padStart(6,"0");
@@ -61,33 +42,6 @@ export async function verifyClassPassword(value: string, hash: string | null) {
   return !hash || await hashPassword(value) === hash;
 }
 
-export async function createClassRoom(user: SessionUser, input: Record<string,unknown>) {
-  if (!await isTeacherUser(user)) throw new Error("TEACHER_REQUIRED");
-  if(!isBootstrapAdminEmail(user.email)){
-    const count=await getDatabase().prepare("SELECT COUNT(*) AS count FROM live_class_rooms WHERE host_user_id=? AND status='active'").bind(user.id).first<{count:number}>();
-    if(Number(count?.count||0)>=5)throw new Error("DIRECTOR_CLASS_LIMIT");
-  }
-  const title=String(input.title||"").trim().slice(0,120);
-  const description=String(input.description||"").trim().slice(0,2000);
-  const subject=String(input.subject||"").trim().slice(0,80);
-  const classType:ClassType=input.classType==="private"?"private":input.classType==="trial"?"trial":"public";
-  const streamingMode:StreamingMode=input.streamingMode==="audio"?"audio":"video";
-  const realtimeMode:RealtimeMode=input.realtimeMode==="webinar"?"webinar":input.realtimeMode==="livestream"?"livestream":"group_call";
-  const startsAt=Math.floor(new Date(String(input.startsAt||new Date().toISOString())).getTime()/1000);
-  const durationMinutes=Math.max(15,Math.min(480,Number(input.durationMinutes)||60));
-  const trialMinutes=classType==="trial"?7*24*60:0;
-  const tuitionCents=classType==="trial"?Math.max(0,Math.min(10_000_000,Math.round(Number(input.tuition||0)*100))):0;
-  const password=classType==="private"?"":String(input.password||"").trim();
-  if(title.length<3||!Number.isFinite(startsAt))throw new Error("INVALID_CLASS");
-  if(password&&(password.length<4||password.length>72))throw new Error("INVALID_PASSWORD");
-  const id=createId(),code=await generateClassCode(),now=Math.floor(Date.now()/1000),db=getDatabase();
-  await db.prepare(`INSERT INTO live_class_rooms(id,code,host_user_id,host_email,host_name,title,description,subject,class_type,streaming_mode,realtime_mode,starts_at,duration_minutes,trial_minutes,tuition_cents,password_hash,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,code,user.id,user.email,user.displayName,title,description,subject,classType,streamingMode,realtimeMode,startsAt,durationMinutes,trialMinutes,tuitionCents,password?await hashPassword(password):null,now,now).run();
-  const invites=String(input.invites||"").split(/[\s,;]+/).map(item=>item.trim().toLowerCase()).filter(item=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item));
-  for(const email of new Set(invites))await db.prepare("INSERT OR IGNORE INTO live_class_invites(id,room_id,email,created_at) VALUES(?,?,?,?)").bind(createId(),id,email,now).run();
-  return {id,code};
-}
-
 export async function recordClassJoin(userId:string,roomId:string,joinedAt=Math.floor(Date.now()/1000)){
   await getDatabase().prepare(`INSERT INTO live_class_join_history(user_id,room_id,first_joined_at,last_joined_at) VALUES(?,?,?,?) ON CONFLICT(user_id,room_id) DO UPDATE SET last_joined_at=excluded.last_joined_at`).bind(userId,roomId,joinedAt,joinedAt).run();
 }
@@ -99,6 +53,11 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
   if(room.classType!=="private")return {allowed:true,admin,host,manager};
   if(manager)return {allowed:true,admin,host,manager:true};
   if(!user)return {allowed:false,admin:false,host:false,manager:false};
+  const courseMember=await getDatabase().prepare(`SELECT cc.course_id FROM smartlingo_course_classrooms cc
+    JOIN smartlingo_language_classes c ON c.id=cc.course_id
+    LEFT JOIN smartlingo_language_class_members m ON m.class_id=c.id AND m.user_id=?
+    WHERE cc.room_id=? AND (c.owner_user_id=? OR m.status='active') LIMIT 1`).bind(user.id,room.id,user.id).first();
+  if(courseMember)return {allowed:true,admin:false,host,manager};
   const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND lower(email)=lower(?) LIMIT 1").bind(room.id,user.email).first();
   return {allowed:Boolean(invited),admin:false,host:false,manager:false};
 }
