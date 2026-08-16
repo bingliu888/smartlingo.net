@@ -14,6 +14,7 @@ if [[ ! -x "${vinext}" ]]; then
 fi
 
 echo "Running bounded vinext build..."
+node "${script_dir}/prepare-pdf-worker.mjs"
 node "${script_dir}/run-bounded.mjs" \
   "${SITES_BUILD_TIMEOUT:-3m}" \
   "${SITES_BUILD_KILL_AFTER:-10s}" \

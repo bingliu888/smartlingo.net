@@ -127,7 +127,7 @@ export function ContentShareStudio({
         setTextOffset(0);
         drawText(lines, 0, name);
       } else if (blob.type === "application/pdf" || /\.pdf$/i.test(name)) {
-        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs") as any; const pdf = await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), disableWorker: true }).promise;
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs") as any; pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"; const pdf = await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
         if (!pdf) throw new Error("PDF_LOAD_FAILED"); pdfDocumentRef.current = pdf; setDocumentKind("pdf"); setPdfPages(pdf.numPages); await drawPdfPage(1, name);
       } else if (/\.docx$/i.test(name) || /wordprocessingml\.document/i.test(blob.type)) {
         const mammoth = await import("mammoth") as any; const result = await mammoth.extractRawText({ arrayBuffer: await blob.arrayBuffer() }); const lines = result.value.replace(/\r/g, "").split("\n");
