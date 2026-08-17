@@ -95,7 +95,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Course-scoped crypto payment configuration
-          RELEASE_TITLE_ZH: 单门课程加密支付配置
-          RELEASE_NOTES: Add an administrator action to create the nine standard Ethereum, BSC, Polygon, Base and GLC payment rails|Use the public receiver wallet saved in the permanent administrator profile|Keep Beginner, Intermediate and Advanced prices fixed at $20, $100 and $300 across every language|Activate only the exact selected language course after verified card or crypto payment|Never promote a member-level subscription from a course payment; all accounts remain free to register
-          RELEASE_NOTES_ZH: 新增管理员操作，一键创建 Ethereum、BSC、Polygon、Base 与 GLC 共九项标准收款通道|使用永久管理员资料中保存的公开收款钱包|所有语言的初期、中级和高级课程价格固定为 20、100 和 300 美元|信用卡或加密付款验证后只启用所选语言的对应单门课程|课程付款不再提升会员级订阅，所有账户均可免费注册
+          RELEASE_TITLE: High-visibility course crypto payment action
+          RELEASE_TITLE_ZH: 高可见度课程加密付款入口
+          RELEASE_NOTES: Replace the low-contrast crypto payment link with a bright high-contrast button|Preserve keyboard focus, hover feedback and full-width touch behavior|Keep the button linked to the exact selected course crypto checkout
+          RELEASE_NOTES_ZH: 将低对比度加密付款链接改为明亮的高对比度按钮|保留键盘焦点、悬停反馈与全宽触控体验|继续把按钮严格链接到所选课程的加密结账页
