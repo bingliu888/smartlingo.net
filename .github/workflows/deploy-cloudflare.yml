@@ -75,9 +75,9 @@ jobs:
         run: |
           pricing="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/pricing)"
           grep -F 'Connect wallet' <<<"$pricing"
-          grep -F '$20' <<<"$pricing"
-          grep -F '$100' <<<"$pricing"
-          grep -F '$300' <<<"$pricing"
+          grep -F 'pricing/crypto?plan=basic' <<<"$pricing"
+          grep -F 'pricing/crypto?plan=intermediate' <<<"$pricing"
+          grep -F 'pricing/crypto?plan=advanced' <<<"$pricing"
           status="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/api/billing/status)"
           grep -F '"cryptoSettings"' <<<"$status"
           code="$(curl -sS -o /tmp/admin-crypto.json -w '%{http_code}' https://smartlingo.net/api/admin/crypto-settings)"
