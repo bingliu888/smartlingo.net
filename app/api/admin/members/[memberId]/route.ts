@@ -44,7 +44,3 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
   await db.batch(statements);
   return Response.json({ ok: true, action });
 }
-
-export async function DELETE() {
-  return Response.json({ error: "Member deletion is disabled; remove a specific role instead" }, { status: 405, headers: { Allow: "PATCH" } });
-}

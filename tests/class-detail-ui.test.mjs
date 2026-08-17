@@ -15,6 +15,7 @@ test("class detail uses the SmartClass entry experience", () => {
   assert.match(source, /navigator\.share/);
   assert.match(source, /shareImageHref/);
   assert.match(source, /\/share/);
+  assert.doesNotMatch(source, /ended=room\.startsAt|本次课程已结束|Class session ended|课堂内容永久保留/);
   assert.match(shareStudio, /toBlob/);
   assert.match(css, /\.class-entry-layout\{display:grid/);
   assert.match(css, /@media\(max-width:900px\).*class-entry-layout\{grid-template-columns:1fr\}/s);
