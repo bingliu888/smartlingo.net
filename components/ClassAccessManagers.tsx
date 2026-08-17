@@ -1,4 +1,40 @@
 "use client";
-import { useCallback,useEffect,useState } from "react";
-type Member={id:string;email:string;displayName:string};
-export function ClassAccessManagers({code,showSubscribers=false,zh=false}:{code:string;showSubscribers?:boolean;zh?:boolean}){const[panel,setPanel]=useState<"cohosts"|"subscribers"|null>(null),[members,setMembers]=useState<Member[]>([]),[email,setEmail]=useState(""),[message,setMessage]=useState("");const load=useCallback(async(kind:"cohosts"|"subscribers")=>{const response=await fetch(`/api/classrooms/${code}/${kind}`,{cache:"no-store"}),data=await response.json().catch(()=>({}))as{members?:Member[];error?:string};if(response.ok)setMembers(data.members||[]);else setMessage(data.error||"Unable to load members");},[code]);useEffect(()=>{if(panel)void load(panel)},[load,panel]);async function add(){if(!panel)return;setMessage("");const response=await fetch(`/api/classrooms/${code}/${panel}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email})}),data=await response.json().catch(()=>({}))as{error?:string};if(response.ok){setEmail("");await load(panel)}else setMessage(data.error||"Unable to add member");}async function remove(id:string){if(!panel||!window.confirm(zh?"确认删除该成员？":"Remove this member?"))return;const response=await fetch(`/api/classrooms/${code}/${panel}?userId=${encodeURIComponent(id)}`,{method:"DELETE"});if(response.ok)await load(panel);}return <><button onClick={()=>setPanel("cohosts")}>{zh?"联合教师":"Co-teachers"}</button>{showSubscribers&&<button onClick={()=>setPanel("subscribers")}>{zh?"订阅成员":"Subscribers"}</button>}{panel&&<div className="class-manager-overlay" onClick={()=>setPanel(null)}><section className="class-manager-dialog" onClick={event=>event.stopPropagation()}><header><div><small>{panel==="cohosts"?(zh?"课程管理":"CLASS MANAGEMENT"):(zh?"付费访问":"PAID ACCESS")}</small><h2>{panel==="cohosts"?(zh?"联合教师":"Co-teachers"):(zh?"订阅成员":"Subscribers")}</h2></div><button aria-label="Close" onClick={()=>setPanel(null)}>×</button></header><p>{panel==="cohosts"?(zh?"联合教师可以编辑课程以及管理录音、附件和播放列表。":"Co-teachers can edit this class and manage recordings, attachments, and playlists."):(zh?"只有这里列出的付费成员可在试课结束后继续进入。":"Paid members listed here retain access after the seven-day trial.")}</p><div className="class-manager-add"><input type="email" value={email} onChange={event=>setEmail(event.target.value)} placeholder={zh?"会员邮箱":"Member email"}/><button onClick={()=>void add()}>{zh?"添加":"Add"}</button></div>{message&&<p role="alert">{message}</p>}<div className="class-manager-list">{members.map(member=><article key={member.id}><div><strong>{member.displayName||member.email}</strong><small>{member.email}</small></div><button onClick={()=>void remove(member.id)} aria-label={zh?`删除 ${member.displayName||member.email}`:`Remove ${member.displayName||member.email}`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"/></svg></button></article>)}{!members.length&&<p>{zh?"尚未添加成员。":"No members added yet."}</p>}</div></section></div>}</>}
+
+import { useCallback, useEffect, useState } from "react";
+
+type Member = { id: string; email: string; displayName: string };
+
+export function ClassAccessManagers({ code, showSubscribers = false, zh = false }: { code: string; showSubscribers?: boolean; zh?: boolean }) {
+  const [panel, setPanel] = useState<"cohosts" | "subscribers" | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const load = useCallback(async (kind: "cohosts" | "subscribers") => {
+    const response = await fetch(`/api/classrooms/${code}/${kind}`, { cache: "no-store" });
+    const data = await response.json().catch(() => ({})) as { members?: Member[]; error?: string };
+    if (response.ok) setMembers(data.members || []); else setMessage(data.error || "Unable to load members");
+  }, [code]);
+  useEffect(() => { if (panel) void load(panel); }, [load, panel]);
+  async function add() {
+    if (!panel) return;
+    setMessage("");
+    const response = await fetch(`/api/classrooms/${code}/${panel}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) });
+    const data = await response.json().catch(() => ({})) as { error?: string };
+    if (response.ok) { setEmail(""); await load(panel); } else setMessage(data.error || "Unable to add member");
+  }
+  async function remove(id: string) {
+    if (!panel || !window.confirm(zh ? "确认删除该成员？" : "Remove this member?")) return;
+    if ((await fetch(`/api/classrooms/${code}/${panel}?userId=${encodeURIComponent(id)}`, { method: "DELETE" })).ok) await load(panel);
+  }
+  return <>
+    <button onClick={() => setPanel("cohosts")}>{zh ? "协办主持／演讲嘉宾" : "Co-hosts / speakers"}</button>
+    {showSubscribers && <button onClick={() => setPanel("subscribers")}>{zh ? "订阅成员" : "Subscribers"}</button>}
+    {panel && <div className="class-manager-overlay" onClick={() => setPanel(null)}><section className="class-manager-dialog" onClick={event => event.stopPropagation()}>
+      <header><div><small>{panel === "cohosts" ? (zh ? "课程管理" : "COURSE MANAGEMENT") : (zh ? "订阅访问" : "SUBSCRIPTION ACCESS")}</small><h2>{panel === "cohosts" ? (zh ? "协办主持／演讲嘉宾" : "Co-hosts / speakers") : (zh ? "订阅成员" : "Subscribers")}</h2></div><button aria-label="Close" onClick={() => setPanel(null)}>×</button></header>
+      <p>{panel === "cohosts" ? (zh ? "协办主持可作为演讲嘉宾，并可编辑课程及管理课堂内容。" : "Co-hosts can present as speakers, edit the course, and manage classroom content.") : (zh ? "有效订阅或首月试用期内的学员可以进入课程教室。" : "Learners with an active subscription or free first month can enter the classroom.")}</p>
+      <div className="class-manager-add"><input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder={zh ? "会员邮箱" : "Member email"}/><button onClick={() => void add()}>{zh ? "添加" : "Add"}</button></div>
+      {message && <p role="alert">{message}</p>}
+      <div className="class-manager-list">{members.map(member => <article key={member.id}><div><strong>{member.displayName || member.email}</strong><small>{member.email}</small></div><button onClick={() => void remove(member.id)} aria-label={zh ? `删除 ${member.displayName || member.email}` : `Remove ${member.displayName || member.email}`}>×</button></article>)}{!members.length && <p>{zh ? "尚未添加成员。" : "No members added yet."}</p>}</div>
+    </section></div>}
+  </>;
+}

@@ -11,7 +11,7 @@ export async function generateMetadata({
   params: Promise<{ lang: string; classId: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
-  return { title: lang === "zh" ? "加入班级" : "Join class" };
+  return { title: lang === "zh" ? "课程详情" : "Course details" };
 }
 
 export default async function ClassPage({

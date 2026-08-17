@@ -13,7 +13,8 @@ test("each course exposes one private Webinar A/V classroom", () => {
   const learningPage = read("app/[lang]/classes/[classId]/learn/page.tsx");
   assert.match(migration, /CREATE TABLE IF NOT EXISTS smartlingo_course_classrooms/);
   assert.match(helper, /'private','video','webinar'/);
-  assert.match(route, /membershipStatus !== "active"/);
+  assert.match(route, /subscriptionStatus === "active"/);
+  assert.match(route, /trialEndsAt/);
   assert.match(panel, /CourseClassroomTile/);
   assert.match(panel, /Classroom/);
   assert.match(classStudio, /CourseClassroomTile/);

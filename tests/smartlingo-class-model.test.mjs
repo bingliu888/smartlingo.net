@@ -4,101 +4,54 @@ import test from "node:test";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
-test("class collection API lets every authenticated member create a private teacher or coordinator class", async () => {
-  const route = await read("../app/api/classes/route.ts");
-
-  assert.match(route, /getSessionUser/);
-  assert.match(route, /status: 401/);
-  assert.match(route, /input\.ownerRole === "teacher"/);
-  assert.match(route, /input\.ownerRole === "coordinator"/);
-  assert.match(route, /smartlingo_language_paths WHERE id = \? AND status = 'published'/);
-  assert.match(route, /smartlingo_language_classes/);
-  assert.match(route, /'open', 'private'/);
-  assert.match(route, /smartlingo_language_class_members/);
-  assert.match(route, /'owner', 'active'/);
-  assert.match(route, /quoteClassOrder/);
-  assert.match(route, /charged: false/);
-  assert.doesNotMatch(route, /licenseKey|assertClassCreationAllowed|membershipTier|Platinum|Gold/);
+test("ordinary members cannot create courses or set fees", async () => {
+  const [route, studio] = await Promise.all([read("../app/api/classes/route.ts"), read("../components/ClassStudio.tsx")]);
+  assert.match(route, /MEMBER_COURSE_CREATION_DISABLED/);
+  assert.match(route, /status: 403/);
+  assert.match(route, /canCreatePrivateClass: false/);
+  assert.doesNotMatch(studio, /createClass|创建私有班级|priceCents: Math\.round/);
 });
 
-test("class API keeps class commerce separate from subscription referral rewards", async () => {
-  const [route, commerce, schema, migration, claim, enrollment, referrals, licenses, deepLink] = await Promise.all([
-    read("../app/api/classes/route.ts"),
-    read("../lib/smartlingo-commerce.ts"),
-    read("../db/schema.ts"),
-    read("../drizzle/0017_smartlingo_language_marketplace.sql"),
-    read("../app/api/classes/referrals/claim/route.ts"),
+test("the MVP seeds three fixed monthly courses for all twelve languages", async () => {
+  const [migration, packages, schema] = await Promise.all([
+    read("../drizzle/0119_fixed_mvp_courses.sql"), read("../lib/smartlingo-course-packages.ts"), read("../db/schema.ts"),
+  ]);
+  for (const value of ["basic", "intermediate", "advanced", "2000", "10000", "30000"]) assert.match(migration, new RegExp(value));
+  assert.match(migration, /CROSS JOIN tiers/);
+  assert.match(migration, /trial_days,created_at/);
+  assert.match(packages, /口音校正/);
+  assert.match(packages, /演讲训练/);
+  assert.match(packages, /演讲稿修改/);
+  assert.match(schema, /smartlingo_course_subscriptions/);
+});
+
+test("free first month is durable and course access checks subscription state", async () => {
+  const [enrollment, classroom, learning] = await Promise.all([
     read("../app/api/classes/[classId]/enroll/route.ts"),
-    read("../app/api/classes/[classId]/referrals/route.ts"),
-    read("../app/api/classes/licenses/route.ts"),
-    read("../app/r/class/[code]/route.ts"),
+    read("../app/api/classes/[classId]/classroom/route.ts"),
+    read("../lib/smartlingo-learning-access.ts"),
   ]);
-
-  assert.match(route, /classPaymentsCreateIntroducerRewards: false/);
-  assert.match(commerce, /payment\.source !== "platform_subscription"/);
-  assert.match(commerce, /payment\.eventType !== "invoice\.paid"/);
-  assert.match(schema, /smartlingo_language_class_orders/);
-  assert.match(schema, /smartlingo_platform_subscription_payments/);
-  assert.match(schema, /smartlingo_introducer_reward_ledger/);
-  assert.match(migration, /smartlingo_language_class_order_split_ck/);
-  assert.match(migration, /smartlingo_introducer_reward_ledger_subscription_payment_id_unique/);
-  assert.doesNotMatch(migration, /(?:^|\n)\s*(?:DROP|DELETE)\b/i);
-  for (const legacyRoute of [claim, referrals, licenses, deepLink]) {
-    assert.match(legacyRoute, /status: 410/);
-    assert.doesNotMatch(legacyRoute, /INSERT|UPDATE|smartlingo_bacc_ledger/i);
-  }
-  assert.match(enrollment, /getSessionUser/);
-  assert.match(enrollment, /status: 401/);
-  assert.match(enrollment, /visibility !== "public"/);
-  assert.match(enrollment, /priceCents > 0/);
-  assert.match(enrollment, /SMARTLINGO_CLASS_PAYMENT_NOT_ENABLED/);
-  assert.match(enrollment, /smartlingo_language_class_members/);
-  assert.match(enrollment, /ON CONFLICT\(class_id, user_id\) DO UPDATE/);
-  assert.match(enrollment, /charged: false/);
-  assert.doesNotMatch(enrollment, /preferredLanguage|reward_ledger|introducer/i);
-  assert.match(claim, /points: 0/);
-  assert.match(referrals, /rewardPoints: 0/);
+  assert.match(enrollment, /course\.trialDays \* 86_400/);
+  assert.match(enrollment, /smartlingo_course_subscriptions/);
+  assert.match(enrollment, /firstMonthFree: true/);
+  assert.match(classroom, /subscriptionStatus === "trialing"/);
+  assert.match(learning, /subscription\.trial_ends_at>unixepoch\(\)/);
 });
 
-test("class catalog returns official, available, joined, and created classes with persistent state", async () => {
-  const [route, detail, enrollment, catalog] = await Promise.all([
-    read("../app/api/classes/route.ts"),
-    read("../app/api/classes/[classId]/route.ts"),
-    read("../app/api/classes/[classId]/enroll/route.ts"),
-    read("../lib/smartlingo-language-communities.ts"),
-  ]);
-
-  for (const field of ["classKind", "membershipRole", "membershipStatus", "isJoined", "isOwner", "canJoin"]) {
-    assert.match(route, new RegExp(field));
-  }
-  for (const group of ["availableClasses", "joinedClasses", "createdClasses"]) {
-    assert.match(route, new RegExp(group));
-  }
-  assert.match(route, /c\.class_kind AS classKind/);
-  assert.match(route, /'member_language'/);
-  assert.match(detail, /c\.class_kind AS classKind/);
-  assert.match(enrollment, /role = 'student', status = 'active'/);
-  assert.match(enrollment, /status IN \('invited', 'paused', 'left'\)/);
-  assert.match(catalog, /SMARTLINGO_LANGUAGE_COMMUNITIES/);
+test("admins and course co-hosts can edit while fixed price remains immutable", async () => {
+  const detail = await read("../app/api/classes/[classId]/route.ts");
+  assert.match(detail, /isAdminUser\(user\)/);
+  assert.match(detail, /live_class_cohosts/);
+  assert.match(detail, /update_official_course/);
+  assert.doesNotMatch(detail.match(/if \(input\.action === "update_official_course"[\s\S]*?return Response\.json\(\{ ok: true/)?.[0] || "", /price_cents/);
 });
 
-test("Class Studio is bilingual and exposes the approved class economics without tier gates", async () => {
-  const [component, page] = await Promise.all([
-    read("../components/ClassStudio.tsx"),
-    read("../app/[lang]/classes/page.tsx"),
-  ]);
-
-  for (const copy of [
-    "每位已登录的 SmartLingo 会员都可作为教师或协调员创建私有语言班",
-    "同一学员首次支付本班费用可享受八五折",
-    "优惠后税前金额的 70% 归班级开办人",
-    "班级付款永不产生介绍人积分",
-    "Stripe Connect 入驻",
-  ]) assert.match(component, new RegExp(copy));
-  assert.match(component, /quoteClassOrder/);
-  assert.match(component, /initialClassId/);
-  assert.match(component, /signInUrl/);
-  assert.doesNotMatch(component, /铂金|黄金|licenseKey|BACC/);
-  assert.match(page, /SiteHeader/);
-  assert.match(page, /SiteFooter/);
+test("Class Studio lists joined and available fixed courses without creation economics", async () => {
+  const studio = await read("../components/ClassStudio.tsx");
+  assert.match(studio, /context\.joinedClasses/);
+  assert.match(studio, /context\.availableClasses/);
+  assert.match(studio, /开始免费首月/);
+  assert.match(studio, /会员不能创建课程或自行定价/);
+  assert.match(studio, /CourseClassroomTile/);
+  assert.doesNotMatch(studio, /70 \/ 30|Stripe Connect|我创建的班级/);
 });

@@ -60,7 +60,7 @@ test("0019 seeds nine official language communities and keeps same-language enro
     read("../drizzle/meta/_journal.json"),
   ]);
 
-  assert.match(schema, /classKind: text\("class_kind"\)\.notNull\(\)\.default\("member_language"\)/);
+  assert.match(schema, /classKind: text\("class_kind"\)\.notNull\(\)\.default\("official_course"\)/);
   assert.match(migration, /ALTER TABLE `smartlingo_language_classes` ADD `class_kind`/);
   assert.doesNotMatch(migration, /DROP TABLE|DELETE FROM/i);
   assert.match(migration, /smartlingo_language_class_kind_insert_trg/);

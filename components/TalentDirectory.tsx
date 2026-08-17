@@ -32,15 +32,15 @@ export function TalentDirectory({ lang }: { lang: "en" | "zh" }) {
       <header className="talent-directory-hero">
         <div>
           <p className="section-kicker">{zh ? "班级目录" : "CLASS DIRECTORY"}</p>
-          <h1>{zh ? "旧入口已迁移到班级工作室。" : "This legacy entry now points to Class Studio."}</h1>
+          <h1>{zh ? "旧入口已迁移到课程中心。" : "This legacy entry now points to Courses."}</h1>
           <p>
             {zh
-              ? "从同一个入口浏览语言路径、加入班级、创建私有班级并查看自己的班级。"
-              : "Use one place to browse language paths, join a class, create a private class, and view your classes."}
+              ? "从同一个入口浏览固定三级课程、开始免费首月并查看自己的课程。"
+              : "Use one place to browse the three fixed levels, start a free first month, and view your courses."}
           </p>
         </div>
         <Link className="primary-button" href={`/${lang}/classes`}>
-          {zh ? "进入班级工作室" : "Open Class Studio"} →
+          {zh ? "进入课程中心" : "Open Courses"} →
         </Link>
       </header>
       <div className="talent-card-grid">

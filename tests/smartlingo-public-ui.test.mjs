@@ -22,8 +22,8 @@ test("SmartLingo branding exposes the simplified course and Guru navigation", as
   assert.match(layout, /"smartlingo\.net"/);
   assert.match(layout, /smartlingo-language-community-1600\.png/);
   assert.match(layout, /<html lang="zh-CN"/);
-  assert.match(languageLayout, /十二种语言、词汇阅读写作听力对话五项技能、实时语音导师、会员自主开班与学习社区/);
-  assert.match(languageLayout, /twelve languages with five-skill vocabulary, reading, writing, listening, and dialogue practice/);
+  assert.match(languageLayout, /十二种语言、三级固定月费课程、首月免费/);
+  assert.match(languageLayout, /twelve languages with three fixed monthly course levels/);
   assert.doesNotMatch(`${header}\n${footer}\n${layout}`, /SmartAICert|SmartCert\.pro|BingAcademy certificate/i);
 });
 
@@ -67,7 +67,7 @@ test("member-led classes and commerce follow the approved boundaries", async () 
   assert.doesNotMatch(joined, /开班权限从黄金会员开始|铂金会员|管理员签发的授权码|license key|PayPal|BACC/);
 });
 
-test("real checkout stays off until Stripe, tax, refund, and webhook readiness is verified", async () => {
+test("course activation starts with a free month and no immediate charge", async () => {
   const [home, pricing, programs, terms, refund] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/pricing/page.tsx"),
@@ -77,10 +77,10 @@ test("real checkout stays off until Stripe, tax, refund, and webhook readiness i
   ]);
   const joined = [home, pricing, programs, terms, refund].join("\n");
 
-  assert.match(home, /真实结账保持关闭/);
-  assert.match(pricing, /本页面不会发起真实收费/);
-  assert.match(pricing, /以回调为准/);
-  assert.match(terms, /只有在服务商凭据、连接账户、税务、退款规则、验证回调与生产验收全部完成后/);
+  assert.match(home, /30 天后按固定月费续订/);
+  assert.match(pricing, /免费首月由服务器记录/);
+  assert.match(pricing, /30 天试用订阅/);
+  assert.match(terms, /付款启用条件/);
   assert.match(refund, /真实付款保持关闭/);
   assert.doesNotMatch(joined, /当前已启用真实收费|charged:\s*true/);
 });

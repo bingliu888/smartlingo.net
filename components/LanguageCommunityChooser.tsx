@@ -59,7 +59,7 @@ export function LanguageCommunityChooser({ lang }: { lang: Lang }) {
   }, [context]);
 
   function classFor(code: SmartLingoCommunityLanguage, source: CommunityClass[]) {
-    return source.find(item => item.targetLanguage === code && item.classKind === "official_language")
+    return source.find(item => item.targetLanguage === code && item.classKind === "official_course")
       ?? source.find(item => item.targetLanguage === code);
   }
 

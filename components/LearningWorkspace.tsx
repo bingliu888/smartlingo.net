@@ -58,7 +58,7 @@ type ClassSummary = {
   id: string;
   title: string;
   targetLanguage: string;
-  classKind?: "official_language" | "member_language" | "subject";
+  classKind?: "official_language" | "official_course" | "member_language" | "subject";
 };
 
 type VocabularyItem = {
@@ -633,7 +633,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   classId?: string;
   calendarOnly?: boolean;
   view?: "dashboard" | "session";
-  initialSkill?: "vocabulary" | "dialogue";
+  initialSkill?: "vocabulary" | "writing" | "dialogue";
 }) {
   const router = useRouter();
   const t = COPY[lang];

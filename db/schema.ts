@@ -823,10 +823,8 @@ export const smartAiAdminAudit = sqliteTable("smartlingo_admin_audit", {
 ]);
 
 /**
- * SmartLingo language marketplace foundation.
- * Platform subscriptions and member-created class commerce are intentionally
- * separate: only paid platform subscription invoices can create introducer
- * reward points.
+ * SmartLingo language course foundation. MVP courses are platform-authored,
+ * use fixed monthly prices, and include a server-authoritative free first month.
  */
 export const lingoLanguagePaths = sqliteTable("smartlingo_language_paths", {
   id: text("id").primaryKey(),
@@ -922,7 +920,7 @@ export const lingoClasses = sqliteTable("smartlingo_language_classes", {
   id: text("id").primaryKey(),
   ownerUserId: text("owner_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
-  classKind: text("class_kind").notNull().default("member_language"),
+  classKind: text("class_kind").notNull().default("official_course"),
   ownerRole: text("owner_role").notNull().default("coordinator"),
   title: text("title").notNull(),
   summary: text("summary").notNull().default(""),
@@ -934,10 +932,15 @@ export const lingoClasses = sqliteTable("smartlingo_language_classes", {
   priceCents: integer("price_cents").notNull().default(0),
   currency: text("currency").notNull().default("USD"),
   capacity: integer("capacity").notNull().default(30),
+  packageTier: text("package_tier"),
+  billingInterval: text("billing_interval").notNull().default("month"),
+  trialDays: integer("trial_days").notNull().default(30),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 }, (table) => [
-  check("smartlingo_language_class_kind_ck", sql`${table.classKind} IN ('official_language', 'member_language', 'subject')`),
+  check("smartlingo_language_class_kind_ck", sql`${table.classKind} IN ('official_language', 'official_course', 'member_language', 'subject')`),
+  check("smartlingo_language_class_package_ck", sql`${table.packageTier} IS NULL OR ${table.packageTier} IN ('basic', 'intermediate', 'advanced')`),
+  check("smartlingo_language_class_billing_ck", sql`${table.billingInterval} = 'month' AND ${table.trialDays} BETWEEN 0 AND 365`),
   check("smartlingo_language_class_role_ck", sql`${table.ownerRole} IN ('teacher', 'coordinator')`),
   check("smartlingo_language_class_status_ck", sql`${table.status} IN ('draft', 'open', 'closed', 'archived')`),
   check("smartlingo_language_class_visibility_ck", sql`${table.visibility} IN ('private', 'review', 'public')`),
@@ -946,6 +949,25 @@ export const lingoClasses = sqliteTable("smartlingo_language_classes", {
   index("smartlingo_language_class_owner_status_idx").on(table.ownerUserId, table.status),
   index("smartlingo_language_class_directory_idx").on(table.visibility, table.status),
   index("smartlingo_language_class_kind_path_idx").on(table.classKind, table.pathId, table.status),
+]);
+
+export const lingoCourseSubscriptions = sqliteTable("smartlingo_course_subscriptions", {
+  id: text("id").primaryKey(),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("trialing"),
+  monthlyPriceCents: integer("monthly_price_cents").notNull(),
+  trialStartedAt: integer("trial_started_at").notNull(),
+  trialEndsAt: integer("trial_ends_at").notNull(),
+  currentPeriodEndsAt: integer("current_period_ends_at"),
+  providerSubscriptionId: text("provider_subscription_id").unique(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  uniqueIndex("smartlingo_course_subscription_class_user_uq").on(table.classId, table.userId),
+  check("smartlingo_course_subscription_status_ck", sql`${table.status} IN ('trialing', 'active', 'past_due', 'cancelled', 'expired')`),
+  check("smartlingo_course_subscription_price_ck", sql`${table.monthlyPriceCents} > 0`),
+  index("smartlingo_course_subscription_user_status_idx").on(table.userId, table.status),
 ]);
 
 export const lingoClassMembers = sqliteTable("smartlingo_language_class_members", {

@@ -1,9 +1,8 @@
 /**
  * Small, side-effect-free sanitizers shared by the language-class APIs.
  *
- * Class eligibility and money rules deliberately live elsewhere: every
- * authenticated member may create a class, while pricing and the 70/30 split
- * are server-authoritative in `smartlingo-commerce.ts`.
+ * Course eligibility and fixed monthly pricing are server-authoritative.
+ * MVP members may subscribe to platform courses but cannot create courses.
  */
 export function cleanText(value: unknown, maximum: number) {
   return String(value ?? "").trim().replace(/\s+/g, " ").slice(0, maximum);

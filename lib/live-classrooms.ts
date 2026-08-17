@@ -56,7 +56,9 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
   const courseMember=await getDatabase().prepare(`SELECT cc.course_id FROM smartlingo_course_classrooms cc
     JOIN smartlingo_language_classes c ON c.id=cc.course_id
     LEFT JOIN smartlingo_language_class_members m ON m.class_id=c.id AND m.user_id=?
-    WHERE cc.room_id=? AND (c.owner_user_id=? OR m.status='active') LIMIT 1`).bind(user.id,room.id,user.id).first();
+    LEFT JOIN smartlingo_course_subscriptions s ON s.class_id=c.id AND s.user_id=?
+    WHERE cc.room_id=? AND (c.owner_user_id=? OR (m.status='active' AND
+      (s.status='active' OR (s.status='trialing' AND s.trial_ends_at>unixepoch())))) LIMIT 1`).bind(user.id,user.id,room.id,user.id).first();
   if(courseMember)return {allowed:true,admin:false,host,manager};
   const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND lower(email)=lower(?) LIMIT 1").bind(room.id,user.email).first();
   return {allowed:Boolean(invited),admin:false,host:false,manager:false};

@@ -5,17 +5,22 @@ import test from "node:test";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("daily practice opens durable vocab or immersive speaking training", async () => {
-  const [learnPage, sessionPage, workspace] = await Promise.all([
+  const [learnPage, trainingMenu, sessionPage, workspace] = await Promise.all([
     read("../app/[lang]/classes/[classId]/learn/page.tsx"),
+    read("../components/CourseTrainingMenu.tsx"),
     read("../app/[lang]/classes/[classId]/learn/session/page.tsx"),
     read("../components/LearningWorkspace.tsx"),
   ]);
 
-  assert.match(learnPage, />Vocab</);
-  assert.match(learnPage, />Speaking</);
-  assert.match(learnPage, /training=vocabulary/);
-  assert.match(learnPage, /training=dialogue/);
-  assert.match(sessionPage, /query\.training === "dialogue" \? "dialogue" : query\.training === "vocabulary" \? "vocabulary" : undefined/);
+  assert.match(learnPage, /CourseTrainingMenu/);
+  assert.match(trainingMenu, /title: "Vocab"/);
+  assert.match(trainingMenu, /title: "Speaking"/);
+  assert.match(trainingMenu, /training=vocabulary/);
+  assert.match(trainingMenu, /training=dialogue/);
+  assert.match(trainingMenu, /口音校正/);
+  assert.match(trainingMenu, /演讲训练/);
+  assert.match(trainingMenu, /演讲稿修改/);
+  assert.match(sessionPage, /query\.training === "writing" \? "writing"/);
   assert.match(workspace, /const selectedStep = initialSkill \?\?/);
   assert.match(workspace, /className="sl-primary-training-menu"/);
   assert.match(workspace, />Vocab</);

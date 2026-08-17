@@ -4,20 +4,19 @@ import test from "node:test";
 
 const source = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("SmartLingo class screens do not charge before verified Stripe Connect checkout exists", async () => {
+test("SmartLingo starts a server-recorded free month without charging", async () => {
   const [classes, enrollment, component] = await Promise.all([
     source("app/api/classes/route.ts"),
     source("app/api/classes/[classId]/enroll/route.ts"),
     source("components/ClassStudio.tsx"),
   ]);
 
-  assert.match(classes, /paymentMode: "stripe_connect_not_enabled"/);
-  assert.match(classes, /charged: false/);
+  assert.match(classes, /paymentMode: "monthly_subscription"/);
+  assert.match(classes, /fixedPlatformPricing: true/);
   assert.match(enrollment, /charged: false/);
-  assert.match(enrollment, /SMARTLINGO_CLASS_PAYMENT_NOT_ENABLED/);
-  assert.match(enrollment, /status: 409/);
-  assert.match(enrollment, /price_cents = 0/);
-  assert.match(component, /本基础页面不会发起班级收费/);
+  assert.match(enrollment, /firstMonthFree: true/);
+  assert.match(enrollment, /smartlingo_course_subscriptions/);
+  assert.match(component, /第一个月免费/);
   assert.doesNotMatch(`${classes}\n${enrollment}`, /stripe\.checkout|PaymentIntent|destination_charge/i);
 });
 

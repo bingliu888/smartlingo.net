@@ -71,8 +71,9 @@ test("home and Choose course route languages through a separate detail page or a
   assert.match(planner, /openCatalogLanguage/);
   assert.match(planner, /joined[\s\S]*?\/classes\/\$\{encodeURIComponent\(joined\.id\)\}/);
   assert.match(planner, /\/programs\/\$\{encodeURIComponent\(language\)\}/);
-  assert.match(detail, /initialLanguage=\{language\}/);
-  assert.match(detail, /确认前不会自动加入课程/);
+  assert.match(detail, /SMARTLINGO_COURSE_PACKAGES/);
+  assert.match(detail, /首月免费/);
+  assert.match(detail, /fixedCourseId\(language, course\.tier\)/);
   assert.doesNotMatch(chooser, /selectedLanguage|lingo-training-menu|>Vocab<|>Speaking</);
   assert.doesNotMatch(css, /\.lingo-training-menu\{/);
   assert.match(css, /\.lingo-community-grid\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
@@ -100,7 +101,7 @@ test("home and Choose course route languages through a separate detail page or a
   assert.ok(layouts.get(834).card >= 240);
 });
 
-test("Classes is login-gated and separates joined, created, and available class tiles", async () => {
+test("Courses is login-gated and separates joined from available fixed plans", async () => {
   const [page, detailPage, studio] = await Promise.all([
     read("../app/[lang]/classes/page.tsx"),
     read("../app/[lang]/classes/[classId]/page.tsx"),
@@ -113,12 +114,11 @@ test("Classes is login-gated and separates joined, created, and available class 
   }
   assert.match(page, /initialTargetLanguage=\{query\.target\}/);
   assert.match(studio, /context\.joinedClasses/);
-  assert.match(studio, /context\.createdClasses/);
   assert.match(studio, /context\.availableClasses/);
-  assert.match(studio, /我已加入的班级/);
-  assert.match(studio, /我创建的班级/);
-  assert.match(studio, /寻找下一个学习社区/);
-  assert.match(studio, /免费加入社区/);
+  assert.match(studio, /我的课程/);
+  assert.match(studio, /可订阅课程/);
+  assert.match(studio, /开始免费首月/);
+  assert.doesNotMatch(studio, /我创建的班级|创建私有班级/);
   assert.match(studio, /t\.joined/);
-  assert.match(studio, /joinClass\(item\)/);
+  assert.match(studio, /subscribe\(item\)/);
 });

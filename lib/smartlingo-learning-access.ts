@@ -30,8 +30,12 @@ export async function requireOfficialClassMembership(
       ON path.id = c.path_id AND path.target_language = c.target_language
     JOIN smartlingo_language_class_members member
       ON member.class_id = c.id AND member.user_id = ? AND member.status = 'active'
-    WHERE c.id = ? AND c.class_kind = 'official_language'
-      AND c.status = 'open' AND c.visibility = 'public' AND c.price_cents = 0
+    LEFT JOIN smartlingo_course_subscriptions subscription
+      ON subscription.class_id=c.id AND subscription.user_id=member.user_id
+    WHERE c.id = ? AND c.class_kind IN ('official_language','official_course')
+      AND c.status = 'open' AND c.visibility = 'public'
+      AND (c.class_kind='official_language' OR subscription.status='active'
+        OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch()))
       AND path.status = 'published'
     LIMIT 1`).bind(user.id, classId).first<OfficialClassAccess>();
   return access;

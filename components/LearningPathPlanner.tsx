@@ -199,7 +199,7 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
 
   function openCatalogLanguage(language: SmartLingoCommunityLanguage) {
     rememberTargetLanguage(language);
-    const joined = joinedCourses.find(item => item.targetLanguage === language && item.classKind === "official_language")
+    const joined = joinedCourses.find(item => item.targetLanguage === language && item.classKind === "official_course")
       ?? joinedCourses.find(item => item.targetLanguage === language);
     window.location.assign(joined
       ? `/${lang}/classes/${encodeURIComponent(joined.id)}`

@@ -7,7 +7,7 @@ export function SiteFooter({ lang }: { lang: "en" | "zh" }) {
     <footer className="global-site-footer ai-cert-footer">
       <div className="footer-identity">
         <strong>Smart<span>Lingo</span></strong>
-        <span>{zh ? "从第一天开口 · 人工智能导师 · 会员开班 · 一起学习" : "Speak from day one · AI Guru · Member-led classes · Learn together"}</span>
+        <span>{zh ? "从第一天开口 · 人工智能导师 · 三级课程 · 首月免费" : "Speak from day one · AI Guru · Three course levels · First month free"}</span>
         <small>© 2026 SmartLingo.net</small>
       </div>
       <nav aria-label={zh ? "页脚导航" : "Footer navigation"}>

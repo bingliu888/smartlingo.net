@@ -31,7 +31,7 @@ export default async function LearningSessionPage({
         lang={lang}
         classId={classId}
         view="session"
-        initialSkill={query.training === "dialogue" ? "dialogue" : query.training === "vocabulary" ? "vocabulary" : undefined}
+        initialSkill={query.training === "dialogue" ? "dialogue" : query.training === "vocabulary" ? "vocabulary" : query.training === "writing" ? "writing" : undefined}
       />
       <SiteFooter lang={lang} />
     </main>

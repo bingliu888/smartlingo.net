@@ -11,8 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
       template: "%s | SmartLingo",
     },
     description: zh
-      ? "人工智能原生语言学习：十二种语言、词汇阅读写作听力对话五项技能、实时语音导师、会员自主开班与学习社区。"
-      : "AI-native language learning across twelve languages with five-skill vocabulary, reading, writing, listening, and dialogue practice, live voice, member-led classes, and learning communities.",
+      ? "人工智能原生语言学习：十二种语言、三级固定月费课程、首月免费、五项技能与课程网络研讨会。"
+      : "AI-native language learning across twelve languages with three fixed monthly course levels, a free first month, five-skill practice, and course webinars.",
   };
 }
 

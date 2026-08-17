@@ -1,4 +1,5 @@
 import { getDatabase, getSessionUser } from "../../../../lib/auth";
+import { isAdminUser } from "../../../../lib/admin-access";
 import { cleanMultiline, cleanText } from "../../../../lib/smartlingo-classes";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ type ClassDetail = {
   pathId: string;
   pathTitleEn: string;
   pathTitleZh: string;
-  classKind: "official_language" | "member_language" | "subject";
+  classKind: "official_language" | "official_course" | "member_language" | "subject";
   ownerRole: "teacher" | "coordinator";
   title: string;
   summary: string;
@@ -20,6 +21,9 @@ type ClassDetail = {
   status: string;
   visibility: string;
   priceCents: number;
+  packageTier: "basic" | "intermediate" | "advanced" | null;
+  billingInterval: "month";
+  trialDays: number;
   currency: string;
   capacity: number;
   enrollmentCount: number;
@@ -40,6 +44,7 @@ async function classDetail(classId: string) {
     c.class_kind AS classKind, c.owner_role AS ownerRole, c.title, c.summary,
     c.target_language AS targetLanguage, c.level, c.schedule,
     c.status, c.visibility, c.price_cents AS priceCents, c.currency,
+    c.package_tier AS packageTier,c.billing_interval AS billingInterval,c.trial_days AS trialDays,
     c.capacity,
     COALESCE(SUM(CASE WHEN members.role = 'student' AND members.status = 'active' THEN 1 ELSE 0 END), 0) AS enrollmentCount
     FROM smartlingo_language_classes c
@@ -59,16 +64,25 @@ export async function GET(
   const detail = await classDetail(classId);
   if (!detail) return Response.json({ error: "Class not found" }, { status: 404 });
 
-  const membership = await getDatabase().prepare(`SELECT role, status
-    FROM smartlingo_language_class_members
-    WHERE class_id = ? AND user_id = ? AND status IN ('active', 'invited', 'paused') LIMIT 1`)
-    .bind(classId, user.id).first<{ role: string; status: string }>();
+  const membership = await getDatabase().prepare(`SELECT member.role,member.status
+    FROM smartlingo_language_class_members member
+    LEFT JOIN smartlingo_course_subscriptions subscription
+      ON subscription.class_id=member.class_id AND subscription.user_id=member.user_id
+    WHERE member.class_id=? AND member.user_id=? AND member.status IN ('active','invited','paused')
+      AND (?!='official_course' OR subscription.status='active'
+        OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch())) LIMIT 1`)
+    .bind(classId, user.id, detail.classKind).first<{ role: string; status: string }>();
   const isOwner = detail.ownerUserId === user.id;
+  const room = await getDatabase().prepare(`SELECT room_id AS roomId FROM smartlingo_course_classrooms WHERE course_id=? LIMIT 1`)
+    .bind(classId).first<{ roomId: string }>();
+  const coAdmin = room ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
+    .bind(room.roomId, user.id).first() : null;
+  const canManage = isOwner || await isAdminUser(user) || Boolean(coAdmin);
   if (!isOwner && !membership && detail.visibility !== "public") {
     return Response.json({ error: "This private class is available by invitation only." }, { status: 403 });
   }
 
-  const placement = detail.classKind === "official_language" && membership?.status === "active"
+  const placement = ["official_language", "official_course"].includes(detail.classKind) && membership?.status === "active"
     ? await getDatabase().prepare(`SELECT id, status, entry_mode AS entryMode,
         overall_score AS overallScore, recommended_level AS recommendedLevel,
         updated_at AS updatedAt
@@ -82,15 +96,11 @@ export async function GET(
     class: detail,
     currentUserId: user.id,
     isOwner,
+    canManage,
     membership,
     placement,
-    paymentPolicy: {
-      firstPaymentDiscountPercent: 15,
-      ownerSharePercent: 70,
-      platformSharePercent: 30,
-      classPaymentsCreateIntroducerRewards: false,
-    },
-    paymentMode: "stripe_connect_not_enabled",
+    paymentPolicy: { trialDays: detail.trialDays, billingInterval: detail.billingInterval, firstMonthFree: true },
+    paymentMode: "monthly_subscription",
   });
 }
 
@@ -105,7 +115,13 @@ export async function PATCH(
   const classId = cleanText((await params).classId, 100);
   const current = await classDetail(classId);
   if (!current) return Response.json({ error: "Class not found" }, { status: 404 });
-  if (current.ownerUserId !== user.id) return Response.json({ error: "Class owner access required" }, { status: 403 });
+  const linkedRoom = await getDatabase().prepare(`SELECT cc.room_id AS roomId FROM smartlingo_course_classrooms cc WHERE cc.course_id=? LIMIT 1`)
+    .bind(classId).first<{ roomId: string }>();
+  const coAdmin = linkedRoom ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
+    .bind(linkedRoom.roomId, user.id).first() : null;
+  if (current.ownerUserId !== user.id && !await isAdminUser(user) && !coAdmin) {
+    return Response.json({ error: "Course administrator access required" }, { status: 403 });
+  }
   const now = Math.floor(Date.now() / 1000);
 
   if (input.action === "request_public_directory") {
@@ -137,6 +153,15 @@ export async function PATCH(
       SET title = ?, summary = ?, schedule = ?, price_cents = ?, updated_at = ? WHERE id = ?`)
       .bind(title, summary, schedule, priceCents, now, classId).run();
     return Response.json({ ok: true, title, summary, schedule, priceCents });
+  }
+  if (input.action === "update_official_course" && current.classKind === "official_course") {
+    const title = cleanText(input.title, 100) || current.title;
+    const summary = cleanMultiline(input.summary, 800) || current.summary;
+    const schedule = cleanText(input.schedule, 120) || current.schedule;
+    await getDatabase().prepare(`UPDATE smartlingo_language_classes
+      SET title=?,summary=?,schedule=?,updated_at=? WHERE id=? AND class_kind='official_course'`)
+      .bind(title, summary, schedule, now, classId).run();
+    return Response.json({ ok: true, title, summary, schedule });
   }
   return Response.json({ error: "Unsupported class update" }, { status: 400 });
 }

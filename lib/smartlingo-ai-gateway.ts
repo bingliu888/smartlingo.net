@@ -588,7 +588,7 @@ function responseText(data: ResponsesData) {
 }
 
 const PUBLIC_GURU_FALLBACK = {
-  zh: "智能导师暂时无法连接。您仍可查看语言路径、继续每日练习、进入“班级”创建或加入私有语言班，也可使用社区与消息。每位已登录会员均可作为教师或协调员创建私有班级。请勿提交敏感个人资料，稍后再试。",
+  zh: "智能导师暂时无法连接。您仍可选择语言、查看固定三级课程或继续每日练习。每门课程均由 SmartLingo 管理员维护，会员不能自行创建课程或收费。请勿提交敏感个人资料，稍后再试。",
   en: "Guru is temporarily unable to connect. You can still review Language Paths, continue daily practice, open Classes to create or join a private language class, or use Community and Messages. Please do not submit sensitive personal information, and try again later.",
 } as const;
 

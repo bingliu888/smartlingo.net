@@ -17,7 +17,7 @@ test("Chinese shared controls and account notices remain localized", async () =>
   assert.match(header, /主导航/);
   for (const label of ["选择课程", "咨询专家"]) assert.match(header, new RegExp(label));
   assert.match(footer, /页脚导航/);
-  assert.match(footer, /从第一天开口 · 人工智能导师 · 会员开班 · 一起学习/);
+  assert.match(footer, /从第一天开口 · 人工智能导师 · 三级课程 · 首月免费/);
   assert.match(language, /切换为英文/);
   assert.match(account, /条未读消息/);
   assert.match(assistant, /打开智能助手/);
@@ -62,7 +62,7 @@ test("necessary product and infrastructure names stay intact", async () => {
   assert.match(profile, /EVM 钱包/);
   assert.match(roadmap, /GitHub/);
   assert.match(roadmap, /Sites/);
-  assert.match(pricing, /Stripe Connect/);
+  assert.match(pricing, /SMARTLINGO/);
 });
 
 test("Chinese class, pricing, programs, and retired Admin UI are truthful", async () => {
@@ -75,17 +75,17 @@ test("Chinese class, pricing, programs, and retired Admin UI are truthful", asyn
     source("app/[lang]/auth/[mode]/page.tsx"),
   ]);
 
-  for (const label of ["教师", "协调员", "创建私有班级", "同一学员首次支付本班费用可享受八五折", "班级付款永不产生介绍人积分"]) assert.match(classes, new RegExp(label));
-  assert.match(pricing, /免费方案/);
-  assert.match(pricing, /进阶方案/);
-  assert.match(pricing, /协调员方案/);
-  assert.match(pricing, /本页面不会发起真实收费/);
+  for (const label of ["三级课程", "第一个月免费", "会员不能创建课程或自行定价", "音视频网络研讨会教室"]) assert.match(classes, new RegExp(label));
+  assert.match(pricing, /基础/);
+  assert.match(pricing, /中级/);
+  assert.match(pricing, /高级/);
+  assert.match(pricing, /免费首月由服务器记录/);
   assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
-  assert.match(programs, /任何已登录会员都可以准备私有班级/);
+  assert.match(programs, /选择课程/);
   assert.match(adminPage, /notFound\(\)/);
   assert.match(adminApi, /status: 410/);
   assert.match(auth, /lingo-brand-mark/);
-  assert.match(auth, /词汇阅读写作听力对话 · 会员开班 · 学习社区/);
+  assert.match(auth, /词汇阅读写作听力对话/);
   assert.doesNotMatch(`${classes}\n${pricing}\n${programs}`, /黄金|铂金|授权码|BACC|PayPal/);
 });
 

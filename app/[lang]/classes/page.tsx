@@ -12,10 +12,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   return {
-    title: lang === "zh" ? "班级工作室" : "Class Studio",
+    title: lang === "zh" ? "SmartLingo 课程" : "SmartLingo Courses",
     description: lang === "zh"
-      ? "每位已登录会员都可作为教师或协调员创建私有语言班，并带领社区共同学习。"
-      : "Every signed-in member can create a private language class as a teacher or coordinator.",
+      ? "选择固定月费语言课程，首月免费，并进入课程专属音视频网络研讨会教室。"
+      : "Choose a fixed-price monthly language course with a free first month and a dedicated A/V webinar classroom.",
   };
 }
 

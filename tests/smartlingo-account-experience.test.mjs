@@ -63,7 +63,7 @@ test("legacy talent route and API point safely to language classes", async () =>
   assert.match(page, /redirect\(`\/\$\{lang\}\/classes`\)/);
   assert.match(api, /status: 410/);
   assert.match(api, /redirect: "\/classes"/);
-  assert.match(compatibility, /进入班级工作室/);
-  assert.match(compatibility, /每位登录会员都可作为老师或协调员准备私有班级/);
+  assert.match(compatibility, /进入课程中心/);
+  assert.match(compatibility, /浏览固定三级课程/);
   assert.doesNotMatch(`${page}\n${api}\n${compatibility}`, /求职|招聘|雇主|候选人|Gold|Platinum|BACC/i);
 });

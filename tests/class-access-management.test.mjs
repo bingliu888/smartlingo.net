@@ -28,15 +28,15 @@ test("classroom item exposes edit, co-host and subscriber controls", () => {
   const detail=source("../components/class-detail-experience.tsx");
   assert.match(detail,/ClassEditDialog/);
   assert.match(detail,/showSubscribers=\{room\.tuitionCents>0\}/);
-  assert.match(source("../components/ClassAccessManagers.tsx"),/Co-teachers/);
+  assert.match(source("../components/ClassAccessManagers.tsx"),/Co-hosts \/ speakers/);
 });
 
-test("creating a course automatically creates its private Webinar A/V classroom", () => {
-  const route = source("../app/api/classes/route.ts");
-  const helper = source("../lib/course-classrooms.ts");
-  assert.match(route, /ensureCourseClassroom/);
-  assert.match(helper, /'private','video','webinar'/);
-  assert.match(helper, /smartlingo_course_classrooms/);
+test("fixed MVP courses are bulk-created with private Webinar A/V classrooms", () => {
+  const migration = source("../drizzle/0119_fixed_mvp_courses.sql");
+  assert.match(migration, /class_kind='official_course'/);
+  assert.match(migration, /'private','video','webinar'/);
+  assert.match(migration, /smartlingo_course_classrooms/);
+  assert.match(migration, /CROSS JOIN tiers/);
 });
 
 test("course membership authorizes the embedded classroom", () => {
