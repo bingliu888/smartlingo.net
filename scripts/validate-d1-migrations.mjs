@@ -1621,7 +1621,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0037_bright_champions");
+  assert.equal(migrations.at(-1)?.tag, "0038_crypto_course_checkout");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1723,6 +1723,9 @@ export function validateD1Migrations() {
       "smartlingo_daily_answer_feedback",
       "smartlingo_learning_xp_ledger",
       "smartlingo_learning_streaks",
+      "crypto_payment_settings",
+      "crypto_payment_claims",
+      "crypto_payment_admin_audit",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     const smoke = runD1Smoke(database);
