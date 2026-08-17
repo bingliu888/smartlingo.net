@@ -1,5 +1,6 @@
 import type { SessionUser } from "../lib/auth";
 import { getDatabase } from "../lib/auth";
+import AdminCryptoSettings from "./AdminCryptoSettings";
 
 type CountRow = { count: number };
 
@@ -41,6 +42,7 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
         <h2>{zh ? "运营入口" : "Operations"}</h2>
         <div><a href={`/${lang}/project`}>{zh ? "项目进展" : "Project"}</a><a href={`/${lang}/community`}>{zh ? "社区" : "Community"}</a><a href={`/${lang}/messages`}>{zh ? "消息与实时聊天" : "Messages & live chat"}</a><a href={`/${lang}/assistant`}>{zh ? "智能导师" : "Ask Guru"}</a></div>
       </section>
+      <AdminCryptoSettings lang={lang}/>
     </div>
   );
 }

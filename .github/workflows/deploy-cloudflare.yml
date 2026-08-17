@@ -27,6 +27,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify session, pricing, and crypto contracts
+        run: node --test tests/subscription-crypto-contract.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
+
+      - name: Validate D1 migrations
+        run: npm run db:validate
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
       - name: Ensure private class-media bucket
         run: npx wrangler r2 bucket create smartlingo-net-class-files --config wrangler.cloudflare.jsonc || true
         env:
@@ -60,3 +69,29 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           REALTIMEKIT_API_TOKEN: ${{ secrets.CLOUDFLARE_REALTIME_API_TOKEN }}
+
+      - name: Verify production pricing and crypto boundaries
+        shell: bash
+        run: |
+          pricing="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/pricing)"
+          grep -F 'Connect wallet' <<<"$pricing"
+          grep -F '$20' <<<"$pricing"
+          grep -F '$100' <<<"$pricing"
+          grep -F '$300' <<<"$pricing"
+          status="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/api/billing/status)"
+          grep -F '"cryptoSettings"' <<<"$status"
+          code="$(curl -sS -o /tmp/admin-crypto.json -w '%{http_code}' https://smartlingo.net/api/admin/crypto-settings)"
+          test "$code" = "403"
+
+      - name: Publish exact Project release record
+        shell: bash
+        run: |
+          node scripts/deployment-report-sql.mjs > /tmp/smartlingo-release.sql
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --file /tmp/smartlingo-release.sql
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RELEASE_TITLE: Seven-day sessions and course-isolated crypto checkout
+          RELEASE_TITLE_ZH: 七天会话与课程隔离加密结账
+          RELEASE_NOTES: Keep app sessions aligned with Clerk's seven-day default|Publish actual SmartLingo Basic $20, Intermediate $100, and Advanced $300 monthly course prices from the footer pricing entry|Add SmartLingo-isolated admin crypto rails, Connect wallet, WalletConnect, direct transfer, payment history, and server-side ERC-20 verification|Activate the selected fixed language course, classroom membership, and learning entitlement without creating platform referral rewards|Verify production pricing, public checkout status, and the authenticated admin boundary
+          RELEASE_NOTES_ZH: 站内会话与 Clerk 默认七天有效期保持一致|通过页脚订阅入口发布 SmartLingo 实际基础 $20、中级 $100 和高级 $300 月费课程|加入 SmartLingo 独立管理员加密通道、连接钱包、WalletConnect、直接转账、付款记录与服务端 ERC-20 验证|付款后激活所选固定语言课程、课堂成员与学习权益且不产生平台推荐奖励|验证正式站课程价格、公开结账状态与管理员鉴权边界

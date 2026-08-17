@@ -71,7 +71,7 @@ test("app sessions are short-lived, Clerk-linked, and reject legacy cookies", as
     "utf8",
   );
 
-  assert.match(auth, /const SESSION_SECONDS = 60 \* 60 \* 12/);
+  assert.match(auth, /export const SESSION_SECONDS = 60 \* 60 \* 24 \* 7/);
   assert.match(auth, /INSERT INTO sessions \(id, user_id, clerk_session_id, expires_at, created_at\)/);
   assert.match(auth, /DELETE FROM sessions WHERE clerk_session_id = \?/);
   assert.match(auth, /s\.clerk_session_id IS NOT NULL/);

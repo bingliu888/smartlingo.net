@@ -55,7 +55,7 @@ function dependencies(overrides = {}) {
       },
     }),
     createAppSession: async () => ({
-      cookie: "smartlingo_session=inert-app-cookie; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=43200",
+      cookie: "smartlingo_session=inert-app-cookie; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800",
     }),
     referralCodeFromRequest: () => "LINGO_TEST",
     clearReferralCookie: () => "smartlingo_referral_code=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0",

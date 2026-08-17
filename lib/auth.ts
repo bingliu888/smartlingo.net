@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 const COOKIE_NAME = "smartlingo_session";
 const REFERRAL_COOKIE_NAME = "smartlingo_referral_code";
-const SESSION_SECONDS = 60 * 60 * 12;
+export const SESSION_SECONDS = 60 * 60 * 24 * 7;
 const REFERRAL_SECONDS = 60 * 60 * 24 * 30;
 const HASH_ITERATIONS = 210_000;
 
