@@ -161,6 +161,7 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
     {step === "password-required" && <label>{zh ? "确认密码" : "Confirm password"}<input type="password" autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={event => setPasswordConfirmation(event.target.value)} required /></label>}
     {authView.showCodeField && <label>{zh ? "一次性验证码" : "One-time code"}<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ""))} required /></label>}
     {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message success" role="status">{message}</p>}
+    {step === "code" && <p className="form-message">{zh ? "如果收件箱中没有看到验证码邮件，请检查垃圾邮件或广告邮件文件夹。" : "If you don't see the code email in your inbox, check your Spam or Junk folder."}</p>}
     <div id={authView.captchaElementId} />
     <button className="primary-button full" disabled={loading || !signInLoaded || !signUpLoaded}>{loading ? (zh ? "请稍候…" : "Please wait…") : authView.primaryAction}</button>
     {step === "code" || step === "password-required" ? <button className="form-link" type="button" onClick={() => reset()}>{authView.secondaryAction}</button> : <button className="form-link" type="button" onClick={() => reset(method === "code" ? "password" : "code")}>{authView.secondaryAction}</button>}
