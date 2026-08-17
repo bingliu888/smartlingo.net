@@ -137,10 +137,12 @@ export async function handleClerkSessionBridgeRequest(
       : "";
     if (!email) return Response.json({ error: "Verified email required" }, { status: 400 });
 
-    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ")
-      || clerkUser.username
-      || email.split("@")[0]
-      || "SmartLingo";
+    const name = email === "bingliu@cybeye.com"
+      ? "Admin"
+      : [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ")
+        || clerkUser.username
+        || email.split("@")[0]
+        || "SmartLingo";
     const session = await dependencies.createAppSession(
       userId,
       email,
