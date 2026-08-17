@@ -15,15 +15,16 @@ test("daily practice opens durable vocab or immersive speaking training", async 
   ]);
 
   assert.match(learnPage, /CourseTrainingMenu/);
-  for (const training of ["Vocabulary", "Reading", "Writing", "Listening", "Dialogue"]) assert.match(trainingMenu, new RegExp(training));
+  for (const training of ["Vocabulary", "Speaking", "Listening", "Writing", "Quiz"]) assert.match(trainingMenu, new RegExp(training));
   assert.match(trainingMenu, /training=vocabulary/);
   assert.match(trainingMenu, /training=dialogue/);
-  assert.match(trainingMenu, /training=reading/);
+  assert.match(trainingMenu, /training=quiz/);
   assert.match(trainingMenu, /training=listening/);
   assert.match(trainingMenu, /口音校正/);
   assert.match(trainingMenu, /演讲训练/);
   assert.match(trainingMenu, /演讲稿修改/);
   assert.match(sessionPage, /query\.training === "writing" \? "writing"/);
+  assert.match(sessionPage, /query\.training === "quiz" \? "exam"/);
   assert.match(placementPage, /redirect\(`\/\$\{lang\}\/classes\/\$\{encodeURIComponent\(classId\)\}\/learn`\)/);
   assert.match(learningRoute, /fixedCoursePlacement/);
   assert.match(learningRoute, /entryMode: "fixed_course"/);

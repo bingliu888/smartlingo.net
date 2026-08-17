@@ -633,7 +633,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   classId?: string;
   calendarOnly?: boolean;
   view?: "dashboard" | "session";
-  initialSkill?: Skill;
+  initialSkill?: TrainingTab;
 }) {
   const router = useRouter();
   const t = COPY[lang];
