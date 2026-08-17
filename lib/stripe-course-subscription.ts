@@ -48,10 +48,6 @@ export async function syncStripeCourseSubscription(userId: string, classId: stri
     database.prepare(`INSERT INTO smartlingo_language_class_members(id,class_id,user_id,role,status,joined_at,updated_at)
       VALUES(?,?,?,'student',?,?,?) ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status=excluded.status,updated_at=excluded.updated_at`)
       .bind(crypto.randomUUID(), classId, userId, memberStatus, now, now),
-    database.prepare(`INSERT INTO subscriptions(id,user_id,cadence,status,trial_ends_at,current_period_ends_at,cancel_at_period_end,created_at,updated_at)
-      VALUES(?,?,'monthly',?,?,?,0,?,?) ON CONFLICT(user_id) DO UPDATE SET cadence='monthly',status=excluded.status,
-      trial_ends_at=excluded.trial_ends_at,current_period_ends_at=excluded.current_period_ends_at,cancel_at_period_end=0,updated_at=excluded.updated_at`)
-      .bind(crypto.randomUUID(), userId, status, trialEndsAt, currentPeriodEndsAt, now, now),
   ]);
   return { status, trialEndsAt, currentPeriodEndsAt };
 }

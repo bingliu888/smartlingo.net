@@ -84,6 +84,8 @@ jobs:
           test "$card_code" = "401"
           code="$(curl -sS -o /tmp/admin-crypto.json -w '%{http_code}' https://smartlingo.net/api/admin/crypto-settings)"
           test "$code" = "403"
+          presets_code="$(curl -sS -o /tmp/admin-crypto-presets.json -w '%{http_code}' -X POST https://smartlingo.net/api/admin/crypto-settings/presets)"
+          test "$presets_code" = "403"
 
       - name: Publish exact Project release record
         shell: bash
@@ -93,7 +95,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Course teaching rooms, practice rooms, and wallet checkout
-          RELEASE_TITLE_ZH: 课程教课室、练习室与钱包结账
-          RELEASE_NOTES: Pre-create one private Group Audio practice room for each of the 36 fixed language courses|Keep each existing private A/V Webinar as the course teaching room for administrators and co-host speakers|Allow active course students to use the practice room for free discussion and speaking practice|Show teaching-room and practice-room tiles together on course detail and learning pages|Bind Connect Wallet crypto verification to the exact selected course on both client and server
-          RELEASE_NOTES_ZH: 为 36 门固定语言课程各预创建一个私有 Group Audio 练习室|保留每门课程现有私有音视频 Webinar 作为管理员与协办主持使用的教课室|允许有效课程学员免费进入练习室讨论和练习口语|在课程详情与学习页同时显示教课室和练习室卡片|在客户端和服务端把连接钱包加密付款严格绑定到所选课程
+          RELEASE_TITLE: Course-scoped crypto payment configuration
+          RELEASE_TITLE_ZH: 单门课程加密支付配置
+          RELEASE_NOTES: Add an administrator action to create the nine standard Ethereum, BSC, Polygon, Base and GLC payment rails|Use the public receiver wallet saved in the permanent administrator profile|Keep Beginner, Intermediate and Advanced prices fixed at $20, $100 and $300 across every language|Activate only the exact selected language course after verified card or crypto payment|Never promote a member-level subscription from a course payment; all accounts remain free to register
+          RELEASE_NOTES_ZH: 新增管理员操作，一键创建 Ethereum、BSC、Polygon、Base 与 GLC 共九项标准收款通道|使用永久管理员资料中保存的公开收款钱包|所有语言的初期、中级和高级课程价格固定为 20、100 和 300 美元|信用卡或加密付款验证后只启用所选语言的对应单门课程|课程付款不再提升会员级订阅，所有账户均可免费注册
