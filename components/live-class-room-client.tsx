@@ -1023,6 +1023,7 @@ export function LiveClassRoomClient({
     [mic, setMic] = useState(false),
     [camera, setCamera] = useState(false),
     [identity] = useState(() => crypto.randomUUID()),
+    [entryPassword] = useState(() => { try { return String(JSON.parse(sessionStorage.getItem(`class-entry-${room.code}`) || "{}").password || ""); } catch { return ""; } }),
     [error, setError] = useState(""),
     [connecting, setConnecting] = useState(false),
     [playlistEnabled, setPlaylistEnabled] = useState(false),
@@ -1098,6 +1099,7 @@ export function LiveClassRoomClient({
             body: JSON.stringify({
               displayName,
               identity,
+              password: entryPassword,
               start,
               publish,
             }),
@@ -1153,7 +1155,7 @@ export function LiveClassRoomClient({
         setConnecting(false);
       }
     },
-    [client, disconnect, displayName, identity, initClient, joined, room.code],
+    [client, disconnect, displayName, entryPassword, identity, initClient, joined, room.code],
   );
   const changeMedia = useCallback(
     async (nextMic: boolean, nextCamera: boolean) => {

@@ -2,6 +2,7 @@ import {
   classAccess,
   classByCode,
   recordClassJoin,
+  verifyClassEntryPassword,
 } from "@/lib/live-classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
 import {
@@ -20,6 +21,7 @@ export async function POST(
       return Response.json({ error: "Class not found" }, { status: 404 });
     const body = (await request.json().catch(() => ({}))) as {
         displayName?: string;
+        password?: string;
         identity?: string;
         publish?: boolean;
         start?: boolean;
@@ -32,6 +34,8 @@ export async function POST(
         { error: "Private class invitation required" },
         { status: 403 },
       );
+    if (room.hasPassword && !access.manager && !await verifyClassEntryPassword(code, String(body.password || "")))
+      return Response.json({ error: "Incorrect class password", errorCode: "INCORRECT_CLASS_PASSWORD" }, { status: 403 });
     const db = getDatabase(),
       now = Math.floor(Date.now() / 1000),
       identity = String(body.identity || crypto.randomUUID()).slice(0, 100),

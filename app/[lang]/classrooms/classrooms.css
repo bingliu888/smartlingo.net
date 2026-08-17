@@ -74,3 +74,5 @@
 .class-local-playlist-tile>button{margin-top:8px;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:#21d6a2;color:#06232d;font-weight:800;cursor:pointer}
 .class-local-playlist-tile>em{display:block;padding-top:8px;color:#ffd1cc;font-style:normal}
 @media(max-width:640px){.playlist-waiting-toggle{align-items:flex-start;flex-wrap:wrap}.playlist-waiting-toggle small{width:100%;margin-left:20px}.class-local-playlist-tile{padding:8px}}
+
+.class-password-control{position:relative;display:block}.class-password-control input{width:100%;padding-right:52px}.class-password-toggle{width:42px;height:42px;position:absolute;right:5px;top:5px;display:grid;place-items:center;border:0;border-radius:10px;background:transparent;color:#fff;cursor:pointer}.class-password-toggle:hover,.class-password-toggle:focus-visible{background:#ffffff18;outline:2px solid #2de3aa;outline-offset:-2px}.class-password-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

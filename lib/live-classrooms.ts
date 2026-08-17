@@ -42,6 +42,11 @@ export async function verifyClassPassword(value: string, hash: string | null) {
   return !hash || await hashPassword(value) === hash;
 }
 
+export async function verifyClassEntryPassword(code: string, value: string) {
+  const row = await getDatabase().prepare("SELECT password_hash AS passwordHash FROM live_class_rooms WHERE code=? LIMIT 1").bind(code).first<{passwordHash:string|null}>();
+  return verifyClassPassword(value, row?.passwordHash ?? null);
+}
+
 export async function recordClassJoin(userId:string,roomId:string,joinedAt=Math.floor(Date.now()/1000)){
   await getDatabase().prepare(`INSERT INTO live_class_join_history(user_id,room_id,first_joined_at,last_joined_at) VALUES(?,?,?,?) ON CONFLICT(user_id,room_id) DO UPDATE SET last_joined_at=excluded.last_joined_at`).bind(userId,roomId,joinedAt,joinedAt).run();
 }
