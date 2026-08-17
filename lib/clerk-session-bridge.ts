@@ -139,7 +139,8 @@ export async function handleClerkSessionBridgeRequest(
 
     const name = email === "bingliu@cybeye.com"
       ? "Admin"
-      : [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ")
+      : /^bingliu\+([^@]+)@/i.exec(email)?.[1]
+        || [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ")
         || clerkUser.username
         || email.split("@")[0]
         || "SmartLingo";
