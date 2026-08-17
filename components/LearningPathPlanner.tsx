@@ -20,6 +20,7 @@ import {
   type SmartLingoCourseDays,
   type SmartLingoCourseLevel,
 } from "../lib/smartlingo-quick-courses";
+import { rememberTargetLanguage } from "./InterfaceLanguageMenu";
 
 type SavedPlan = {
   targetLanguage: SmartLingoCommunityLanguage;
@@ -146,9 +147,14 @@ const copy = {
   },
 } as const;
 
-export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
+export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false }: {
+  lang: "zh" | "en";
+  initialLanguage?: SmartLingoCommunityLanguage;
+  catalogOnly?: boolean;
+}) {
   const t = copy[lang];
-  const [targetLanguage, setTargetLanguage] = useState<SmartLingoCommunityLanguage>(lang === "zh" ? "en" : "es");
+  const [targetLanguage, setTargetLanguage] = useState<SmartLingoCommunityLanguage>(initialLanguage ?? (lang === "zh" ? "en" : "es"));
+  const [joinedCourses, setJoinedCourses] = useState<Array<{ id: string; targetLanguage: string; classKind?: string }>>([]);
   const [useCase, setUseCase] = useState<SmartLingoUseCase>("daily_life");
   const [dailyMinutes, setDailyMinutes] = useState<SmartLingoDailyMinutes>(10);
   const [selfReportedLevel, setSelfReportedLevel] = useState<SmartLingoLevel>("beginner");
@@ -164,7 +170,7 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
   const stages = useMemo(() => buildLanguagePath(targetLanguage), [targetLanguage]);
 
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("language");
+    const requested = initialLanguage ? null : new URLSearchParams(window.location.search).get("language");
     let languageFrame = 0;
     if (requested && SMARTLINGO_LANGUAGE_CATALOG.some(language => language.code === requested)) {
       languageFrame = window.requestAnimationFrame(() => setTargetLanguage(requested as SmartLingoCommunityLanguage));
@@ -172,9 +178,9 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
     void fetch("/api/learning-plan", { headers: { accept: "application/json" } }).then(async response => {
       if (!response.ok) return;
       const payload = await response.json() as { plans?: SavedPlan[] };
-      const active = payload.plans?.find(plan => plan.isActive);
+      const active = payload.plans?.find(plan => plan.isActive && (!initialLanguage || plan.targetLanguage === initialLanguage));
       if (!active) return;
-      setTargetLanguage(active.targetLanguage);
+      if (!initialLanguage) setTargetLanguage(active.targetLanguage);
       setUseCase(active.useCase);
       setDailyMinutes(active.dailyMinutes);
       setSelfReportedLevel(active.selfReportedLevel);
@@ -184,7 +190,21 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
     return () => {
       if (languageFrame) window.cancelAnimationFrame(languageFrame);
     };
-  }, []);
+    void fetch("/api/classes", { headers: { accept: "application/json" } }).then(async response => {
+      if (!response.ok) return;
+      const payload = await response.json() as { joinedClasses?: Array<{ id: string; targetLanguage: string; classKind?: string }>; classes?: Array<{ id: string; targetLanguage: string; classKind?: string; isJoined?: boolean; isOwner?: boolean }> };
+      setJoinedCourses(payload.joinedClasses ?? payload.classes?.filter(item => item.isJoined || item.isOwner) ?? []);
+    }).catch(() => undefined);
+  }, [initialLanguage]);
+
+  function openCatalogLanguage(language: SmartLingoCommunityLanguage) {
+    rememberTargetLanguage(language);
+    const joined = joinedCourses.find(item => item.targetLanguage === language && item.classKind === "official_language")
+      ?? joinedCourses.find(item => item.targetLanguage === language);
+    window.location.assign(joined
+      ? `/${lang}/classes/${encodeURIComponent(joined.id)}`
+      : `/${lang}/programs/${encodeURIComponent(language)}`);
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -250,7 +270,7 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
   }
 
   return <div className="sl-path-planner">
-    <section className="sl-language-catalog" data-layout-fill="language-catalog">
+    {!initialLanguage && <section id="language-catalog" className="sl-language-catalog" data-layout-fill="language-catalog">
       <header className="sl-planner-heading" data-readable-copy="language-catalog-copy">
         <p className="section-kicker">{t.catalogKicker}</p>
         <h2 data-layout-text-fit="language-catalog-title">{t.catalogTitle}</h2>
@@ -258,11 +278,9 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
       </header>
       <div className="sl-language-grid" data-layout-fill="language-catalog-grid">
         {SMARTLINGO_LANGUAGE_CATALOG.map(language => <button
-          className={language.code === targetLanguage ? "selected" : ""}
           type="button"
-          aria-pressed={language.code === targetLanguage}
           data-layout-track={`language-${language.code}`}
-          onClick={() => setTargetLanguage(language.code)}
+          onClick={() => openCatalogLanguage(language.code)}
           key={language.stableId}
         >
           <span>{language.nameZh} · {language.nameEn}</span>
@@ -277,8 +295,9 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
           <em>{t.status}</em>
         </button>)}
       </div>
-    </section>
+    </section>}
 
+    {!catalogOnly && <>
     <section className="sl-onboarding" data-layout-fill="goal-onboarding">
       <header className="sl-planner-heading" data-readable-copy="onboarding-copy">
         <p className="section-kicker">{t.onboardingKicker}</p>
@@ -287,7 +306,7 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
       </header>
       <form onSubmit={save} data-layout-fill="goal-onboarding-form">
         <div className="sl-onboarding-fields">
-          <label data-layout-track="onboarding-language"><span>{t.language}</span><select value={targetLanguage} onChange={event => setTargetLanguage(event.target.value as SmartLingoCommunityLanguage)}>{SMARTLINGO_LANGUAGE_CATALOG.map(language => <option value={language.code} key={language.code}>{language.nativeName} · {lang === "zh" ? language.nameZh : language.nameEn}</option>)}</select></label>
+          <div className="sl-fixed-language" data-layout-track="onboarding-language"><span>{t.language}</span><strong dir={selected.direction}>{selected.nativeName} · {lang === "zh" ? selected.nameZh : selected.nameEn}</strong></div>
           <label data-layout-track="onboarding-use-case"><span>{t.useCase}</span><select value={useCase} onChange={event => setUseCase(event.target.value as SmartLingoUseCase)}>{SMARTLINGO_USE_CASES.map(value => <option value={value} key={value}>{t.useCases[value]}</option>)}</select></label>
           <label data-layout-track="onboarding-minutes"><span>{t.minutes}</span><select value={dailyMinutes} onChange={event => setDailyMinutes(Number(event.target.value) as SmartLingoDailyMinutes)}>{SMARTLINGO_DAILY_MINUTES.map(value => <option value={value} key={value}>{value} {lang === "zh" ? "分钟" : "minutes"}</option>)}</select></label>
           <label data-layout-track="onboarding-level"><span>{t.level}</span><select value={selfReportedLevel} onChange={event => setSelfReportedLevel(event.target.value as SmartLingoLevel)}>{(["beginner", "intermediate", "advanced"] as const).map(value => <option value={value} key={value}>{t.levels[value]}</option>)}</select></label>
@@ -355,13 +374,14 @@ export function LearningPathPlanner({ lang }: { lang: "zh" | "en" }) {
       </div>
       <p className="sl-version-note">SmartLingo original bilingual path · {SMARTLINGO_PATH_CONTENT_VERSION}</p>
     </section>
+    </>}
     <LearningPathPlannerStyles/>
   </div>;
 }
 
 function LearningPathPlannerStyles() {
   return <style>{`
-    .sl-path-planner,.sl-path-planner *{box-sizing:border-box;min-width:0}.sl-path-planner{width:100%;max-width:none;color:var(--ink)}.sl-language-catalog,.sl-onboarding,.sl-path-map{width:100%;max-width:none;padding:clamp(66px,8vw,112px) clamp(18px,5vw,72px)}.sl-language-catalog{background:#f7f2e8}.sl-onboarding{background:#fff}.sl-path-map{background:#e8f3ed}.sl-planner-heading{width:100%;max-width:none}.sl-planner-heading h2{width:100%;max-width:none;margin:9px 0 15px;font:850 clamp(34px,5vw,66px)/1.04 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.045em;overflow-wrap:anywhere}.sl-planner-heading>p:last-child{max-width:74ch;margin:0;color:#566963;font-size:17px;line-height:1.72}.sl-language-grid{width:100%;max-width:none;margin-top:38px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.sl-language-grid>button{width:100%;min-height:310px;padding:23px;display:flex;flex-direction:column;align-items:stretch;border:1px solid #d6d2c8;border-radius:19px;background:#fff;color:var(--ink);font:inherit;text-align:left;cursor:pointer;overflow:hidden}.sl-language-grid>button.selected{border-color:#0c9271;box-shadow:inset 0 0 0 2px rgba(12,146,113,.2);background:#f0fbf6}.sl-language-grid>button>span{color:#0a775f;font-size:12px;font-weight:900;letter-spacing:.04em}.sl-language-grid strong{width:100%;margin:14px 0 18px;font-size:clamp(27px,3vw,39px);line-height:1.12;overflow-wrap:anywhere}.sl-language-grid dl{width:100%;margin:0;display:grid;gap:7px}.sl-language-grid dl div{display:flex;justify-content:space-between;gap:14px;border-top:1px solid #ebe7df;padding-top:7px}.sl-language-grid dt{color:#6b756f;font-size:12px}.sl-language-grid dd{margin:0;font-size:12px;font-weight:800;text-align:right;overflow-wrap:anywhere}.sl-language-grid small{margin-top:17px;color:#536b63;line-height:1.5}.sl-language-grid em{margin-top:auto;padding-top:12px;color:#0a775f;font-size:12px;font-style:normal;font-weight:900}.sl-onboarding form{width:100%;max-width:none;margin-top:38px;padding:clamp(24px,4vw,48px);border-radius:24px;background:#133f36;color:#fff}.sl-onboarding-fields{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.sl-onboarding label>span,.sl-onboarding fieldset>legend{display:block;margin-bottom:8px;color:#cbe0d8;font-size:12px;font-weight:900}.sl-onboarding select{width:100%;min-height:52px;padding:0 13px;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:#fff;color:#16362f;font:750 16px/1.3 inherit}.sl-onboarding fieldset{width:100%;margin:27px 0 0;padding:0;border:0}.sl-entry-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.sl-entry-grid label{width:100%;min-height:128px;padding:17px;display:flex;align-items:flex-start;gap:11px;border:1px solid rgba(255,255,255,.22);border-radius:14px;background:rgba(255,255,255,.06);cursor:pointer}.sl-entry-grid label.selected{border-color:#63deb7;background:rgba(99,222,183,.13)}.sl-entry-grid input{margin-top:4px;accent-color:#58d7ae}.sl-entry-grid strong,.sl-entry-grid small{display:block}.sl-entry-grid strong{color:#fff;line-height:1.35}.sl-entry-grid small{margin-top:8px;color:#c8d9d3;line-height:1.5}.sl-noncredential{max-width:74ch;margin:22px 0;color:#c6d7d1;line-height:1.65}.sl-onboarding form>.primary-button{border:0}.sl-planner-notice,.sl-planner-error{width:100%;margin:16px 0 0;padding:13px 15px;border-radius:11px}.sl-planner-notice{background:#dff7ec;color:#075b49}.sl-planner-error{background:#fff0ed;color:#8b332e}.sl-planner-error a{color:inherit;font-weight:900}.sl-stage-stack{width:100%;margin-top:40px;display:grid;gap:18px}.sl-stage{width:100%;padding:clamp(22px,4vw,43px);border:1px solid #c8dbd1;border-radius:24px;background:#fff}.sl-stage>header{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:19px}.sl-stage>header>span{min-width:56px;padding:9px 12px;border-radius:999px;background:#123f35;color:#fff;font-size:13px;font-weight:900;text-align:center}.sl-stage h3{width:100%;max-width:none;margin:0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em;overflow-wrap:anywhere}.sl-stage>header p{max-width:72ch;margin:8px 0 0;color:#5c6c66;line-height:1.6}.sl-stage>header em{padding:8px 11px;border-radius:999px;background:#e3f6ed;color:#087159;font-size:12px;font-style:normal;font-weight:900}.sl-unit-grid{width:100%;margin-top:27px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.sl-unit-grid>section{width:100%;padding:20px;border:1px solid #d7e1db;border-radius:17px;background:#fffdf8}.sl-unit-grid>section.current{border-color:#0b9473;box-shadow:inset 0 0 0 2px rgba(11,148,115,.16)}.sl-unit-grid>section>div:first-child{display:flex;justify-content:space-between;gap:10px;color:#0a775f;font-size:12px;font-weight:900}.sl-unit-grid h4{width:100%;max-width:none;margin:14px 0 9px;font-size:23px;line-height:1.18;overflow-wrap:anywhere}.sl-unit-grid>section>p{color:#586963;line-height:1.58}.sl-unit-grid dl{margin:18px 0 0;display:grid;gap:11px}.sl-unit-grid dt{color:#75817c;font-size:11px;font-weight:900;text-transform:uppercase}.sl-unit-grid dd{margin:4px 0 0;line-height:1.48;overflow-wrap:anywhere}.sl-unit-grid ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:5px;list-style:none}.sl-unit-grid li{padding:6px 8px;border-radius:999px;background:#e7f4ed;color:#087159;font-size:11px;font-weight:850}.sl-version-note{margin:22px 0 0;color:#5e6e68;font-size:12px}
+    .sl-path-planner,.sl-path-planner *{box-sizing:border-box;min-width:0}.sl-path-planner{width:100%;max-width:none;color:var(--ink)}.sl-language-catalog,.sl-onboarding,.sl-path-map{width:100%;max-width:none;padding:clamp(66px,8vw,112px) clamp(18px,5vw,72px)}.sl-language-catalog{background:#f7f2e8}.sl-onboarding{background:#fff}.sl-path-map{background:#e8f3ed}.sl-planner-heading{width:100%;max-width:none}.sl-planner-heading h2{width:100%;max-width:none;margin:9px 0 15px;font:850 clamp(34px,5vw,66px)/1.04 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.045em;overflow-wrap:anywhere}.sl-planner-heading>p:last-child{max-width:74ch;margin:0;color:#566963;font-size:17px;line-height:1.72}.sl-language-grid{width:100%;max-width:none;margin-top:38px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.sl-language-grid>button{width:100%;min-height:310px;padding:23px;display:flex;flex-direction:column;align-items:stretch;border:1px solid #d6d2c8;border-radius:19px;background:#fff;color:var(--ink);font:inherit;text-align:left;cursor:pointer;overflow:hidden}.sl-language-grid>button.selected{border-color:#0c9271;box-shadow:inset 0 0 0 2px rgba(12,146,113,.2);background:#f0fbf6}.sl-language-grid>button>span{color:#0a775f;font-size:12px;font-weight:900;letter-spacing:.04em}.sl-language-grid strong{width:100%;margin:14px 0 18px;font-size:clamp(27px,3vw,39px);line-height:1.12;overflow-wrap:anywhere}.sl-language-grid dl{width:100%;margin:0;display:grid;gap:7px}.sl-language-grid dl div{display:flex;justify-content:space-between;gap:14px;border-top:1px solid #ebe7df;padding-top:7px}.sl-language-grid dt{color:#6b756f;font-size:12px}.sl-language-grid dd{margin:0;font-size:12px;font-weight:800;text-align:right;overflow-wrap:anywhere}.sl-language-grid small{margin-top:17px;color:#536b63;line-height:1.5}.sl-language-grid em{margin-top:auto;padding-top:12px;color:#0a775f;font-size:12px;font-style:normal;font-weight:900}.sl-onboarding form{width:100%;max-width:none;margin-top:38px;padding:clamp(24px,4vw,48px);border-radius:24px;background:#133f36;color:#fff}.sl-onboarding-fields{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.sl-onboarding label>span,.sl-onboarding fieldset>legend,.sl-fixed-language>span{display:block;margin-bottom:8px;color:#cbe0d8;font-size:12px;font-weight:900}.sl-fixed-language>strong{min-height:52px;padding:0 13px;display:flex;align-items:center;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:#fff;color:#16362f;font:750 16px/1.3 inherit}.sl-onboarding select{width:100%;min-height:52px;padding:0 13px;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:#fff;color:#16362f;font:750 16px/1.3 inherit}.sl-onboarding fieldset{width:100%;margin:27px 0 0;padding:0;border:0}.sl-entry-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.sl-entry-grid label{width:100%;min-height:128px;padding:17px;display:flex;align-items:flex-start;gap:11px;border:1px solid rgba(255,255,255,.22);border-radius:14px;background:rgba(255,255,255,.06);cursor:pointer}.sl-entry-grid label.selected{border-color:#63deb7;background:rgba(99,222,183,.13)}.sl-entry-grid input{margin-top:4px;accent-color:#58d7ae}.sl-entry-grid strong,.sl-entry-grid small{display:block}.sl-entry-grid strong{color:#fff;line-height:1.35}.sl-entry-grid small{margin-top:8px;color:#c8d9d3;line-height:1.5}.sl-noncredential{max-width:74ch;margin:22px 0;color:#c6d7d1;line-height:1.65}.sl-onboarding form>.primary-button{border:0}.sl-planner-notice,.sl-planner-error{width:100%;margin:16px 0 0;padding:13px 15px;border-radius:11px}.sl-planner-notice{background:#dff7ec;color:#075b49}.sl-planner-error{background:#fff0ed;color:#8b332e}.sl-planner-error a{color:inherit;font-weight:900}.sl-stage-stack{width:100%;margin-top:40px;display:grid;gap:18px}.sl-stage{width:100%;padding:clamp(22px,4vw,43px);border:1px solid #c8dbd1;border-radius:24px;background:#fff}.sl-stage>header{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:19px}.sl-stage>header>span{min-width:56px;padding:9px 12px;border-radius:999px;background:#123f35;color:#fff;font-size:13px;font-weight:900;text-align:center}.sl-stage h3{width:100%;max-width:none;margin:0;font:820 clamp(27px,4vw,44px)/1.08 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em;overflow-wrap:anywhere}.sl-stage>header p{max-width:72ch;margin:8px 0 0;color:#5c6c66;line-height:1.6}.sl-stage>header em{padding:8px 11px;border-radius:999px;background:#e3f6ed;color:#087159;font-size:12px;font-style:normal;font-weight:900}.sl-unit-grid{width:100%;margin-top:27px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.sl-unit-grid>section{width:100%;padding:20px;border:1px solid #d7e1db;border-radius:17px;background:#fffdf8}.sl-unit-grid>section.current{border-color:#0b9473;box-shadow:inset 0 0 0 2px rgba(11,148,115,.16)}.sl-unit-grid>section>div:first-child{display:flex;justify-content:space-between;gap:10px;color:#0a775f;font-size:12px;font-weight:900}.sl-unit-grid h4{width:100%;max-width:none;margin:14px 0 9px;font-size:23px;line-height:1.18;overflow-wrap:anywhere}.sl-unit-grid>section>p{color:#586963;line-height:1.58}.sl-unit-grid dl{margin:18px 0 0;display:grid;gap:11px}.sl-unit-grid dt{color:#75817c;font-size:11px;font-weight:900;text-transform:uppercase}.sl-unit-grid dd{margin:4px 0 0;line-height:1.48;overflow-wrap:anywhere}.sl-unit-grid ul{margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:5px;list-style:none}.sl-unit-grid li{padding:6px 8px;border-radius:999px;background:#e7f4ed;color:#087159;font-size:11px;font-weight:850}.sl-version-note{margin:22px 0 0;color:#5e6e68;font-size:12px}
     .sl-course-intro{max-width:74ch;margin:0 0 12px;color:#c8d9d3;line-height:1.6}.sl-course-grid{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.sl-course-grid label{width:100%;min-height:164px;padding:17px;display:flex;align-items:flex-start;gap:11px;border:1px solid rgba(255,255,255,.22);border-radius:14px;background:rgba(255,255,255,.06);cursor:pointer}.sl-course-grid label.selected{border-color:#63deb7;background:rgba(99,222,183,.13)}.sl-course-grid input{margin-top:4px;accent-color:#58d7ae}.sl-course-grid b,.sl-course-grid small,.sl-course-grid em{display:block}.sl-course-grid b{color:#fff;line-height:1.35}.sl-course-grid small{margin-top:8px;color:#c8d9d3;line-height:1.5}.sl-course-grid em{margin-top:12px;color:#77e0be;font-size:12px;font-style:normal;font-weight:850}
     @media(max-width:1000px){.sl-language-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sl-onboarding-fields{grid-template-columns:1fr 1fr}.sl-unit-grid{grid-template-columns:1fr}.sl-unit-grid>section{min-height:0}}
     @media(max-width:700px){.sl-language-catalog,.sl-onboarding,.sl-path-map{padding-inline:16px}.sl-language-grid,.sl-entry-grid,.sl-course-grid{grid-template-columns:minmax(0,1fr)}.sl-language-grid>button{min-height:0}.sl-onboarding-fields{grid-template-columns:minmax(0,1fr)}.sl-onboarding form{padding:22px 16px}.sl-stage{padding:22px 16px}.sl-stage>header{grid-template-columns:minmax(0,1fr)}.sl-stage>header>span,.sl-stage>header>em{justify-self:start}.sl-entry-grid label,.sl-course-grid label{min-height:0}.sl-onboarding form>.primary-button{width:100%}}

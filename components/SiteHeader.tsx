@@ -8,10 +8,8 @@ import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
 function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
   const zh = lang === "zh";
   return <>
-    <Link href={`/${lang}/programs`}>{zh ? "学习" : "Learn"}</Link>
-    <Link href={`/${lang}/classes`}>{zh ? "课程" : "Courses"}</Link>
-    <Link href={`/${lang}/community`}>{zh ? "社区" : "Community"}</Link>
-    <Link href={`/${lang}/assistant`}>{zh ? "导师" : "Guru"}</Link>
+    <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
+    <Link href={`/${lang}/assistant`}>{zh ? "咨询专家" : "Ask Guru"}</Link>
   </>;
 }
 

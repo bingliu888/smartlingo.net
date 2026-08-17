@@ -98,11 +98,8 @@ export default async function ProgramsPage({ params }: { params: Promise<{ lang:
   if (lang !== "en" && lang !== "zh") notFound();
   const t = copy[lang];
   return <main className="ai-cert-public-page lingo-public-page" data-layout-page="programs">
-    <div className="ai-public-hero-shell" data-layout-fill="programs-hero-shell"><SiteHeader lang={lang}/><section className="ai-public-hero"><p className="section-kicker">SMARTLINGO · {lang === "zh" ? "学习" : "LEARN"}</p><h1 data-layout-text-fit="programs-title">{t.title}</h1><p data-readable-copy="programs-hero-copy">{t.intro}</p><div className="ai-cert-actions" data-layout-track="programs-actions"><Link className="primary-button" href={`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/programs`)}`}>{t.start} →</Link><Link className="secondary-button" href={`/${lang}/assistant`}>{t.guide}</Link></div></section></div>
-    <LearningPathPlanner lang={lang}/>
-    <section className="ai-governance-list"><div className="ai-cert-heading"><p className="section-kicker">{t.practiceKicker}</p><h2>{t.practiceTitle}</h2></div><div className="lingo-practice-grid">{t.practice.map(([title,body],index) => <article key={title}><span>0{index+1}</span><h3>{title}</h3><p>{body}</p></article>)}</div></section>
-    <section className="ai-class-builder-section"><div><p className="section-kicker">{t.classKicker}</p><h2>{t.classTitle}</h2><p>{t.classBody}</p><Link className="primary-button" href={`/${lang}/classes`}>{lang === "zh" ? "打开班级工作室" : "Open Class Studio"} →</Link></div><div>{t.classOptions.map(([title,body],index) => <article key={title}><span>0{index+1}</span><h3>{title}</h3><p>{body}</p></article>)}</div></section>
-    <section className="ai-program-notes"><article><h2>{t.safetyTitle}</h2><p>{t.safetyBody}</p></article><article><h2>{t.audioTitle}</h2><p>{t.audioBody}</p></article></section>
+    <div className="ai-public-hero-shell" data-layout-fill="programs-hero-shell"><SiteHeader lang={lang}/><section className="ai-public-hero"><p className="section-kicker">SMARTLINGO · {lang === "zh" ? "选择课程" : "CHOOSE COURSE"}</p><h1 data-layout-text-fit="programs-title">{t.title}</h1><p data-readable-copy="programs-hero-copy">{t.intro}</p><div className="ai-cert-actions" data-layout-track="programs-actions"><Link className="primary-button" href="#language-catalog">{t.start} →</Link><Link className="secondary-button" href={`/${lang}/assistant`}>{t.guide}</Link></div></section></div>
+    <LearningPathPlanner lang={lang} catalogOnly/>
     <SiteFooter lang={lang}/>
   </main>;
 }

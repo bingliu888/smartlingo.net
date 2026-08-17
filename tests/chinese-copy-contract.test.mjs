@@ -15,7 +15,7 @@ test("Chinese shared controls and account notices remain localized", async () =>
 
   assert.match(header, /SmartLingo 首页/);
   assert.match(header, /主导航/);
-  for (const label of ["学习", "课程", "社区", "导师"]) assert.match(header, new RegExp(label));
+  for (const label of ["选择课程", "咨询专家"]) assert.match(header, new RegExp(label));
   assert.match(footer, /页脚导航/);
   assert.match(footer, /从第一天开口 · 人工智能导师 · 会员开班 · 一起学习/);
   assert.match(language, /切换为英文/);

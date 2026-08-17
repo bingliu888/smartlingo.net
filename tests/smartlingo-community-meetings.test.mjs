@@ -17,7 +17,7 @@ test("community meetings have one active meeting per host and own durable group 
   assert.match(route, /You already have a live or scheduled meeting/);
 });
 
-test("meeting center separates live and upcoming meetings and profiles expose countdown join", () => {
+test("retired Community page redirects while meeting runtime remains isolated", () => {
   const center = read("components/CommunityMeetings.tsx");
   const community = read("components/CommunityClient.tsx");
   const page = read("app/[lang]/community/page.tsx");
@@ -30,7 +30,7 @@ test("meeting center separates live and upcoming meetings and profiles expose co
   assert.match(community, /meetingCountdown/);
   assert.match(community, /joinMemberMeeting/);
   assert.match(community, /addEventListener\("smartlingo:meetings-changed"/);
-  assert.match(page, /CommunityMeetings/);
+  assert.match(page, /redirect\(`\/\$\{lang\}\/programs`\)/);
 });
 
 test("only the host can end a meeting and ending closes its active realtime call", () => {

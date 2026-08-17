@@ -25,4 +25,9 @@ test("daily practice opens durable vocab or immersive speaking training", async 
   assert.match(workspace, /导师已就绪/);
   assert.match(workspace, /startDictation\(skill, task\.speechLocale\)/);
   assert.match(workspace, /submitTask\(task, false\)/);
+  assert.match(workspace, /跟我说/);
+  assert.match(workspace, /回答我/);
+  assert.match(workspace, /startDialogueTraining\(task, "follow"\)/);
+  assert.match(workspace, /startDialogueTraining\(task, "answer"\)/);
+  assert.match(workspace, /action: "submit_task", taskId: task\.taskId, skill: "dialogue", answer: transcript/);
 });

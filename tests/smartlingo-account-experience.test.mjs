@@ -4,13 +4,13 @@ import test from "node:test";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("signed-in account menu uses the shared six-entry member navigation", async () => {
+test("signed-in account menu keeps the simplified member navigation", async () => {
   const source = await read("components/HeaderAccount.tsx");
 
-  for (const label of ["用户面板", "个人资料", "我的课程", "消息", "社区", "学习路径"]) assert.match(source, new RegExp(label));
-  for (const label of ["Dashboard", "Profile", "My Courses", "Messages", "Community", "Learning paths"]) assert.match(source, new RegExp(label));
+  for (const label of ["用户面板", "个人资料", "我的课程", "消息", "选择课程"]) assert.match(source, new RegExp(label));
+  for (const label of ["Dashboard", "Profile", "My Courses", "Messages", "Choose course"]) assert.match(source, new RegExp(label));
   assert.match(source, /\/classes\?mine=1/);
-  assert.doesNotMatch(source, /\/classrooms\?view=mine|My Classrooms/);
+  assert.doesNotMatch(source, /\/classrooms\?view=mine|My Classrooms|\/community/);
   assert.doesNotMatch(source, /职业档案|人才库|Gold|Platinum|黄金|铂金|BACC|license/i);
 });
 
@@ -31,7 +31,7 @@ test("dashboard presents three platform plans without gating member-created clas
   assert.doesNotMatch(joined, /白银会员|黄金会员|铂金会员|BACC|授权码|license key/i);
 });
 
-test("profile and member directory keep shared avatar, message, community, and platform-introducer paths", async () => {
+test("profile and member directory keep shared avatar, message, and platform-introducer paths", async () => {
   const [account, profile, members] = await Promise.all([
     read("app/[lang]/account/page.tsx"),
     read("components/ProfileEditor.tsx"),
@@ -42,7 +42,7 @@ test("profile and member directory keep shared avatar, message, community, and p
   assert.match(account, /FROM referrals r JOIN referral_codes rc/);
   assert.match(account, /\/classes\?mine=1/);
   assert.match(account, /\/messages/);
-  assert.match(account, /\/community/);
+  assert.doesNotMatch(account, /\/community/);
   assert.match(profile, /prepareAvatarUpload/);
   assert.match(profile, /平台直接介绍关系/);
   assert.match(profile, /班级付款不产生介绍人积分/);

@@ -16,7 +16,7 @@ test("anchors Ask Guru as a root-layout viewport control", async () => {
   assert.match(assistant, /route === "\/assistant" \|\| route\.startsWith\("\/auth\/"\)/);
   assert.match(css, /\.floating-assistant\{\s*position:fixed!important;\s*inset:auto[^;]*safe-area-inset-right[^;]*safe-area-inset-bottom[^;]*auto!important;/);
   assert.match(header, /href=\{`\/\$\{lang\}\/assistant`\}/);
-  assert.match(header, /zh \? "导师" : "Guru"/);
+  assert.match(header, /zh \? "咨询专家" : "Ask Guru"/);
 });
 
 test("keeps the supplementary Guru shortcut outside every release viewport", async () => {

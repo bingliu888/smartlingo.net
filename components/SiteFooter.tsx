@@ -11,9 +11,8 @@ export function SiteFooter({ lang }: { lang: "en" | "zh" }) {
         <small>© 2026 SmartLingo.net</small>
       </div>
       <nav aria-label={zh ? "页脚导航" : "Footer navigation"}>
-        <Link href={`/${lang}/programs`}>{zh ? "学习" : "Learn"}</Link>
-        <Link href={`/${lang}/classes`}>{zh ? "班级" : "Classes"}</Link>
-        <Link href={`/${lang}/community`}>{zh ? "社区" : "Community"}</Link>
+        <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
+        <Link href={`/${lang}/assistant`}>{zh ? "咨询专家" : "Ask Guru"}</Link>
         <Link href={`/${lang}/pricing`}>{zh ? "方案" : "Plans"}</Link>
         <Link href={`/${lang}/project`}>{zh ? "项目" : "Project"}</Link>
         <Link href={`/${lang}/about`}>{zh ? "关于我们" : "About"}</Link>

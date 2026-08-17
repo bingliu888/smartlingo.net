@@ -45,10 +45,13 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.doesNotMatch(css, /\.interface-language-current\{display:none\}/);
 });
 
-test("the homepage language chooser gives all twelve communities a working join, placement, or enter path", async () => {
-  const [home, chooser, css] = await Promise.all([
+test("home and Choose course route languages through a separate detail page or an existing course", async () => {
+  const [home, chooser, planner, programs, detail, css] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/LanguageCommunityChooser.tsx"),
+    read("../components/LearningPathPlanner.tsx"),
+    read("../app/[lang]/programs/page.tsx"),
+    read("../app/[lang]/programs/[language]/page.tsx"),
     read("../app/globals.css"),
   ]);
 
@@ -56,15 +59,20 @@ test("the homepage language chooser gives all twelve communities a working join,
   assert.equal((chooser.match(/<h1/g) || []).length, 1);
   assert.equal((home.match(/<h1/g) || []).length, 0);
   assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);
-  assert.match(chooser, /您想加入哪个语言学习社区/);
-  assert.match(chooser, /已经会的语言继续提高/);
+  assert.match(chooser, /您想学习哪种语言/);
+  assert.match(chooser, /下一页会显示课程详情与学习选项/);
   assert.match(chooser, /joined \? "joined" : ""/);
   assert.match(chooser, /已加入 · 进入课程/);
   assert.match(chooser, /Joined · Open course/);
-  assert.match(chooser, /\/api\/classes\/\$\{encodeURIComponent\(available\.id\)\}\/enroll/);
-  assert.match(chooser, /\/classes\/\$\{encodeURIComponent\(available\.id\)\}\/placement/);
-  assert.match(chooser, /auth\/login\?returnTo=/);
+  assert.match(chooser, /\/programs\/\$\{encodeURIComponent\(code\)\}/);
+  assert.doesNotMatch(chooser, /\/enroll|\/placement|auth\/login\?returnTo=/);
   assert.match(chooser, /openLanguage/);
+  assert.match(programs, /<LearningPathPlanner lang=\{lang\} catalogOnly\/>/);
+  assert.match(planner, /openCatalogLanguage/);
+  assert.match(planner, /joined[\s\S]*?\/classes\/\$\{encodeURIComponent\(joined\.id\)\}/);
+  assert.match(planner, /\/programs\/\$\{encodeURIComponent\(language\)\}/);
+  assert.match(detail, /initialLanguage=\{language\}/);
+  assert.match(detail, /确认前不会自动加入课程/);
   assert.doesNotMatch(chooser, /selectedLanguage|lingo-training-menu|>Vocab<|>Speaking</);
   assert.doesNotMatch(css, /\.lingo-training-menu\{/);
   assert.match(css, /\.lingo-community-grid\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);

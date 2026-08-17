@@ -9,7 +9,6 @@ test("primary public and signed-in surfaces use the shared SiteHeader", async ()
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
     read("../app/[lang]/account/page.tsx"),
-    read("../app/[lang]/community/page.tsx"),
     read("../app/[lang]/members/page.tsx"),
     read("../app/[lang]/messages/page.tsx"),
     read("../app/[lang]/messages/live/[threadId]/page.tsx"),
@@ -22,6 +21,7 @@ test("primary public and signed-in surfaces use the shared SiteHeader", async ()
     read("../components/ProjectDashboard.tsx"),
   ]);
   for (const source of files) assert.match(source, /<SiteHeader lang=\{lang\}\s*\/>/);
+  assert.match(await read("../app/[lang]/community/page.tsx"), /redirect\(`\/\$\{lang\}\/programs`\)/);
 });
 
 test("shared footer links to the bilingual public Project progress and history", async () => {

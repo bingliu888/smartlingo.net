@@ -120,9 +120,9 @@ test("Project status records the fourth-day evidence without fabricating a verif
 
   assert.match(projectStatus, /import \{ smartLingoRoadmapTasks \} from "\.\/smartlingo-roadmap";/);
   assert.match(projectStatus, /projectTasks: ProjectTask\[\] = smartLingoRoadmapTasks/);
-  assert.match(projectStatus, /editionDate: "2026-08-03"/);
-  assert.match(projectStatus, /today: 20/);
-  assert.match(projectStatus, /total: 100/);
+  assert.match(projectStatus, /editionDate: "2026-08-16"/);
+  assert.match(projectStatus, /today: 1/);
+  assert.match(projectStatus, /total: 101/);
   assert.match(projectStatus, /projectBuilds: ProjectBuild\[\] = \[/);
   assert.match(projectStatus, /version: 5/);
   assert.match(projectStatus, /commit: "a4389a5edfa6d73cb5471d2c564625d041054a2b"/);

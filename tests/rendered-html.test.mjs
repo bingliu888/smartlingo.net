@@ -59,7 +59,9 @@ test("renders the SmartLingo language-learning foundation", async () => {
   assert.match(html, /介绍人积分只来自平台订阅付款/);
   assert.match(html, /真实结账保持关闭/);
   assert.match(html, /社区/);
-  assert.match(html, /\/zh\/community/);
+  assert.doesNotMatch(html, /href="\/zh\/community"/);
+  assert.match(html, />选择课程<\/a>/);
+  assert.match(html, />咨询专家<\/a>/);
   assert.match(html, /\/zh\/project/);
   assert.match(html, />项目</);
   assert.match(html, /消息与实时聊天/);

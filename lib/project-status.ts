@@ -272,7 +272,7 @@ export const projectReports: ProjectReport[] = [
       en: "Continue with the five August 4 tasks: versioned vocabulary records, multimodal flashcards, the spaced-review engine, mistake and focus lists, and vocabulary-learning quality tests.",
     },
   },
-  { date: "2026-08-16", title: { zh: "实时课堂媒体隔离发布 · 2026-08-16 10:33 PDT", en: "Realtime classroom media isolation release · 2026-08-16 10:33 PDT" }, beta: { zh: "查看发布说明", en: "View release notes" }, completed: 4, summary: { zh: "实时课堂候场播放、发布连接与安全保护完成统一。", en: "Realtime classroom waiting playback, publisher connection timing, and safeguards are aligned." }, validation: { zh: ["相关契约测试通过", "生产构建通过"], en: ["Relevant contract tests pass", "Production build passes"] }, rollback: { zh: "可回滚至上一 Cloudflare Worker 版本。", en: "Rollback to the previous Cloudflare Worker release." }, next: { zh: "按需在站点专用任务中执行真实用户测试。", en: "Run real-user testing in the dedicated site task when requested." } },
+  { date: "2026-08-16", title: { zh: "实时课堂媒体隔离发布 · 2026-08-16 10:33 PDT", en: "Realtime classroom media isolation release · 2026-08-16 10:33 PDT" }, beta: { zh: "查看发布说明", en: "View release notes" }, completed: 4, summary: { zh: "实时课堂候场播放、发布连接与安全保护完成统一。", en: "Realtime classroom waiting playback, publisher connection timing, and safeguards are aligned." }, validation: { zh: ["相关契约测试通过", "生产构建通过"], en: ["Relevant contract tests pass", "Production build passes"] }, rollback: { zh: "可回滚至上一云端运行版本。", en: "Rollback to the previous Cloudflare Worker release." }, next: { zh: "按需在站点专用任务中执行真实用户测试。", en: "Run real-user testing in the dedicated site task when requested." } },
 ];
 
 export const taskById = (id: string) => projectTasks.find(task => task.id === id);

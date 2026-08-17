@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
-test("SmartLingo branding and bilingual navigation expose learning, classes, community, and Guru", async () => {
+test("SmartLingo branding exposes the simplified course and Guru navigation", async () => {
   const [header, footer, layout, languageLayout] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../components/SiteFooter.tsx"),
@@ -13,10 +13,12 @@ test("SmartLingo branding and bilingual navigation expose learning, classes, com
   ]);
 
   assert.match(header, /Smart<em>Lingo<\/em>/);
-  for (const path of ["programs", "classes", "community", "assistant"]) assert.match(header, new RegExp(`/${path}`));
-  for (const label of ["学习", "课程", "社区", "导师"]) assert.match(header, new RegExp(label));
+  for (const path of ["programs", "assistant"]) assert.match(header, new RegExp(`/${path}`));
+  for (const label of ["选择课程", "咨询专家"]) assert.match(header, new RegExp(label));
+  assert.doesNotMatch(header, /\/classes|\/community/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
-  for (const path of ["programs", "classes", "community", "pricing", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
+  for (const path of ["programs", "assistant", "pricing", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
+  assert.doesNotMatch(footer, /\/community/);
   assert.match(layout, /"smartlingo\.net"/);
   assert.match(layout, /smartlingo-language-community-1600\.png/);
   assert.match(layout, /<html lang="zh-CN"/);
