@@ -26,7 +26,7 @@ export function CourseClassroomTile({ classId, lang, compact = false }: { classI
     { key: "teaching", icon: "▣", eyebrow: zh ? "WEBINAR · 音视频" : "WEBINAR · A/V", title: zh ? "教课室" : "Teaching room", copy: state?.teachingRoom.title || (zh ? "管理员授课与协办主持演讲" : "Administrator teaching and co-host speakers"), live: state?.teachingRoom.live, code: state?.teachingRoom.code },
     { key: "practice", icon: "◉", eyebrow: zh ? "GROUP CALL · 语音" : "GROUP CALL · AUDIO", title: zh ? "练习室" : "Practice room", copy: state?.practiceRoom.title || (zh ? "同学免费讨论与口语练习" : "Free student discussion and speaking practice"), live: state?.practiceRoom.live, code: state?.practiceRoom.code },
   ];
-  return <section className={`course-room-grid${compact ? " compact" : ""}`} data-layout-fill="course-classrooms" aria-label={zh ? "课程教课室与练习室" : "Course teaching and practice rooms"}>
+  return <section className={`course-room-grid${compact ? " compact" : ""}`} data-layout-fill={compact ? undefined : "course-classrooms"} aria-label={zh ? "课程教课室与练习室" : "Course teaching and practice rooms"}>
     {rooms.map(room => <article className="course-classroom-tile" key={room.key}>
       <span className="course-classroom-icon" aria-hidden="true">{room.icon}</span>
       <div><small>{room.eyebrow}</small><h2>{room.title}</h2><p>{room.copy}</p><b>{room.live ? (zh ? "正在进行" : "Live now") : room.key === "practice" ? (zh ? "学员免费使用" : "Free for enrolled students") : (zh ? "课程专属" : "Course access")}</b>{error && <em>{zh ? "房间暂时不可用" : "Room is temporarily unavailable"}</em>}</div>

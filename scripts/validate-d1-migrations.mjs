@@ -1621,7 +1621,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0039_smartlingo_vocabulary_focus");
+  assert.equal(migrations.at(-1)?.tag, "0040_smartcards_curriculum_credits");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1684,6 +1684,10 @@ export function validateD1Migrations() {
       "smartlingo_daily_checkpoint_enrollment_day_uq",
       "smartlingo_daily_answer_feedback_client_operation_id_unique",
       "smartlingo_learning_xp_ledger_activity_event_id_unique",
+      "smartlingo_vocabulary_identity_uq",
+      "smartlingo_smartcard_attempt_identity_uq",
+      "smartlingo_smartcard_reward_once_uq",
+      "smartlingo_course_credit_source_uq",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1726,7 +1730,21 @@ export function validateD1Migrations() {
       "crypto_payment_settings",
       "crypto_payment_claims",
       "crypto_payment_admin_audit",
+      "smartlingo_curriculum_levels",
+      "smartlingo_vocabulary_items",
+      "smartlingo_smartcard_decks",
+      "smartlingo_smartcard_items",
+      "smartlingo_smartcard_challenge_attempts",
+      "smartlingo_smartcard_guest_attempts",
+      "smartlingo_course_credit_policy",
+      "smartlingo_course_credit_ledger",
+      "smartlingo_course_credit_redemptions",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
+
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_curriculum_levels").get().count, 3);
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items WHERE review_status='published'").get().count, 336);
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_decks WHERE owner_user_id='smartlingo-language-admin'").get().count, 12);
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_items WHERE deck_id LIKE 'starter_%'").get().count, 144);
 
     const smoke = runD1Smoke(database);
     return {

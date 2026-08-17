@@ -6,7 +6,6 @@ import { TextSizeControl } from "../../../components/TextSizeControl";
 import { getDatabase, getSessionUser } from "../../../lib/auth";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
-import { isAdminUser } from "../../../lib/admin-access";
 import "./dashboard-tuneup.css";
 
 export const dynamic = "force-dynamic";
@@ -63,12 +62,12 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
   const t = copy[lang];
-  const isAdmin = await isAdminUser(user);
   const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2 WHERE user_id = ?")
     .bind(user.id).first<{ count: number }>())?.count ?? 0;
   return (
-    <main className="dashboard-page">
+    <main className="dashboard-page" data-layout-page="dashboard" data-layout-ready="true" data-layout-overlap-check="dashboard-page">
       <SiteHeader lang={lang} />
+      <span data-layout-overlap-check="dashboard-start" style={{ display: "block", height: 1 }} />
       <div className="dashboard-wrap">
         <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p></div>
         <section className="dashboard-voice-panel">
@@ -85,6 +84,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
           <section className="coming-card"><div className="mini-table gc-mini-network" aria-hidden="true"><span>{lang === "zh" ? "免费" : "FREE"}</span><span>{lang === "zh" ? "进阶" : "PLUS"}</span><i>{lang === "zh" ? "协调" : "COORD"}</i><span>{lang === "zh" ? "开班" : "CLASS"}</span><span>{lang === "zh" ? "社区" : "SOCIAL"}</span></div><div><p className="section-kicker">{lang === "zh" ? "平台方案" : "PLATFORM PLANS"}</p><h2>{t.coming}</h2><p>{t.comingBody}</p></div></section>
         </div>
       </div>
+      <span data-layout-overlap-check="dashboard-end" style={{ display: "block", height: 1 }} />
       <SiteFooter lang={lang} />
     </main>
   );

@@ -48,8 +48,8 @@ const copy = {
       ["3 levels", "Beginner, Intermediate, and Advanced"],
       ["2 rooms", "A Webinar teaching room and group-audio practice room for each course"],
     ],
-    rewardTitle: "Introducer rewards apply only to platform subscriptions.",
-    rewardBody: "When the platform successfully charges a recurring SmartLingo subscription, its direct introducer can receive the published reward points for that payment. Class purchases, teacher payouts, refunds, tips, and connected-account charges never create introducer points.",
+    rewardTitle: "Three point types stay separate and auditable.",
+    rewardBody: "Learning XP tracks motivation and has no cash value. Verified SmartCard challenge points can offset only a SmartLingo course month. Direct-introducer rewards remain limited to qualifying platform-subscription payments; class purchases, payouts, tips, and refunds never create them.",
     socialKicker: "LEARN WITH PEOPLE",
     socialTitle: "A language class should feel alive between lessons.",
     social: [
@@ -112,8 +112,8 @@ const copy = {
       ["三级", "初期、中级和高级"],
       ["两个房间", "每门课程都有 Webinar 教课室和小组语音练习室"],
     ],
-    rewardTitle: "介绍人积分只来自平台订阅付款。",
-    rewardBody: "平台每次成功收取 SmartLingo 订阅费后，该用户的直接介绍人可按已公布规则获得积分。班级购买、老师收款、退款、打赏和连接账户付款一律不产生介绍人积分。",
+    rewardTitle: "三类积分独立记账、可追溯。",
+    rewardBody: "学习 XP 只表示动力和进度，没有现金价值；经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费；直接介绍人积分仍只来自符合规则的平台订阅付款，班级购买、收款、打赏和退款都不会产生介绍人积分。",
     socialKicker: "和真实的人一起学习",
     socialTitle: "一门语言班，在下课后也应该保持活力。",
     social: [
@@ -157,7 +157,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <h2 data-layout-text-fit="home-hero-title">{t.title}</h2>
             <p>{t.intro}</p>
             <div className="lingo-actions">
-              <Link className="primary-button" href={`/${lang}/auth/sign-up`}>{t.start} →</Link>
+              <Link className="primary-button" href={`/${lang}/smartcards`}>{lang === "zh" ? "无需登录，免费挑战" : "Try free — no sign-in"} →</Link>
+              <Link className="secondary-button" href={`/${lang}/auth/sign-up`}>{t.start}</Link>
               <Link className="secondary-button" href={`/${lang}/classes`}>{t.classes}</Link>
               <Link className="text-link" href={`/${lang}/assistant`}>{t.voice}</Link>
             </div>
@@ -182,6 +183,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </section>
       </div>
+
+      <section className="lingo-section" style={{ paddingTop: 72, paddingBottom: 72 }}>
+        <div className="lingo-heading"><p className="section-kicker">SMARTCARDS · SOCIAL LEARNING</p><h2>{lang === "zh" ? "先学会，再决定是否注册。" : "Learn something first. Decide about an account later."}</h2><p>{lang === "zh" ? "十二种语言都有公开入门词卡。翻卡、听发音、完成混合挑战并把链接发给朋友；合格积分保存在此设备，登录后可用于抵扣最多全额月费。打开词卡、注册或领取积分都不会自动订阅。" : "Every language has a public starter deck. Flip cards, hear pronunciation, complete a mixed challenge, and share it with a friend. Eligible points stay on this device and can offset up to a full monthly fee after sign-in. Opening, registering, or claiming never starts a subscription."}</p></div>
+        <div className="lingo-actions"><Link className="primary-button" href={`/${lang}/smartcards`}>{lang === "zh" ? "选择语言开始" : "Choose a language"} →</Link><Link className="secondary-button" href={`/${lang}/smartcards/starter-en`}>{lang === "zh" ? "直接试学英语" : "Try English now"}</Link></div>
+      </section>
 
       <section className="lingo-section lingo-loop-section">
         <div className="lingo-heading"><p className="section-kicker">{t.loopKicker}</p><h2>{t.loopTitle}</h2><p>{t.loopBody}</p></div>

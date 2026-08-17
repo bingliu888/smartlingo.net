@@ -16,8 +16,12 @@ test("English and Chinese routes use matching content", async () => {
   assert.match(home, /练词汇、做阅读、写作、听力和真实对话/);
   assert.match(home, /Choose the depth of training that fits your goal/);
   assert.match(home, /三级课程/);
-  assert.match(home, /Introducer rewards apply only to platform subscriptions/);
-  assert.match(home, /介绍人积分只来自平台订阅付款/);
+  assert.match(home, /Three point types stay separate and auditable/);
+  assert.match(home, /三类积分独立记账、可追溯/);
+  assert.match(home, /Verified SmartCard challenge points can offset only a SmartLingo course month/);
+  assert.match(home, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
+  assert.match(home, /Try free — no sign-in/);
+  assert.match(home, /无需登录，免费挑战/);
   assert.match(home, /Messages & Live Chat/);
   assert.match(home, /AI Guru & live audio/);
   assert.match(home, /人工智能导师与实时语音/);

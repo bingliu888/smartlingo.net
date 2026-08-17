@@ -18,8 +18,10 @@ test("homepage exposes the complete SmartLingo learning and fixed-course flow", 
   assert.match(source, /人工智能导师与实时语音/);
   assert.match(source, /今天开通课程不会收费/);
   assert.match(source, /30 天后按固定月费续订/);
-  assert.match(source, /介绍人积分只来自平台订阅付款/);
-  assert.match(source, /班级购买、老师收款、退款、打赏和连接账户付款一律不产生介绍人积分/);
+  assert.match(source, /三类积分独立记账、可追溯/);
+  assert.match(source, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
+  assert.match(source, /班级购买、收款、打赏和退款都不会产生介绍人积分/);
+  assert.match(source, /无需登录，免费挑战/);
   assert.doesNotMatch(source, /人工智能实操营|21 天|BACC|黄金会员|铂金会员|授权码|PayPal/);
 });
 

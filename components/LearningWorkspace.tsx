@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
+import { SmartCardStudio } from "./SmartCardStudio";
 
 type Lang = "zh" | "en";
 type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
@@ -1694,6 +1695,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               <small>{item.reason === "saved" ? `★ ${t.focusSaved}` : `↻ ${t.focusMistake}${item.lapseCount > 1 ? ` × ${item.lapseCount}` : ""}`}</small>
             </li>)}</ul>
           </section> : null}
+          {classId ? <SmartCardStudio lang={lang} classId={classId}/> : null}
         </article> : null}
 
         {PRACTICE_SKILLS.filter(skill => skill === activeSkill).map((skill, index) => {

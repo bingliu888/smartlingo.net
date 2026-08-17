@@ -9,6 +9,7 @@ const copy = {
     intro: "Draft for preview as of July 31, 2026. Live payment remains disabled until this policy completes legal and provider review.",
     sections: [
       ["Platform subscriptions", "Cancellation stops future renewals under the checkout terms. Refund eligibility for a paid period will be stated at checkout and remains subject to non-waivable consumer rights."],
+      ["Course-credit periods", "A full course-credit redemption opens one course for 30 days and does not auto-renew. No money is charged, so it is not a cash refund. A verified technical failure or legally required remedy is handled through an auditable credit reversal without creating a negative balance."],
       ["Member-created classes", "Each class must disclose schedule, delivery, owner, price, and refund window before purchase. The first-payment discount does not remove applicable refund rights."],
       ["Split reversal", "An approved class refund reverses applicable owner transfer and platform application fee consistently. Partial refunds reverse the corresponding amounts and update access and ledgers from verified webhooks."],
       ["Disputes", "A dispute can pause class access and owner payout while evidence is reviewed. Platform records distinguish paid, refunded, partially refunded, disputed, failed, and cancelled orders."],
@@ -20,6 +21,7 @@ const copy = {
     intro: "预览草案，日期为 2026 年 7 月 31 日。本政策完成法律与服务商审核前，真实付款保持关闭。",
     sections: [
       ["平台订阅", "取消会依照结账条款停止未来续费；已付周期的退款资格会在结账时说明，并始终受不可放弃的消费者权利约束。"],
+      ["课程积分周期", "全额课程积分兑换会开放一门课程 30 天且不会自动续订。因为没有收取金钱，所以不存在现金退款；经验证的技术故障或法律要求的补救通过可审计积分冲正处理，并且不会造成负余额。"],
       ["会员创建班级", "每个班级在购买前必须披露日程、交付方式、班主、价格与退款窗口。首次付款优惠不会取消适用的退款权利。"],
       ["分账冲正", "批准班级退款时，按规则同步冲正班主转账与平台应用费；部分退款按相应金额冲正，并根据验证回调更新使用权和账本。"],
       ["付款争议", "争议处理期间可以暂停班级使用权与班主提现。平台会区分已付款、已退款、部分退款、争议、失败与取消订单。"],

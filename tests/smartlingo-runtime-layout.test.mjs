@@ -28,10 +28,12 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/",
     "/classes",
     "/programs",
-    "/classes/class_official_es/placement",
-    "/classes/class_official_en/learn",
-    "/classes/class_official_en/learn/session",
-    "/community",
+    "/classes/course_en_basic/learn",
+    "/classes/course_en_basic/learn/session",
+    "/smartcards",
+    "/smartcards/starter-en",
+    "/smartcards/tutorial",
+    "/dashboard",
     "/messages",
     "/messages/live/layout-check",
     "/certificates",
@@ -111,7 +113,7 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {
-  for (const page of ["home", "classes", "programs", "placement", "learning", "learning-session", "community", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
+  for (const page of ["home", "classes", "programs", "learning", "learning-session", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
   }
   assert.match(runnerSource, /requiredHooks/);
@@ -122,10 +124,9 @@ test("layout gate requires real page markers and representative hook categories"
 test("authenticated surfaces require a loopback D1-backed session and their own ready marker", () => {
   assert.deepEqual(SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES, [
     "/classes",
-    "/classes/class_official_es/placement",
-    "/classes/class_official_en/learn",
-    "/classes/class_official_en/learn/session",
-    "/community",
+    "/classes/course_en_basic/learn",
+    "/classes/course_en_basic/learn/session",
+    "/dashboard",
     "/messages",
     "/messages/live/layout-check",
     "/certificates",

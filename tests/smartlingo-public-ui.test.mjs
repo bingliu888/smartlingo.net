@@ -13,8 +13,8 @@ test("SmartLingo branding exposes the simplified course and Guru navigation", as
   ]);
 
   assert.match(header, /Smart<em>Lingo<\/em>/);
-  for (const path of ["programs", "assistant"]) assert.match(header, new RegExp(`/${path}`));
-  for (const label of ["选择课程", "咨询专家"]) assert.match(header, new RegExp(label));
+  for (const path of ["programs", "smartcards", "assistant"]) assert.match(header, new RegExp(`/${path}`));
+  for (const label of ["选择课程", "SmartCards", "咨询专家"]) assert.match(header, new RegExp(label));
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["programs", "assistant", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
@@ -63,8 +63,9 @@ test("member-led classes and commerce follow the approved boundaries", async () 
   assert.match(joined, /30%|三成/);
   assert.match(joined, /折后税前/);
   assert.match(joined, /Stripe Connect/);
-  assert.match(joined, /班级付款永不产生介绍人积分|班级购买.*一律不产生介绍人积分/);
+  assert.match(joined, /班级购买、收款、打赏和退款都不会产生介绍人积分/);
   assert.match(joined, /平台订阅/);
+  assert.match(joined, /SmartCard course credit is a third, independent accounting domain/);
   assert.doesNotMatch(joined, /开班权限从黄金会员开始|铂金会员|管理员签发的授权码|license key|PayPal|BACC/);
 });
 

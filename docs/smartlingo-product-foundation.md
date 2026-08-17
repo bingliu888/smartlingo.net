@@ -148,6 +148,14 @@ The reward contract is deliberately narrow:
 
 The database rejects class-order event types from the platform-subscription reward ledger. This boundary is enforced server-side and tested; it is not a display convention.
 
+## SmartCards and redeemable course credit
+
+SmartCard course credit is a third, independent accounting domain. It is not learning XP and it is not a direct-introducer reward. Public starter decks may be used without an account, but guest earnings are provisional until a verified member claims them from the same device.
+
+A first server-scored pass of 80 or higher for one published deck version awards 10 points, with no self-challenge reward and a maximum of 50 points per learner-local day. One hundred points offset one US dollar. When a balance covers a fixed monthly course price, the learner may exchange the full amount for exactly 30 days of that course. The credit-only period does not auto-renew and does not silently begin a card free trial.
+
+All balance changes are append-only, idempotent ledger entries. The browser never supplies scores, awards, balances, prices, or discounts. Course credit has no cash-out, transfer, peer-sale, or class-owner payout value.
+
 ## Community, messaging, and safety
 
 Each class may have a forum, shared weekly goals, optional peer-practice matching, direct messages, and group Live Chat. Learning activity is shared only by opt-in. Private scores, detailed mistakes, payments, email, phone, and minors' location are never public activity.

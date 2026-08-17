@@ -961,7 +961,7 @@ export const lingoClasses = sqliteTable("smartlingo_language_classes", {
 
 export const lingoCourseSubscriptions = sqliteTable("smartlingo_course_subscriptions", {
   id: text("id").primaryKey(),
-  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  classId: text("class_id").references(() => lingoClasses.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   status: text("status").notNull().default("trialing"),
   monthlyPriceCents: integer("monthly_price_cents").notNull(),
@@ -1086,6 +1086,164 @@ export const lingoIntroducerRewardLedger = sqliteTable("smartlingo_introducer_re
   check("smartlingo_introducer_reward_points_ck", sql`${table.points} > 0`),
   check("smartlingo_introducer_reward_status_ck", sql`${table.status} IN ('earned', 'reversed')`),
   index("smartlingo_introducer_reward_user_idx").on(table.introducerUserId, table.createdAt),
+]);
+
+/** Published curriculum targets are product goals aligned to CEFR descriptors;
+ * they are not official CEFR word-count requirements or certifications. */
+export const lingoCurriculumLevels = sqliteTable("smartlingo_curriculum_levels", {
+  level: text("level").primaryKey(),
+  cefrBand: text("cefr_band").notNull(),
+  cumulativeItemTarget: integer("cumulative_item_target").notNull(),
+  productiveItemTarget: integer("productive_item_target").notNull(),
+  goalEn: text("goal_en").notNull(),
+  goalZh: text("goal_zh").notNull(),
+  methodologyVersion: text("methodology_version").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_curriculum_level_ck", sql`${table.level} IN ('beginner','intermediate','advanced')`),
+  check("smartlingo_curriculum_target_ck", sql`${table.cumulativeItemTarget} > 0 AND ${table.productiveItemTarget} BETWEEN 1 AND ${table.cumulativeItemTarget}`),
+]);
+
+/** One row represents a learnable sense, phrase, formula or word. Versions are
+ * immutable once published so cards and challenge evidence remain auditable. */
+export const lingoVocabularyItems = sqliteTable("smartlingo_vocabulary_items", {
+  id: text("id").primaryKey(),
+  stableKey: text("stable_key").notNull(),
+  version: text("version").notNull(),
+  targetLanguage: text("target_language").notNull(),
+  level: text("level").notNull(),
+  cefrBand: text("cefr_band").notNull(),
+  difficulty: integer("difficulty").notNull(),
+  sceneKey: text("scene_key").notNull(),
+  sequence: integer("sequence").notNull(),
+  form: text("form").notNull(),
+  pronunciation: text("pronunciation").notNull().default(""),
+  meaningEn: text("meaning_en").notNull(),
+  meaningZh: text("meaning_zh").notNull(),
+  itemKind: text("item_kind").notNull(),
+  productive: integer("productive", { mode: "boolean" }).notNull().default(true),
+  sourceType: text("source_type").notNull().default("smartlingo_original"),
+  reviewStatus: text("review_status").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  uniqueIndex("smartlingo_vocabulary_identity_uq").on(table.targetLanguage, table.stableKey, table.version),
+  index("smartlingo_vocabulary_catalog_idx").on(table.targetLanguage, table.level, table.reviewStatus, table.sceneKey, table.sequence),
+]);
+
+export const lingoSmartcardDecks = sqliteTable("smartlingo_smartcard_decks", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "cascade" }),
+  targetLanguage: text("target_language").notNull(),
+  level: text("level").notNull(),
+  title: text("title").notNull(),
+  version: integer("version").notNull().default(1),
+  visibility: text("visibility").notNull().default("public"),
+  shareToken: text("share_token").notNull().unique(),
+  status: text("status").notNull().default("active"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  index("smartlingo_smartcard_deck_owner_idx").on(table.ownerUserId, table.updatedAt),
+  index("smartlingo_smartcard_deck_public_idx").on(table.visibility, table.status, table.updatedAt),
+]);
+
+export const lingoSmartcardItems = sqliteTable("smartlingo_smartcard_items", {
+  deckId: text("deck_id").notNull().references(() => lingoSmartcardDecks.id, { onDelete: "cascade" }),
+  vocabularyItemId: text("vocabulary_item_id").notNull().references(() => lingoVocabularyItems.id, { onDelete: "restrict" }),
+  position: integer("position").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.deckId, table.vocabularyItemId] }),
+  uniqueIndex("smartlingo_smartcard_position_uq").on(table.deckId, table.position),
+]);
+
+export const lingoSmartcardChallengeAttempts = sqliteTable("smartlingo_smartcard_challenge_attempts", {
+  id: text("id").primaryKey(),
+  deckId: text("deck_id").notNull().references(() => lingoSmartcardDecks.id, { onDelete: "restrict" }),
+  deckVersion: integer("deck_version").notNull(),
+  attemptNumber: integer("attempt_number").notNull(),
+  challengerUserId: text("challenger_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  score: integer("score").notNull(),
+  correctCount: integer("correct_count").notNull(),
+  questionCount: integer("question_count").notNull(),
+  passed: integer("passed", { mode: "boolean" }).notNull(),
+  rewardPoints: integer("reward_points").notNull().default(0),
+  answerFingerprint: text("answer_fingerprint").notNull(),
+  localDate: text("local_date").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("smartlingo_smartcard_attempt_identity_uq").on(table.challengerUserId, table.deckId, table.deckVersion, table.attemptNumber),
+  uniqueIndex("smartlingo_smartcard_reward_once_uq").on(table.challengerUserId, table.deckId, table.deckVersion).where(sql`${table.rewardPoints} > 0`),
+  index("smartlingo_smartcard_challenge_deck_idx").on(table.deckId, table.score, table.createdAt),
+]);
+
+/** Guests may practice without an account. Their random HttpOnly device key
+ * stores provisional points only; redeemable credit is created after sign-in. */
+export const lingoSmartcardGuestAttempts = sqliteTable("smartlingo_smartcard_guest_attempts", {
+  id: text("id").primaryKey(),
+  guestKeyHash: text("guest_key_hash").notNull(),
+  deckId: text("deck_id").notNull().references(() => lingoSmartcardDecks.id, { onDelete: "restrict" }),
+  deckVersion: integer("deck_version").notNull(),
+  attemptNumber: integer("attempt_number").notNull(),
+  score: integer("score").notNull(),
+  correctCount: integer("correct_count").notNull(),
+  questionCount: integer("question_count").notNull(),
+  passed: integer("passed", { mode: "boolean" }).notNull(),
+  provisionalPoints: integer("provisional_points").notNull(),
+  answerFingerprint: text("answer_fingerprint").notNull(),
+  localDate: text("local_date").notNull(),
+  claimedUserId: text("claimed_user_id").references(() => users.id, { onDelete: "restrict" }),
+  claimedAt: integer("claimed_at"),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("smartlingo_smartcard_guest_attempt_identity_uq").on(table.guestKeyHash, table.deckId, table.deckVersion, table.attemptNumber),
+  uniqueIndex("smartlingo_smartcard_guest_reward_once_uq").on(table.guestKeyHash, table.deckId, table.deckVersion).where(sql`${table.provisionalPoints} > 0`),
+  index("smartlingo_smartcard_guest_claim_idx").on(table.guestKeyHash, table.claimedUserId, table.createdAt),
+]);
+
+export const lingoCourseCreditPolicy = sqliteTable("smartlingo_course_credit_policy", {
+  id: text("id").primaryKey(),
+  pointsPerUsd: integer("points_per_usd").notNull(),
+  challengePassScore: integer("challenge_pass_score").notNull(),
+  challengeRewardPoints: integer("challenge_reward_points").notNull(),
+  dailyEarnCap: integer("daily_earn_cap").notNull(),
+  maxRedemptionBasisPoints: integer("max_redemption_basis_points").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+/** Redeemable course points are independent from non-cash learning XP and the
+ * direct-introducer ledger. Every balance change is append-only and idempotent. */
+export const lingoCourseCreditLedger = sqliteTable("smartlingo_course_credit_ledger", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  points: integer("points").notNull(),
+  entryType: text("entry_type").notNull(),
+  sourceType: text("source_type").notNull(),
+  sourceId: text("source_id").notNull(),
+  localDate: text("local_date").notNull(),
+  relatedEntryId: text("related_entry_id").references((): AnySQLiteColumn => lingoCourseCreditLedger.id, { onDelete: "restrict" }),
+  note: text("note").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("smartlingo_course_credit_source_uq").on(table.userId, table.sourceType, table.sourceId),
+  index("smartlingo_course_credit_user_idx").on(table.userId, table.createdAt),
+]);
+
+export const lingoCourseCreditRedemptions = sqliteTable("smartlingo_course_credit_redemptions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "restrict" }),
+  points: integer("points").notNull(),
+  discountCents: integer("discount_cents").notNull(),
+  coursePriceCents: integer("course_price_cents").notNull(),
+  provider: text("provider").notNull(),
+  providerReference: text("provider_reference"),
+  status: text("status").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  index("smartlingo_course_credit_redemption_user_idx").on(table.userId, table.status, table.createdAt),
 ]);
 
 /**

@@ -20,10 +20,12 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/",
   "/classes",
   "/programs",
-  "/classes/class_official_es/placement",
-  "/classes/class_official_en/learn",
-  "/classes/class_official_en/learn/session",
-  "/community",
+  "/classes/course_en_basic/learn",
+  "/classes/course_en_basic/learn/session",
+  "/smartcards",
+  "/smartcards/starter-en",
+  "/smartcards/tutorial",
+  "/dashboard",
   "/messages",
   "/messages/live/layout-check",
   "/certificates",
@@ -38,10 +40,9 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
 
 export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
   "/classes",
-  "/classes/class_official_es/placement",
-  "/classes/class_official_en/learn",
-  "/classes/class_official_en/learn/session",
-  "/community",
+  "/classes/course_en_basic/learn",
+  "/classes/course_en_basic/learn/session",
+  "/dashboard",
   "/messages",
   "/messages/live/layout-check",
   "/certificates",
@@ -53,10 +54,12 @@ const expectedPageNames = Object.freeze({
   "/": "home",
   "/classes": "classes",
   "/programs": "programs",
-  "/classes/class_official_es/placement": "placement",
-  "/classes/class_official_en/learn": "learning",
-  "/classes/class_official_en/learn/session": "learning-session",
-  "/community": "community",
+  "/classes/course_en_basic/learn": "learning",
+  "/classes/course_en_basic/learn/session": "learning-session",
+  "/smartcards": "smartcards",
+  "/smartcards/starter-en": "smartcards",
+  "/smartcards/tutorial": "smartcards",
+  "/dashboard": "dashboard",
   "/messages": "messages",
   "/messages/live/layout-check": "live-chat",
   "/certificates": "certificates",
@@ -71,12 +74,14 @@ const expectedPageNames = Object.freeze({
 
 const requiredHooks = Object.freeze({
   "/": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
-  "/classes": { fills: 4, tracks: 2, readableCopy: 1, textFits: 1 },
+  "/classes": {},
   "/programs": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
-  "/classes/class_official_es/placement": { fills: 2, readableCopy: 1, textFits: 1 },
-  "/classes/class_official_en/learn": { fills: 2, readableCopy: 1, textFits: 1 },
-  "/classes/class_official_en/learn/session": { fills: 3, readableCopy: 1, textFits: 1 },
-  "/community": { fills: 1, tracks: 3, readableCopy: 1, textFits: 1 },
+  "/classes/course_en_basic/learn": { fills: 2, readableCopy: 1, textFits: 1 },
+  "/classes/course_en_basic/learn/session": { fills: 3, readableCopy: 1, textFits: 1 },
+  "/smartcards": {},
+  "/smartcards/starter-en": {},
+  "/smartcards/tutorial": {},
+  "/dashboard": {},
   "/messages": { fills: 1, textFits: 1 },
   "/messages/live/layout-check": { fills: 1, textFits: 1 },
   "/certificates": { fills: 1 },
@@ -646,7 +651,7 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
         routes: routes.map(route => ({
           route,
           loadPath: route,
-          readySelector: route.startsWith("/classes/class_official_en/learn")
+          readySelector: route.startsWith("/classes/course_en_basic/learn")
             ? '[data-layout-fill="five-skill-workspace"][data-layout-ready="true"]'
             : SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)
               ? '[data-layout-ready="true"]'

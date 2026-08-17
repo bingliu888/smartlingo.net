@@ -48,6 +48,16 @@ Every recorded daily and course score uses a 1–100 scale. A completed course p
 - Failed, canceled, duplicate, refunded, self-referred, or forged events must not create a reward; reversals follow the published platform reward policy.
 - Learning XP and streaks have no cash value and are stored separately from introducer reward points.
 
+## SmartCards and course credit
+
+- Public starter SmartCards may be learned and challenged without sign-in. Guest points are provisional, device-bound, and not spendable until claimed by a verified signed-in account.
+- Only a first server-scored pass of at least 80 for one deck version may award 10 course points. Self-challenges award none; the daily course-point cap is 50.
+- The client never submits a score, point award, balance, price, or discount. Published reviewed content, scoring, caps, claims, and ledger writes are server-authoritative and idempotent.
+- Course points use their own append-only ledger, separate from learning XP and introducer rewards. They cannot be cashed out, transferred, sold, or included in a class-owner payout.
+- 100 course points offset USD $1. A sufficient balance may pay 100% of one fixed SmartLingo monthly course fee and opens exactly 30 days without auto-renewal.
+- Opening a card, registration, point claim, or credit-only month never starts a card trial or recurring subscription. Subscription checkout remains a separate explicit choice.
+- AI-drafted vocabulary stays in `draft` or `ai_checked`; only published, reviewed, versioned items may appear in public point-bearing challenges.
+
 ## Shared MVP contract
 
 - Chinese is the default language. Chinese mode uses idiomatic Chinese for generic interface and product language; English mode uses English.

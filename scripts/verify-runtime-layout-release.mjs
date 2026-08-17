@@ -13,9 +13,8 @@ const wrangler = join(projectRoot, "node_modules", "wrangler", "bin", "wrangler.
 const verifier = join(projectRoot, "scripts", "verify-runtime-layout-webkit.mjs");
 const protectedPages = [
   "/zh/classes",
-  "/zh/classes/class_official_es/placement",
-  "/zh/classes/class_official_en/learn",
-  "/zh/community",
+  "/zh/classes/course_en_basic/learn",
+  "/zh/dashboard",
   "/zh/messages",
   "/zh/messages/live/layout-check",
   "/zh/admin/members",
@@ -26,8 +25,7 @@ const protectedPages = [
 ];
 const protectedApis = [
   "/api/classes",
-  "/api/classes/class_official_es/placement",
-  "/api/classes/class_official_en/learning",
+  "/api/classes/course_en_basic/learning",
   "/api/community",
   "/api/messages",
   "/api/messages?thread=layout-check",
@@ -62,9 +60,9 @@ async function freePort() {
   });
 }
 
-async function waitForServer(baseURL, process) {
+async function waitForServer(baseURL, process, diagnostics = () => "") {
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    if (process.exitCode !== null) throw new Error(`local layout Worker exited ${process.exitCode}`);
+    if (process.exitCode !== null) throw new Error(`local layout Worker exited ${process.exitCode}: ${diagnostics().slice(-2000)}`);
     try {
       const response = await fetch(`${baseURL}/zh`, { redirect: "manual" });
       if (response.status === 200) return;
@@ -73,7 +71,7 @@ async function waitForServer(baseURL, process) {
     }
     await new Promise(resolvePromise => setTimeout(resolvePromise, 250));
   }
-  throw new Error("local layout Worker did not become ready");
+  throw new Error(`local layout Worker did not become ready: ${diagnostics().slice(-2000)}`);
 }
 
 async function assertControls(baseURL, token) {
@@ -82,7 +80,7 @@ async function assertControls(baseURL, token) {
       headers: { cookie: `smartlingo_session=${token}` },
       redirect: "manual",
     });
-    if (signedIn.status !== 200) throw new Error(`authenticated page control failed: ${path} returned ${signedIn.status}`);
+    if (signedIn.status !== 200) throw new Error(`authenticated page control failed: ${path} returned ${signedIn.status} ${signedIn.headers.get("location") || ""}`.trim());
     const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
     if (![302, 307, 308].includes(anonymous.status)) throw new Error(`anonymous page control failed: ${path} returned ${anonymous.status}`);
   }
@@ -124,10 +122,11 @@ async function main() {
   const port = await freePort();
   const baseURL = `http://127.0.0.1:${port}`;
   let worker = null;
+  let workerDiagnostics = "";
 
   const allowedEnvironmentKeys = [
     "PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "SHELL", "USER", "LOGNAME", "TERM",
-    "DEVELOPER_DIR", "SDKROOT", "SMARTLINGO_SWIFT_SDK",
+    "DEVELOPER_DIR", "SDKROOT", "SMARTLINGO_SWIFT_SDK", "OPENSSL_CONF",
   ];
   const isolatedEnv = Object.fromEntries(allowedEnvironmentKeys
     .filter(key => typeof process.env[key] === "string")
@@ -162,28 +161,32 @@ async function main() {
     }), { mode: 0o600 });
     await writeFile(fixture, `
 INSERT INTO users (id,email,display_name,password_hash,preferred_language,role,created_at) VALUES
- ('layout-user','layout-user@smartlingo.invalid','Layout Learner','disabled-local-fixture','en','admin',1785680000),
+ ('layout-user','bingliu@cybeye.com','Layout Learner','disabled-local-fixture','en','admin',1785680000),
  ('layout-peer','layout-peer@smartlingo.invalid','Layout Peer','disabled-local-fixture','zh','member',1785680001);
 INSERT INTO sessions (id,user_id,clerk_session_id,expires_at,created_at) VALUES
  ('${sessionHash}','layout-user','layout-local-session',4102444800,1785680002);
+INSERT INTO smartlingo_course_subscriptions
+ (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,created_at,updated_at) VALUES
+ ('layout-en-subscription','course_en_basic','layout-user','active',2000,1785680002,1788272002,1788272002,'layout-en',1785680002,1785680002),
+ ('layout-es-subscription','course_es_basic','layout-user','active',2000,1785680002,1788272002,1788272002,'layout-es',1785680002,1785680002);
 INSERT INTO smartlingo_language_class_members (id,class_id,user_id,role,status,joined_at,updated_at) VALUES
- ('layout-en-member','class_official_en','layout-user','student','active',1785680003,1785680003),
- ('layout-es-member','class_official_es','layout-user','student','active',1785680004,1785680004);
+ ('layout-en-member','course_en_basic','layout-user','student','active',1785680003,1785680003),
+ ('layout-es-member','course_es_basic','layout-user','student','active',1785680004,1785680004);
 INSERT INTO smartlingo_placement_attempts
  (id,user_id,class_id,path_id,entry_mode,status,current_difficulty,active_seconds,vocabulary_score,reading_score,writing_score,listening_score,dialogue_score,overall_score,recommended_level,started_at,completed_at,created_at,updated_at)
- VALUES ('layout-placement','layout-user','class_official_en','path_en_a1','beginner','completed',1,900,82,78,75,80,79,79,'beginner',1785680100,1785681000,1785680100,1785681000);
+ VALUES ('layout-placement','layout-user','course_en_basic','path_en_a1','beginner','completed',1,900,82,78,75,80,79,79,'beginner',1785680100,1785681000,1785680100,1785681000);
 INSERT INTO smartlingo_placement_attempts
  (id,user_id,class_id,path_id,entry_mode,status,current_difficulty,active_seconds,last_resumed_at,started_at,created_at,updated_at)
- VALUES ('layout-placement-active','layout-user','class_official_es','path_es_a1','adaptive','in_progress',3,45,1785682000,1785681900,1785681900,1785682000);
+ VALUES ('layout-placement-active','layout-user','course_es_basic','path_es_a1','adaptive','in_progress',3,45,1785682000,1785681900,1785681900,1785682000);
 INSERT INTO smartlingo_course_enrollments_v3
  (id,offering_id,user_id,class_id,access_type,status,start_day,current_day,daily_seconds,started_at,completed_at,created_at,updated_at)
- VALUES ('layout-enrollment','sl-course-en-beginner-7d-v1','layout-user','class_official_en','free','completed',1,1,3600,1785682100,1785682200,1785682100,1785682200);
+ VALUES ('layout-enrollment','sl-course-en-beginner-7d-v1','layout-user','course_en_basic','free','completed',1,1,3600,1785682100,1785682200,1785682100,1785682200);
 INSERT INTO smartlingo_course_day_progress_v2
  (id,enrollment_id,user_id,class_id,course_day,started_date,last_activity_date,score,skill_scores,quiz_score,is_complete,started_at,completed_at,updated_at)
- VALUES ('layout-daily-score','layout-enrollment','layout-user','class_official_en',1,'2026-08-02','2026-08-02',95,'{"vocabulary":95,"listening":95,"dialogue":95}',95,1,1785682150,1785682150,1785682150);
+ VALUES ('layout-daily-score','layout-enrollment','layout-user','course_en_basic',1,'2026-08-02','2026-08-02',95,'{"vocabulary":95,"listening":95,"dialogue":95}',95,1,1785682150,1785682150,1785682150);
 INSERT INTO smartlingo_course_certificates_v2
  (id,certificate_number,verification_code,enrollment_id,offering_id,user_id,class_id,member_name,course_title_zh,course_title_en,target_language,level,duration_days,start_day,completed_days,final_score,pass_score,completion_reason,curriculum_version,issued_at,created_at)
- VALUES ('layout-certificate','SL-2026-LAYOUT','LAYOUT95','layout-enrollment','sl-course-en-beginner-7d-v1','layout-user','class_official_en','Layout Learner','英语 7 天旅行入门课','English 7-day travel beginner course','en','beginner',7,1,1,95,60,'early_mastery','2026-08-02.3',1785682200,1785682200);
+ VALUES ('layout-certificate','SL-2026-LAYOUT','LAYOUT95','layout-enrollment','sl-course-en-beginner-7d-v1','layout-user','course_en_basic','Layout Learner','英语 7 天旅行入门课','English 7-day travel beginner course','en','beginner',7,1,1,95,60,'early_mastery','2026-08-02.3',1785682200,1785682200);
 INSERT INTO community_topics (id,user_id,category,title,body,created_at,updated_at) VALUES
  ('layout-topic','layout-peer','learning','Practice together / 一起练习','Share one phrase used today. / 分享一句今天使用的表达。',1785681100,1785681200);
 INSERT INTO community_replies (id,topic_id,user_id,body,created_at) VALUES
@@ -206,17 +209,17 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
     worker = spawn(process.execPath, [
       wrangler, "dev", ...common, "--ip", "127.0.0.1", "--port", String(port), "--log-level", "warn",
     ], { cwd: projectRoot, env: isolatedEnv, stdio: ["ignore", "pipe", "pipe"] });
-    worker.stdout.on("data", () => {});
-    worker.stderr.on("data", () => {});
-    await waitForServer(baseURL, worker);
+    worker.stdout.on("data", value => { workerDiagnostics += String(value); });
+    worker.stderr.on("data", value => { workerDiagnostics += String(value); });
+    await waitForServer(baseURL, worker, () => workerDiagnostics);
     await assertControls(baseURL, token);
     const verified = await run(process.execPath, [verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile, ...process.argv.slice(2)], {
       cwd: projectRoot,
       env: isolatedEnv,
     });
-    const evidence = verified.stdout.match(/WebKit runtime layout verified: 170\/170[^\n]*/)?.[0];
+    const evidence = verified.stdout.match(/WebKit runtime layout verified: 190\/190[^\n]*/)?.[0];
     if (!evidence) {
-      throw new Error(`Full 170/170 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+      throw new Error(`Full 190/190 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
     }
     await writeFile(join(tmpdir(), "smartlingo-layout-release-evidence.txt"), `${evidence}\n`, { mode: 0o600 });
     process.stderr.write(`${evidence}\n`);

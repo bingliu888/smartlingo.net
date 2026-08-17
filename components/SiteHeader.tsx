@@ -9,6 +9,7 @@ function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
   const zh = lang === "zh";
   return <>
     <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
+    <Link href={`/${lang}/smartcards`}>SmartCards</Link>
     <Link href={`/${lang}/assistant`}>{zh ? "咨询专家" : "Ask Guru"}</Link>
   </>;
 }
