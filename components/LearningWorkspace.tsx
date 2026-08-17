@@ -12,6 +12,7 @@ type TrainingTab = Skill | "exam";
 type VocabularyMode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
 type VocabularyGrade = "again" | "hard" | "good" | "easy" | "suspend";
 type SessionStatus = "idle" | "running" | "paused" | "completing";
+type PronunciationCoachStatus = "idle" | "speaking" | "listening" | "scoring" | "complete";
 type BilingualText = { zh: string; en: string };
 type CheckpointDraft = {
   answers?: Partial<Record<Skill, string>>;
@@ -81,6 +82,11 @@ type VocabularyItem = {
   direction?: "ltr" | "rtl";
   mode?: VocabularyMode;
   status?: string;
+  level?: string;
+  topic?: string;
+  sourceType?: "smartlingo_original";
+  humanReviewStatus?: "reviewed";
+  progress?: { isFocused?: boolean; lapseCount?: number; dueAt?: number | null };
 };
 
 type PracticeOption = { id?: string; value?: string; label: string };
@@ -112,6 +118,16 @@ type LearningPayload = {
   date?: string;
   vocabulary?: VocabularyItem | null;
   vocabularyDeck?: VocabularyItem[];
+  vocabularyFocusPack?: {
+    sampleId: string;
+    form: string;
+    pronunciation: string;
+    meaning: BilingualText;
+    topic: string;
+    reason: "saved" | "repeated_error";
+    lapseCount: number;
+    dueAt: number | null;
+  }[];
   vocabularyDeckMeta?: {
     day: number;
     total: number;
@@ -369,6 +385,23 @@ const COPY = {
     answer: "输入答案",
     grades: { again: "重来", hard: "困难", good: "良好", easy: "容易", suspend: "暂停此词" },
     gradeHelp: "揭示后请如实评价回忆难度，系统将据此安排下一次复习。",
+    saveFocus: "加入重点词本",
+    removeFocus: "移出重点词本",
+    focusTitle: "错题与重点词本",
+    focusIntro: "系统自动收集反复出错的词，也保留您主动加入的重点词，组成短复习包。",
+    focusSaved: "已收藏",
+    focusMistake: "反复出错",
+    reviewedOriginal: "SmartLingo 原创 · 已人工审核",
+    followMe: "跟我读 5 次",
+    coachTitle: "SmartLingo 人工智能发音导师",
+    coachIntro: "我先读，您再跟读。完成 5 次后会显示本轮平均分，并可立即重新练习。",
+    coachSpeaking: "请先听我读",
+    coachListening: "现在请您跟读",
+    coachScoring: "正在给出本次反馈",
+    coachComplete: "本轮完成",
+    coachRound: "第 {round} / 5 次",
+    coachAverage: "本轮平均分",
+    coachAgain: "再练 5 次",
     prompt: "任务",
     context: "学习材料",
     play: "播放听力",
@@ -515,6 +548,23 @@ const COPY = {
     answer: "Enter your answer",
     grades: { again: "Again", hard: "Hard", good: "Good", easy: "Easy", suspend: "Suspend" },
     gradeHelp: "After revealing, rate your recall honestly so the next review can be scheduled appropriately.",
+    saveFocus: "Add to focus list",
+    removeFocus: "Remove from focus list",
+    focusTitle: "Mistakes and focus words",
+    focusIntro: "Repeated mistakes are collected automatically, while words you save stay in a compact review pack.",
+    focusSaved: "Saved",
+    focusMistake: "Repeated error",
+    reviewedOriginal: "SmartLingo original · human reviewed",
+    followMe: "Follow me 5 times",
+    coachTitle: "SmartLingo AI pronunciation coach",
+    coachIntro: "I speak first, then you repeat. After five turns, see the round average and start again immediately.",
+    coachSpeaking: "Listen to me first",
+    coachListening: "Now repeat after me",
+    coachScoring: "Scoring this turn",
+    coachComplete: "Round complete",
+    coachRound: "Turn {round} of 5",
+    coachAverage: "Round average",
+    coachAgain: "Practice 5 more",
     prompt: "Task",
     context: "Learning material",
     play: "Play listening",
@@ -660,6 +710,9 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   const [dialogueMode, setDialogueMode] = useState<"follow" | "answer" | null>(null);
   const [pronouncing, setPronouncing] = useState(false);
   const [pronunciationFeedback, setPronunciationFeedback] = useState<LearningPayload["pronunciationFeedback"]>(undefined);
+  const [pronunciationCoachStatus, setPronunciationCoachStatus] = useState<PronunciationCoachStatus>("idle");
+  const [pronunciationRound, setPronunciationRound] = useState(0);
+  const [pronunciationScores, setPronunciationScores] = useState<number[]>([]);
   const [pronunciationAudioUrl, setPronunciationAudioUrl] = useState("");
   const pronunciationRecorder = useRef<MediaRecorder | null>(null);
   const pronunciationStream = useRef<MediaStream | null>(null);
@@ -1220,16 +1273,30 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       setLearningError(lang === "zh" ? "当前浏览器不支持语音转写，请使用 Safari 或 Chrome 的最新版本。" : "Speech transcription is unavailable in this browser. Try the latest Safari or Chrome.");
       return;
     }
+    setPronunciationRound(1);
+    setPronunciationScores([]);
+    setPronunciationFeedback(undefined);
+    await runPronunciationCoachTurn(item, 1);
+  }
+
+  async function runPronunciationCoachTurn(item: VocabularyItem, round: number) {
+    const sampleId = item.sampleId || item.stableId || item.taskId;
+    if (!sampleId) return;
+    const browser = window as typeof window & {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Recognition) {
+      setLearningError(lang === "zh" ? "当前浏览器不支持语音转写，请使用 Safari 或 Chrome 的最新版本。" : "Speech transcription is unavailable in this browser. Try the latest Safari or Chrome.");
+      return;
+    }
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       setLearningError(lang === "zh" ? "无法使用麦克风，请检查浏览器权限。" : "The microphone is unavailable. Check browser permission.");
       return;
-    }
-    if (pronunciationAudioUrl) {
-      URL.revokeObjectURL(pronunciationAudioUrl);
-      setPronunciationAudioUrl("");
     }
     const chunks: Blob[] = [];
     const recorder = new MediaRecorder(stream);
@@ -1239,7 +1306,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     recorder.onstop = () => {
       stream.getTracks().forEach(track => track.stop());
       pronunciationStream.current = null;
-      if (chunks.length) setPronunciationAudioUrl(URL.createObjectURL(new Blob(chunks, { type: recorder.mimeType || "audio/webm" })));
+      if (chunks.length) setPronunciationAudioUrl(current => {
+        if (current) URL.revokeObjectURL(current);
+        return URL.createObjectURL(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+      });
     };
     const recognition = new Recognition();
     recognition.lang = item.speechLocale || classInfo?.targetLanguage || "en-US";
@@ -1247,22 +1317,51 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     recognition.continuous = false;
     recognition.onresult = event => {
       const transcript = event.results[0]?.[0]?.transcript || "";
+      setPronunciationCoachStatus("scoring");
       void postLearning({ action: "pronunciation_review", sampleId, transcript }, `pronunciation:${sampleId}`).then(result => {
-        if (result?.pronunciationFeedback) setPronunciationFeedback(result.pronunciationFeedback);
+        if (!result?.pronunciationFeedback) {
+          setPronunciationCoachStatus("idle");
+          return;
+        }
+        setPronunciationFeedback(result.pronunciationFeedback);
+        setPronunciationScores(current => [...current, result.pronunciationFeedback!.score]);
+        if (round >= 5) {
+          setPronunciationCoachStatus("complete");
+          setPronouncing(false);
+          return;
+        }
+        window.setTimeout(() => {
+          setPronunciationRound(round + 1);
+          void runPronunciationCoachTurn(item, round + 1);
+        }, 1100);
       });
     };
     recognition.onend = () => {
-      setPronouncing(false);
       if (recorder.state !== "inactive") recorder.stop();
     };
     recognition.onerror = () => {
       setPronouncing(false);
+      setPronunciationCoachStatus("idle");
       if (recorder.state !== "inactive") recorder.stop();
     };
-    setPronunciationFeedback(undefined);
     setPronouncing(true);
-    recorder.start();
-    recognition.start();
+    setPronunciationCoachStatus("speaking");
+    const listen = () => {
+      setPronunciationCoachStatus("listening");
+      recorder.start();
+      recognition.start();
+    };
+    if (!("speechSynthesis" in window)) {
+      listen();
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(item.audioText || item.word || item.form || "");
+    utterance.lang = item.speechLocale || classInfo?.targetLanguage || "en-US";
+    utterance.rate = 0.72;
+    utterance.onend = listen;
+    utterance.onerror = listen;
+    window.speechSynthesis.speak(utterance);
   }
 
   async function startSession() {
@@ -1363,6 +1462,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       setRevealState({ key: "", revealed: false });
       setAnswers(current => ({ ...current, vocabulary: "" }));
     }
+  }
+
+  async function setVocabularyFocus(focused: boolean) {
+    if (!vocabulary) return;
+    const sampleId = vocabulary.sampleId || vocabulary.stableId || vocabulary.taskId;
+    if (!sampleId) return;
+    await postLearning({ action: "set_vocabulary_focus", sampleId, focused }, "vocabulary-focus");
   }
 
   async function submitTask(task: PracticeTask, skip = false) {
@@ -1512,6 +1618,23 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               </div>
             </div>
             <p className="sl-mode-help">{t.modeHelp[vocabularyMode]}</p>
+            <section className={`sl-pronunciation-coach ${pronunciationCoachStatus}`} aria-labelledby="sl-pronunciation-coach-title">
+              <div className="sl-tutor-portrait sl-person-avatar" aria-hidden="true"><span>🧑‍🏫</span><i/><i/><i/></div>
+              <div className="sl-pronunciation-coach-copy">
+                <p className="sl-task-label">SMARTLINGO AI COACH</p>
+                <h4 id="sl-pronunciation-coach-title">{t.coachTitle}</h4>
+                <p>{t.coachIntro}</p>
+                {pronunciationCoachStatus !== "idle" ? <div className="sl-coach-dialogue" aria-live="polite">
+                  <strong>{pronunciationCoachStatus === "speaking" ? t.coachSpeaking : pronunciationCoachStatus === "listening" ? t.coachListening : pronunciationCoachStatus === "scoring" ? t.coachScoring : t.coachComplete}</strong>
+                  <span>{t.coachRound.replace("{round}", String(pronunciationRound || 1))}</span>
+                  {pronunciationCoachStatus === "complete" && pronunciationScores.length ? <b>{t.coachAverage} · {Math.round(pronunciationScores.reduce((sum, score) => sum + score, 0) / pronunciationScores.length)} / 100</b> : null}
+                </div> : null}
+                <button type="button" className="sl-coach-start" disabled={pronouncing && pronunciationCoachStatus !== "complete"} onClick={() => startPronunciationPractice(vocabulary)}>
+                  {pronunciationCoachStatus === "complete" ? t.coachAgain : t.followMe}
+                </button>
+              </div>
+              <span className="sl-speaking-live"><i/>{pronunciationCoachStatus === "listening" ? t.coachListening : pronunciationCoachStatus === "speaking" ? t.coachSpeaking : pronunciationCoachStatus === "complete" ? t.coachComplete : (lang === "zh" ? "导师已就绪" : "Coach ready")}</span>
+            </section>
             {vocabulary.visualCue ? <div className="sl-vocabulary-cue" aria-label={`${t.visualCue}：${localizedText(vocabulary.visualCue.label, lang)}`}>
               <span role="img" aria-hidden="true">{vocabulary.visualCue.symbol}</span>
               <div><small>{t.visualCue}</small><strong>{localizedText(vocabulary.visualCue.label, lang)}</strong></div>
@@ -1527,8 +1650,11 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale)}>
                 ◉ {t.pronounce}
               </button>
-              <button type="button" disabled={pronouncing || Boolean(busyKey)} onClick={() => startPronunciationPractice(vocabulary)}>◉ {pronouncing ? t.speakingNow : t.speakCompare}</button>
+              <button type="button" disabled={pronouncing || Boolean(busyKey)} onClick={() => startPronunciationPractice(vocabulary)}>◉ {pronouncing ? t.speakingNow : t.followMe}</button>
               <button type="button" onClick={() => setRevealState({ key: vocabularyKey, revealed: true })}>{t.reveal}</button>
+              <button type="button" disabled={Boolean(busyKey)} aria-pressed={Boolean(vocabulary.progress?.isFocused)} onClick={() => setVocabularyFocus(!vocabulary.progress?.isFocused)}>
+                {vocabulary.progress?.isFocused ? `★ ${t.removeFocus}` : `☆ ${t.saveFocus}`}
+              </button>
             </div>
             <p className="sl-repeat-help">{t.repeatHelp}</p>
             {pronunciationFeedback ? <div className="sl-pronunciation-feedback" aria-live="polite">
@@ -1553,12 +1679,21 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               <p><b>{t.sourceMeaning}：</b>{localizedText(vocabulary.meaning, lang)}</p>
               {vocabulary.example ? <blockquote>{vocabulary.example}</blockquote> : null}
               {localizedText(vocabulary.exampleTranslation, lang) ? <small>{localizedText(vocabulary.exampleTranslation, lang)}</small> : null}
+              {vocabulary.sourceType === "smartlingo_original" && vocabulary.humanReviewStatus === "reviewed" ? <small className="sl-content-provenance">✓ {t.reviewedOriginal} · {vocabulary.level} · {vocabulary.topic}</small> : null}
               <p className="sl-grade-help">{t.gradeHelp}</p>
               <div className="sl-grade-actions">
                 {VOCABULARY_GRADES.map(grade => <button type="button" disabled={Boolean(busyKey)} onClick={() => gradeVocabulary(grade)} key={grade}>{t.grades[grade]}</button>)}
               </div>
             </div> : null}
           </div> : <p className="sl-empty-task">{t.noTask}</p>}
+          {learning.vocabularyFocusPack?.length ? <section className="sl-focus-pack" aria-labelledby="sl-focus-pack-title">
+            <header><h4 id="sl-focus-pack-title">{t.focusTitle}</h4><p>{t.focusIntro}</p></header>
+            <ul>{learning.vocabularyFocusPack.map(item => <li key={item.sampleId}>
+              <div><strong>{item.form}</strong>{item.pronunciation ? <span>{item.pronunciation}</span> : null}</div>
+              <p>{localizedText(item.meaning, lang)}</p>
+              <small>{item.reason === "saved" ? `★ ${t.focusSaved}` : `↻ ${t.focusMistake}${item.lapseCount > 1 ? ` × ${item.lapseCount}` : ""}`}</small>
+            </li>)}</ul>
+          </section> : null}
         </article> : null}
 
         {PRACTICE_SKILLS.filter(skill => skill === activeSkill).map((skill, index) => {
@@ -1714,8 +1849,9 @@ function LearningWorkspaceStyles() {
     .sl-workspace,.sl-workspace *{box-sizing:border-box}.sl-workspace{width:100%;max-width:none;min-width:0;margin:0;padding:clamp(48px,7vw,92px) clamp(16px,4vw,58px) clamp(76px,9vw,126px);display:grid;gap:clamp(30px,5vw,64px);color:var(--ink)}.sl-workspace-heading,.sl-section-heading{width:100%;min-width:0;display:grid;gap:12px}.sl-workspace-heading h1{width:100%;max-width:none;margin:0;font:850 clamp(40px,6vw,76px)/1.03 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.055em;overflow-wrap:anywhere}.sl-workspace-heading>p:last-child,.sl-section-heading>p:last-child{max-width:76ch;margin:0;color:var(--muted);font-size:17px;line-height:1.72}.sl-eyebrow{margin:0;color:#087d62;font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.sl-placement-gate,.sl-community-entry{width:100%;min-width:0;padding:clamp(24px,4vw,48px);display:flex;align-items:center;justify-content:space-between;gap:24px;border-radius:25px}.sl-placement-gate.pending{background:#fff1cb}.sl-placement-gate.complete{background:#e3f5ed}.sl-placement-gate>div,.sl-community-entry>div{min-width:0}.sl-placement-gate h2,.sl-community-entry h2,.sl-section-heading h2{width:100%;max-width:none;margin:8px 0 10px;font:820 clamp(28px,4vw,47px)/1.08 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em;overflow-wrap:anywhere}.sl-placement-gate p:last-child,.sl-community-entry p:last-child{max-width:76ch;margin:0;color:#58706a;line-height:1.65}.sl-primary-action,.sl-secondary-action{min-height:46px;padding:0 19px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:999px;font-size:16px;font-weight:850;text-align:center;text-decoration:none}.sl-primary-action{background:#0b9473;color:#fff}.sl-secondary-action{border-color:#a8bdb5;background:#fff;color:var(--ink)}button.sl-primary-action{font-family:inherit;cursor:pointer}.sl-daily-workspace,.sl-calendar-stack{width:100%;min-width:0;display:grid;gap:28px}.sl-skill-stack{width:100%;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}.sl-skill-card{width:100%;min-width:0;padding:clamp(22px,4vw,44px);border:1px solid #d7e0db;border-left:5px solid var(--skill-accent);border-radius:24px;background:#fffdf8;overflow:hidden}.sl-skill-card-head{width:100%;min-width:0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}.sl-skill-card-head>div:first-child{display:flex;align-items:baseline;gap:12px;min-width:0}.sl-skill-card-head span{color:var(--skill-accent);font-size:12px;font-weight:900}.sl-skill-card-head h3{margin:0;font:830 clamp(27px,4vw,42px)/1.08 Inter,"Noto Sans SC",sans-serif}.sl-skill-card-head>small{color:#65746f}.sl-mode-picker{min-width:0;display:flex;flex-wrap:wrap;gap:7px}.sl-mode-picker button,.sl-inline-actions button,.sl-grade-actions button,.sl-audio-action,.sl-voice-action,.sl-task-actions button{min-height:44px;padding:9px 14px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 16px/1.25 inherit;cursor:pointer}.sl-mode-picker button.active{border-color:#087d62;background:#e2f5ed;color:#08745e}.sl-vocabulary-practice,.sl-task-body{width:100%;min-width:0;margin-top:24px}.sl-mode-help{max-width:76ch;margin:0 0 20px;color:#5f706a;line-height:1.65}.sl-word-stage{width:100%;min-width:0;padding:clamp(24px,5vw,54px);display:grid;place-items:center;gap:10px;border-radius:20px;background:#edf7f2;text-align:center;overflow:hidden}.sl-word-stage strong{max-width:100%;font-size:clamp(34px,6vw,70px);line-height:1.12;overflow-wrap:anywhere}.sl-word-stage span{color:#547068;font-size:17px}.sl-inline-actions,.sl-grade-actions,.sl-task-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.sl-vocabulary-reveal{width:100%;min-width:0;margin-top:18px;padding:clamp(20px,3vw,32px);border:1px solid #cfe1d8;border-radius:18px;background:#fff}.sl-vocabulary-reveal>strong{display:block;font-size:clamp(28px,4vw,46px);overflow-wrap:anywhere}.sl-vocabulary-reveal>span,.sl-vocabulary-reveal>small{display:block;margin-top:6px;color:#64736e}.sl-vocabulary-reveal>p,.sl-vocabulary-reveal blockquote{max-width:76ch;line-height:1.65;overflow-wrap:anywhere}.sl-vocabulary-reveal blockquote{margin:16px 0;padding-left:16px;border-left:3px solid #0b9473}.sl-grade-help{color:#5b6d67}.sl-grade-actions button:last-child{color:#9b3e39}.sl-task-label{margin:0 0 8px;color:var(--skill-accent);font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.sl-task-body h4{width:100%;max-width:none;margin:0;font-size:clamp(22px,3vw,34px);line-height:1.25;overflow-wrap:anywhere}.sl-task-context{width:100%;min-width:0;margin-top:18px;padding:18px;border-radius:15px;background:#f1f5f2}.sl-task-context span{font-size:12px;font-weight:900}.sl-task-context p{max-width:76ch;margin:8px 0 0;white-space:pre-wrap;line-height:1.68;overflow-wrap:anywhere}.sl-audio-action,.sl-voice-action{margin-top:16px;border-color:#8cc7b6;background:#eaf8f2;color:#08745e}.sl-answer-field{width:100%;min-width:0;margin-top:18px;display:grid;gap:8px;font-weight:850}.sl-answer-field input,.sl-answer-field textarea{width:100%;min-width:0;padding:15px;border:1px solid #bdccc5;border-radius:13px;background:#fff;color:var(--ink);font:16px/1.55 inherit}.sl-answer-field textarea{min-height:135px;resize:vertical}.sl-task-options{width:100%;min-width:0;margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.sl-task-options button{min-width:0;min-height:52px;padding:12px 15px;border:1px solid #cbd7d1;border-radius:13px;background:#fff;color:var(--ink);font:750 16px/1.4 inherit;text-align:left;overflow-wrap:anywhere}.sl-task-options button.selected{border-color:#0b9473;background:#e7f7f0;box-shadow:inset 0 0 0 1px #0b9473}.sl-task-actions{justify-content:flex-end}.sl-task-actions button{padding-inline:18px}.sl-task-actions button:disabled,.sl-grade-actions button:disabled{cursor:not-allowed;opacity:.55}.sl-task-status{margin:20px 0 0;padding:14px 17px;border-radius:12px;background:#e4f6ed;color:#08745e;font-weight:850}.sl-task-status.skipped{background:#f2eee4;color:#715e3f}.sl-empty-task,.sl-loading,.sl-calendar-loading{width:100%;margin:22px 0 0;padding:18px;border-radius:13px;background:#f2f5f2;color:#5b6b66}.sl-community-entry{background:#103f35;color:#fff}.sl-community-entry .sl-eyebrow{color:#65ddb7}.sl-community-entry h2{color:#fff}.sl-community-entry p:last-child{color:#c8dbd4}.sl-community-entry nav{display:flex;flex-wrap:wrap;gap:9px}.sl-notice,.sl-error{width:100%;margin:0;padding:14px 17px;border-radius:12px}.sl-notice{background:#e3f6ed;color:#08745e}.sl-error{background:#fff0ee;color:#9a3933}.sl-calendar-stack{padding-top:8px}.sl-calendar-stack>.sl-calendar-loading{margin:0}.sl-workspace button:focus-visible,.sl-workspace a:focus-visible,.sl-workspace input:focus-visible,.sl-workspace textarea:focus-visible{outline:3px solid rgba(10,142,111,.28);outline-offset:3px}
     .sl-primary-training-menu{width:100%;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}.sl-primary-training-menu button{min-width:0;min-height:92px;padding:16px 18px;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:13px;border:1px solid #bfd1c9;border-radius:17px;background:#fff;color:#173d34;text-align:left;cursor:pointer}.sl-primary-training-menu button>span{grid-row:1/-1;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:#e3f5ed;color:#087d62;font-weight:950}.sl-primary-training-menu strong{font-size:22px}.sl-primary-training-menu small{color:#63746e}.sl-primary-training-menu button.active{border-color:#087d62;background:#0d4138;color:#fff;box-shadow:0 15px 34px rgba(13,65,56,.2)}.sl-primary-training-menu button.active>span{background:#65dfb8;color:#103f35}.sl-primary-training-menu button.active small{color:#c8ddd6}
     .sl-speaking-card{background:#f3f7f5}.sl-speaking-stage{width:100%;min-width:0;margin-top:22px;padding:clamp(20px,4vw,38px);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(18px,4vw,40px);border-radius:22px;background:radial-gradient(circle at 15% 20%,rgba(95,226,184,.2),transparent 30%),linear-gradient(135deg,#112f2a,#173f36);color:#fff;overflow:hidden}.sl-tutor-portrait{position:relative;width:clamp(110px,16vw,180px);aspect-ratio:1;display:grid;place-items:center;border:1px solid rgba(255,255,255,.22);border-radius:50%;background:linear-gradient(145deg,#74e2bf,#268b72);box-shadow:0 18px 50px rgba(0,0,0,.25)}.sl-tutor-portrait span{font-size:clamp(50px,8vw,88px);font-weight:950;color:#103f35}.sl-tutor-portrait i{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff}.sl-tutor-portrait i:nth-of-type(1){top:14%;left:7%}.sl-tutor-portrait i:nth-of-type(2){right:4%;bottom:24%}.sl-tutor-portrait i:nth-of-type(3){right:15%;top:8%;width:4px;height:4px}.sl-speaking-copy{min-width:0}.sl-speaking-copy .sl-task-label{color:#6ee3bd}.sl-speaking-copy h4{width:100%;margin:8px 0 10px;color:#fff;font:850 clamp(28px,4vw,46px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-speaking-copy>p:last-of-type{max-width:66ch;margin:0;color:#c8ddd6;line-height:1.62}.sl-speaking-copy dl{margin:20px 0 0;display:flex;flex-wrap:wrap;gap:9px}.sl-speaking-copy dl>div{min-width:150px;padding:10px 13px;border-radius:12px;background:rgba(255,255,255,.08)}.sl-speaking-copy dt{color:#9fd6c4;font-size:11px;font-weight:850}.sl-speaking-copy dd{margin:4px 0 0;font-size:13px;font-weight:800;overflow-wrap:anywhere}.sl-speaking-live{align-self:start;padding:9px 12px;display:flex;align-items:center;gap:7px;border-radius:999px;background:rgba(255,255,255,.1);color:#d7eee6;font-size:12px;font-weight:850;white-space:nowrap}.sl-speaking-live i{width:8px;height:8px;border-radius:50%;background:#64e1b8;box-shadow:0 0 0 5px rgba(100,225,184,.13)}.sl-dialogue-actions{width:100%;margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.sl-dialogue-actions button{min-height:54px;border:1px solid #16745c;border-radius:14px;background:#14634e;color:#fff;font:850 16px/1.25 inherit;cursor:pointer}.sl-dialogue-actions button:disabled{opacity:.55;cursor:wait}.sl-dialogue-actions small{grid-column:1/-1;color:#5d6e67;line-height:1.5}
-    @media(max-width:760px){.sl-speaking-stage{grid-template-columns:minmax(0,1fr);text-align:center}.sl-tutor-portrait{margin-inline:auto}.sl-speaking-copy dl{justify-content:center}.sl-speaking-live{justify-self:center}.sl-primary-training-menu{grid-template-columns:minmax(0,1fr)}}
-    .sl-vocabulary-cue{width:100%;min-width:0;margin:0 0 14px;padding:16px 20px;display:flex;align-items:center;gap:14px;border:1px solid #c9ded5;border-radius:18px;background:#fff}.sl-vocabulary-cue>span{flex:0 0 auto;font-size:clamp(38px,6vw,62px);line-height:1}.sl-vocabulary-cue>div{min-width:0;display:grid;gap:3px}.sl-vocabulary-cue small{color:#5c7169;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.sl-vocabulary-cue strong{font-size:clamp(18px,3vw,25px);overflow-wrap:anywhere}
+    .sl-pronunciation-coach{width:100%;min-width:0;margin:22px 0;padding:clamp(20px,4vw,38px);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(18px,4vw,40px);border-radius:22px;background:radial-gradient(circle at 15% 20%,rgba(95,226,184,.2),transparent 30%),linear-gradient(135deg,#112f2a,#173f36);color:#fff;overflow:hidden}.sl-pronunciation-coach.listening .sl-tutor-portrait{box-shadow:0 0 0 8px rgba(100,225,184,.16),0 18px 50px rgba(0,0,0,.25)}.sl-pronunciation-coach-copy{min-width:0}.sl-pronunciation-coach-copy .sl-task-label{color:#6ee3bd}.sl-pronunciation-coach-copy h4{width:100%;margin:8px 0 10px;color:#fff;font:850 clamp(25px,4vw,42px)/1.08 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-pronunciation-coach-copy>p:not(.sl-task-label){max-width:66ch;margin:0;color:#c8ddd6;line-height:1.62}.sl-coach-dialogue{margin-top:16px;padding:13px 15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-radius:14px;background:rgba(255,255,255,.1)}.sl-coach-dialogue strong{font-size:17px}.sl-coach-dialogue span{color:#b8d9ce}.sl-coach-dialogue b{width:100%;color:#79e2bf;font-size:20px}.sl-coach-start{min-height:48px;margin-top:16px;padding:10px 18px;border:0;border-radius:999px;background:#6ee3bd;color:#103f35;font:900 15px/1.2 inherit;cursor:pointer}.sl-coach-start:disabled{cursor:wait;opacity:.55}
+    @media(max-width:760px){.sl-speaking-stage,.sl-pronunciation-coach{grid-template-columns:minmax(0,1fr);text-align:center}.sl-tutor-portrait{margin-inline:auto}.sl-speaking-copy dl{justify-content:center}.sl-speaking-live{justify-self:center}.sl-primary-training-menu{grid-template-columns:minmax(0,1fr)}}
+    .sl-vocabulary-cue{width:100%;min-width:0;margin:0 0 14px;padding:16px 20px;display:flex;align-items:center;gap:14px;border:1px solid #c9ded5;border-radius:18px;background:#fff}.sl-vocabulary-cue>span{flex:0 0 auto;font-size:clamp(38px,6vw,62px);line-height:1}.sl-vocabulary-cue>div{min-width:0;display:grid;gap:3px}.sl-vocabulary-cue small{color:#5c7169;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.sl-vocabulary-cue strong{font-size:clamp(18px,3vw,25px);overflow-wrap:anywhere}.sl-content-provenance{margin-top:12px!important;color:#08745e!important;font-weight:800}.sl-focus-pack{width:100%;margin-top:24px;padding-top:24px;border-top:1px solid #d8e3de}.sl-focus-pack header h4{margin:0;font-size:clamp(20px,3vw,28px)}.sl-focus-pack header p{max-width:72ch;margin:7px 0 16px;color:#5d7069;line-height:1.55}.sl-focus-pack ul{margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px;list-style:none}.sl-focus-pack li{min-width:0;padding:15px;border:1px solid #d4e1db;border-radius:14px;background:#fff}.sl-focus-pack li>div{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.sl-focus-pack li strong{font-size:19px;overflow-wrap:anywhere}.sl-focus-pack li span,.sl-focus-pack li small{color:#61716b}.sl-focus-pack li p{margin:8px 0;line-height:1.45}.sl-focus-pack li small{font-weight:800}
     .sl-feature-overview,.sl-session-planner,.sl-daily-quiz{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;gap:20px;border:1px solid #cfded7;border-radius:24px;background:#f6fbf8}.sl-feature-overview{background:#fffdf8}.sl-feature-overview header,.sl-session-planner header,.sl-daily-quiz header{width:100%;min-width:0;display:grid;gap:8px}.sl-feature-overview h2,.sl-session-planner h2,.sl-daily-quiz h2{width:100%;margin:0;font:820 clamp(27px,4vw,43px)/1.1 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-feature-overview header>p:last-child,.sl-session-planner header>p:last-child,.sl-daily-quiz header>p:last-child{max-width:76ch;margin:0;color:#5f706a;line-height:1.65}.sl-feature-overview>ol{width:100%;min-width:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;list-style:none}.sl-feature-overview li{min-width:0;padding:18px;display:flex;align-items:flex-start;gap:13px;border:1px solid #d8e1dc;border-top:4px solid var(--skill-accent);border-radius:15px;background:#fff}.sl-feature-overview li>span{flex:0 0 auto;color:var(--skill-accent);font-size:12px;font-weight:950}.sl-feature-overview li>div{min-width:0}.sl-feature-overview strong{display:block;font-size:19px;overflow-wrap:anywhere}.sl-feature-overview li p{max-width:60ch;margin:7px 0 0;color:#5f706a;line-height:1.55;overflow-wrap:anywhere}.sl-duration-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.sl-duration-picker button{min-width:0;min-height:48px;padding:10px;border:1px solid #afc7bc;border-radius:13px;background:#fff;color:var(--ink);font:850 15px/1.2 inherit;cursor:pointer}.sl-duration-picker button.active{border-color:#087d62;background:#087d62;color:#fff}.sl-session-start{width:100%;min-height:54px;padding:12px 20px;display:flex;align-items:center;justify-content:center;gap:10px;border:0;border-radius:14px;background:#087d62;color:#fff;font:900 17px/1.2 inherit;cursor:pointer}.sl-session-start:disabled{cursor:not-allowed;opacity:.48}.sl-session-start span{font-size:15px}.sl-section-heading#today-five-skills{scroll-margin-top:120px}.sl-skill-tabs{width:100%;min-width:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.sl-skill-tabs button{min-width:0;min-height:62px;padding:10px 8px;display:grid;place-items:center;gap:3px;border:1px solid #c5d3cd;border-radius:14px;background:#fff;color:#30423c;font:850 15px/1.2 inherit;cursor:pointer}.sl-skill-tabs button span{font-size:10px;color:#75847f}.sl-skill-tabs button.active{border-color:#087d62;background:#087d62;color:#fff}.sl-skill-tabs button.active span{color:#c8efe2}.sl-skill-stepper{width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}.sl-skill-stepper button,.sl-skill-stepper a{min-height:46px;padding:10px 15px;border:1px solid #b9cbc3;border-radius:999px;background:#fff;color:#173d34;font:800 14px/1.2 inherit;text-align:center;text-decoration:none;cursor:pointer}.sl-skill-stepper button:last-child{background:#087d62;color:#fff;border-color:#087d62}.sl-skill-stepper button:disabled{cursor:not-allowed;opacity:.4}.sl-session-timer{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(94px,calc(env(safe-area-inset-bottom) + 76px));z-index:170;width:auto;min-width:92px;padding:5px;border:1px solid rgba(255,255,255,.75);border-radius:999px;background:#0d4138;color:#fff;box-shadow:0 18px 42px rgba(11,45,39,.3)}.sl-session-timer.paused{background:#755d23}.sl-session-timer-summary{width:100%;min-height:48px;padding:6px 14px;border:0;background:transparent;color:inherit;cursor:pointer}.sl-session-timer-summary strong{font-size:20px;font-variant-numeric:tabular-nums}.sl-session-timer-controls{position:absolute;right:0;bottom:calc(100% + 9px);width:210px;padding:8px;display:grid;gap:7px;border-radius:15px;background:#0d4138;box-shadow:0 14px 36px rgba(11,45,39,.3)}.sl-session-timer.paused .sl-session-timer-controls{background:#755d23}.sl-session-timer-controls button{min-height:42px;padding:8px 12px;border:1px solid rgba(255,255,255,.32);border-radius:11px;background:rgba(255,255,255,.1);color:#fff;font:800 14px/1.2 inherit;cursor:pointer}.sl-session-timer-controls button:last-child{background:#fff;color:#7d332e}.sl-repeat-help{max-width:76ch;margin:14px 0 0;color:#536760;line-height:1.6}.sl-pronunciation-feedback{width:100%;min-width:0;margin-top:16px;padding:17px;border-radius:14px;background:#fff6d8}.sl-pronunciation-feedback strong{font-size:20px}.sl-pronunciation-feedback p{max-width:76ch;margin:8px 0;line-height:1.55;overflow-wrap:anywhere}.sl-pronunciation-feedback small{display:block;color:#6f6448;line-height:1.5}.sl-quiz-status{margin:0;padding:14px;border-radius:12px;background:#e2f5ed;color:#08745e;font-weight:850}.sl-quiz-questions{width:100%;min-width:0;display:grid;gap:12px}.sl-quiz-questions fieldset{min-width:0;margin:0;padding:18px;border:1px solid #cfdbd5;border-radius:16px;background:#fff}.sl-quiz-questions legend{max-width:100%;padding:0 5px;font:800 clamp(18px,2.5vw,25px)/1.35 inherit;overflow-wrap:anywhere}.sl-quiz-questions legend small{display:block;color:#64736e;font-size:14px;font-weight:600}.sl-quiz-questions fieldset>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sl-quiz-questions button{min-width:0;min-height:48px;padding:10px 13px;border:1px solid #cbd7d1;border-radius:12px;background:#fff;color:var(--ink);font:750 15px/1.35 inherit;text-align:left;overflow-wrap:anywhere;cursor:pointer}.sl-quiz-questions button.selected{border-color:#0b9473;background:#e7f7f0;box-shadow:inset 0 0 0 1px #0b9473}
     .sl-flashcard-progress{width:100%;min-width:0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.sl-flashcard-progress>strong{color:#08745e;font-size:15px}.sl-flashcard-progress>div{display:flex;gap:7px}.sl-flashcard-progress button{min-height:40px;padding:8px 13px;border:1px solid #bdccc5;border-radius:999px;background:#fff;color:var(--ink);font:800 14px/1.2 inherit;cursor:pointer}.sl-flashcard-progress button:disabled{cursor:not-allowed;opacity:.45}.sl-recording-preview{width:100%;min-width:0;margin-top:14px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid #d4dfda;border-radius:14px;background:#fff}.sl-recording-preview>strong,.sl-recording-preview>small{grid-column:1/-1}.sl-recording-preview audio{width:100%;min-width:0}.sl-recording-preview button{min-height:42px;padding:8px 13px;border:1px solid #d1aaa5;border-radius:999px;background:#fff;color:#8e3730;font:800 14px/1.2 inherit;cursor:pointer}.sl-recording-preview small{color:#61716b;line-height:1.5}
     .sl-motivation-card,.sl-daily-plan{width:100%;min-width:0;padding:clamp(22px,4vw,42px);display:grid;gap:20px;border:1px solid #cfded7;border-radius:24px;background:#fff}.sl-motivation-card{background:linear-gradient(135deg,#123f36,#17584a);color:#fff}.sl-motivation-card header,.sl-daily-plan header{width:100%;min-width:0;display:grid;gap:8px}.sl-motivation-card h2,.sl-daily-plan h2{width:100%;margin:0;font:820 clamp(27px,4vw,43px)/1.1 Inter,"Noto Sans SC",sans-serif;overflow-wrap:anywhere}.sl-motivation-card h2{color:#fff}.sl-motivation-card header>p:not(.sl-eyebrow),.sl-daily-plan header>p:last-child{max-width:76ch;margin:0;line-height:1.65;overflow-wrap:anywhere}.sl-motivation-card header>p:not(.sl-eyebrow){color:#d6ebe4}.sl-motivation-card dl{width:100%;min-width:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.sl-motivation-card dl>div{min-width:0;padding:16px;border-radius:15px;background:rgba(255,255,255,.1)}.sl-motivation-card dt{color:#bfe1d6;font-size:12px;font-weight:850}.sl-motivation-card dd{margin:6px 0 0;font-size:clamp(21px,3vw,31px);font-weight:900;overflow-wrap:anywhere}.sl-motivation-card>small{max-width:76ch;color:#c8ddd6;line-height:1.55}.sl-streak-repair{width:100%;margin:0;padding:12px 14px;border-radius:12px;background:#f8d981;color:#2c443c;font-weight:850}.sl-plan-context{width:100%;min-width:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sl-plan-context>div{min-width:0;padding:16px;border-radius:15px;background:#edf7f2}.sl-plan-context dt{color:#4f6a62;font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.sl-plan-context dd{min-width:0;margin:7px 0 0;display:grid;gap:4px}.sl-plan-context dd strong,.sl-plan-context dd span{overflow-wrap:anywhere}.sl-plan-context dd span{color:#5d7069;line-height:1.45}.sl-plan-blocks{width:100%;min-width:0;margin:0;padding:0;display:grid;gap:10px;list-style:none}.sl-plan-blocks li{width:100%;min-width:0;padding:18px;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:14px;border:1px solid #d5e0db;border-radius:16px;background:#fffdf8}.sl-plan-blocks li.recap{border-color:#97cdbb;background:#e6f6ef}.sl-plan-number{width:34px;height:34px;display:grid;place-items:center;border-radius:999px;background:#173f36;color:#fff;font-size:11px;font-weight:900}.sl-plan-blocks li>div{min-width:0}.sl-plan-blocks p{max-width:76ch;margin:0;color:#536760;line-height:1.55;overflow-wrap:anywhere}.sl-plan-blocks p:first-child{max-width:none;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink)}.sl-plan-blocks p:first-child strong{font-size:18px}.sl-plan-blocks p:first-child span{padding:4px 8px;border-radius:999px;background:#e8f0ec;color:#276052;font-size:12px;font-weight:850}.sl-plan-blocks p:first-child b{margin-left:auto;color:#08745e;font-size:13px}.sl-checkpoint-status{width:100%;min-width:0;margin:0;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-radius:13px;background:#e4f6ed;color:#08745e;font-weight:850;overflow-wrap:anywhere}.sl-checkpoint-status small{font-weight:700}.sl-checkpoint-status.saving{background:#fff5d8;color:#735b1d}.sl-checkpoint-status.offline,.sl-checkpoint-status.conflict{background:#fff0ee;color:#923c35}.sl-answer-feedback{width:100%;min-width:0;margin-top:14px;padding:18px;display:grid;gap:14px;border:1px solid #bdd8cd;border-radius:15px;background:#eef8f3}.sl-answer-feedback header,.sl-answer-feedback>div{width:100%;min-width:0;display:grid;gap:5px}.sl-answer-feedback header strong,.sl-answer-feedback p,.sl-answer-feedback small{max-width:76ch;margin:0;line-height:1.55;overflow-wrap:anywhere}.sl-answer-feedback>div>b{color:#315c50}.sl-answer-feedback>small{display:block;color:#5e706a}.sl-answer-feedback.incorrect{border-color:#e4b4ae;background:#fff2ef}.sl-answer-feedback.partial,.sl-answer-feedback.partially_correct{border-color:#e0cb91;background:#fff9e7}.sl-session-timer.completing{background:#315b52}.sl-session-timer-summary:disabled{cursor:wait}

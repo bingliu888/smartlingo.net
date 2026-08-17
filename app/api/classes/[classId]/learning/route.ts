@@ -85,6 +85,7 @@ type VocabularyProgressRow = {
   correctCount: number;
   lapseCount: number;
   lastScore: number | null;
+  isFocused: number;
   dueAt: number | null;
   lastReviewedAt: number | null;
   updatedAt: number;
@@ -130,6 +131,7 @@ type LearningBody = {
   sampleId?: unknown;
   mode?: unknown;
   grade?: unknown;
+  focused?: unknown;
   taskId?: unknown;
   skill?: unknown;
   answer?: unknown;
@@ -1002,7 +1004,7 @@ async function vocabularyProgress(
   return database.prepare(`SELECT id, status, modes_seen AS modesSeen,
     review_box AS reviewBox, interval_days AS intervalDays,
     review_count AS reviewCount, correct_count AS correctCount,
-    lapse_count AS lapseCount, last_score AS lastScore,
+    lapse_count AS lapseCount, last_score AS lastScore, is_focused AS isFocused,
     due_at AS dueAt, last_reviewed_at AS lastReviewedAt, updated_at AS updatedAt
     FROM smartlingo_vocabulary_progress
     WHERE user_id = ? AND path_id = ? AND word_key = ? AND word_version = ? LIMIT 1`)
@@ -1018,6 +1020,7 @@ function publicProgress(row: VocabularyProgressRow | null) {
     correctCount: Number(row.correctCount || 0),
     lapseCount: Number(row.lapseCount || 0),
     lastScore: row.lastScore,
+    isFocused: Boolean(row.isFocused),
     dueAt: row.dueAt,
     lastReviewedAt: row.lastReviewedAt,
   } : {
@@ -1028,6 +1031,7 @@ function publicProgress(row: VocabularyProgressRow | null) {
     correctCount: 0,
     lapseCount: 0,
     lastScore: null,
+    isFocused: false,
     dueAt: null,
     lastReviewedAt: null,
   };
@@ -1099,6 +1103,32 @@ async function learningState(
     : [getVocabularySample(targetLanguage, level)];
   const vocabularyProgressRows = await Promise.all(vocabularySamples.map(sample =>
     vocabularyProgress(database, userId, access.pathId, sample.stableId, sample.version)));
+  const focusResult = await database.prepare(`SELECT word_key AS wordKey, word_version AS wordVersion,
+    is_focused AS isFocused, lapse_count AS lapseCount, last_score AS lastScore,
+    status, due_at AS dueAt
+    FROM smartlingo_vocabulary_progress
+    WHERE user_id = ? AND path_id = ?
+      AND (is_focused = 1 OR lapse_count > 0 OR (last_score IS NOT NULL AND last_score < 60))
+      AND status != 'suspended'
+    ORDER BY is_focused DESC, lapse_count DESC, updated_at DESC LIMIT 12`)
+    .bind(userId, access.pathId).run<{
+      wordKey: string; wordVersion: string; isFocused: number; lapseCount: number;
+      lastScore: number | null; status: string; dueAt: number | null;
+    }>();
+  const vocabularyFocusPack = (focusResult.results || []).flatMap(row => {
+    const focusSample = getVocabularySampleById(targetLanguage, row.wordKey);
+    if (!focusSample || focusSample.version !== row.wordVersion) return [];
+    return [{
+      sampleId: focusSample.stableId,
+      form: focusSample.form,
+      pronunciation: focusSample.pronunciation,
+      meaning: focusSample.meaning,
+      topic: focusSample.topic,
+      reason: row.isFocused ? "saved" as const : "repeated_error" as const,
+      lapseCount: Number(row.lapseCount || 0),
+      dueAt: row.dueAt,
+    }];
+  });
   const selectedIndex = vocabularyProgressRows.findIndex(row => row?.status !== "mastered" && row?.status !== "suspended");
   const activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
   const sample = vocabularySamples[activeIndex];
@@ -1141,6 +1171,10 @@ async function learningState(
       visualCue: getVocabularyVisualCue(deckSample),
       example: deckSample.example,
       exampleTranslation: deckSample.exampleTranslation,
+      level: deckSample.level,
+      topic: deckSample.topic,
+      sourceType: deckSample.sourceType,
+      humanReviewStatus: deckSample.humanReviewStatus,
       audioText: deckSample.form,
       speechLocale: SPEECH_LOCALES[targetLanguage],
       direction: targetLanguage === "ar" ? "rtl" as const : "ltr" as const,
@@ -1233,6 +1267,7 @@ async function learningState(
       nextMode,
     },
     vocabularyDeck,
+    vocabularyFocusPack,
     vocabularyDeckMeta: {
       day: vocabularyDay,
       total: vocabularyDeck.length,
@@ -2033,6 +2068,34 @@ export async function POST(
       ),
       idempotent: !inserted,
     });
+  }
+
+  if (action === "set_vocabulary_focus") {
+    const sampleId = safeIdentifier(body.sampleId || body.taskId, 160);
+    if (!sampleId || typeof body.focused !== "boolean") {
+      return Response.json({ error: "A valid vocabulary sample and focus state are required" }, { status: 400 });
+    }
+    const currentState = await learningState(
+      auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage,
+    );
+    if (!currentState.vocabularyDeck.some(item => item.sampleId === sampleId)) {
+      return Response.json({ error: "This vocabulary sample is not in the current server-assigned deck" }, { status: 409 });
+    }
+    const sample = getVocabularySampleById(auth.access.targetLanguage, sampleId);
+    if (!sample) return Response.json({ error: "Vocabulary sample not found" }, { status: 404 });
+    const now = Math.floor(Date.now() / 1000);
+    await auth.database.prepare(`INSERT INTO smartlingo_vocabulary_progress
+      (id, user_id, path_id, class_id, word_key, word_version, status, modes_seen,
+       review_box, interval_days, review_count, correct_count, lapse_count,
+       last_score, is_focused, due_at, last_reviewed_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, 'new', '[]', 0, 0, 0, 0, 0, NULL, ?, NULL, NULL, ?, ?)
+      ON CONFLICT(user_id, path_id, word_key, word_version) DO UPDATE SET
+        is_focused = excluded.is_focused, class_id = excluded.class_id, updated_at = excluded.updated_at`)
+      .bind(createId(), auth.user.id, auth.access.pathId, auth.classId, sample.stableId,
+        sample.version, body.focused ? 1 : 0, now, now).run();
+    return Response.json(await learningState(
+      auth.database, auth.user.id, auth.access, auth.placement, today, uiLanguage,
+    ));
   }
 
   if (action === "submit_task" || action === "skip_task") {

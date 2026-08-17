@@ -35,7 +35,7 @@ test("SmartLingo roadmap covers 20 consecutive delivery days", () => {
 });
 
 test("every day has exactly five bilingual tasks with evidence-based status", () => {
-  const completedDates = ["2026-07-31", "2026-08-01", "2026-08-02", "2026-08-03"];
+  const completedDates = ["2026-07-31", "2026-08-01", "2026-08-02", "2026-08-03", "2026-08-04"];
   for (const day of days) {
     assert.match(day.date, /^\d{4}-\d{2}-\d{2}$/);
     const expectedDayStatus = completedDates.includes(day.date) ? "done" : "planned";

@@ -99,7 +99,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: SmartMeeting-aligned single wallet connection
-          RELEASE_TITLE_ZH: 与 SmartMeeting 一致的单一钱包连接
-          RELEASE_NOTES: Replace separate browser-wallet and QR actions with the same unified connector flow used by SmartMeeting|Show one Connect wallet action, then the connected address and exact course-token send action|Preserve direct transfer, balance lookup, server-side chain verification, and course-scoped entitlement activation
-          RELEASE_NOTES_ZH: 将浏览器钱包与二维码两个入口替换为 SmartMeeting 同款统一连接流程|只显示一个连接钱包按钮，连接后显示地址及精确课程代币发送按钮|保留直接转账、余额查询、服务端链上验证及课程级权益启用
+          RELEASE_TITLE: Five-turn AI pronunciation coach and vocabulary focus packs
+          RELEASE_TITLE_ZH: 五轮人工智能跟读导师与词汇重点复习包
+          RELEASE_NOTES: Add a person-avatar coach that speaks first, scores five learner repetitions, and shows a round average|Complete versioned human-reviewed vocabulary metadata, five flashcard modes, and deterministic spaced review|Add server-authorized saved words and automatic repeated-error focus packs with cross-device persistence
+          RELEASE_NOTES_ZH: 新增人物头像导师先朗读、连续评分五次用户跟读并显示本轮平均分|完成版本化人工审核词汇元数据、五种词卡模式与确定性间隔复习|新增服务端授权收藏词和自动反复错词复习包，并跨设备保存

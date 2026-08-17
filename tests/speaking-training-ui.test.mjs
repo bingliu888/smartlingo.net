@@ -43,3 +43,15 @@ test("daily practice opens durable vocab or immersive speaking training", async 
   assert.match(workspace, /startDialogueTraining\(task, "answer"\)/);
   assert.match(workspace, /action: "submit_task", taskId: task\.taskId, skill: "dialogue", answer: transcript/);
 });
+
+test("the person-avatar pronunciation coach leads five scored follow-me turns", async () => {
+  const workspace = await readFile(new URL("../components/LearningWorkspace.tsx", import.meta.url), "utf8");
+  assert.match(workspace, /sl-person-avatar/);
+  assert.match(workspace, /🧑‍🏫/);
+  assert.match(workspace, /Follow me 5 times/);
+  assert.match(workspace, /round >= 5/);
+  assert.match(workspace, /runPronunciationCoachTurn\(item, round \+ 1\)/);
+  assert.match(workspace, /pronunciationScores\.reduce/);
+  assert.match(workspace, /speechSynthesis\.speak\(utterance\)/);
+  assert.match(workspace, /action: "pronunciation_review"/);
+});

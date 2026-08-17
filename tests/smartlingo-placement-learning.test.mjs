@@ -122,6 +122,7 @@ test("the learning catalog covers twelve languages, five skills, and three origi
     for (const sample of samples) {
       assert.equal(sample.version, SMARTLINGO_LEARNING_CONTENT_VERSION);
       assert.equal(sample.sourceType, "smartlingo_original");
+      assert.equal(sample.humanReviewStatus, "reviewed");
       assert.ok(sample.form && sample.example && sample.meaning.zh && sample.meaning.en);
     }
   }
@@ -197,6 +198,22 @@ test("vocabulary mastery requires three consecutive correct answers in three dif
   const suspended = scheduleVocabularyReview(varied, { grade: "suspend", mode: "cloze", reviewedAt: 8_000 });
   assert.equal(suspended.status, "suspended");
   assert.equal(suspended.dueAt, null);
+});
+
+test("vocabulary focus lists are server-authorized and durable", async () => {
+  const [route, workspace, migration] = await Promise.all([
+    read("../app/api/classes/[classId]/learning/route.ts"),
+    read("../components/LearningWorkspace.tsx"),
+    read("../drizzle/0039_smartlingo_vocabulary_focus.sql"),
+  ]);
+  assert.match(route, /action === "set_vocabulary_focus"/);
+  assert.match(route, /currentState\.vocabularyDeck\.some/);
+  assert.match(route, /is_focused = 1 OR lapse_count > 0/);
+  assert.match(workspace, /错题与重点词本/);
+  assert.match(workspace, /Mistakes and focus words/);
+  assert.match(workspace, /humanReviewStatus === "reviewed"/);
+  assert.match(migration, /ADD COLUMN `is_focused` integer DEFAULT 0 NOT NULL/);
+  assert.match(migration, /smartlingo_vocabulary_progress_focus_idx/);
 });
 
 test("daily five-skill tasks are stable, localized, client-safe, and graded from server reconstruction", () => {

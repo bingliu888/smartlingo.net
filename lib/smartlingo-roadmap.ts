@@ -78,16 +78,16 @@ const smartLingoRoadmapJson = String.raw`[
   },
   {
     "date": "2026-08-04",
-    "status": "planned",
+    "status": "done",
     "category": { "zh": "词汇与间隔复习", "en": "Vocabulary and spaced review" },
     "owner": { "zh": "SmartLingo 词汇学习团队", "en": "SmartLingo vocabulary team" },
     "acceptance": { "zh": "原创词汇内容通过卡片、语境和间隔复习形成可解释、可调整的长期记忆计划。", "en": "Original vocabulary content supports an explainable, adjustable long-term memory plan through cards, context, and spaced review." },
     "tasks": [
-      { "id": "sl-d05-vocabulary-records", "status": "planned", "progress": 0, "title": { "zh": "建立版本化词汇记录", "en": "Build versioned vocabulary records" }, "summary": { "zh": "保存词形、读音、词义、例句、难度、主题、来源类型和人工审核状态。", "en": "Store form, pronunciation, meaning, examples, difficulty, topic, source type, and human-review status." } },
-      { "id": "sl-d05-flashcards", "status": "planned", "progress": 0, "title": { "zh": "建立多模式词汇卡", "en": "Build multimodal flashcards" }, "summary": { "zh": "支持识别、回忆、听音选词、拼写与例句填空，避免只靠翻译记忆。", "en": "Support recognition, recall, listen-and-select, spelling, and contextual cloze instead of translation-only memorization." } },
-      { "id": "sl-d05-spaced-engine", "status": "planned", "progress": 0, "title": { "zh": "建立间隔复习引擎", "en": "Build the spaced-review engine" }, "summary": { "zh": "依据每次表现安排下一次复习，允许用户标记太易、太难或暂时忽略。", "en": "Schedule the next review from each response and allow learners to mark items too easy, too hard, or temporarily ignored." } },
-      { "id": "sl-d05-mistake-book", "status": "planned", "progress": 0, "title": { "zh": "建立错题与重点词本", "en": "Build mistake and focus lists" }, "summary": { "zh": "自动归集反复错误和用户收藏，按技能与原因生成短复习包。", "en": "Collect repeated errors and saved items, then generate short review packs by skill and error reason." } },
-      { "id": "sl-d05-vocabulary-tests", "status": "planned", "progress": 0, "title": { "zh": "测试词汇学习质量", "en": "Test vocabulary-learning quality" }, "summary": { "zh": "验证调度确定性、重复词、文字方向、音频缺失、内容撤回、时区和跨设备同步。", "en": "Verify scheduling determinism, duplicates, writing direction, missing audio, content withdrawal, timezones, and cross-device sync." } }
+      { "id": "sl-d05-vocabulary-records", "status": "done", "progress": 100, "title": { "zh": "建立版本化词汇记录", "en": "Build versioned vocabulary records" }, "summary": { "zh": "十二语词汇以稳定编号和不可变版本保存词形、读音、双语词义、例句、难度、主题、SmartLingo 原创来源和已人工审核状态，并在词卡中公开来源证据。", "en": "Twelve-language vocabulary uses stable IDs and immutable versions for form, pronunciation, bilingual meaning, examples, difficulty, topic, SmartLingo-original provenance, and human-review status, with provenance visible on each card." } },
+      { "id": "sl-d05-flashcards", "status": "done", "progress": 100, "title": { "zh": "建立多模式词汇卡", "en": "Build multimodal flashcards" }, "summary": { "zh": "词卡现支持识别、主动回忆、听音、拼写和语境填空，配有中性视觉提示、设备发音、跟读、答案揭示和本地录音试听。", "en": "Flashcards now support recognition, active recall, listening, spelling, and contextual cloze with neutral visual cues, device speech, repetition, answer reveal, and local-only recording preview." } },
+      { "id": "sl-d05-spaced-engine", "status": "done", "progress": 100, "title": { "zh": "建立间隔复习引擎", "en": "Build the spaced-review engine" }, "summary": { "zh": "确定性服务端调度根据重来、困难、良好或容易更新间隔、到期时间、连续正确模式和遗忘次数；暂停词不再进入到期队列。", "en": "Deterministic server scheduling updates intervals, due times, varied-mode mastery, and lapse counts from Again, Hard, Good, or Easy; suspended words leave the due queue." } },
+      { "id": "sl-d05-mistake-book", "status": "done", "progress": 100, "title": { "zh": "建立错题与重点词本", "en": "Build mistake and focus lists" }, "summary": { "zh": "服务端自动归集反复错误词，学习者可收藏或移出重点词；按收藏与错因排序的短复习包跨设备保存，并只接受当前服务器分配词卡。", "en": "The server collects repeated-error words automatically; learners can save or remove focus words, and a reason-ranked short pack syncs across devices while accepting only server-assigned cards." } },
+      { "id": "sl-d05-vocabulary-tests", "status": "done", "progress": 100, "title": { "zh": "测试词汇学习质量", "en": "Test vocabulary-learning quality" }, "summary": { "zh": "迁移、纯函数、API 与界面回归覆盖版本与审核元数据、五种模式、三种不同模式掌握、重复提交、暂停、右到左文字、缺失音频回退、重点词权限和跨设备持久化。", "en": "Migration, pure-function, API, and UI regressions cover version and review metadata, five modes, three-mode mastery, duplicate submission, suspension, RTL text, missing-audio fallback, focus authorization, and cross-device persistence." } }
     ]
   },
   {

@@ -1703,6 +1703,7 @@ export const lingoVocabularyProgress = sqliteTable("smartlingo_vocabulary_progre
   correctCount: integer("correct_count").notNull().default(0),
   lapseCount: integer("lapse_count").notNull().default(0),
   lastScore: integer("last_score"),
+  isFocused: integer("is_focused", { mode: "boolean" }).notNull().default(false),
   dueAt: integer("due_at"),
   lastReviewedAt: integer("last_reviewed_at"),
   createdAt: integer("created_at").notNull(),
@@ -1718,6 +1719,7 @@ export const lingoVocabularyProgress = sqliteTable("smartlingo_vocabulary_progre
     AND ${table.correctCount} + ${table.lapseCount} <= ${table.reviewCount}
   `),
   check("smartlingo_vocabulary_progress_score_ck", sql`${table.lastScore} IS NULL OR ${table.lastScore} BETWEEN 0 AND 100`),
+  check("smartlingo_vocabulary_progress_focus_ck", sql`${table.isFocused} IN (0, 1)`),
   uniqueIndex("smartlingo_vocabulary_progress_word_uq").on(table.userId, table.pathId, table.wordKey, table.wordVersion),
   index("smartlingo_vocabulary_progress_user_due_idx").on(table.userId, table.status, table.dueAt),
   index("smartlingo_vocabulary_progress_path_status_idx").on(table.pathId, table.status),

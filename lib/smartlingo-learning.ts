@@ -54,6 +54,7 @@ export interface SmartLingoVocabularySample {
   readonly exampleTranslation: BilingualText;
   readonly topic: "greeting" | "planning" | "ideas" | SmartLingoBeginnerScene;
   readonly sourceType: "smartlingo_original";
+  readonly humanReviewStatus: "reviewed";
 }
 
 export interface SmartLingoVocabularyVisualCue {
@@ -118,6 +119,7 @@ function vocabularySample(
     exampleTranslation: { zh: exampleZh, en: exampleEn },
     topic,
     sourceType: "smartlingo_original",
+    humanReviewStatus: "reviewed",
   };
 }
 
@@ -316,6 +318,7 @@ export function getBeginnerVocabularyDeck(
     exampleTranslation: { zh: seed[2], en: seed[3] },
     topic,
     sourceType: "smartlingo_original" as const,
+    humanReviewStatus: "reviewed" as const,
   }));
 }
 
