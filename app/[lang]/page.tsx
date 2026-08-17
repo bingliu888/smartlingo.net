@@ -34,7 +34,7 @@ const copy = {
     ],
     classKicker: "THREE COURSE LEVELS",
     classTitle: "Choose the depth of training that fits your goal.",
-    classBody: "Every language has Beginner, Intermediate, and Advanced courses maintained by SmartLingo administrators, with a dedicated A/V webinar classroom and co-host speakers.",
+    classBody: "Every language has Beginner, Intermediate, and Advanced courses maintained by SmartLingo administrators, with an A/V Webinar teaching room and a free group-audio practice room.",
     classCards: [
       ["Beginner · $20/month", "Core vocabulary, pronunciation, listening, and guided speaking."],
       ["Intermediate · $100/month", "Adds daily-life dialogue and writing training."],
@@ -46,7 +46,7 @@ const copy = {
     moneyFacts: [
       ["30 days", "Free first month for every course subscription"],
       ["3 levels", "Beginner, Intermediate, and Advanced"],
-      ["A/V", "A dedicated Webinar classroom for each course"],
+      ["2 rooms", "A Webinar teaching room and group-audio practice room for each course"],
     ],
     rewardTitle: "Introducer rewards apply only to platform subscriptions.",
     rewardBody: "When the platform successfully charges a recurring SmartLingo subscription, its direct introducer can receive the published reward points for that payment. Class purchases, teacher payouts, refunds, tips, and connected-account charges never create introducer points.",
@@ -60,14 +60,14 @@ const copy = {
     ],
     planKicker: "COMPETITIVE BY DESIGN",
     planTitle: "Start with a free month, then choose the depth you need.",
-    planBody: "Every language uses the same transparent monthly prices and includes a dedicated A/V webinar classroom.",
+    planBody: "Every language uses the same transparent monthly prices and includes a Webinar teaching room plus a group-audio practice room.",
     plans: [
       ["Beginner · $20/month", "Core vocabulary, pronunciation, listening, and guided speaking."],
       ["Intermediate · $100/month", "Beginner training plus daily-life dialogue and writing."],
       ["Advanced · $300/month", "Intermediate training plus accent correction, speeches, and speech-draft revision."],
     ],
     readyTitle: "Choose a language and say the first sentence today.",
-    readyBody: "Choose a fixed course level, use the first month free, and keep your learning and webinar classroom together.",
+    readyBody: "Choose a fixed course level, use the first month free, and keep learning, teaching, and speaking practice together.",
     readyAction: "Create free account",
   },
   zh: {
@@ -98,7 +98,7 @@ const copy = {
     ],
     classKicker: "三级课程",
     classTitle: "按学习目标选择合适的训练深度。",
-    classBody: "每种语言都有由 SmartLingo 管理员维护的初期、中级和高级课程；每门课程配有独立音视频网络研讨会教室，并支持协办主持担任演讲嘉宾。",
+    classBody: "每种语言都有由 SmartLingo 管理员维护的初期、中级和高级课程；每门课程配有音视频 Webinar 教课室和免费的 Group Audio 练习室。",
     classCards: [
       ["初期 · 每月 20 美元", "核心词汇、发音、听力和引导式口语。"],
       ["中级 · 每月 100 美元", "增加日常生活对话和写作训练。"],
@@ -110,7 +110,7 @@ const copy = {
     moneyFacts: [
       ["30 天", "每门课程订阅的免费首月"],
       ["三级", "初期、中级和高级"],
-      ["音视频", "每门课程独立的网络研讨会教室"],
+      ["两个房间", "每门课程都有 Webinar 教课室和小组语音练习室"],
     ],
     rewardTitle: "介绍人积分只来自平台订阅付款。",
     rewardBody: "平台每次成功收取 SmartLingo 订阅费后，该用户的直接介绍人可按已公布规则获得积分。班级购买、老师收款、退款、打赏和连接账户付款一律不产生介绍人积分。",
@@ -124,14 +124,14 @@ const copy = {
     ],
     planKicker: "以更有竞争力的价值设计",
     planTitle: "首月免费，再选择需要的训练深度。",
-    planBody: "每种语言采用相同透明月费，并配有独立的音视频网络研讨会教室。",
+    planBody: "每种语言采用相同透明月费，并配有 Webinar 教课室和小组语音练习室。",
     plans: [
       ["初期 · 每月 20 美元", "核心词汇、发音、听力和引导式口语。"],
       ["中级 · 每月 100 美元", "初期训练加日常生活对话和写作。"],
       ["高级 · 每月 300 美元", "中级训练加口音校正、演讲和演讲稿修改。"],
     ],
     readyTitle: "今天就选一种语言，说出第一句话。",
-    readyBody: "选择固定课程等级，使用免费首月，并把学习与网络研讨会教室连接在一起。",
+    readyBody: "选择固定课程等级，使用免费首月，把学习、授课与口语练习连接在一起。",
     readyAction: "免费创建账户",
   },
 } as const;
