@@ -88,6 +88,8 @@ jobs:
           test "$presets_code" = "403"
           students_code="$(curl -sS -o /tmp/course-students.json -w '%{http_code}' https://smartlingo.net/api/classes/course_en_basic/students)"
           test "$students_code" = "401"
+          wallet_asset_code="$(curl -sS -o /dev/null -w '%{http_code}' https://smartlingo.net/wallet-assets/greatlove-onboard.js)"
+          test "$wallet_asset_code" = "200"
 
       - name: Publish exact Project release record
         shell: bash
@@ -97,7 +99,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Course-scoped student subscription controls
-          RELEASE_TITLE_ZH: 课程级学员订阅管理
-          RELEASE_NOTES: Add Trial and Subscribers tabs to every course for authorized managers|Allow enabling, disabling, or adding a registered subscriber by email for the selected course only|Preserve member accounts, platform roles, other courses, and write every manual change to the admin audit log
-          RELEASE_NOTES_ZH: 为每门课程的授权管理员增加试用与订阅者标签页|支持仅针对所选课程启用、停用订阅或按邮箱添加已注册订阅者|保留会员账号、全站角色和其他课程，并将每次人工修改写入管理员审计记录
+          RELEASE_TITLE: SmartMeeting-aligned single wallet connection
+          RELEASE_TITLE_ZH: 与 SmartMeeting 一致的单一钱包连接
+          RELEASE_NOTES: Replace separate browser-wallet and QR actions with the same unified connector flow used by SmartMeeting|Show one Connect wallet action, then the connected address and exact course-token send action|Preserve direct transfer, balance lookup, server-side chain verification, and course-scoped entitlement activation
+          RELEASE_NOTES_ZH: 将浏览器钱包与二维码两个入口替换为 SmartMeeting 同款统一连接流程|只显示一个连接钱包按钮，连接后显示地址及精确课程代币发送按钮|保留直接转账、余额查询、服务端链上验证及课程级权益启用
