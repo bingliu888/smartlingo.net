@@ -16,11 +16,3 @@ export async function getAdminUser(request?: Request) {
   const user = await getSessionUser(request);
   return user && isBootstrapAdminEmail(user.email) ? user : null;
 }
-
-export async function isTeacherUser(user: Parameters<typeof isAdminUser>[0]) {
-  if (!user) return false;
-  if (await isAdminUser(user)) return true;
-  const database = getDatabase();
-  const row = await database.prepare("SELECT subscriber_override AS subscriberOverride FROM platform_member_access WHERE user_id=? AND status='active' LIMIT 1").bind(user.id).first() as { subscriberOverride?: number } | null;
-  return Number(row?.subscriberOverride || 0) === 1;
-}

@@ -1,5 +1,50 @@
-import { isAdmin, isBootstrapAdminEmail } from "../../../../../lib/admin-access";
+import { isBootstrapAdminEmail } from "../../../../../lib/admin-access";
 import { getDatabase, getSessionUser } from "../../../../../lib/auth";
-type Target={id:string;email:string;role:"member"|"admin"};async function context(request:Request,memberId:string){const admin=await getSessionUser(request);if(!admin)return{response:Response.json({error:"Authentication required"},{status:401})};if(!isBootstrapAdminEmail(admin.email))return{response:Response.json({error:"Administrator access required"},{status:403})};const target=await getDatabase().prepare("SELECT id,email,role FROM users WHERE id=? LIMIT 1").bind(memberId).first<Target>();if(!target)return{response:Response.json({error:"Member not found"},{status:404})};return{admin,target}}
-export async function PATCH(request:Request,{params}:{params:Promise<{memberId:string}>}){const{memberId}=await params,c=await context(request,memberId);if("response"in c)return c.response;const body=await request.json().catch(()=>({}))as{role?:string};if(body.role!=="member"&&body.role!=="admin")return Response.json({error:"Role must be member or admin"},{status:400});if((isBootstrapAdminEmail(c.target.email)||c.target.id===c.admin.id)&&body.role!=="admin")return Response.json({error:"This administrator role is protected"},{status:409});await getDatabase().prepare("UPDATE users SET role=? WHERE id=?").bind(body.role,c.target.id).run();return Response.json({ok:true})}
-export async function DELETE(request:Request,{params}:{params:Promise<{memberId:string}>}){const{memberId}=await params,c=await context(request,memberId);if("response"in c)return c.response;if(isBootstrapAdminEmail(c.target.email)||c.target.id===c.admin.id)return Response.json({error:"Protected administrator"},{status:409});const db=getDatabase(),now=Math.floor(Date.now()/1000);await db.batch([db.prepare("DELETE FROM sessions WHERE user_id=?").bind(c.target.id),db.prepare("UPDATE users SET role='member' WHERE id=?").bind(c.target.id),db.prepare("INSERT INTO platform_member_access(user_id,status,subscriber_override,updated_by_user_id,created_at,updated_at) VALUES(?,'removed',0,?,?,?) ON CONFLICT(user_id) DO UPDATE SET status='removed',subscriber_override=0,updated_by_user_id=excluded.updated_by_user_id,updated_at=excluded.updated_at").bind(c.target.id,c.admin.id,now,now),db.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)").bind(crypto.randomUUID(),c.admin.id,c.target.id,"member.removed",now)]);return Response.json({ok:true})}
+
+type Target = { id: string; email: string; role: "member" | "admin" };
+type RoleAction = "grant-admin" | "revoke-admin" | "grant-subscriber" | "revoke-subscriber";
+
+async function context(request: Request, memberId: string) {
+  const admin = await getSessionUser(request);
+  if (!admin) return { response: Response.json({ error: "Authentication required" }, { status: 401 }) };
+  if (!isBootstrapAdminEmail(admin.email)) return { response: Response.json({ error: "Administrator access required" }, { status: 403 }) };
+  const target = await getDatabase().prepare("SELECT id,email,role FROM users WHERE id=? LIMIT 1").bind(memberId).first<Target>();
+  if (!target) return { response: Response.json({ error: "Member not found" }, { status: 404 }) };
+  return { admin, target };
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ memberId: string }> }) {
+  const { memberId } = await params;
+  const value = await context(request, memberId);
+  if ("response" in value) return value.response;
+  const body = await request.json().catch(() => ({})) as { action?: RoleAction };
+  const action = body.action;
+  if (!action || !["grant-admin", "revoke-admin", "grant-subscriber", "revoke-subscriber"].includes(action)) {
+    return Response.json({ error: "Choose a specific role action" }, { status: 400 });
+  }
+  if (action === "revoke-admin" && (isBootstrapAdminEmail(value.target.email) || value.target.id === value.admin.id)) {
+    return Response.json({ error: "This administrator role is protected" }, { status: 409 });
+  }
+
+  const db = getDatabase();
+  const now = Math.floor(Date.now() / 1000);
+  const statements = [];
+  if (action === "grant-admin" || action === "revoke-admin") {
+    statements.push(db.prepare("UPDATE users SET role=? WHERE id=?").bind(action === "grant-admin" ? "admin" : "member", value.target.id));
+  } else if (action === "grant-subscriber" || action === "revoke-subscriber") {
+    statements.push(db.prepare(`INSERT INTO platform_member_access
+      (user_id,status,subscriber_override,updated_by_user_id,created_at,updated_at)
+      VALUES(?,'active',?,?,?,?)
+      ON CONFLICT(user_id) DO UPDATE SET status='active',subscriber_override=excluded.subscriber_override,
+      updated_by_user_id=excluded.updated_by_user_id,updated_at=excluded.updated_at`)
+      .bind(value.target.id, action === "grant-subscriber" ? 1 : -1, value.admin.id, now, now));
+  }
+  statements.push(db.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)")
+    .bind(crypto.randomUUID(), value.admin.id, value.target.id, `role.${action}`, now));
+  await db.batch(statements);
+  return Response.json({ ok: true, action });
+}
+
+export async function DELETE() {
+  return Response.json({ error: "Member deletion is disabled; remove a specific role instead" }, { status: 405, headers: { Allow: "PATCH" } });
+}

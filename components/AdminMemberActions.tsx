@@ -1,9 +1,71 @@
 "use client";
+
 import { useState } from "react";
 
-export function AdminMemberActions({lang,tab}:{lang:"en"|"zh";tab:"recent"|"subscribers"|"teachers"}){
-  const zh=lang==="zh",[busy,setBusy]=useState(false),[message,setMessage]=useState("");
-  async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();setBusy(true);setMessage("");const form=new FormData(event.currentTarget);const payload=tab==="recent"?{action:"create",displayName:String(form.get("displayName")??""),email:String(form.get("email")??""),password:String(form.get("password")??"")}:{action:tab==="subscribers"?"grant-subscriber":"grant-teacher",email:String(form.get("email")??"")};const response=await fetch("/api/admin/members",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});const data=await response.json().catch(()=>({})) as {error?:string};if(!response.ok){setMessage(data.error||(zh?"操作失败。":"Action failed."));setBusy(false);return}window.location.reload()}
-  return <section className="admin-add-card"><h2>{zh?"添加":"Add"}</h2><p>{tab==="recent"?(zh?"创建一个可使用邮箱和临时密码登录的新会员。密码只发送到身份服务，不写入本站数据库。":"Create a member with email and a temporary password. The password is sent only to the identity provider."):(tab==="subscribers"?(zh?"输入现有会员邮箱，确认后授予订阅访问权益。":"Enter an existing member email and grant subscriber access."):(zh?"输入现有付费会员邮箱，确认后授予教师课堂创建权限。":"Enter an existing paid member email and grant teacher class-creation access."))}</p><form onSubmit={submit}>{tab==="recent"&&<label>{zh?"用户名":"Name"}<input name="displayName" required minLength={2} maxLength={60}/></label>}<label>{zh?"邮箱":"Email"}<input name="email" type="email" required autoComplete="off"/></label>{tab==="recent"&&<label>{zh?"临时密码":"Temporary password"}<input name="password" type="password" required minLength={8} autoComplete="new-password"/></label>}<button type="submit" disabled={busy}>{busy?(zh?"处理中…":"Working…"):(tab==="recent"?(zh?"添加":"Add"):(zh?"添加教师":"Add Teacher"))}</button>{message&&<p className="admin-form-message" role="alert">{message}</p>}</form></section>}
+type RoleTab = "members" | "admins" | "subscribers";
+type RoleKind = "admin" | "subscriber";
 
-export function AdminMemberDelete({memberId,lang,locked}:{memberId:string;lang:"en"|"zh";locked:boolean}){const zh=lang==="zh",[busy,setBusy]=useState(false);async function remove(){if(locked||!confirm(zh?"从本站移除此会员？其身份提供商账户不会被删除。":"Remove this member from this site? Their identity-provider account will not be deleted."))return;setBusy(true);const response=await fetch(`/api/admin/members/${encodeURIComponent(memberId)}`,{method:"DELETE"});if(response.ok){window.location.reload();return}const data=await response.json().catch(()=>({})) as {error?:string};alert(data.error||(zh?"移除失败。":"Removal failed."));setBusy(false)}return <button type="button" className="admin-delete" onClick={remove} disabled={locked||busy} title={locked?(zh?"受保护的管理员":"Protected administrator"):undefined}>{busy?(zh?"移除中…":"Removing…"):(zh?"删除":"Delete")}</button>}
+const roleName = (kind: RoleKind, zh: boolean) => kind === "admin"
+  ? (zh ? "管理员" : "Administrator")
+  : (zh ? "订阅者" : "Subscriber");
+
+export function AdminMemberActions({ lang, tab }: { lang: "en" | "zh"; tab: RoleTab }) {
+  const zh = lang === "zh";
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const kind = tab === "admins" ? "admin" : tab === "subscribers" ? "subscriber" : null;
+  if (!kind) return null;
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage("");
+    const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/admin/members", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: `grant-${kind}`, email: String(form.get("email") ?? "") }),
+    });
+    const data = await response.json().catch(() => ({})) as { error?: string };
+    if (!response.ok) {
+      setMessage(data.error || (zh ? "操作失败。" : "Action failed."));
+      setBusy(false);
+      return;
+    }
+    window.location.reload();
+  }
+  const name = roleName(kind, zh);
+  return <section className="admin-add-card">
+    <h2>{zh ? `添加${name}` : `Add ${name}`}</h2>
+    <p>{zh ? `输入现有会员邮箱，只添加${name}角色；会员账户不会被替换。` : `Enter an existing member email. Only the ${name.toLowerCase()} role is added; the member account is unchanged.`}</p>
+    <form onSubmit={submit}>
+      <label>{zh ? "会员邮箱" : "Member email"}<input name="email" type="email" required autoComplete="off"/></label>
+      <button type="submit" disabled={busy}>{busy ? (zh ? "处理中…" : "Working…") : (zh ? `添加${name}` : `Add ${name}`)}</button>
+      {message && <p className="admin-form-message" role="alert">{message}</p>}
+    </form>
+  </section>;
+}
+
+export function AdminRoleRemoveButton({ memberId, lang, kind, locked = false }: { memberId: string; lang: "en" | "zh"; kind: RoleKind; locked?: boolean }) {
+  const zh = lang === "zh";
+  const [busy, setBusy] = useState(false);
+  const name = roleName(kind, zh);
+  async function remove() {
+    if (locked || !confirm(zh ? `删除此会员的${name}角色？会员账户和其他角色会保留。` : `Remove this member's ${name.toLowerCase()} role? Their member account and other roles will remain.`)) return;
+    setBusy(true);
+    const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: `revoke-${kind}` }),
+    });
+    if (response.ok) {
+      window.location.reload();
+      return;
+    }
+    const data = await response.json().catch(() => ({})) as { error?: string };
+    alert(data.error || (zh ? "角色删除失败。" : "Could not remove role."));
+    setBusy(false);
+  }
+  return <button type="button" className="admin-delete" onClick={remove} disabled={locked || busy}>
+    {busy ? (zh ? "处理中…" : "Working…") : (zh ? `删除${name}` : `Delete ${name}`)}
+  </button>;
+}

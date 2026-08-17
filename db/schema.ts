@@ -19,7 +19,15 @@ export const users = sqliteTable("users", {
 ]);
 
 // Unified, site-local member lifecycle. Authentication remains in Clerk.
-export const platformMemberAccess = sqliteTable("platform_member_access", { userId:text("user_id").primaryKey().references(()=>users.id,{onDelete:"cascade"}),status:text("status").notNull().default("active"),subscriberOverride:integer("subscriber_override").notNull().default(0),updatedByUserId:text("updated_by_user_id").references(()=>users.id,{onDelete:"set null"}),createdAt:integer("created_at").notNull(),updatedAt:integer("updated_at").notNull() },table=>[index("platform_member_access_status_idx").on(table.status,table.updatedAt)]);
+export const platformMemberAccess = sqliteTable("platform_member_access", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("active"),
+  // -1 explicitly revokes subscriber access, 0 follows billing, 1 grants it.
+  subscriberOverride: integer("subscriber_override").notNull().default(0),
+  updatedByUserId: text("updated_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [index("platform_member_access_status_idx").on(table.status, table.updatedAt)]);
 export const platformAdminAudit = sqliteTable("platform_admin_audit", { id:text("id").primaryKey(),adminUserId:text("admin_user_id").references(()=>users.id,{onDelete:"set null"}),targetUserId:text("target_user_id").references(()=>users.id,{onDelete:"set null"}),action:text("action").notNull(),createdAt:integer("created_at").notNull() },table=>[index("platform_admin_audit_target_idx").on(table.targetUserId,table.createdAt)]);
 
 export const userAvatars = sqliteTable("user_avatars", {

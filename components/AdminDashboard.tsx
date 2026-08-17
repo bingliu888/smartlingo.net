@@ -11,7 +11,7 @@ async function count(sql: string) {
 export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: SessionUser }) {
   const [members, subscribers, classes, openClasses, certificates] = await Promise.all([
     count("SELECT COUNT(*) AS count FROM users"),
-    count("SELECT COUNT(DISTINCT subscriber_user_id) AS count FROM smartlingo_platform_subscription_payments WHERE status = 'paid'"),
+    count("SELECT COUNT(DISTINCT u.id) AS count FROM users u LEFT JOIN platform_member_access a ON a.user_id=u.id WHERE COALESCE(a.status,'active')='active' AND COALESCE(a.subscriber_override,0)<>-1 AND (COALESCE(a.subscriber_override,0)=1 OR EXISTS (SELECT 1 FROM smartlingo_platform_subscription_payments p WHERE p.subscriber_user_id=u.id AND p.status='paid'))"),
     count("SELECT COUNT(*) AS count FROM smartlingo_language_classes"),
     count("SELECT COUNT(*) AS count FROM smartlingo_language_classes WHERE status = 'open'"),
     count("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2"),
@@ -27,7 +27,7 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
       <section className="admin-overview-grid" aria-label={zh ? "管理概览" : "Admin overview"}>
         <article className="admin-overview-card">
           <div><p>{zh ? "会员" : "Members"}</p><strong>{members.toLocaleString()}</strong><span>{zh ? `${subscribers.toLocaleString()} 位付费订阅会员` : `${subscribers.toLocaleString()} paid subscribers`}</span></div>
-          <nav><a href={`/${lang}/admin/members?tab=recent`}>{zh ? "最近会员" : "Recent"} →</a><a href={`/${lang}/admin/members?tab=subscribers`}>{zh ? "订阅会员" : "Subscribers"} →</a></nav>
+          <nav><a href={`/${lang}/admin/members?tab=members`}>{zh ? "全部会员" : "All members"} →</a><a href={`/${lang}/admin/members?tab=admins`}>{zh ? "管理员" : "Administrators"} →</a><a href={`/${lang}/admin/members?tab=subscribers`}>{zh ? "订阅者" : "Subscribers"} →</a></nav>
         </article>
         <article className="admin-overview-card">
           <div><p>{zh ? "语言班级" : "Language classes"}</p><strong>{classes.toLocaleString()}</strong><span>{zh ? `${openClasses.toLocaleString()} 个开放班级` : `${openClasses.toLocaleString()} open classes`}</span></div>
