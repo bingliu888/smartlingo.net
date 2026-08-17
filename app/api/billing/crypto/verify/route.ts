@@ -7,12 +7,13 @@ import { isSmartLingoCommunityLanguage } from "@/lib/smartlingo-language-communi
 export async function POST(request:Request){
  try{
   const user=await getSessionUser();if(!user)return Response.json({error:"Sign in required"},{status:401});
-  const body=await request.json().catch(()=>null) as {settingId?:string;plan?:string;languageCode?:string;txHash?:string}|null;
-  const setting=await cryptoPaymentSettingById(String(body?.settingId||"")),plan=cryptoPlan(body?.plan),languageCode=String(body?.languageCode||""),txHash=String(body?.txHash||"").toLowerCase();
+  const body=await request.json().catch(()=>null) as {settingId?:string;plan?:string;languageCode?:string;classId?:string;txHash?:string}|null;
+  const setting=await cryptoPaymentSettingById(String(body?.settingId||"")),plan=cryptoPlan(body?.plan),languageCode=String(body?.languageCode||""),requestedClassId=String(body?.classId||""),txHash=String(body?.txHash||"").toLowerCase();
   if(!setting||!plan||!isSmartLingoCommunityLanguage(languageCode)||!/^0x[a-f0-9]{64}$/.test(txHash))return Response.json({error:"Select a valid course, language, rail, and transaction hash"},{status:400});
   const db=getDatabase();if(await db.prepare("SELECT id FROM crypto_payment_claims WHERE tx_hash=?").bind(txHash).first())return Response.json({error:"This transaction was already claimed"},{status:409});
   const account=await db.prepare("SELECT wallet_address AS wallet FROM users WHERE id=?").bind(user.id).first<{wallet:string|null}>();if(!account?.wallet)return Response.json({error:"Save the payer wallet first"},{status:409});
-  const classId=fixedCourseId(languageCode,plan.id),course=await db.prepare("SELECT id,price_cents AS priceCents,package_tier AS tier FROM smartlingo_language_classes WHERE id=? AND class_kind='official_course' AND status='open'").bind(classId).first<{id:string;priceCents:number;tier:string}>();
+  const classId=fixedCourseId(languageCode,plan.id);if(requestedClassId!==classId)return Response.json({error:"Payment does not match this course"},{status:400});
+  const course=await db.prepare("SELECT id,price_cents AS priceCents,package_tier AS tier FROM smartlingo_language_classes WHERE id=? AND class_kind='official_course' AND status='open'").bind(classId).first<{id:string;priceCents:number;tier:string}>();
   if(!course||course.tier!==plan.id||course.priceCents!==plan.priceCents)return Response.json({error:"The selected fixed-price course is unavailable"},{status:409});
   const url=await cryptoRpcUrl(setting.chainId);if(!url)return Response.json({error:"Blockchain RPC is not configured"},{status:503});
   const receipt=await cryptoRpc(url,"eth_getTransactionReceipt",[txHash]) as {status?:string;blockNumber?:string;logs?:Array<{address?:string;topics?:string[];data?:string}>};if(receipt.status!=="0x1"||!receipt.blockNumber)return Response.json({error:"Transaction is not confirmed successfully"},{status:422});

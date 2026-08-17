@@ -28,26 +28,26 @@ type Detail = {
 const COPY = {
   en: {
     eyebrow: "SMARTLINGO COURSES", title: "Three clear levels. One free first month.",
-    intro: "Choose Beginner, Intermediate, or Advanced. SmartLingo administrators maintain every course and each course includes a dedicated A/V webinar classroom.",
+    intro: "Choose Beginner, Intermediate, or Advanced. Every course includes an A/V Webinar teaching room and a group-audio practice room.",
     signIn: "Sign in to view courses", joinedTitle: "My courses", noJoined: "You have not started a course yet.",
     availableTitle: "Available courses", availableIntro: "Fixed monthly plans; members cannot create courses or set fees.",
     noAvailable: "No additional courses are available.", joined: "Subscribed", subscribe: "Start free month", subscribing: "Starting…",
     open: "Open course", learners: "learners", firstMonth: "First month free", perMonth: "per month",
     back: "All courses", courseAdmin: "SmartLingo course", schedule: "Schedule", price: "Monthly price",
-    package: "Course package", classroom: "A/V Webinar classroom", classroomCopy: "The course administrator can assign co-hosts as webinar speakers.",
+    package: "Course package", classroom: "Two course rooms", classroomCopy: "Use the Webinar teaching room for administrator and co-host lessons, and the free group-audio practice room for student speaking discussion.",
     fiveSkillsTitle: "Learn five skills", fiveSkillsBody: "Start vocabulary, reading, writing, listening, and dialogue directly—no placement test required.",
     dailyLearning: "Start five-skill learning", calendar: "Learning calendar",
     edit: "Edit course", save: "Save", cancel: "Cancel", summary: "Description", joinFailed: "The subscription could not be started. Please try again.",
   },
   zh: {
     eyebrow: "SmartLingo 课程", title: "三级课程，首月免费。",
-    intro: "选择初期、中级或高级课程。所有课程由 SmartLingo 管理员维护，并配有独立的音视频网络研讨会教室。",
+    intro: "选择初期、中级或高级课程。每门课程都配有音视频 Webinar 教课室和小组语音练习室。",
     signIn: "登录后查看课程", joinedTitle: "我的课程", noJoined: "您尚未开始任何课程。",
     availableTitle: "可订阅课程", availableIntro: "固定月费；会员不能创建课程或自行定价。",
     noAvailable: "目前没有其他可订阅课程。", joined: "已订阅", subscribe: "开始免费首月", subscribing: "正在开通…",
     open: "进入课程", learners: "位学员", firstMonth: "第一个月免费", perMonth: "每月",
     back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "每月价格",
-    package: "课程内容", classroom: "音视频网络研讨会教室", classroomCopy: "课程管理员可以指定协办主持作为演讲嘉宾。",
+    package: "课程内容", classroom: "两个课程房间", classroomCopy: "管理员和协办主持在 Webinar 教课室授课；学员可在免费的 Group Audio 练习室讨论和练习口语。",
     fiveSkillsTitle: "学习五项技能", fiveSkillsBody: "直接开始词汇、阅读、写作、听力和对话训练，无需分级测试。",
     dailyLearning: "开始五项技能学习", calendar: "学习日历",
     edit: "编辑课程", save: "保存", cancel: "取消", summary: "课程说明", joinFailed: "暂时无法开通订阅，请稍后重试。",
@@ -128,7 +128,7 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
       {editing && <form className="course-edit-form" onSubmit={saveCourse}><label>{lang === "zh" ? "课程名称" : "Course title"}<input name="title" defaultValue={item.title}/></label><label>{t.summary}<textarea name="summary" defaultValue={item.summary}/></label><label>{t.schedule}<input name="schedule" defaultValue={item.schedule}/></label><div><button disabled={busy}>{t.save}</button><button type="button" onClick={() => setEditing(false)}>{t.cancel}</button></div></form>}
       <div className="class-detail-grid">
         <article><span>{plan?.name[lang] || item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features[lang].map(feature => <li key={feature}>✓ {feature}</li>)}</ul></article>
-        <article><span>WEBINAR · A/V</span><h2>{t.classroom}</h2><p>{t.classroomCopy}</p></article>
+        <article><span>WEBINAR + GROUP AUDIO</span><h2>{t.classroom}</h2><p>{t.classroomCopy}</p></article>
         {!joined && !detail.canManage && <article className="class-subscribe-card"><span>{t.firstMonth}</span><h2>{money(item.priceCents)} / {t.perMonth}</h2><p>{lang === "zh" ? "选择信用卡订阅（符合资格者首月免费），或使用加密货币购买本课程一个月。" : "Choose a card subscription (first month free when eligible) or purchase one month of this course with crypto."}</p><CoursePaymentActions lang={lang} classId={item.id} priceCents={item.priceCents} firstMonthFree /></article>}
         {joined && <article className="class-placement-card"><span>5 SKILLS</span><h2>{t.fiveSkillsTitle}</h2><p>{t.fiveSkillsBody}</p><ul><li>✓ {lang === "zh" ? "词汇" : "Vocabulary"}</li><li>✓ {lang === "zh" ? "阅读" : "Reading"}</li><li>✓ {lang === "zh" ? "写作" : "Writing"}</li><li>✓ {lang === "zh" ? "听力" : "Listening"}</li><li>✓ {lang === "zh" ? "对话" : "Dialogue"}</li></ul><div className="class-learning-actions"><Link className="primary-button" href={`/${lang}/classes/${item.id}/learn`}>{t.dailyLearning} →</Link><Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
         {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang}/>}

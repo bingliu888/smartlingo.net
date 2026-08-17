@@ -17,6 +17,12 @@ export async function courseClassroom(courseId: string) {
     WHERE cc.course_id=? AND r.status='active' LIMIT 1`).bind(courseId).first<{ code: string }>();
 }
 
+export async function coursePracticeRoom(courseId: string) {
+  return getDatabase().prepare(`SELECT r.code FROM smartlingo_course_practice_rooms practice
+    JOIN live_class_rooms r ON r.id=practice.room_id
+    WHERE practice.course_id=? AND r.status='active' LIMIT 1`).bind(courseId).first<{ code: string }>();
+}
+
 export async function ensureCourseClassroom(course: CourseClassroomCourse) {
   const existing = await courseClassroom(course.id);
   if (existing) return classByCode(existing.code);
@@ -37,6 +43,31 @@ export async function ensureCourseClassroom(course: CourseClassroomCourse) {
     return classByCode(code);
   } catch (error) {
     const concurrent = await courseClassroom(course.id);
+    if (concurrent) return classByCode(concurrent.code);
+    throw error;
+  }
+}
+
+export async function ensureCoursePracticeRoom(course: CourseClassroomCourse) {
+  const existing = await coursePracticeRoom(course.id);
+  if (existing) return classByCode(existing.code);
+
+  const db = getDatabase();
+  const roomId = createId();
+  const code = await generateClassCode();
+  const now = Math.floor(Date.now() / 1000);
+  try {
+    await db.batch([
+      db.prepare(`INSERT INTO live_class_rooms
+        (id,code,host_user_id,host_email,host_name,title,description,subject,class_type,streaming_mode,realtime_mode,starts_at,duration_minutes,trial_minutes,tuition_cents,mute_all,status,created_at,updated_at)
+        VALUES (?,?,?,?,?,?,?,?, 'private','audio','group_call',?,60,0,0,0,'active',?,?)`)
+        .bind(roomId, code, course.ownerUserId, course.ownerEmail, course.ownerName, `${course.title} Practice Room`, `Free group audio speaking practice for enrolled students. ${course.summary}`, `${course.targetLanguage.toUpperCase()} speaking practice`, now, now, now),
+      db.prepare(`INSERT INTO smartlingo_course_practice_rooms(course_id,room_id,created_at) VALUES(?,?,?)`)
+        .bind(course.id, roomId, now),
+    ]);
+    return classByCode(code);
+  } catch (error) {
+    const concurrent = await coursePracticeRoom(course.id);
     if (concurrent) return classByCode(concurrent.code);
     throw error;
   }

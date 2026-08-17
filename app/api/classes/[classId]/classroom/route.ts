@@ -1,4 +1,4 @@
-import { ensureCourseClassroom } from "@/lib/course-classrooms";
+import { ensureCourseClassroom, ensureCoursePracticeRoom } from "@/lib/course-classrooms";
 import { getDatabase, getSessionUser } from "@/lib/auth";
 import { canManageClass } from "@/lib/class-managers";
 
@@ -20,8 +20,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
     LEFT JOIN smartlingo_course_subscriptions s ON s.class_id=c.id AND s.user_id=?
     WHERE c.id=? LIMIT 1`).bind(user.id, user.id, classId).first<CourseRow>();
   if (!course) return Response.json({ error: "Course not found" }, { status: 404 });
-  const room = await ensureCourseClassroom(course);
-  if (!room) return Response.json({ error: "Classroom unavailable" }, { status: 503 });
+  const [room, practiceRoom] = await Promise.all([ensureCourseClassroom(course), ensureCoursePracticeRoom(course)]);
+  if (!room || !practiceRoom) return Response.json({ error: "Classroom unavailable" }, { status: 503 });
   const isManager = await canManageClass(room, user);
   const now = Math.floor(Date.now() / 1000);
   const subscribed = course.membershipStatus === "active" && (course.subscriptionStatus === "active"
@@ -29,5 +29,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
   if (!isManager && !subscribed) {
     return Response.json({ error: "Course membership required" }, { status: 403 });
   }
-  return Response.json({ room: { code: room.code, title: room.title, streamingMode: room.streamingMode, realtimeMode: room.realtimeMode, streamActive: Boolean(room.streamActive) }, isOwner: isManager });
+  return Response.json({
+    room: { code: room.code, title: room.title, streamingMode: room.streamingMode, realtimeMode: room.realtimeMode, streamActive: Boolean(room.streamActive) },
+    practiceRoom: { code: practiceRoom.code, title: practiceRoom.title, streamingMode: practiceRoom.streamingMode, realtimeMode: practiceRoom.realtimeMode, streamActive: Boolean(practiceRoom.streamActive) },
+    isOwner: isManager,
+  });
 }

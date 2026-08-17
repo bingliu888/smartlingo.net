@@ -39,6 +39,17 @@ test("fixed MVP courses are bulk-created with private Webinar A/V classrooms", (
   assert.match(migration, /CROSS JOIN tiers/);
 });
 
+test("fixed courses bulk-create free group-audio practice rooms", () => {
+  const migration = source("../drizzle/0122_course_practice_rooms.sql");
+  const access = source("../lib/live-classrooms.ts");
+  const roomRoute = source("../app/api/classrooms/[code]/route.ts");
+  assert.match(migration, /36|CROSS JOIN tiers/);
+  assert.match(migration, /'private','audio','group_call'/);
+  assert.match(migration, /tuition_cents,mute_all/);
+  assert.match(access, /smartlingo_course_practice_rooms/);
+  assert.match(roomRoute, /coursePracticeRoomLocked/);
+});
+
 test("course membership authorizes the embedded classroom", () => {
   const access=source("../lib/live-classrooms.ts");
   assert.match(access,/smartlingo_course_classrooms/);

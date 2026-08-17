@@ -54,7 +54,7 @@ test("renders the SmartLingo language-learning foundation", async () => {
   }
   for (const skill of ["词汇", "阅读", "写作", "听力", "对话"]) assert.match(html, new RegExp(skill));
   assert.match(html, /三级课程/);
-  assert.match(html, /基础 · 每月 20 美元/);
+  assert.match(html, /初期 · 每月 20 美元/);
   assert.match(html, /高级 · 每月 300 美元/);
   assert.match(html, /介绍人积分只来自平台订阅付款/);
   assert.match(html, /第一个月免费/);

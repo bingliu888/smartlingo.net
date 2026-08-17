@@ -75,7 +75,7 @@ test("Chinese class, pricing, programs, and retired Admin UI are truthful", asyn
     source("app/[lang]/auth/[mode]/page.tsx"),
   ]);
 
-  for (const label of ["三级课程", "第一个月免费", "会员不能创建课程或自行定价", "音视频网络研讨会教室"]) assert.match(classes, new RegExp(label));
+  for (const label of ["三级课程", "第一个月免费", "会员不能创建课程或自行定价", "Webinar 教课室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
   assert.match(classes, /初期/);
   assert.match(classes, /中级/);
   assert.match(classes, /高级/);

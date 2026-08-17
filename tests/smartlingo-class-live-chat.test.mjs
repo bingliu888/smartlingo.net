@@ -4,19 +4,27 @@ import test from "node:test";
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("each course exposes one private Webinar A/V classroom", () => {
+test("each course exposes a Webinar teaching room and pre-created group-audio practice room", () => {
   const route = read("app/api/classes/[classId]/classroom/route.ts");
   const panel = read("components/CourseClassroomTile.tsx");
   const helper = read("lib/course-classrooms.ts");
   const migration = read("drizzle/0118_course_classrooms.sql");
+  const practiceMigration = read("drizzle/0122_course_practice_rooms.sql");
   const classStudio = read("components/ClassStudio.tsx");
   const learningPage = read("app/[lang]/classes/[classId]/learn/page.tsx");
   assert.match(migration, /CREATE TABLE IF NOT EXISTS smartlingo_course_classrooms/);
   assert.match(helper, /'private','video','webinar'/);
+  assert.match(practiceMigration, /CREATE TABLE IF NOT EXISTS smartlingo_course_practice_rooms/);
+  assert.match(practiceMigration, /'private','audio','group_call'/);
+  assert.match(practiceMigration, /FROM languages CROSS JOIN tiers/);
+  assert.match(practiceMigration, /INSERT OR IGNORE INTO smartlingo_course_practice_rooms/);
+  assert.match(helper, /ensureCoursePracticeRoom/);
   assert.match(route, /subscriptionStatus === "active"/);
   assert.match(route, /trialEndsAt/);
   assert.match(panel, /CourseClassroomTile/);
-  assert.match(panel, /Classroom/);
+  assert.match(panel, /Teaching room/);
+  assert.match(panel, /Practice room/);
+  assert.match(panel, /Free for enrolled students/);
   assert.match(classStudio, /CourseClassroomTile/);
   assert.match(learningPage, /CourseClassroomTile/);
   assert.equal(existsSync(new URL("../components/ClassLiveChatPanel.tsx", import.meta.url)), false);
@@ -45,5 +53,6 @@ test("course membership controls the embedded classroom", () => {
   const roomAccess = read("lib/live-classrooms.ts");
   assert.match(classRoute, /Course membership required/);
   assert.match(roomAccess, /smartlingo_course_classrooms/);
+  assert.match(roomAccess, /smartlingo_course_practice_rooms/);
   assert.match(roomAccess, /m\.status='active'/);
 });

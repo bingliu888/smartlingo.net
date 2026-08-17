@@ -6,7 +6,7 @@ export const SMARTLINGO_COURSE_PACKAGES = [
   {
     tier: "basic", level: "A1", monthlyPriceCents: 2_000,
     name: { zh: "初期课程", en: "Beginner" },
-    features: { zh: ["核心词汇", "发音与听力", "引导式口语"], en: ["Core vocabulary", "Pronunciation and listening", "Guided speaking"] },
+    features: { zh: ["核心词汇", "发音与听力", "引导式口语", "Webinar 教课室", "小组语音练习室"], en: ["Core vocabulary", "Pronunciation and listening", "Guided speaking", "Webinar teaching room", "Group-audio practice room"] },
   },
   {
     tier: "intermediate", level: "A2", monthlyPriceCents: 10_000,

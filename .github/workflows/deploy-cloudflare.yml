@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify session and course payment contracts
-        run: node --test tests/subscription-crypto-contract.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
+      - name: Verify session, course rooms, and payment contracts
+        run: node --test tests/subscription-crypto-contract.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
 
       - name: Validate D1 migrations
         run: npm run db:validate
@@ -93,7 +93,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Direct five-skill courses and course checkout
-          RELEASE_TITLE_ZH: 直达五项技能课程与单课结账
-          RELEASE_NOTES: Remove placement testing from fixed Beginner, Intermediate, and Advanced course entry|Rename customer-facing Basic courses to Beginner and 初期 while preserving stable database tier identifiers|Add course-specific card subscription and crypto payment actions to each course detail page|Remove the Pricing navigation entry and redirect the retired pricing route to Choose course|Verify production course copy, pricing retirement, public billing status, and authenticated payment boundaries
-          RELEASE_NOTES_ZH: 固定初期、中级和高级课程不再进入分级测试而直接学习五项技能|把用户可见的 Basic 和基础课程改为 Beginner 与初期并保留稳定数据库等级标识|在每个课程详情页加入该课程专属信用卡订阅和加密货币付款入口|移除 Pricing 导航并将旧价格页面重定向到选择课程|验证正式站课程文案、价格页下线、公开付款状态与付款鉴权边界
+          RELEASE_TITLE: Course teaching rooms, practice rooms, and wallet checkout
+          RELEASE_TITLE_ZH: 课程教课室、练习室与钱包结账
+          RELEASE_NOTES: Pre-create one private Group Audio practice room for each of the 36 fixed language courses|Keep each existing private A/V Webinar as the course teaching room for administrators and co-host speakers|Allow active course students to use the practice room for free discussion and speaking practice|Show teaching-room and practice-room tiles together on course detail and learning pages|Bind Connect Wallet crypto verification to the exact selected course on both client and server
+          RELEASE_NOTES_ZH: 为 36 门固定语言课程各预创建一个私有 Group Audio 练习室|保留每门课程现有私有音视频 Webinar 作为管理员与协办主持使用的教课室|允许有效课程学员免费进入练习室讨论和练习口语|在课程详情与学习页同时显示教课室和练习室卡片|在客户端和服务端把连接钱包加密付款严格绑定到所选课程
