@@ -12,7 +12,7 @@ test("homepage exposes the complete SmartLingo learning and fixed-course flow", 
     assert.match(source, new RegExp(skill));
   }
   assert.match(source, /每日短任务、间隔复习/);
-  assert.match(source, /每种语言都有由 SmartLingo 管理员维护的基础、中级和高级课程/);
+  assert.match(source, /每种语言都有由 SmartLingo 管理员维护的初期、中级和高级课程/);
   assert.match(source, /班级社区/);
   assert.match(source, /消息与实时聊天/);
   assert.match(source, /人工智能导师与实时语音/);
@@ -49,6 +49,6 @@ test("Guru, live audio, and fixed-course boundaries are explicit", async () => {
   assert.match(live, /Never promise fluency, education, employment, visa, income/);
   assert.match(programs, /实时语音需要登录/);
   assert.match(terms, /不是官方语言考试/);
-  assert.match(pricing, /第一个月免费/);
-  assert.match(pricing, /有效月费订阅/);
+  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
 });

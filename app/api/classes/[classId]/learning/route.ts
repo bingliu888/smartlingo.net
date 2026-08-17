@@ -971,6 +971,27 @@ async function completedPlacement(database: LearningDatabase, userId: string, cl
     .bind(userId, classId).first<CompletedPlacementRow>();
 }
 
+function fixedCoursePlacement(access: OfficialClassAccess): CompletedPlacementRow {
+  const recommendedLevel: SmartLingoLevel = access.packageTier === "advanced"
+    ? "advanced"
+    : access.packageTier === "intermediate"
+      ? "intermediate"
+      : "beginner";
+  return {
+    id: `fixed-level:${access.classId}`,
+    status: "completed",
+    entryMode: "fixed_course",
+    overallScore: null,
+    recommendedLevel,
+    vocabularyScore: null,
+    readingScore: null,
+    writingScore: null,
+    listeningScore: null,
+    dialogueScore: null,
+    completedAt: null,
+  };
+}
+
 async function vocabularyProgress(
   database: LearningDatabase,
   userId: string,
@@ -1274,7 +1295,9 @@ async function authorize(request: Request, classIdValue: unknown) {
   if (!isLearningLanguage(access.targetLanguage)) {
     return { response: Response.json({ error: "This class language is not supported for learning" }, { status: 409 }) } as const;
   }
-  const placement = await completedPlacement(database, user.id, classId);
+  const placement = access.classKind === "official_course"
+    ? fixedCoursePlacement(access)
+    : await completedPlacement(database, user.id, classId);
   if (!placement) {
     return {
       response: Response.json({

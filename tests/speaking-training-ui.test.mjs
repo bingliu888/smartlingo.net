@@ -5,22 +5,28 @@ import test from "node:test";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("daily practice opens durable vocab or immersive speaking training", async () => {
-  const [learnPage, trainingMenu, sessionPage, workspace] = await Promise.all([
+  const [learnPage, trainingMenu, sessionPage, placementPage, learningRoute, workspace] = await Promise.all([
     read("../app/[lang]/classes/[classId]/learn/page.tsx"),
     read("../components/CourseTrainingMenu.tsx"),
     read("../app/[lang]/classes/[classId]/learn/session/page.tsx"),
+    read("../app/[lang]/classes/[classId]/placement/page.tsx"),
+    read("../app/api/classes/[classId]/learning/route.ts"),
     read("../components/LearningWorkspace.tsx"),
   ]);
 
   assert.match(learnPage, /CourseTrainingMenu/);
-  assert.match(trainingMenu, /title: "Vocab"/);
-  assert.match(trainingMenu, /title: "Speaking"/);
+  for (const training of ["Vocabulary", "Reading", "Writing", "Listening", "Dialogue"]) assert.match(trainingMenu, new RegExp(training));
   assert.match(trainingMenu, /training=vocabulary/);
   assert.match(trainingMenu, /training=dialogue/);
+  assert.match(trainingMenu, /training=reading/);
+  assert.match(trainingMenu, /training=listening/);
   assert.match(trainingMenu, /口音校正/);
   assert.match(trainingMenu, /演讲训练/);
   assert.match(trainingMenu, /演讲稿修改/);
   assert.match(sessionPage, /query\.training === "writing" \? "writing"/);
+  assert.match(placementPage, /redirect\(`\/\$\{lang\}\/classes\/\$\{encodeURIComponent\(classId\)\}\/learn`\)/);
+  assert.match(learningRoute, /fixedCoursePlacement/);
+  assert.match(learningRoute, /entryMode: "fixed_course"/);
   assert.match(workspace, /const selectedStep = initialSkill \?\?/);
   assert.match(workspace, /className="sl-primary-training-menu"/);
   assert.match(workspace, />Vocab</);

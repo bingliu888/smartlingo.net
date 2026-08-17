@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify session, pricing, and crypto contracts
+      - name: Verify session and course payment contracts
         run: node --test tests/subscription-crypto-contract.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
 
       - name: Validate D1 migrations
@@ -70,16 +70,18 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           REALTIMEKIT_API_TOKEN: ${{ secrets.CLOUDFLARE_REALTIME_API_TOKEN }}
 
-      - name: Verify production pricing and crypto boundaries
+      - name: Verify production course and payment boundaries
         shell: bash
         run: |
-          pricing="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/pricing)"
-          grep -F 'Connect wallet' <<<"$pricing"
-          grep -F 'pricing/crypto?plan=basic' <<<"$pricing"
-          grep -F 'pricing/crypto?plan=intermediate' <<<"$pricing"
-          grep -F 'pricing/crypto?plan=advanced' <<<"$pricing"
+          home="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en)"
+          grep -F 'Beginner' <<<"$home"
+          if grep -F '/en/pricing' <<<"$home"; then exit 1; fi
+          pricing_code="$(curl -sS -o /tmp/pricing-redirect.html -w '%{http_code}' https://smartlingo.net/en/pricing)"
+          test "$pricing_code" = "307"
           status="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/api/billing/status)"
           grep -F '"cryptoSettings"' <<<"$status"
+          card_code="$(curl -sS -o /tmp/card-checkout.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"classId":"course_en_basic","lang":"en"}' https://smartlingo.net/api/billing/card/checkout)"
+          test "$card_code" = "401"
           code="$(curl -sS -o /tmp/admin-crypto.json -w '%{http_code}' https://smartlingo.net/api/admin/crypto-settings)"
           test "$code" = "403"
 
@@ -91,7 +93,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Seven-day sessions and course-isolated crypto checkout
-          RELEASE_TITLE_ZH: 七天会话与课程隔离加密结账
-          RELEASE_NOTES: Keep app sessions aligned with Clerk's seven-day default|Publish actual SmartLingo Basic $20, Intermediate $100, and Advanced $300 monthly course prices from the footer pricing entry|Add SmartLingo-isolated admin crypto rails, Connect wallet, WalletConnect, direct transfer, payment history, and server-side ERC-20 verification|Activate the selected fixed language course, classroom membership, and learning entitlement without creating platform referral rewards|Verify production pricing, public checkout status, and the authenticated admin boundary
-          RELEASE_NOTES_ZH: 站内会话与 Clerk 默认七天有效期保持一致|通过页脚订阅入口发布 SmartLingo 实际基础 $20、中级 $100 和高级 $300 月费课程|加入 SmartLingo 独立管理员加密通道、连接钱包、WalletConnect、直接转账、付款记录与服务端 ERC-20 验证|付款后激活所选固定语言课程、课堂成员与学习权益且不产生平台推荐奖励|验证正式站课程价格、公开结账状态与管理员鉴权边界
+          RELEASE_TITLE: Direct five-skill courses and course checkout
+          RELEASE_TITLE_ZH: 直达五项技能课程与单课结账
+          RELEASE_NOTES: Remove placement testing from fixed Beginner, Intermediate, and Advanced course entry|Rename customer-facing Basic courses to Beginner and 初期 while preserving stable database tier identifiers|Add course-specific card subscription and crypto payment actions to each course detail page|Remove the Pricing navigation entry and redirect the retired pricing route to Choose course|Verify production course copy, pricing retirement, public billing status, and authenticated payment boundaries
+          RELEASE_NOTES_ZH: 固定初期、中级和高级课程不再进入分级测试而直接学习五项技能|把用户可见的 Basic 和基础课程改为 Beginner 与初期并保留稳定数据库等级标识|在每个课程详情页加入该课程专属信用卡订阅和加密货币付款入口|移除 Pricing 导航并将旧价格页面重定向到选择课程|验证正式站课程文案、价格页下线、公开付款状态与付款鉴权边界

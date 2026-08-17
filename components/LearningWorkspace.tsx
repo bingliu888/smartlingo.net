@@ -633,7 +633,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   classId?: string;
   calendarOnly?: boolean;
   view?: "dashboard" | "session";
-  initialSkill?: "vocabulary" | "writing" | "dialogue";
+  initialSkill?: Skill;
 }) {
   const router = useRouter();
   const t = COPY[lang];
@@ -810,7 +810,6 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       .then(async classResponse => {
         const classResult = await classResponse.json().catch(() => ({})) as ClassDetailPayload;
         if (!classResponse.ok) throw new Error(classResult.error || t.loadError);
-        if (classResult.placement?.status !== "completed") return { classResult, learningResult: null };
         const query = new URLSearchParams({ date: today, lang, timeZone, vocabularyMode });
         const learningResponse = await fetch(`/api/classes/${encodeURIComponent(classId)}/learning?${query}`, { cache: "no-store" });
         const learningResult = await learningResponse.json().catch(() => ({})) as LearningPayload;
@@ -1388,29 +1387,12 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     }).catch(() => undefined);
   }
 
-  const placementLabel = placement?.recommendedLevel
-    ? t.level[placement.recommendedLevel]
-    : placement?.status === "completed" && finiteScore(placement.overallScore) !== null
-      ? `${finiteScore(placement.overallScore)} / 100`
-      : t.placementUnknown;
-
   return <section className="sl-workspace" data-layout-fill="learning-workspace" data-layout-ready={placementChecked && logLoaded ? "true" : undefined}>
     <header className="sl-workspace-heading" data-layout-fill="learning-workspace-heading">
       <p className="section-kicker">{calendarOnly ? t.calendarKicker : t.kicker}</p>
       <h1 data-layout-text-fit="learning-workspace-title">{calendarOnly ? t.calendarTitle : t.title}</h1>
       <p data-readable-copy="learning-intro">{calendarOnly ? t.calendarIntro : t.intro}</p>
     </header>
-
-    {!calendarOnly && classId ? <section className={`sl-placement-gate ${placementComplete ? "complete" : "pending"}`} data-layout-fill="learning-placement-status">
-      <div data-readable-copy>
-        <p className="sl-eyebrow">{t.placement}</p>
-        <h2>{placementComplete ? t.placementComplete : placement?.status === "in_progress" || placement?.status === "paused" ? t.placementInProgress : t.placementRequired}</h2>
-        <p>{classInfo?.title || classId} · {placementLabel}{finiteScore(placement?.overallScore) !== null ? ` · ${finiteScore(placement?.overallScore)} / 100` : ""}</p>
-      </div>
-      <Link className="sl-primary-action" href={`/${lang}/classes/${encodeURIComponent(classId)}/placement`}>
-        {placementComplete ? t.placementComplete : placement?.status === "in_progress" || placement?.status === "paused" ? t.resumePlacement : t.startPlacement} →
-      </Link>
-    </section> : null}
 
     {!calendarOnly && classId && !placementChecked && !learningError ? <p className="sl-loading" aria-live="polite">{t.loading}</p> : null}
 

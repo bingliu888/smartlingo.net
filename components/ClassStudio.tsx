@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SMARTLINGO_COURSE_PACKAGES, type SmartLingoPackageTier } from "../lib/smartlingo-course-packages";
 import { CourseClassroomTile } from "./CourseClassroomTile";
+import { CoursePaymentActions } from "./CoursePaymentActions";
 
 type Lang = "en" | "zh";
 type LanguageClass = {
@@ -27,28 +28,28 @@ type Detail = {
 const COPY = {
   en: {
     eyebrow: "SMARTLINGO COURSES", title: "Three clear levels. One free first month.",
-    intro: "Choose Basic, Intermediate, or Advanced. SmartLingo administrators maintain every course and each course includes a dedicated A/V webinar classroom.",
+    intro: "Choose Beginner, Intermediate, or Advanced. SmartLingo administrators maintain every course and each course includes a dedicated A/V webinar classroom.",
     signIn: "Sign in to view courses", joinedTitle: "My courses", noJoined: "You have not started a course yet.",
     availableTitle: "Available courses", availableIntro: "Fixed monthly plans; members cannot create courses or set fees.",
     noAvailable: "No additional courses are available.", joined: "Subscribed", subscribe: "Start free month", subscribing: "Starting…",
     open: "Open course", learners: "learners", firstMonth: "First month free", perMonth: "per month",
     back: "All courses", courseAdmin: "SmartLingo course", schedule: "Schedule", price: "Monthly price",
     package: "Course package", classroom: "A/V Webinar classroom", classroomCopy: "The course administrator can assign co-hosts as webinar speakers.",
-    placementTitle: "Set your starting point", placementBody: "Take placement, then begin the learning included in this course.",
-    startPlacement: "Start placement", resumePlacement: "Resume placement", dailyLearning: "Daily learning", calendar: "Learning calendar",
+    fiveSkillsTitle: "Learn five skills", fiveSkillsBody: "Start vocabulary, reading, writing, listening, and dialogue directly—no placement test required.",
+    dailyLearning: "Start five-skill learning", calendar: "Learning calendar",
     edit: "Edit course", save: "Save", cancel: "Cancel", summary: "Description", joinFailed: "The subscription could not be started. Please try again.",
   },
   zh: {
     eyebrow: "SmartLingo 课程", title: "三级课程，首月免费。",
-    intro: "选择基础、中级或高级课程。所有课程由 SmartLingo 管理员维护，并配有独立的音视频网络研讨会教室。",
+    intro: "选择初期、中级或高级课程。所有课程由 SmartLingo 管理员维护，并配有独立的音视频网络研讨会教室。",
     signIn: "登录后查看课程", joinedTitle: "我的课程", noJoined: "您尚未开始任何课程。",
     availableTitle: "可订阅课程", availableIntro: "固定月费；会员不能创建课程或自行定价。",
     noAvailable: "目前没有其他可订阅课程。", joined: "已订阅", subscribe: "开始免费首月", subscribing: "正在开通…",
     open: "进入课程", learners: "位学员", firstMonth: "第一个月免费", perMonth: "每月",
     back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "每月价格",
     package: "课程内容", classroom: "音视频网络研讨会教室", classroomCopy: "课程管理员可以指定协办主持作为演讲嘉宾。",
-    placementTitle: "确定学习起点", placementBody: "完成分级后，开始本课程包含的训练。",
-    startPlacement: "开始分级", resumePlacement: "继续分级", dailyLearning: "每日学习", calendar: "学习日历",
+    fiveSkillsTitle: "学习五项技能", fiveSkillsBody: "直接开始词汇、阅读、写作、听力和对话训练，无需分级测试。",
+    dailyLearning: "开始五项技能学习", calendar: "学习日历",
     edit: "编辑课程", save: "保存", cancel: "取消", summary: "课程说明", joinFailed: "暂时无法开通订阅，请稍后重试。",
   },
 } as const;
@@ -62,7 +63,6 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
   const [context, setContext] = useState<Context | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
-  const [joining, setJoining] = useState("");
   const [notice, setNotice] = useState("");
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -92,13 +92,6 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
     return { joined: prioritize(context.joinedClasses || []), available: prioritize(context.availableClasses || []) };
   }, [context, initialTargetLanguage]);
 
-  async function subscribe(item: LanguageClass) {
-    setJoining(item.id); setNotice("");
-    const response = await fetch(`/api/classes/${encodeURIComponent(item.id)}/enroll`, { method: "POST" });
-    if (response.ok) window.location.assign(`/${lang}/classes/${encodeURIComponent(item.id)}/placement`);
-    else { setJoining(""); setNotice(t.joinFailed); }
-  }
-
   async function saveCourse(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!detail) return; setBusy(true); setNotice("");
     const values = Object.fromEntries(new FormData(event.currentTarget));
@@ -116,8 +109,7 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
       <h3>{item.title}</h3><p>{item.summary}</p>
       {plan && <ul>{plan.features[lang].map(feature => <li key={feature}>✓ {feature}</li>)}</ul>}
       <small>{money(item.priceCents, item.currency)} {t.perMonth} · {t.firstMonth} · {item.enrollmentCount}/{item.capacity} {t.learners}</small>
-      {joined ? <Link className="secondary-button" href={`/${lang}/classes/${item.id}`}>{t.open} →</Link>
-        : <button className="primary-button" onClick={() => subscribe(item)} disabled={joining === item.id}>{joining === item.id ? t.subscribing : `${t.subscribe} →`}</button>}
+      <Link className={joined ? "secondary-button" : "primary-button"} href={`/${lang}/classes/${item.id}`}>{joined ? t.open : (lang === "zh" ? "查看课程与付款" : "View course and payment")} →</Link>
     </article>;
   }
 
@@ -135,10 +127,10 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
       {detail.canManage && <button className="secondary-button class-edit-course" onClick={() => setEditing(true)}>✎ {t.edit}</button>}
       {editing && <form className="course-edit-form" onSubmit={saveCourse}><label>{lang === "zh" ? "课程名称" : "Course title"}<input name="title" defaultValue={item.title}/></label><label>{t.summary}<textarea name="summary" defaultValue={item.summary}/></label><label>{t.schedule}<input name="schedule" defaultValue={item.schedule}/></label><div><button disabled={busy}>{t.save}</button><button type="button" onClick={() => setEditing(false)}>{t.cancel}</button></div></form>}
       <div className="class-detail-grid">
-        <article><span>{item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features[lang].map(feature => <li key={feature}>✓ {feature}</li>)}</ul></article>
+        <article><span>{plan?.name[lang] || item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features[lang].map(feature => <li key={feature}>✓ {feature}</li>)}</ul></article>
         <article><span>WEBINAR · A/V</span><h2>{t.classroom}</h2><p>{t.classroomCopy}</p></article>
-        {!joined && !detail.canManage && <article className="class-subscribe-card"><span>{t.firstMonth}</span><h2>{money(item.priceCents)} / {t.perMonth}</h2><p>{lang === "zh" ? "今天开始不收费；30 天后按月续费。" : "No charge today; monthly renewal begins after 30 days."}</p><button className="primary-button" onClick={() => subscribe(item)} disabled={joining === item.id}>{joining === item.id ? t.subscribing : `${t.subscribe} →`}</button></article>}
-        {joined && <article className="class-placement-card"><span>{t.dailyLearning}</span><h2>{detail.placement?.status === "completed" ? t.dailyLearning : t.placementTitle}</h2><p>{t.placementBody}</p><div className="class-learning-actions">{detail.placement?.status === "completed" ? <Link className="primary-button" href={`/${lang}/classes/${item.id}/learn`}>{t.dailyLearning} →</Link> : <Link className="primary-button" href={`/${lang}/classes/${item.id}/placement`}>{detail.placement ? t.resumePlacement : t.startPlacement} →</Link>}<Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
+        {!joined && !detail.canManage && <article className="class-subscribe-card"><span>{t.firstMonth}</span><h2>{money(item.priceCents)} / {t.perMonth}</h2><p>{lang === "zh" ? "选择信用卡订阅（符合资格者首月免费），或使用加密货币购买本课程一个月。" : "Choose a card subscription (first month free when eligible) or purchase one month of this course with crypto."}</p><CoursePaymentActions lang={lang} classId={item.id} priceCents={item.priceCents} firstMonthFree /></article>}
+        {joined && <article className="class-placement-card"><span>5 SKILLS</span><h2>{t.fiveSkillsTitle}</h2><p>{t.fiveSkillsBody}</p><ul><li>✓ {lang === "zh" ? "词汇" : "Vocabulary"}</li><li>✓ {lang === "zh" ? "阅读" : "Reading"}</li><li>✓ {lang === "zh" ? "写作" : "Writing"}</li><li>✓ {lang === "zh" ? "听力" : "Listening"}</li><li>✓ {lang === "zh" ? "对话" : "Dialogue"}</li></ul><div className="class-learning-actions"><Link className="primary-button" href={`/${lang}/classes/${item.id}/learn`}>{t.dailyLearning} →</Link><Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
         {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang}/>}
       </div>{notice && <p className="class-notice">{notice}</p>}<Styles/>
     </section>;

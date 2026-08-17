@@ -15,9 +15,11 @@ export function CourseTrainingMenu({ lang, classId }: { lang: "zh" | "en"; class
   }, [classId]);
   const base = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session`;
   const items = [
-    { key: "vocab", icon: "Aa", title: "Vocab", copy: zh ? "词卡 · 主动回忆 · 连续掌握" : "Flashcards · active recall · mastery", href: `${base}?training=vocabulary` },
-    { key: "speaking", icon: "◉", title: "Speaking", copy: zh ? "跟我说 · 回答我 · 即时纠正" : "Repeat · answer · instant correction", href: `${base}?training=dialogue` },
-    ...(tier !== "basic" ? [{ key: "writing", icon: "✎", title: zh ? "写作训练" : "Writing", copy: zh ? "日常表达 · 修改建议" : "Daily writing · guided revision", href: `${base}?training=writing` }] : []),
+    { key: "vocab", icon: "Aa", title: zh ? "词汇" : "Vocabulary", copy: zh ? "词卡 · 主动回忆 · 连续掌握" : "Flashcards · active recall · mastery", href: `${base}?training=vocabulary` },
+    { key: "reading", icon: "文", title: zh ? "阅读" : "Reading", copy: zh ? "理解文章 · 重点表达" : "Comprehension · useful expressions", href: `${base}?training=reading` },
+    { key: "writing", icon: "✎", title: zh ? "写作" : "Writing", copy: zh ? "组织表达 · 修改建议" : "Structured writing · guided revision", href: `${base}?training=writing` },
+    { key: "listening", icon: "◒", title: zh ? "听力" : "Listening", copy: zh ? "听辨语音 · 理解语境" : "Sound recognition · context", href: `${base}?training=listening` },
+    { key: "speaking", icon: "◉", title: zh ? "对话" : "Dialogue", copy: zh ? "跟我说 · 回答我 · 即时纠正" : "Repeat · answer · instant correction", href: `${base}?training=dialogue` },
     ...(tier === "advanced" ? [
       { key: "accent", icon: "◎", title: zh ? "口音校正" : "Accent correction", copy: zh ? "跟读比较 · 发音纠正" : "Speak and compare · correction", href: `${base}?training=dialogue&focus=accent` },
       { key: "speech", icon: "▰", title: zh ? "演讲训练" : "Speech training", copy: zh ? "演讲表达 · 人工智能反馈" : "Delivery practice · AI feedback", href: `${base}?training=dialogue&focus=speech` },

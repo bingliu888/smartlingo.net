@@ -10,9 +10,11 @@ export type LearningDatabase = { prepare(query: string): Statement };
 
 export type OfficialClassAccess = {
   classId: string;
+  classKind: "official_language" | "official_course";
   pathId: string;
   targetLanguage: string;
   level: string;
+  packageTier: "basic" | "intermediate" | "advanced" | null;
   title: string;
   membershipRole: string;
 };
@@ -22,8 +24,8 @@ export async function requireOfficialClassMembership(
   user: SessionUser,
   classId: string,
 ) {
-  const access = await database.prepare(`SELECT c.id AS classId, c.path_id AS pathId,
-    c.target_language AS targetLanguage, c.level, c.title,
+  const access = await database.prepare(`SELECT c.id AS classId,c.class_kind AS classKind,c.path_id AS pathId,
+    c.target_language AS targetLanguage,c.level,c.package_tier AS packageTier,c.title,
     member.role AS membershipRole
     FROM smartlingo_language_classes c
     JOIN smartlingo_language_paths path

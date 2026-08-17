@@ -120,5 +120,7 @@ test("Courses is login-gated and separates joined from available fixed plans", a
   assert.match(studio, /开始免费首月/);
   assert.doesNotMatch(studio, /我创建的班级|创建私有班级/);
   assert.match(studio, /t\.joined/);
-  assert.match(studio, /subscribe\(item\)/);
+  assert.match(studio, /CoursePaymentActions/);
+  assert.match(studio, /查看课程与付款/);
+  assert.doesNotMatch(studio, /subscribe\(item\)/);
 });

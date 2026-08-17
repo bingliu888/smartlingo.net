@@ -34,9 +34,9 @@ const copy = {
     ],
     classKicker: "THREE COURSE LEVELS",
     classTitle: "Choose the depth of training that fits your goal.",
-    classBody: "Every language has Basic, Intermediate, and Advanced courses maintained by SmartLingo administrators, with a dedicated A/V webinar classroom and co-host speakers.",
+    classBody: "Every language has Beginner, Intermediate, and Advanced courses maintained by SmartLingo administrators, with a dedicated A/V webinar classroom and co-host speakers.",
     classCards: [
-      ["Basic · $20/month", "Core vocabulary, pronunciation, listening, and guided speaking."],
+      ["Beginner · $20/month", "Core vocabulary, pronunciation, listening, and guided speaking."],
       ["Intermediate · $100/month", "Adds daily-life dialogue and writing training."],
       ["Advanced · $300/month", "Adds accent correction, speech training, and speech-draft revision."],
     ],
@@ -45,7 +45,7 @@ const copy = {
     moneyBody: "Start a course without a charge today. After 30 days, the fixed monthly price applies until cancellation. Members cannot create courses or set fees.",
     moneyFacts: [
       ["30 days", "Free first month for every course subscription"],
-      ["3 levels", "Basic, Intermediate, and Advanced"],
+      ["3 levels", "Beginner, Intermediate, and Advanced"],
       ["A/V", "A dedicated Webinar classroom for each course"],
     ],
     rewardTitle: "Introducer rewards apply only to platform subscriptions.",
@@ -62,8 +62,8 @@ const copy = {
     planTitle: "Start with a free month, then choose the depth you need.",
     planBody: "Every language uses the same transparent monthly prices and includes a dedicated A/V webinar classroom.",
     plans: [
-      ["Basic · $20/month", "Core vocabulary, pronunciation, listening, and guided speaking."],
-      ["Intermediate · $100/month", "Basic training plus daily-life dialogue and writing."],
+      ["Beginner · $20/month", "Core vocabulary, pronunciation, listening, and guided speaking."],
+      ["Intermediate · $100/month", "Beginner training plus daily-life dialogue and writing."],
       ["Advanced · $300/month", "Intermediate training plus accent correction, speeches, and speech-draft revision."],
     ],
     readyTitle: "Choose a language and say the first sentence today.",
@@ -98,9 +98,9 @@ const copy = {
     ],
     classKicker: "三级课程",
     classTitle: "按学习目标选择合适的训练深度。",
-    classBody: "每种语言都有由 SmartLingo 管理员维护的基础、中级和高级课程；每门课程配有独立音视频网络研讨会教室，并支持协办主持担任演讲嘉宾。",
+    classBody: "每种语言都有由 SmartLingo 管理员维护的初期、中级和高级课程；每门课程配有独立音视频网络研讨会教室，并支持协办主持担任演讲嘉宾。",
     classCards: [
-      ["基础 · 每月 20 美元", "核心词汇、发音、听力和引导式口语。"],
+      ["初期 · 每月 20 美元", "核心词汇、发音、听力和引导式口语。"],
       ["中级 · 每月 100 美元", "增加日常生活对话和写作训练。"],
       ["高级 · 每月 300 美元", "增加口音校正、演讲训练和演讲稿修改。"],
     ],
@@ -109,7 +109,7 @@ const copy = {
     moneyBody: "今天开通课程不会收费；30 天后按固定月费续订，直至取消。会员不能创建课程或自行定价。",
     moneyFacts: [
       ["30 天", "每门课程订阅的免费首月"],
-      ["三级", "基础、中级和高级"],
+      ["三级", "初期、中级和高级"],
       ["音视频", "每门课程独立的网络研讨会教室"],
     ],
     rewardTitle: "介绍人积分只来自平台订阅付款。",
@@ -126,8 +126,8 @@ const copy = {
     planTitle: "首月免费，再选择需要的训练深度。",
     planBody: "每种语言采用相同透明月费，并配有独立的音视频网络研讨会教室。",
     plans: [
-      ["基础 · 每月 20 美元", "核心词汇、发音、听力和引导式口语。"],
-      ["中级 · 每月 100 美元", "基础训练加日常生活对话和写作。"],
+      ["初期 · 每月 20 美元", "核心词汇、发音、听力和引导式口语。"],
+      ["中级 · 每月 100 美元", "初期训练加日常生活对话和写作。"],
       ["高级 · 每月 300 美元", "中级训练加口音校正、演讲和演讲稿修改。"],
     ],
     readyTitle: "今天就选一种语言，说出第一句话。",
@@ -208,7 +208,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       <section className="lingo-section lingo-plan-section">
         <div className="lingo-heading"><p className="section-kicker">{t.planKicker}</p><h2>{t.planTitle}</h2><p>{t.planBody}</p></div>
-        <div className="lingo-plan-grid">{t.plans.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p><Link href={`/${lang}/pricing`}>{lang === "zh" ? "查看详情" : "View details"} →</Link></article>)}</div>
+        <div className="lingo-plan-grid">{t.plans.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p><Link href={`/${lang}/programs`}>{lang === "zh" ? "选择语言" : "Choose language"} →</Link></article>)}</div>
       </section>
 
       <section className="lingo-ready"><h2>{t.readyTitle}</h2><p>{t.readyBody}</p><div className="lingo-actions"><Link className="primary-button" href={`/${lang}/auth/sign-up`}>{t.readyAction} →</Link><Link className="secondary-button" href={`/${lang}/programs`}>{lang === "zh" ? "查看学习路径" : "View learning paths"}</Link></div></section>

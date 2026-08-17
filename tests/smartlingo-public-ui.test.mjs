@@ -17,7 +17,8 @@ test("SmartLingo branding exposes the simplified course and Guru navigation", as
   for (const label of ["选择课程", "咨询专家"]) assert.match(header, new RegExp(label));
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
-  for (const path of ["programs", "assistant", "pricing", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
+  for (const path of ["programs", "assistant", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
+  assert.doesNotMatch(footer, /\/pricing/);
   assert.doesNotMatch(footer, /\/community/);
   assert.match(layout, /"smartlingo\.net"/);
   assert.match(layout, /smartlingo-language-community-1600\.png/);
@@ -78,8 +79,8 @@ test("course activation starts with a free month and no immediate charge", async
   const joined = [home, pricing, programs, terms, refund].join("\n");
 
   assert.match(home, /30 天后按固定月费续订/);
-  assert.match(pricing, /免费首月由服务器记录/);
-  assert.match(pricing, /30 天试用订阅/);
+  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(home, /第一个月免费/);
   assert.match(terms, /付款启用条件/);
   assert.match(refund, /真实付款保持关闭/);
   assert.doesNotMatch(joined, /当前已启用真实收费|charged:\s*true/);

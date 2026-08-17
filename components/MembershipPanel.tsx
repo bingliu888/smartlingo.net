@@ -107,7 +107,7 @@ export function MembershipPanel({ lang }: { lang: "en" | "zh" }) {
           <small>{zh ? "严格奖励边界" : "STRICT REWARD BOUNDARY"}</small>
           <strong>{zh ? "班级付款不计积分" : "Class payments never qualify"}</strong>
           <p>{zh ? "班级购买、班主收款、Stripe Connect 转账、退款、争议和打赏一律不产生介绍人积分。积分只能由验证后的平台订阅付款回调写入。" : "Class purchases, owner payouts, Stripe Connect transfers, refunds, disputes, and tips never create introducer points. Only a verified platform-subscription payment webhook may write a reward."}</p>
-          <Link className="history-button" href={`/${lang}/pricing`}>{zh ? "查看方案与规则" : "View plans and rules"} →</Link>
+          <Link className="history-button" href={`/${lang}/programs`}>{zh ? "查看课程与规则" : "View courses and rules"} →</Link>
         </article>
 
         <article>

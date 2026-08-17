@@ -51,18 +51,18 @@ test("Chinese public, dashboard, Project, and legal copy uses language-learning 
 });
 
 test("necessary product and infrastructure names stay intact", async () => {
-  const [auth, profile, roadmap, pricing] = await Promise.all([
+  const [auth, profile, roadmap, packages] = await Promise.all([
     source("components/ClerkAuthForm.tsx"),
     source("components/ProfileEditor.tsx"),
     source("lib/smartlingo-roadmap.ts"),
-    source("app/[lang]/pricing/page.tsx"),
+    source("lib/smartlingo-course-packages.ts"),
   ]);
 
   assert.match(auth, /Clerk/);
   assert.match(profile, /EVM 钱包/);
   assert.match(roadmap, /GitHub/);
   assert.match(roadmap, /Sites/);
-  assert.match(pricing, /SMARTLINGO/);
+  assert.match(packages, /SMARTLINGO/);
 });
 
 test("Chinese class, pricing, programs, and retired Admin UI are truthful", async () => {
@@ -76,10 +76,10 @@ test("Chinese class, pricing, programs, and retired Admin UI are truthful", asyn
   ]);
 
   for (const label of ["三级课程", "第一个月免费", "会员不能创建课程或自行定价", "音视频网络研讨会教室"]) assert.match(classes, new RegExp(label));
-  assert.match(pricing, /基础/);
-  assert.match(pricing, /中级/);
-  assert.match(pricing, /高级/);
-  assert.match(pricing, /免费首月由服务器记录/);
+  assert.match(classes, /初期/);
+  assert.match(classes, /中级/);
+  assert.match(classes, /高级/);
+  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
   assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
   assert.match(programs, /选择课程/);
   assert.match(adminPage, /notFound\(\)/);
