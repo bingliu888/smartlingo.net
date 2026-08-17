@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Verify session, course rooms, and payment contracts
-        run: node --test tests/subscription-crypto-contract.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
+        run: node --test tests/subscription-crypto-contract.test.mjs tests/course-student-management.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
 
       - name: Validate D1 migrations
         run: npm run db:validate
@@ -86,6 +86,8 @@ jobs:
           test "$code" = "403"
           presets_code="$(curl -sS -o /tmp/admin-crypto-presets.json -w '%{http_code}' -X POST https://smartlingo.net/api/admin/crypto-settings/presets)"
           test "$presets_code" = "403"
+          students_code="$(curl -sS -o /tmp/course-students.json -w '%{http_code}' https://smartlingo.net/api/classes/course_en_basic/students)"
+          test "$students_code" = "401"
 
       - name: Publish exact Project release record
         shell: bash
@@ -95,7 +97,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: High-visibility course crypto payment action
-          RELEASE_TITLE_ZH: 高可见度课程加密付款入口
-          RELEASE_NOTES: Replace the low-contrast crypto payment link with a bright high-contrast button|Preserve keyboard focus, hover feedback and full-width touch behavior|Keep the button linked to the exact selected course crypto checkout
-          RELEASE_NOTES_ZH: 将低对比度加密付款链接改为明亮的高对比度按钮|保留键盘焦点、悬停反馈与全宽触控体验|继续把按钮严格链接到所选课程的加密结账页
+          RELEASE_TITLE: Course-scoped student subscription controls
+          RELEASE_TITLE_ZH: 课程级学员订阅管理
+          RELEASE_NOTES: Add Trial and Subscribers tabs to every course for authorized managers|Allow enabling, disabling, or adding a registered subscriber by email for the selected course only|Preserve member accounts, platform roles, other courses, and write every manual change to the admin audit log
+          RELEASE_NOTES_ZH: 为每门课程的授权管理员增加试用与订阅者标签页|支持仅针对所选课程启用、停用订阅或按邮箱添加已注册订阅者|保留会员账号、全站角色和其他课程，并将每次人工修改写入管理员审计记录

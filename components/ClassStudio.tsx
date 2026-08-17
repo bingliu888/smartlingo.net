@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SMARTLINGO_COURSE_PACKAGES, type SmartLingoPackageTier } from "../lib/smartlingo-course-packages";
 import { CourseClassroomTile } from "./CourseClassroomTile";
 import { CoursePaymentActions } from "./CoursePaymentActions";
+import { CourseStudentManager } from "./CourseStudentManager";
 
 type Lang = "en" | "zh";
 type LanguageClass = {
@@ -132,6 +133,7 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
         {!joined && !detail.canManage && <article className="class-subscribe-card"><span>{t.firstMonth}</span><h2>{money(item.priceCents)} / {t.perMonth}</h2><p>{lang === "zh" ? "选择信用卡订阅（符合资格者首月免费），或使用加密货币购买本课程一个月。" : "Choose a card subscription (first month free when eligible) or purchase one month of this course with crypto."}</p><CoursePaymentActions lang={lang} classId={item.id} priceCents={item.priceCents} firstMonthFree /></article>}
         {joined && <article className="class-placement-card"><span>5 SKILLS</span><h2>{t.fiveSkillsTitle}</h2><p>{t.fiveSkillsBody}</p><ul><li>✓ {lang === "zh" ? "词汇" : "Vocabulary"}</li><li>✓ {lang === "zh" ? "阅读" : "Reading"}</li><li>✓ {lang === "zh" ? "写作" : "Writing"}</li><li>✓ {lang === "zh" ? "听力" : "Listening"}</li><li>✓ {lang === "zh" ? "对话" : "Dialogue"}</li></ul><div className="class-learning-actions"><Link className="primary-button" href={`/${lang}/classes/${item.id}/learn`}>{t.dailyLearning} →</Link><Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
         {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang}/>}
+        {detail.canManage && <CourseStudentManager classId={item.id} lang={lang}/>}
       </div>{notice && <p className="class-notice">{notice}</p>}<Styles/>
     </section>;
   }
