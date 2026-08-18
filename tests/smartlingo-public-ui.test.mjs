@@ -13,8 +13,8 @@ test("SmartLingo branding exposes the simplified course and Guru navigation", as
   ]);
 
   assert.match(header, /Smart<em>Lingo<\/em>/);
-  for (const path of ["programs", "smartcards", "assistant"]) assert.match(header, new RegExp(`/${path}`));
-  for (const label of ["选择课程", "SmartCards", "咨询专家"]) assert.match(header, new RegExp(label));
+  for (const path of ["programs", "play", "assistant"]) assert.match(header, new RegExp(`/${path}`));
+  for (const label of ["选择课程", "游戏", "咨询专家"]) assert.match(header, new RegExp(label));
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["programs", "assistant", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));

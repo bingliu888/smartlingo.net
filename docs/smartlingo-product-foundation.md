@@ -152,7 +152,7 @@ The database rejects class-order event types from the platform-subscription rewa
 
 SmartCard course credit is a third, independent accounting domain. It is not learning XP and it is not a direct-introducer reward. Public starter decks may be used without an account, but guest earnings are provisional until a verified member claims them from the same device.
 
-A first server-scored pass of 80 or higher for one published deck version awards 10 points, with no self-challenge reward and a maximum of 50 points per learner-local day. One hundred points offset one US dollar. When a balance covers a fixed monthly course price, the learner may exchange the full amount for exactly 30 days of that course. The credit-only period does not auto-renew and does not silently begin a card free trial.
+The public single-card game begins at 100 provisional course points. A server-verified correct meaning adds 10, a wrong choice subtracts 5, and a pronunciation pass adds 5. Practice credit is claimable once per published deck version; the daily challenge is claimable once per account, deck, and learner-local day and feeds the public display-name leaderboard. Self-authored decks never award credit. One hundred points offset one US dollar. When a balance covers a fixed monthly course price, the learner may exchange the full amount for exactly 30 days of that course. The credit-only period does not auto-renew and does not silently begin a card free trial.
 
 All balance changes are append-only, idempotent ledger entries. The browser never supplies scores, awards, balances, prices, or discounts. Course credit has no cash-out, transfer, peer-sale, or class-owner payout value.
 

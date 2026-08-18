@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
-import { buildSmartCardChallenge, gradeSmartCardChallenge } from "../lib/smartlingo-smartcards.ts";
+import { buildSmartCardChallenge, gradeSmartCardChallenge, scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards.ts";
 import { applyTrackedMigrations, readMigrationManifest } from "../scripts/validate-d1-migrations.mjs";
 
 const cards = Array.from({ length: 12 }, (_, index) => ({
@@ -44,15 +44,38 @@ test("migration publishes reviewed starter content and enforces point boundaries
   assert.match(sql, /insufficient SmartLingo course credit/);
 });
 
-test("public challenge and redemption routes keep scores and balances server-authoritative", () => {
+test("public game and redemption routes keep scores and balances server-authoritative", () => {
   const publicRoute = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
   const redemptionRoute = readFileSync(new URL("../app/api/billing/credits/redeem/route.ts", import.meta.url), "utf8");
-  assert.match(publicRoute, /gradeSmartCardChallenge/);
+  assert.match(publicRoute, /scoreSmartCardPronunciation/);
+  assert.match(publicRoute, /startingPoints \+ correctCount \* POLICY\.correctPoints/);
   assert.doesNotMatch(publicRoute, /body\.(?:score|points|rewardPoints|balancePoints)/);
   assert.match(publicRoute, /HttpOnly; Secure; SameSite=Lax/);
   assert.match(redemptionRoute, /COALESCE\(SUM\(points\),0\)/);
   assert.match(redemptionRoute, /-value\.course\.priceCents/);
   assert.match(redemptionRoute, /provider_subscription_id[^]*credit:/);
+});
+
+test("pronunciation transcript scoring tolerates case and punctuation but rejects the wrong word", () => {
+  assert.deepEqual(scoreSmartCardPronunciation("Hello!", "hello"), { score: 100, passed: true });
+  assert.equal(scoreSmartCardPronunciation("Hello", "yellow").passed, false);
+});
+
+test("single-card game hides other target words and has no submit button", () => {
+  const source = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
+  assert.match(source, /请跟我说/);
+  assert.match(source, /SpeechRecognition/);
+  assert.match(source, /policy\.startingPoints/);
+  assert.doesNotMatch(source, />Submit</);
+  assert.doesNotMatch(source, /option\.form/);
+});
+
+test("0041 separates practice from daily challenge and guards game rewards", () => {
+  const sql = readFileSync(new URL("../drizzle/0041_smartcard_single_card_game.sql", import.meta.url), "utf8");
+  assert.match(sql, /game_mode TEXT NOT NULL CHECK\(game_mode IN \('practice','challenge'\)\)/);
+  assert.match(sql, /smartlingo_course_credit_game_insert_trg/);
+  assert.match(sql, /run\.score=NEW\.points/);
+  assert.match(sql, /deck\.owner_user_id!=NEW\.user_id/);
 });
 
 test("database permits learning retries but awards one capped credit per deck version", () => {
@@ -78,5 +101,15 @@ test("database permits learning retries but awards one capped credit per deck ve
       (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
       VALUES('spend-all','card-learner',-10,'course_redeem','course_month','ok','2026-08-17','yes',3)`).run();
     assert.equal(database.prepare("SELECT SUM(points) AS balance FROM smartlingo_course_credit_ledger WHERE user_id='card-learner'").get().balance, 0);
+    database.prepare(`INSERT INTO smartlingo_smartcard_game_runs
+      (id,guest_key_hash,deck_id,deck_version,game_mode,score,correct_count,question_count,pronunciation_passes,answer_fingerprint,local_date,claim_status,claimed_user_id,claimed_at,created_at,updated_at)
+      VALUES('game-1','guest-1','starter_en',1,'challenge',250,12,12,6,'game-proof','2026-08-17','claimed','card-learner',4,4,4)`).run();
+    database.prepare(`INSERT INTO smartlingo_course_credit_ledger
+      (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
+      VALUES('game-credit','card-learner',250,'smartcard_game_earn','smartcard_game','game-1','2026-08-17','game',4)`).run();
+    assert.throws(() => database.prepare(`INSERT INTO smartlingo_course_credit_ledger
+      (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
+      VALUES('fake-game-credit','card-learner',251,'smartcard_game_earn','smartcard_game','game-1','2026-08-17','fake',5)`).run());
+    assert.equal(database.prepare("SELECT SUM(points) AS balance FROM smartlingo_course_credit_ledger WHERE user_id='card-learner'").get().balance, 250);
   } finally { database.close(); }
 });

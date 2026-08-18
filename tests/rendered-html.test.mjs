@@ -62,7 +62,7 @@ test("renders the SmartLingo language-learning foundation", async () => {
   assert.match(html, /社区/);
   assert.doesNotMatch(html, /href="\/zh\/community"/);
   assert.match(html, />选择课程<\/a>/);
-  assert.match(html, />SmartCards<\/a>/);
+  assert.match(html, />游戏<\/a>/);
   assert.match(html, />咨询专家<\/a>/);
   assert.match(html, /\/zh\/project/);
   assert.match(html, />项目</);

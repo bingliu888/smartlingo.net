@@ -51,7 +51,7 @@ Every recorded daily and course score uses a 1–100 scale. A completed course p
 ## SmartCards and course credit
 
 - Public starter SmartCards may be learned and challenged without sign-in. Guest points are provisional, device-bound, and not spendable until claimed by a verified signed-in account.
-- Only a first server-scored pass of at least 80 for one deck version may award 10 course points. Self-challenges award none; the daily course-point cap is 50.
+- The public single-card game starts at 100 provisional course points. Server-verified correct choices add 10, wrong choices subtract 5, and pronunciation passes add 5. Practice rewards once per published deck version; the daily challenge rewards once per account, deck, and local day. Self-authored decks award none.
 - The client never submits a score, point award, balance, price, or discount. Published reviewed content, scoring, caps, claims, and ledger writes are server-authoritative and idempotent.
 - Course points use their own append-only ledger, separate from learning XP and introducer rewards. They cannot be cashed out, transferred, sold, or included in a class-owner payout.
 - 100 course points offset USD $1. A sufficient balance may pay 100% of one fixed SmartLingo monthly course fee and opens exactly 30 days without auto-renewal.

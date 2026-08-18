@@ -59,15 +59,15 @@ Each 5–12 card deck supports:
 - five-turn pronunciation practice;
 - one short social or real-life mission.
 
-A point-bearing challenge samples across at least three modes. Exact typing is never the only path for scripts that require a different keyboard. Answers are normalised language-appropriately, and accepted alternatives are versioned content—not client suggestions.
+A public game presents one target word at a time. Meaning choices never expose the other target-language words. A correct choice moves directly to listen-and-repeat practice; the browser recognizes up to three transient speech attempts, while the server scores the transcript conservatively and stores neither audio nor transcript.
 
-The learner can study freely and retry practice. Redeemable points are awarded only once per learner or guest device for a deck version, after the server records a score of at least 80. The deck owner receives no credit for challenging their own deck. Personal best and learning XP may continue changing, but redeemable credit does not.
+The learner can study freely and retry practice. Practice credit is awarded once per learner for a published deck version. The dated challenge is awarded once per learner, deck, and local day and supplies the daily leaderboard. The deck owner receives no credit for their own deck. Replays remain available but do not repeat an already claimed reward.
 
 ## Course-credit policy
 
 - 100 points = USD $1 of course credit.
-- A verified first pass awards 10 points.
-- Maximum verified challenge earnings are 50 points per learner per local day.
+- Each completed public round starts at 100 provisional points; correct meanings add 10, wrong meanings subtract 5, and pronunciation passes add 5.
+- Guest results become spendable only after the full round is complete and a verified account claims them.
 - Up to 100% of one monthly course fee may be paid with points.
 - Points have no cash-out, transfer, peer-sale, or owner-payout value.
 - Course credit is separate from learning XP and direct-introducer rewards.
@@ -75,7 +75,7 @@ The learner can study freely and retry practice. Redeemable points are awarded o
 - A reservation is created before checkout. Failed or abandoned checkout releases it; a refund or dispute reverses the corresponding settlement according to the published refund policy.
 - A credit-only month grants exactly one course period and never silently creates an auto-renewing subscription.
 
-At the 50-point daily cap, a learner can earn at most $0.50 per day. Paying a $20 Beginner month entirely through learning therefore requires at least 40 qualified days. This deliberately rewards serious learning without turning practice into cash farming.
+Server reconstruction, one-claim uniqueness, self-deck exclusion, immutable deck versions, and anomaly review protect the course-credit economy without blocking ordinary practice.
 
 ## Guest safety and conversion
 

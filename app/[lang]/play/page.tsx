@@ -1,0 +1,15 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { SiteFooter } from "../../../components/SiteFooter";
+import { SiteHeader } from "../../../components/SiteHeader";
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
+  return { title: lang === "zh" ? "游戏 · SmartLingo" : "Play · SmartLingo" };
+}
+
+export default async function PlayPage({ params }: { params: Promise<{ lang: string }> }) {
+  const value = await params; if (value.lang !== "en" && value.lang !== "zh") notFound();
+  const lang = value.lang; const zh = lang === "zh";
+  return <main className="lingo-play-hub"><SiteHeader lang={lang}/><section><p>PLAY · SPEAK · GROW</p><h1>{zh ? "边玩边学，每一分都算数。" : "Learn through play. Make every point count."}</h1><span>{zh ? "先从智慧卡练习和每日挑战开始。以后这里会加入更多听、说和社交语言游戏。" : "Start with SmartCard practice and the daily challenge. More listening, speaking, and social games will join them here."}</span><div><Link href={`/${lang}/smartcards`}><small>01 · SMART CARD PRACTICE</small><strong>{zh ? "智慧卡练习" : "Smart Card Practice"}</strong><em>{zh ? "看词、选义、开口说 · 自由练习" : "See it, choose it, say it · practice freely"}</em><b>{zh ? "开始练习" : "Start practice"} →</b></Link><Link href={`/${lang}/play/challenge`}><small>02 · SMART CARD CHALLENGE</small><strong>{zh ? "智慧卡挑战" : "Smart Card Challenge"}</strong><em>{zh ? "每日赛程、最高分与排行榜" : "Daily rounds, top scores, and rankings"}</em><b>{zh ? "查看挑战日历" : "Open challenge calendar"} →</b></Link></div></section><SiteFooter lang={lang}/><style>{`.lingo-play-hub{min-height:100vh;background:radial-gradient(circle at 80% 5%,#bbffe2,transparent 28%),#f7f3ea;color:#153129}.lingo-play-hub>section{width:min(1180px,calc(100% - 36px));margin:auto;padding:clamp(70px,10vw,130px) 0}.lingo-play-hub>section>p{color:#087d62;font-size:12px;font-weight:950;letter-spacing:.15em}.lingo-play-hub h1{max-width:940px;margin:12px 0 20px;font:600 clamp(48px,8vw,92px)/.98 "Iowan Old Style","Noto Serif SC",serif}.lingo-play-hub>section>span{display:block;max-width:68ch;color:#597069;font-size:18px;line-height:1.65}.lingo-play-hub>section>div{margin-top:48px;display:grid;grid-template-columns:1fr 1fr;gap:16px}.lingo-play-hub section a{min-height:310px;padding:clamp(27px,4vw,45px);display:flex;flex-direction:column;border-radius:28px;background:linear-gradient(145deg,#123f35,#087d62);color:#fff;text-decoration:none;box-shadow:0 24px 60px #163c3028;transition:transform .2s}.lingo-play-hub section a:nth-child(2){background:linear-gradient(145deg,#372453,#7555a6)}.lingo-play-hub section a:hover{transform:translateY(-4px)}.lingo-play-hub small{color:#8ff0cf;font-weight:900;letter-spacing:.1em}.lingo-play-hub a:nth-child(2) small{color:#eadbff}.lingo-play-hub strong{margin:45px 0 12px;font-size:clamp(32px,5vw,52px);line-height:1}.lingo-play-hub em{color:#c8e9de;font-style:normal}.lingo-play-hub b{margin-top:auto;color:#fff}@media(max-width:720px){.lingo-play-hub>section>div{grid-template-columns:1fr}.lingo-play-hub section a{min-height:270px}}`}</style></main>;
+}

@@ -30,6 +30,8 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/programs",
     "/classes/course_en_basic/learn",
     "/classes/course_en_basic/learn/session",
+    "/play",
+    "/play/challenge",
     "/smartcards",
     "/smartcards/starter-en",
     "/smartcards/tutorial",

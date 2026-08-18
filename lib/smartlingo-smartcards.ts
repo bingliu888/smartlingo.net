@@ -63,6 +63,31 @@ function normalized(value: string) {
   return value.normalize("NFKC").trim().toLocaleLowerCase().replace(/[\s.,!?！？。，、'’"“”]+/gu, "");
 }
 
+function editDistance(left: string, right: string) {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    let diagonal = previous[0]; previous[0] = leftIndex;
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const above = previous[rightIndex];
+      previous[rightIndex] = left[leftIndex - 1] === right[rightIndex - 1]
+        ? diagonal
+        : 1 + Math.min(diagonal, previous[rightIndex - 1], above);
+      diagonal = above;
+    }
+  }
+  return previous[right.length];
+}
+
+/** Browser speech recognition supplies a transcript, never an identity or an
+ * accent label. The transcript is scored transiently and is not persisted. */
+export function scoreSmartCardPronunciation(target: string, transcript: string) {
+  const expected = normalized(target); const heard = normalized(transcript);
+  if (!expected || !heard) return { score: 0, passed: false };
+  const distance = editDistance(expected, heard);
+  const score = Math.max(0, Math.round((1 - distance / Math.max(expected.length, heard.length)) * 100));
+  return { score, passed: score >= 85 };
+}
+
 export function gradeSmartCardChallenge(cards: readonly SmartCardContent[], answers: Record<string, string>) {
   const questions = buildSmartCardChallenge(cards);
   const byId = new Map(cards.map(card => [card.id, card]));

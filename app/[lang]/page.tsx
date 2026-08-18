@@ -185,7 +185,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </div>
 
       <section className="lingo-section" style={{ paddingTop: 72, paddingBottom: 72 }}>
-        <div className="lingo-heading"><p className="section-kicker">SMARTCARDS · SOCIAL LEARNING</p><h2>{lang === "zh" ? "先学会，再决定是否注册。" : "Learn something first. Decide about an account later."}</h2><p>{lang === "zh" ? "十二种语言都有公开入门词卡。翻卡、听发音、完成混合挑战并把链接发给朋友；合格积分保存在此设备，登录后可用于抵扣最多全额月费。打开词卡、注册或领取积分都不会自动订阅。" : "Every language has a public starter deck. Flip cards, hear pronunciation, complete a mixed challenge, and share it with a friend. Eligible points stay on this device and can offset up to a full monthly fee after sign-in. Opening, registering, or claiming never starts a subscription."}</p></div>
+        <div className="lingo-heading"><p className="section-kicker">PLAY · SMART CARD</p><h2>{lang === "zh" ? "先玩会、开口说，再决定是否注册。" : "Play, speak, then decide about an account."}</h2><p>{lang === "zh" ? "十二种语言都有公开智慧卡：每次只看一个词，选择含义，听智能导师示范，再开口跟读。每轮从 100 个待领取课程积分开始，完成后登录即可保留；打开游戏、注册或领取都不会自动订阅。" : "Every language has public Smart Cards: see one word, choose its meaning, listen to the AI coach, and repeat aloud. Each round starts with 100 provisional course points; finish and sign in to keep them. Playing, registering, or claiming never starts a subscription."}</p></div>
         <div className="lingo-actions"><Link className="primary-button" href={`/${lang}/smartcards`}>{lang === "zh" ? "选择语言开始" : "Choose a language"} →</Link><Link className="secondary-button" href={`/${lang}/smartcards/starter-en`}>{lang === "zh" ? "直接试学英语" : "Try English now"}</Link></div>
       </section>
 

@@ -288,6 +288,13 @@
       "when": 1786968000000,
       "tag": "0040_smartcards_curriculum_credits",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1786971600000,
+      "tag": "0041_smartcard_single_card_game",
+      "breakpoints": true
     }
   ]
 }

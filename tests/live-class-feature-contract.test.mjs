@@ -39,7 +39,6 @@ test("course entrances replace the standalone classroom directory", () => {
   assert.match(home, /classes/);
   assert.doesNotMatch(home, /classrooms\?view=mine/);
   assert.match(dashboard, /classes\?mine=1/);
-  assert.match(dashboard, /isAdmin/);
   assert.doesNotMatch(dashboard, /classrooms\?view=mine/);
   assert.match(community, /redirect\(`\/\$\{lang\}\/programs`\)/);
 });

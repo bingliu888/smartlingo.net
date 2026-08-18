@@ -6,7 +6,8 @@ import ts from "typescript";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const forbidden = /\b(?:Dashboard|Project|Community|Live Chat|Ask Guru|Guru|SmartFi|MVP|FAQ|UI|Worker|Member|Message|Messages|News|Events|Profile|Plan|Pricing|Sign in|AIGC|AI|Home|Shop|Status|Build|Version|Launch|Daily|Schedule|Deployments|Roadmap|Task|Milestone|Report|Loading|Error|Open|Closed|Submit|Save|Cancel|Search|Settings|Account|Password|Welcome|Start|Join|Learn more|View|Manage)\b/i;
+// AI is an intentional, globally recognized product label for the speaking coach.
+const forbidden = /\b(?:Dashboard|Project|Community|Live Chat|Ask Guru|Guru|SmartFi|MVP|FAQ|UI|Worker|Member|Message|Messages|News|Events|Profile|Plan|Pricing|Sign in|AIGC|Home|Shop|Status|Build|Version|Launch|Daily|Schedule|Deployments|Roadmap|Task|Milestone|Report|Loading|Error|Open|Closed|Submit|Save|Cancel|Search|Settings|Account|Password|Welcome|Start|Join|Learn more|View|Manage)\b/i;
 async function filesIn(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   return (await Promise.all(entries.map(async entry => { const file = path.join(directory, entry.name); return entry.isDirectory() ? filesIn(file) : /\.(?:ts|tsx)$/.test(entry.name) ? [file] : []; }))).flat();

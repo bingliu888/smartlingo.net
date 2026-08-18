@@ -1202,6 +1202,31 @@ export const lingoSmartcardGuestAttempts = sqliteTable("smartlingo_smartcard_gue
   index("smartlingo_smartcard_guest_claim_idx").on(table.guestKeyHash, table.claimedUserId, table.createdAt),
 ]);
 
+/** One durable game result per device and published deck version. The score
+ * begins at 100 and becomes course credit only after a verified account claim. */
+export const lingoSmartcardGameRuns = sqliteTable("smartlingo_smartcard_game_runs", {
+  id: text("id").primaryKey(),
+  guestKeyHash: text("guest_key_hash").notNull(),
+  deckId: text("deck_id").notNull().references(() => lingoSmartcardDecks.id, { onDelete: "restrict" }),
+  deckVersion: integer("deck_version").notNull(),
+  gameMode: text("game_mode").notNull(),
+  score: integer("score").notNull(),
+  correctCount: integer("correct_count").notNull(),
+  questionCount: integer("question_count").notNull(),
+  pronunciationPasses: integer("pronunciation_passes").notNull(),
+  answerFingerprint: text("answer_fingerprint").notNull(),
+  localDate: text("local_date").notNull(),
+  claimStatus: text("claim_status").notNull().default("pending"),
+  claimedUserId: text("claimed_user_id").references(() => users.id, { onDelete: "restrict" }),
+  claimedAt: integer("claimed_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  uniqueIndex("smartlingo_smartcard_game_guest_deck_uq").on(table.guestKeyHash, table.deckId, table.deckVersion, table.gameMode, table.localDate),
+  uniqueIndex("smartlingo_smartcard_game_user_deck_uq").on(table.claimedUserId, table.deckId, table.deckVersion, table.gameMode, table.localDate).where(sql`${table.claimedUserId} IS NOT NULL`),
+  index("smartlingo_smartcard_game_claim_idx").on(table.guestKeyHash, table.claimedUserId, table.updatedAt),
+]);
+
 export const lingoCourseCreditPolicy = sqliteTable("smartlingo_course_credit_policy", {
   id: text("id").primaryKey(),
   pointsPerUsd: integer("points_per_usd").notNull(),
