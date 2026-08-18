@@ -114,6 +114,7 @@ test("0042 makes daily challenges timed, single-chance, and settle winners once"
   assert.match(sql, /smartlingo_smartcard_daily_settlement_uq/);
   assert.match(sql, /smartlingo_course_credit_winner_insert_trg/);
   assert.match(route, /challengeSeconds: 5/);
+  assert.match(route, /new Date\(nowMs\)\.toISOString\(\)\.slice\(0,10\)/);
   assert.match(route, /nowMs-session\.questionStartedMs>POLICY\.challengeSeconds\*1000/);
   assert.match(route, /current_index=\?/);
   assert.match(route, /leader&&leader\.score<100&&score>leader\.score/);

@@ -8,7 +8,7 @@ type Rank={rank:number;name:string;score:number};
 type Celebration={date:string;winnerName:string;score:number;rewardPoints:number};
 
 export function SmartCardChallengeCalendar({lang,targetLanguage}:{lang:"en"|"zh";targetLanguage:string}){
-  const zh=lang==="zh";const now=new Date();const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const zh=lang==="zh";const today=new Date().toISOString().slice(0,10);
   const [month,setMonth]=useState(today.slice(0,7));const [days,setDays]=useState<Day[]>([]);const [selected,setSelected]=useState("");const [ranking,setRanking]=useState<Rank[]>([]);const [celebrations,setCelebrations]=useState<Celebration[]>([]);const [error,setError]=useState("");
   useEffect(()=>{void fetch(`/api/smartcards/leaderboard?month=${month}&language=${encodeURIComponent(targetLanguage)}`).then(async response=>{const body=await response.json();if(!response.ok)throw new Error();setDays(body.days||[]);setCelebrations(body.celebrated||[]);setSelected("");setRanking([]);setError("");}).catch(()=>setError(zh?"暂时无法读取排行榜。":"Leaderboard is temporarily unavailable."));},[month,targetLanguage,zh]);
   const cells=useMemo(()=>{const [year,number]=month.split("-").map(Number);const first=new Date(year,number-1,1);const count=new Date(year,number,0).getDate();return [...Array(first.getDay()).fill(null),...Array.from({length:count},(_,index)=>`${month}-${String(index+1).padStart(2,"0")}`)];},[month]);
