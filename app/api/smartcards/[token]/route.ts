@@ -3,11 +3,13 @@ import { scoreSmartCardPronunciation } from "@/lib/smartlingo-smartcards";
 
 export const dynamic = "force-dynamic";
 const COOKIE = "sl_guest_cards";
-const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100 } as const;
+const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100, challengeSeconds: 5, winnerBonusBasisPoints: 1000 } as const;
 
 type Deck = { id: string; ownerUserId: string; ownerName: string; classId: string | null; targetLanguage: string; level: string; title: string; version: number };
 type Card = { id: string; form: string; pronunciation: string; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number };
 type Evidence = { cardId?: unknown; choices?: unknown; transcripts?: unknown };
+type TimedSession = { id:string; localDate:string; currentIndex:number; correctCount:number; questionStartedMs:number; completedAt:number|null };
+type Leader = { score:number; displayName:string };
 
 function cookieValue(request: Request) {
   const value = request.headers.get("cookie")?.split(";").map(item => item.trim()).find(item => item.startsWith(`${COOKIE}=`))?.slice(COOKIE.length + 1) || "";
@@ -45,6 +47,10 @@ async function claimGameRewards(value: NonNullable<Awaited<ReturnType<typeof rea
     if (prior || game.ownerUserId === userId || game.score <= 0) {
       await value.database.prepare(`UPDATE smartlingo_smartcard_game_runs SET claim_status='ineligible',claimed_at=?,updated_at=? WHERE id=? AND claim_status='pending'`).bind(now,now,game.id).run().catch(() => undefined); continue;
     }
+    if (game.gameMode === "challenge") {
+      try { await value.database.prepare(`UPDATE smartlingo_smartcard_game_runs SET claim_status='claimed',claimed_user_id=?,claimed_at=?,updated_at=? WHERE id=? AND claim_status='pending'`).bind(userId,now,now,game.id).run(); } catch { /* Duplicate daily claims stay ineligible. */ }
+      continue;
+    }
     try {
       await value.database.batch([
         value.database.prepare(`UPDATE smartlingo_smartcard_game_runs SET claim_status='claimed',claimed_user_id=?,claimed_at=?,updated_at=? WHERE id=? AND claim_status='pending'`).bind(userId,now,now,game.id),
@@ -73,16 +79,31 @@ async function claimLegacyRewards(value: NonNullable<Awaited<ReturnType<typeof r
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const value = await readDeck((await params).token); if (!value) return Response.json({ error: "SmartCard deck not found" }, { status: 404 });
   const guest = guestKey(request); const guestHash = await sha256(guest.value); const user = await getSessionUser(request);
-  const pending = await value.database.prepare(`SELECT COALESCE(SUM(score),0) AS points FROM smartlingo_smartcard_game_runs WHERE guest_key_hash=? AND claim_status='pending'`).bind(guestHash).first<{ points: number }>();
+  const pending = await value.database.prepare(`SELECT COALESCE(SUM(score),0) AS points FROM smartlingo_smartcard_game_runs WHERE guest_key_hash=? AND game_mode='practice' AND claim_status='pending'`).bind(guestHash).first<{ points: number }>();
   return withCookie(Response.json({ deck: { ...value.deck, cards: value.cards }, signedIn: Boolean(user), provisionalPoints: Number(pending?.points || 0), policy: POLICY }), guest);
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const value = await readDeck((await params).token); if (!value) return Response.json({ error: "SmartCard deck not found" }, { status: 404 });
-  const body = await request.json().catch(() => null) as { action?: string; cardId?: string; answerId?: string; transcript?: string; cards?: Evidence[]; timeZone?: string; gameMode?: string } | null;
+  const body = await request.json().catch(() => null) as { action?: string; cardId?: string; answerId?: string; transcript?: string; cards?: Evidence[]; timeZone?: string; gameMode?: string; sessionId?: string } | null;
   if (!body) return Response.json({ error: "Valid JSON is required" }, { status: 400 });
-  const guest = guestKey(request); const guestHash = await sha256(guest.value); const user = await getSessionUser(request); const now = Math.floor(Date.now() / 1000);
+  const guest = guestKey(request); const guestHash = await sha256(guest.value); const user = await getSessionUser(request); const nowMs = Date.now(); const now = Math.floor(nowMs / 1000);
   const card = value.cards.find(item => item.id === body.cardId);
+  if (body.action === "challenge-start") {
+    const localDate = dateFor(body.timeZone); let session = await value.database.prepare(`SELECT id,local_date AS localDate,current_index AS currentIndex,correct_count AS correctCount,question_started_ms AS questionStartedMs,completed_at AS completedAt FROM smartlingo_smartcard_timed_sessions WHERE guest_key_hash=? AND deck_id=? AND deck_version=? AND local_date=? LIMIT 1`).bind(guestHash,value.deck.id,value.deck.version,localDate).first<TimedSession>();
+    if (!session) { const id=createId(); await value.database.prepare(`INSERT INTO smartlingo_smartcard_timed_sessions(id,guest_key_hash,deck_id,deck_version,local_date,current_index,correct_count,question_started_ms,created_at,updated_at) VALUES(?,?,?,?,?,0,0,?,?,?)`).bind(id,guestHash,value.deck.id,value.deck.version,localDate,nowMs,now,now).run(); session={id,localDate,currentIndex:0,correctCount:0,questionStartedMs:nowMs,completedAt:null}; }
+    const leader = await value.database.prepare(`SELECT run.score,user.display_name AS displayName FROM smartlingo_smartcard_game_runs run JOIN smartlingo_smartcard_decks deck ON deck.id=run.deck_id JOIN users user ON user.id=run.claimed_user_id WHERE run.game_mode='challenge' AND run.claim_status='claimed' AND run.local_date=? AND deck.target_language=? ORDER BY run.score DESC,run.updated_at ASC LIMIT 1`).bind(localDate,value.deck.targetLanguage).first<Leader>();
+    return withCookie(Response.json({ sessionId:session.id,currentIndex:session.currentIndex,correctCount:session.correctCount,questionStartedMs:session.questionStartedMs,completed:Boolean(session.completedAt),currentLeaderScore:Number(leader?.score||0),currentLeaderName:leader?.displayName||"",challengeSeconds:POLICY.challengeSeconds }),guest);
+  }
+  if (body.action === "check-answer" && body.gameMode === "challenge") {
+    if (!body.sessionId || typeof body.answerId !== "string") return withCookie(Response.json({ error:"Timed challenge evidence is required" },{status:400}),guest);
+    const session = await value.database.prepare(`SELECT id,local_date AS localDate,current_index AS currentIndex,correct_count AS correctCount,question_started_ms AS questionStartedMs,completed_at AS completedAt FROM smartlingo_smartcard_timed_sessions WHERE id=? AND guest_key_hash=? AND deck_id=? AND deck_version=? LIMIT 1`).bind(body.sessionId,guestHash,value.deck.id,value.deck.version).first<TimedSession>();
+    const expected = session ? value.cards[session.currentIndex] : null;
+    if (!session || session.completedAt || !expected || expected.id!==body.cardId) return withCookie(Response.json({ error:"This challenge question is no longer active" },{status:409}),guest);
+    const timedOut=nowMs-session.questionStartedMs>POLICY.challengeSeconds*1000; const correct=!timedOut&&body.answerId===expected.id; const nextIndex=session.currentIndex+1; const complete=nextIndex>=value.cards.length;
+    await value.database.prepare(`UPDATE smartlingo_smartcard_timed_sessions SET current_index=?,correct_count=correct_count+?,question_started_ms=?,completed_at=?,updated_at=? WHERE id=? AND current_index=? AND completed_at IS NULL`).bind(nextIndex,correct?1:0,nowMs,complete?now:null,now,session.id,session.currentIndex).run();
+    return withCookie(Response.json({ correct,timedOut,nextIndex,complete,questionStartedMs:nowMs }),guest);
+  }
   if (body.action === "check-answer") return withCookie(card && typeof body.answerId === "string" ? Response.json({ correct: body.answerId === card.id }) : Response.json({ error: "Card answer is invalid" }, { status: 400 }), guest);
   if (body.action === "check-pronunciation") {
     if (!card || typeof body.transcript !== "string" || body.transcript.length > 160) return withCookie(Response.json({ error: "Pronunciation sample is invalid" }, { status: 400 }), guest);
@@ -94,6 +115,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     return withCookie(Response.json({ claimedPoints }), guest);
   }
   if (body.action === "game-complete") {
+    if (body.gameMode === "challenge") {
+      if (!body.sessionId) return withCookie(Response.json({ error:"Timed challenge session is required" },{status:400}),guest);
+      const session=await value.database.prepare(`SELECT id,local_date AS localDate,current_index AS currentIndex,correct_count AS correctCount,question_started_ms AS questionStartedMs,completed_at AS completedAt FROM smartlingo_smartcard_timed_sessions WHERE id=? AND guest_key_hash=? AND deck_id=? AND deck_version=? LIMIT 1`).bind(body.sessionId,guestHash,value.deck.id,value.deck.version).first<TimedSession>();
+      if(!session||!session.completedAt||session.currentIndex!==value.cards.length)return withCookie(Response.json({error:"Complete the timed challenge before finishing"},{status:400}),guest);
+      const score=Math.round(session.correctCount*100/value.cards.length); const leader=await value.database.prepare(`SELECT run.score,user.display_name AS displayName FROM smartlingo_smartcard_game_runs run JOIN smartlingo_smartcard_decks deck ON deck.id=run.deck_id JOIN users user ON user.id=run.claimed_user_id WHERE run.game_mode='challenge' AND run.claim_status='claimed' AND run.local_date=? AND deck.target_language=? ORDER BY run.score DESC,run.updated_at ASC LIMIT 1`).bind(session.localDate,value.deck.targetLanguage).first<Leader>();
+      const bonusBasisPoints=leader&&leader.score<100&&score>leader.score?POLICY.winnerBonusBasisPoints:0; const fingerprint=await sha256(`${session.id}:${session.correctCount}:${value.cards.length}`); const id=createId();
+      await value.database.prepare(`INSERT INTO smartlingo_smartcard_game_runs (id,guest_key_hash,deck_id,deck_version,game_mode,score,correct_count,question_count,pronunciation_passes,answer_fingerprint,local_date,leader_bonus_basis_points,created_at,updated_at) VALUES(?,?,?,?, 'challenge',?,?,?,?,?,?,?, ?,?) ON CONFLICT(guest_key_hash,deck_id,deck_version,game_mode,local_date) DO UPDATE SET score=MAX(score,excluded.score),correct_count=CASE WHEN excluded.score>score THEN excluded.correct_count ELSE correct_count END,answer_fingerprint=CASE WHEN excluded.score>score THEN excluded.answer_fingerprint ELSE answer_fingerprint END,leader_bonus_basis_points=CASE WHEN excluded.score>score THEN excluded.leader_bonus_basis_points ELSE leader_bonus_basis_points END,updated_at=CASE WHEN excluded.score>score THEN excluded.updated_at ELSE updated_at END`).bind(id,guestHash,value.deck.id,value.deck.version,score,session.correctCount,value.cards.length,0,fingerprint,session.localDate,bonusBasisPoints,now,now).run();
+      const claimedPoints=user?await claimGameRewards(value,guestHash,user.id,now):0;
+      return withCookie(Response.json({score,correctCount:session.correctCount,questionCount:value.cards.length,currentLeaderScore:Number(leader?.score||0),currentLeaderName:leader?.displayName||"",bonusPercent:bonusBasisPoints/100,claimedPoints,claimRequired:!user,replayOnly:false}),guest);
+    }
     if (!Array.isArray(body.cards) || body.cards.length !== value.cards.length || value.cards.length < 4 || value.cards.length > 50) return withCookie(Response.json({ error: "Complete every card once before finishing the game" }, { status: 400 }), guest);
     let correctCount = 0; let wrongCount = 0; let pronunciationPasses = 0; const safeEvidence: { cardId: string; choices: string[]; speechScores: number[] }[] = [];
     for (let index = 0; index < value.cards.length; index += 1) {

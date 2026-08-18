@@ -70,12 +70,53 @@ test("single-card game hides other target words and has no submit button", () =>
   assert.doesNotMatch(source, /option\.form/);
 });
 
+test("game navigation keeps target language, progress, local-time art, and score feedback", () => {
+  const course = readFileSync(new URL("../app/[lang]/programs/[language]/page.tsx", import.meta.url), "utf8");
+  const play = readFileSync(new URL("../app/[lang]/play/page.tsx", import.meta.url), "utf8");
+  const challenge = readFileSync(new URL("../app/[lang]/play/challenge/page.tsx", import.meta.url), "utf8");
+  const calendar = readFileSync(new URL("../components/SmartCardChallengeCalendar.tsx", import.meta.url), "utf8");
+  const game = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
+  const leaderboard = readFileSync(new URL("../app/api/smartcards/leaderboard/route.ts", import.meta.url), "utf8");
+  assert.match(course, /play\?language=\$\{language\}/);
+  assert.match(course, /免费游戏/);
+  assert.match(play, /smartcards\/starter-\$\{language\}/);
+  assert.match(play, /play\/challenge\?language=\$\{language\}/);
+  assert.match(challenge, /isSmartLingoCommunityLanguage/);
+  assert.match(calendar, /leaderboard\?month=\$\{month\}&language=/);
+  assert.match(calendar, /mode=challenge&language=\$\{targetLanguage\}/);
+  assert.match(game, /card-count/);
+  assert.match(game, /index \+ 1\} \/ \{cards\.length/);
+  assert.match(game, /learning-world-\$\{timeScene\}\.jpg/);
+  assert.match(game, /getHours\(\)/);
+  assert.match(game, /createOscillator/);
+  assert.match(game, /prefers-reduced-motion/);
+  assert.match(game, /challengeDeadline/);
+  assert.match(game, /currentLeader/);
+  assert.match(game, /gameMode!=="challenge"/);
+  assert.match(leaderboard, /deck\.target_language=\?/);
+  assert.match(leaderboard, /isSmartLingoCommunityLanguage/);
+  assert.match(leaderboard, /smartlingo_smartcard_daily_settlements/);
+  assert.match(leaderboard, /smartcard_winner_earn/);
+});
+
 test("0041 separates practice from daily challenge and guards game rewards", () => {
   const sql = readFileSync(new URL("../drizzle/0041_smartcard_single_card_game.sql", import.meta.url), "utf8");
   assert.match(sql, /game_mode TEXT NOT NULL CHECK\(game_mode IN \('practice','challenge'\)\)/);
   assert.match(sql, /smartlingo_course_credit_game_insert_trg/);
   assert.match(sql, /run\.score=NEW\.points/);
   assert.match(sql, /deck\.owner_user_id!=NEW\.user_id/);
+});
+
+test("0042 makes daily challenges timed, single-chance, and settle winners once", () => {
+  const sql = readFileSync(new URL("../drizzle/0042_smartcard_daily_challenge.sql", import.meta.url), "utf8");
+  const route = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
+  assert.match(sql, /smartlingo_smartcard_timed_sessions/);
+  assert.match(sql, /smartlingo_smartcard_daily_settlement_uq/);
+  assert.match(sql, /smartlingo_course_credit_winner_insert_trg/);
+  assert.match(route, /challengeSeconds: 5/);
+  assert.match(route, /nowMs-session\.questionStartedMs>POLICY\.challengeSeconds\*1000/);
+  assert.match(route, /current_index=\?/);
+  assert.match(route, /leader&&leader\.score<100&&score>leader\.score/);
 });
 
 test("database permits learning retries but awards one capped credit per deck version", () => {
@@ -103,13 +144,28 @@ test("database permits learning retries but awards one capped credit per deck ve
     assert.equal(database.prepare("SELECT SUM(points) AS balance FROM smartlingo_course_credit_ledger WHERE user_id='card-learner'").get().balance, 0);
     database.prepare(`INSERT INTO smartlingo_smartcard_game_runs
       (id,guest_key_hash,deck_id,deck_version,game_mode,score,correct_count,question_count,pronunciation_passes,answer_fingerprint,local_date,claim_status,claimed_user_id,claimed_at,created_at,updated_at)
-      VALUES('game-1','guest-1','starter_en',1,'challenge',250,12,12,6,'game-proof','2026-08-17','claimed','card-learner',4,4,4)`).run();
+      VALUES('game-1','guest-1','starter_en',1,'practice',250,12,12,6,'game-proof','2026-08-17','claimed','card-learner',4,4,4)`).run();
     database.prepare(`INSERT INTO smartlingo_course_credit_ledger
       (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
       VALUES('game-credit','card-learner',250,'smartcard_game_earn','smartcard_game','game-1','2026-08-17','game',4)`).run();
     assert.throws(() => database.prepare(`INSERT INTO smartlingo_course_credit_ledger
       (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
       VALUES('fake-game-credit','card-learner',251,'smartcard_game_earn','smartcard_game','game-1','2026-08-17','fake',5)`).run());
-    assert.equal(database.prepare("SELECT SUM(points) AS balance FROM smartlingo_course_credit_ledger WHERE user_id='card-learner'").get().balance, 250);
+    database.prepare(`INSERT INTO smartlingo_smartcard_game_runs
+      (id,guest_key_hash,deck_id,deck_version,game_mode,score,correct_count,question_count,pronunciation_passes,answer_fingerprint,local_date,claim_status,claimed_user_id,claimed_at,created_at,updated_at,leader_bonus_basis_points)
+      VALUES('daily-winner','guest-2','starter_en',1,'challenge',90,11,12,0,'timed-proof','2026-08-17','claimed','card-learner',5,5,5,1000)`).run();
+    assert.throws(() => database.prepare(`INSERT INTO smartlingo_course_credit_ledger
+      (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
+      VALUES('early-challenge-credit','card-learner',90,'smartcard_game_earn','smartcard_game','daily-winner','2026-08-17','not settled',5)`).run());
+    database.prepare(`INSERT INTO smartlingo_smartcard_daily_settlements
+      (id,target_language,local_date,winner_run_id,winner_user_id,winning_score,reward_points,settled_at)
+      VALUES('settlement-en','en','2026-08-17','daily-winner','card-learner',90,99,6)`).run();
+    database.prepare(`INSERT INTO smartlingo_course_credit_ledger
+      (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
+      VALUES('winner-credit','card-learner',99,'smartcard_winner_earn','smartcard_daily_winner','settlement-en','2026-08-17','winner',6)`).run();
+    assert.throws(() => database.prepare(`INSERT INTO smartlingo_course_credit_ledger
+      (id,user_id,points,entry_type,source_type,source_id,local_date,note,created_at)
+      VALUES('fake-winner-credit','card-learner',100,'smartcard_winner_earn','smartcard_daily_winner','settlement-en','2026-08-17','fake',7)`).run());
+    assert.equal(database.prepare("SELECT SUM(points) AS balance FROM smartlingo_course_credit_ledger WHERE user_id='card-learner'").get().balance, 349);
   } finally { database.close(); }
 });

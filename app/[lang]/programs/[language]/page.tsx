@@ -22,7 +22,7 @@ export default async function CourseLanguagePage({ params }: { params: Promise<{
       <p className="section-kicker">{language.toUpperCase()} · {lang === "zh" ? "课程详情" : "COURSE DETAILS"}</p>
       <h1>{item.nativeName} · {lang === "zh" ? item.nameZh : item.nameEn}</h1>
       <p>{lang === "zh" ? "选择固定月费课程。每个方案首月免费，并包含专属音视频网络研讨会教室。" : "Choose a fixed monthly course. Every plan includes a free first month and a dedicated A/V webinar classroom."}</p>
-      <Link className="secondary-button" href={`/${lang}/programs`}>← {lang === "zh" ? "返回选择课程" : "Back to courses"}</Link>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}><Link className="primary-button" href={`/${lang}/play?language=${language}`}>▶ {lang === "zh" ? "免费游戏" : "Free to Play"}</Link><Link className="secondary-button" href={`/${lang}/programs`}>← {lang === "zh" ? "返回选择课程" : "Back to courses"}</Link></div>
     </section>
     <section className="sl-package-catalog" data-layout-fill="course-packages">
       <header><p className="section-kicker">{lang === "zh" ? "首月免费" : "FIRST MONTH FREE"}</p><h2>{lang === "zh" ? "选择课程等级" : "Choose your course level"}</h2><p>{lang === "zh" ? "固定月费，无会员自建课程或自定义收费。" : "Fixed monthly pricing with no member-created courses or custom fees."}</p></header>
