@@ -63,6 +63,15 @@ function normalized(value: string) {
   return value.normalize("NFKC").trim().toLocaleLowerCase().replace(/[\s.,!?！？。，、'’"“”]+/gu, "");
 }
 
+function recognitionForms(value: string) {
+  const compact = normalized(value);
+  if (!compact) return [];
+  const withoutOptionalMarks = /[\p{Script=Latin}\p{Script=Arabic}]/u.test(compact)
+    ? compact.normalize("NFD").replace(/\p{M}/gu, "")
+    : compact;
+  return [...new Set([compact, withoutOptionalMarks])];
+}
+
 function editDistance(left: string, right: string) {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
   for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
@@ -80,11 +89,15 @@ function editDistance(left: string, right: string) {
 
 /** Browser speech recognition supplies a transcript, never an identity or an
  * accent label. The transcript is scored transiently and is not persisted. */
-export function scoreSmartCardPronunciation(target: string, transcript: string) {
-  const expected = normalized(target); const heard = normalized(transcript);
-  if (!expected || !heard) return { score: 0, passed: false };
-  const distance = editDistance(expected, heard);
-  const score = Math.max(0, Math.round((1 - distance / Math.max(expected.length, heard.length)) * 100));
+export function scoreSmartCardPronunciation(target: string, transcript: string, pronunciation = "") {
+  const aliases = pronunciation && !/^\/.+\/$/.test(pronunciation.trim()) ? [pronunciation] : [];
+  const expectedForms = [target, ...aliases].flatMap(recognitionForms);
+  const heardForms = recognitionForms(transcript);
+  if (!expectedForms.length || !heardForms.length) return { score: 0, passed: false };
+  const score = Math.max(...expectedForms.flatMap(expected => heardForms.map(heard => {
+    const distance = editDistance(expected, heard);
+    return Math.max(0, Math.round((1 - distance / Math.max(expected.length, heard.length)) * 100));
+  })));
   return { score, passed: score >= 85 };
 }
 

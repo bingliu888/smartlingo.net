@@ -85,7 +85,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const value = await readDeck((await params).token); if (!value) return Response.json({ error: "SmartCard deck not found" }, { status: 404 });
-  const body = await request.json().catch(() => null) as { action?: string; cardId?: string; answerId?: string; transcript?: string; cards?: Evidence[]; timeZone?: string; gameMode?: string; sessionId?: string } | null;
+  const body = await request.json().catch(() => null) as { action?: string; cardId?: string; answerId?: string; transcript?: string; transcripts?: string[]; cards?: Evidence[]; timeZone?: string; gameMode?: string; sessionId?: string } | null;
   if (!body) return Response.json({ error: "Valid JSON is required" }, { status: 400 });
   const guest = guestKey(request); const guestHash = await sha256(guest.value); const user = await getSessionUser(request); const nowMs = Date.now(); const now = Math.floor(nowMs / 1000);
   const card = value.cards.find(item => item.id === body.cardId);
@@ -106,8 +106,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   }
   if (body.action === "check-answer") return withCookie(card && typeof body.answerId === "string" ? Response.json({ correct: body.answerId === card.id }) : Response.json({ error: "Card answer is invalid" }, { status: 400 }), guest);
   if (body.action === "check-pronunciation") {
-    if (!card || typeof body.transcript !== "string" || body.transcript.length > 160) return withCookie(Response.json({ error: "Pronunciation sample is invalid" }, { status: 400 }), guest);
-    return withCookie(Response.json(scoreSmartCardPronunciation(card.form, body.transcript)), guest);
+    const transcripts = Array.isArray(body.transcripts) ? body.transcripts : typeof body.transcript === "string" ? [body.transcript] : [];
+    if (!card || transcripts.length < 1 || transcripts.length > 5 || transcripts.some(item => typeof item !== "string" || !item.trim() || item.length > 160)) return withCookie(Response.json({ error: "Pronunciation sample is invalid" }, { status: 400 }), guest);
+    const ranked = transcripts.map(transcript => ({ transcript, ...scoreSmartCardPronunciation(card.form, transcript, card.pronunciation) })).sort((left,right) => right.score-left.score);
+    return withCookie(Response.json(ranked[0]), guest);
   }
   if (body.action === "claim") {
     if (!user) return withCookie(Response.json({ error: "Sign in to claim provisional course points" }, { status: 401 }), guest);
@@ -134,7 +136,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       const transcripts = submitted.transcripts.filter((item): item is string => typeof item === "string" && item.length <= 160);
       if (choices.length !== submitted.choices.length || transcripts.length !== submitted.transcripts.length || choices.length < 1) return withCookie(Response.json({ error: "Game evidence is invalid" }, { status: 400 }), guest);
       const correctAt = choices.indexOf(expected.id); if (correctAt >= 0) correctCount += 1; wrongCount += correctAt >= 0 ? correctAt : choices.length;
-      const speechScores = transcripts.map(item => scoreSmartCardPronunciation(expected.form,item).score); if (speechScores.some(score => score >= 85)) pronunciationPasses += 1;
+      const speechScores = transcripts.map(item => scoreSmartCardPronunciation(expected.form,item,expected.pronunciation).score); if (speechScores.some(score => score >= 85)) pronunciationPasses += 1;
       safeEvidence.push({ cardId: expected.id, choices, speechScores });
     }
     const score = Math.max(0,Math.min(850,POLICY.startingPoints + correctCount * POLICY.correctPoints - wrongCount * POLICY.wrongPenalty + pronunciationPasses * POLICY.pronunciationPoints));

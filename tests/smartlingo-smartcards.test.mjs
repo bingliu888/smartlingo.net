@@ -59,6 +59,9 @@ test("public game and redemption routes keep scores and balances server-authorit
 test("pronunciation transcript scoring tolerates case and punctuation but rejects the wrong word", () => {
   assert.deepEqual(scoreSmartCardPronunciation("Hello!", "hello"), { score: 100, passed: true });
   assert.equal(scoreSmartCardPronunciation("Hello", "yellow").passed, false);
+  assert.equal(scoreSmartCardPronunciation("مرحبًا", "مرحبا", "marḥaban").passed, true);
+  assert.equal(scoreSmartCardPronunciation("こんにちは", "konnichiwa", "konnichiwa").passed, true);
+  assert.equal(scoreSmartCardPronunciation("你好", "ni hao", "nǐ hǎo").passed, true);
 });
 
 test("microphone failures distinguish denied permission from a retryable device error", () => {
@@ -76,6 +79,8 @@ test("single-card game hides other target words and has no submit button", () =>
   assert.match(source, /AI 读完后会自动听您跟读/);
   assert.match(source, /重新检查麦克风/);
   assert.match(source, /Microphone permission timed out/);
+  assert.match(source, /permission\.state === "granted"/);
+  assert.match(source, /maxAlternatives = 5/);
   assert.doesNotMatch(source, /开始说/);
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);

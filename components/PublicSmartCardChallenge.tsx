@@ -44,6 +44,7 @@ type RecognitionResultEvent = Event & {
             [index: number]: {
                 transcript: string;
             };
+            length: number;
         };
     };
 };
@@ -51,6 +52,7 @@ type Recognition = {
     lang: string;
     continuous: boolean;
     interimResults: boolean;
+    maxAlternatives: number;
     onresult: ((event: RecognitionResultEvent) => void) | null;
     onerror: ((event: { error?: string }) => void) | null;
     onend: (() => void) | null;
@@ -100,6 +102,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const claimAttempted = useRef(false);
     const challengeStarted = useRef(false);
     const timeoutSubmitted = useRef(false);
+    const microphoneApproved = useRef(false);
     const load = useCallback(async () => { const response = await fetch(`/api/smartcards/${encodeURIComponent(token)}`, { cache: "no-store" }); const payload = await response.json().catch(() => ({})) as Payload; if (!response.ok)
         throw new Error(payload.error); setData(payload); setPoints(payload.policy?.startingPoints || 100); }, [token]);
     useEffect(() => { const timer = window.setTimeout(() => { const local = new Date(); const hour = local.getHours(); setTimeScene(hour >= 5 && hour < 10 ? "dawn" : hour >= 10 && hour < 17 ? "day" : hour >= 17 && hour < 21 ? "sunset" : "night"); setDaySeed(Math.floor(new Date(local.getFullYear(), local.getMonth(), local.getDate()).getTime() / 86400000)); void load().catch(() => setMessage(zh ? "找不到这套 SmartCard。" : "This SmartCard deck is unavailable.")); }, 0); return () => { window.clearTimeout(timer); recognitionRef.current?.stop(); window.clearTimeout(advanceTimer.current); window.clearTimeout(scoreTimer.current); window.speechSynthesis?.cancel(); void audioRef.current?.close(); }; }, [load, zh]);
@@ -188,11 +191,19 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
         return;
     }
     setMicState("requesting");
-    setMessage(zh ? "正在请求麦克风权限…" : "Requesting microphone permission…");
     try {
-        if (navigator.mediaDevices?.getUserMedia) {
+        if (!microphoneApproved.current && navigator.permissions?.query) {
+            try {
+                const permission = await navigator.permissions.query({ name: "microphone" as PermissionName });
+                if (permission.state === "granted") microphoneApproved.current = true;
+                else if (permission.state === "denied") throw new DOMException("Microphone access denied", "NotAllowedError");
+            }
+            catch (error) { if (error instanceof DOMException && error.name === "NotAllowedError") throw error; }
+        }
+        if (!microphoneApproved.current && navigator.mediaDevices?.getUserMedia) {
+            setMessage(zh ? "正在请求麦克风权限…" : "Requesting microphone permission…");
             let permissionTimer: number | undefined;
-            const access = navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { stream.getTracks().forEach(track => track.stop()); });
+            const access = navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { stream.getTracks().forEach(track => track.stop()); microphoneApproved.current = true; });
             const timeout = new Promise<never>((_, reject) => { permissionTimer = window.setTimeout(() => reject(new DOMException("Microphone permission timed out", "TimeoutError")), 12000); });
             try { await Promise.race([access, timeout]); }
             finally { window.clearTimeout(permissionTimer); }
@@ -207,7 +218,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
             : (zh ? "浏览器没有打开麦克风。请检查网站权限后点“重新检查麦克风”，或点“我已跟读”继续。" : "The browser did not open the microphone. Check site permission and tap “Check microphone again”, or use “I said it” to continue."));
         return;
     }
-    const recognition = new Constructor(); recognitionRef.current = recognition; recognition.lang = speechLang[data?.deck?.targetLanguage || ""] || "en-US"; recognition.continuous = false; recognition.interimResults = false; setListening(true); setMicState("listening"); setMessage(""); recognition.onresult = event => { const transcript = event.results[0]?.[0]?.transcript || ""; void checkSpeech(transcript); }; recognition.onerror = event => { const failure = smartCardMicrophoneFailure(event.error || ""); setListening(false); setMicState(failure === "denied" ? "denied" : "error"); setMessage(failure === "denied" ? (zh ? "麦克风未获允许。请在浏览器的网站设置中允许麦克风，然后点“重新检查麦克风”。" : "Microphone access was denied. Allow it in this site's browser settings, then tap “Check microphone again”.") : (zh ? "没有听清楚，请点“听并跟读”再试一次。" : "I couldn't hear that. Tap “Listen & speak” to try again.")); }; recognition.onend = () => { setListening(false); setMicState(current => current === "listening" ? "idle" : current); }; try {
+    const recognition = new Constructor(); recognitionRef.current = recognition; recognition.lang = speechLang[data?.deck?.targetLanguage || ""] || "en-US"; recognition.continuous = false; recognition.interimResults = false; recognition.maxAlternatives = 5; setListening(true); setMicState("listening"); setMessage(""); recognition.onresult = event => { const result = event.results[0]; const transcripts = Array.from({ length: Math.min(result?.length || 0, 5) }, (_, position) => result?.[position]?.transcript || "").filter(Boolean); void checkSpeech(transcripts); }; recognition.onerror = event => { const failure = smartCardMicrophoneFailure(event.error || ""); if (failure === "denied") microphoneApproved.current = false; setListening(false); setMicState(failure === "denied" ? "denied" : "error"); setMessage(failure === "denied" ? (zh ? "麦克风未获允许。请在浏览器的网站设置中允许麦克风，然后点“重新检查麦克风”。" : "Microphone access was denied. Allow it in this site's browser settings, then tap “Check microphone again”.") : (zh ? "没有听清楚，请点“听并跟读”再试一次。" : "I couldn't hear that. Tap “Listen & speak” to try again.")); }; recognition.onend = () => { setListening(false); setMicState(current => current === "listening" ? "idle" : current); }; try {
         recognition.start();
     }
     catch {
@@ -215,9 +226,10 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
         setMicState("error");
         setMessage(zh ? "暂时无法启动麦克风，请重试或点“我已跟读”。" : "The microphone could not start. Retry or use “I said it”.");
     } }
-    async function checkSpeech(transcript: string) { if (!card)
-        return; evidence.current[index].transcripts.push(transcript); try {
-        const result = await post({ action: "check-pronunciation", cardId: card.id, transcript });
+    async function checkSpeech(transcripts: string[]) { if (!card || !transcripts.length)
+        return; try {
+        const result = await post({ action: "check-pronunciation", cardId: card.id, transcripts });
+        evidence.current[index].transcripts.push(String(result.transcript || transcripts[0]));
         if (result.passed) {
             setPoints(value => value + policy.pronunciationPoints);
             celebrateScore(policy.pronunciationPoints);
