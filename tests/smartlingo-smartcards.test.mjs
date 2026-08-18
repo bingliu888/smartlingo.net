@@ -65,6 +65,7 @@ test("microphone failures distinguish denied permission from a retryable device 
   assert.equal(smartCardMicrophoneFailure("NotAllowedError"), "denied");
   assert.equal(smartCardMicrophoneFailure("service-not-allowed"), "denied");
   assert.equal(smartCardMicrophoneFailure("audio-capture"), "unavailable");
+  assert.equal(smartCardMicrophoneFailure("TimeoutError"), "unavailable");
 });
 
 test("single-card game hides other target words and has no submit button", () => {
@@ -74,6 +75,7 @@ test("single-card game hides other target words and has no submit button", () =>
   assert.match(source, /getUserMedia/);
   assert.match(source, /AI 读完后会自动听您跟读/);
   assert.match(source, /重新检查麦克风/);
+  assert.match(source, /Microphone permission timed out/);
   assert.doesNotMatch(source, /开始说/);
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);

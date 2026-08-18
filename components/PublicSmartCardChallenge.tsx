@@ -191,8 +191,11 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     setMessage(zh ? "正在请求麦克风权限…" : "Requesting microphone permission…");
     try {
         if (navigator.mediaDevices?.getUserMedia) {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => track.stop());
+            let permissionTimer: number | undefined;
+            const access = navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { stream.getTracks().forEach(track => track.stop()); });
+            const timeout = new Promise<never>((_, reject) => { permissionTimer = window.setTimeout(() => reject(new DOMException("Microphone permission timed out", "TimeoutError")), 12000); });
+            try { await Promise.race([access, timeout]); }
+            finally { window.clearTimeout(permissionTimer); }
         }
     }
     catch (error) {
@@ -201,7 +204,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
         setMicState(failure === "denied" ? "denied" : "error");
         setMessage(failure === "denied"
             ? (zh ? "麦克风未获允许。请在浏览器的网站设置中将麦克风改为“允许”，再点“重新检查麦克风”；也可点“我已跟读”继续。" : "Microphone access was denied. Allow it in this site's browser settings, then tap “Check microphone again”, or use “I said it” to continue.")
-            : (zh ? "暂时无法使用麦克风。请检查设备麦克风后重试，或点“我已跟读”继续。" : "The microphone is unavailable. Check the device and retry, or use “I said it” to continue."));
+            : (zh ? "浏览器没有打开麦克风。请检查网站权限后点“重新检查麦克风”，或点“我已跟读”继续。" : "The browser did not open the microphone. Check site permission and tap “Check microphone again”, or use “I said it” to continue."));
         return;
     }
     const recognition = new Constructor(); recognitionRef.current = recognition; recognition.lang = speechLang[data?.deck?.targetLanguage || ""] || "en-US"; recognition.continuous = false; recognition.interimResults = false; setListening(true); setMicState("listening"); setMessage(""); recognition.onresult = event => { const transcript = event.results[0]?.[0]?.transcript || ""; void checkSpeech(transcript); }; recognition.onerror = event => { const failure = smartCardMicrophoneFailure(event.error || ""); setListening(false); setMicState(failure === "denied" ? "denied" : "error"); setMessage(failure === "denied" ? (zh ? "麦克风未获允许。请在浏览器的网站设置中允许麦克风，然后点“重新检查麦克风”。" : "Microphone access was denied. Allow it in this site's browser settings, then tap “Check microphone again”.") : (zh ? "没有听清楚，请点“听并跟读”再试一次。" : "I couldn't hear that. Tap “Listen & speak” to try again.")); }; recognition.onend = () => { setListening(false); setMicState(current => current === "listening" ? "idle" : current); }; try {
