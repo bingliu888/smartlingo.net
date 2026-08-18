@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
-import { buildSmartCardChallenge, gradeSmartCardChallenge, scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards.ts";
+import { buildSmartCardChallenge, gradeSmartCardChallenge, scoreSmartCardPronunciation, smartCardMicrophoneFailure } from "../lib/smartlingo-smartcards.ts";
 import { applyTrackedMigrations, readMigrationManifest } from "../scripts/validate-d1-migrations.mjs";
 
 const cards = Array.from({ length: 12 }, (_, index) => ({
@@ -61,10 +61,20 @@ test("pronunciation transcript scoring tolerates case and punctuation but reject
   assert.equal(scoreSmartCardPronunciation("Hello", "yellow").passed, false);
 });
 
+test("microphone failures distinguish denied permission from a retryable device error", () => {
+  assert.equal(smartCardMicrophoneFailure("NotAllowedError"), "denied");
+  assert.equal(smartCardMicrophoneFailure("service-not-allowed"), "denied");
+  assert.equal(smartCardMicrophoneFailure("audio-capture"), "unavailable");
+});
+
 test("single-card game hides other target words and has no submit button", () => {
   const source = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   assert.match(source, /请跟我说/);
   assert.match(source, /SpeechRecognition/);
+  assert.match(source, /getUserMedia/);
+  assert.match(source, /AI 读完后会自动听您跟读/);
+  assert.match(source, /重新检查麦克风/);
+  assert.doesNotMatch(source, /开始说/);
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);
   assert.doesNotMatch(source, /option\.form/);

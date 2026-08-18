@@ -88,6 +88,15 @@ export function scoreSmartCardPronunciation(target: string, transcript: string) 
   return { score, passed: score >= 85 };
 }
 
+export function smartCardMicrophoneFailure(errorName: string) {
+  const normalized = errorName.toLowerCase().replace(/[^a-z]/g, "");
+  return normalized.includes("notallowed")
+    || normalized.includes("permissiondenied")
+    || normalized.includes("servicenotallowed")
+    ? "denied"
+    : "unavailable";
+}
+
 export function gradeSmartCardChallenge(cards: readonly SmartCardContent[], answers: Record<string, string>) {
   const questions = buildSmartCardChallenge(cards);
   const byId = new Map(cards.map(card => [card.id, card]));
