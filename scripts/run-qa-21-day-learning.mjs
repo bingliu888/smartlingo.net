@@ -61,7 +61,10 @@ for (const account of accounts) {
 }
 
 const now = Math.floor(Date.now() / 1000);
-const statements = ["BEGIN TRANSACTION;"];
+// Wrangler's remote D1 file importer provides the atomic upload boundary and
+// rejects explicit SQL BEGIN/COMMIT statements. Every write below is idempotent
+// so a transport retry is safe even if an importer implementation changes.
+const statements = [];
 let passedRuns = 0;
 const failedChecks = [];
 for (const account of accounts) {
@@ -154,5 +157,4 @@ statements.push(`INSERT INTO editorial_documents(kind,edition_date,payload,updat
       '$.total',MAX(COALESCE(json_extract(editorial_documents.payload,'$.total'),0),COALESCE(json_extract(editorial_documents.payload,'$.today'),0)+1),
       '$.reports',json_insert(COALESCE(json_extract(editorial_documents.payload,'$.reports'),json('[]')),'$[#]',json(${sql(reportJson)}))),
     updated_at=${now};`);
-statements.push("COMMIT;");
 process.stdout.write(`${statements.join("\n")}\n`);

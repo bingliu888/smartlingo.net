@@ -22,6 +22,8 @@ test("daily runner covers all five skills without awarding XP or rewards", () =>
   }
   assert.match(runner, /source_type,source_id/);
   assert.doesNotMatch(runner, /learning_xp_ledger|reward_ledger|course_credit_ledger/);
+  assert.doesNotMatch(runner, /BEGIN TRANSACTION|COMMIT;/);
+  assert.match(runner, /remote D1 file importer provides the atomic upload boundary/);
   assert.match(runner, /not human speech or human grading/);
   assert.match(runner, /smartlingo-project-status/);
   assert.match(runner, /fix, deploy, and rerun/);
