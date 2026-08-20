@@ -14,10 +14,10 @@ The numerical targets are SmartLingo curriculum targets. They are aligned to CEF
 
 - Curriculum goals and scene coverage: Council of Europe CEFR descriptors.
 - Frequency ordering: `wordfreq` corpus frequencies (CC BY-SA 4.0 data; Apache-2.0 software).
-- English lexical senses: Open English WordNet (CC BY 4.0).
+- English lexical senses: Princeton WordNet 3.0, ranked with its corpus lemma counts under the WordNet 3.0 license. Open Multilingual Wordnet 1.4 supplies concise Chinese lemmas when present; an explicit tested core map covers grammatical words WordNet intentionally omits.
 - Other-language lexical senses and dictionary IPA: English Wiktionary dump dated 2026-08-05, extracted by Wiktextract/Kaikki (CC BY-SA 4.0; retrieved 2026-08-20).
 - Missing IPA fallback: eSpeak NG linguistic rules. The stored output is release data; eSpeak is not a production dependency.
-- Chinese gloss draft: Argos Translate English-to-Chinese offline model. This field is recorded as machine-translated and source-verified, not human translated.
+- Chinese gloss draft: Argos Translate English-to-Chinese offline model when no OMW or explicit core gloss is available. Automated length and repetition gates run before release; this field is never represented as human translated.
 
 Every generated row records the lexical source URL, license, source revision, and review method. Existing 336 SmartLingo starter rows retain their reviewed-catalog provenance.
 
@@ -38,5 +38,6 @@ The builder and migrations reject a release unless:
 3. stable keys are unique and every row has source/license/revision/review evidence;
 4. the 21-day vocabulary API returns cumulative catalogs by subscribed course level;
 5. pronunciation feedback is transient, runs for five turns, and does not store microphone audio or transcripts.
+6. common English function words and inflections resolve to their everyday learner meaning, not chemical symbols, place abbreviations, surnames, or other rare homographs.
 
 The reproducible offline builder is [`scripts/build-smartlingo-vocabulary.py`](../scripts/build-smartlingo-vocabulary.py). It is not imported by the production application.

@@ -14,7 +14,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import os
 import re
 import sys
 import unicodedata
@@ -32,6 +31,111 @@ ALLOWED_POS = {"noun", "verb", "adj", "adv", "pron", "det", "prep", "postp", "co
 DISALLOWED_TAGS = {"obsolete", "archaic", "historical", "dated", "rare", "vulgar", "offensive", "derogatory"}
 ESPEAK_VOICES = {"zh": "cmn", "en": "en-us", "es": "es", "ja": "ja", "ko": "ko", "fr": "fr-fr", "de": "de", "ru": "ru", "it": "it", "pt": "pt-br", "ar": "ar", "hi": "hi"}
 SCENES = ("core-grammar", "people", "home", "food", "travel", "health", "study", "work", "community", "nature", "technology", "ideas")
+
+# WordNet intentionally focuses on content words, so its first entry for a
+# short function word can be an abbreviation ("IN" = Indiana, "Be" =
+# beryllium) instead of the everyday grammatical use. These compact glosses
+# cover the high-frequency closed class explicitly; content words below are
+# sense-ranked with WordNet's corpus lemma counts.
+ENGLISH_CORE_GLOSSES = {
+    "the": ("the definite article", "定冠词；特指已知的人或事物"), "to": ("toward; used before an infinitive", "向；到；用于动词不定式"),
+    "and": ("used to join words or ideas", "和；以及"), "of": ("belonging to; relating to", "……的；关于"),
+    "a": ("one; an indefinite article", "一个；不定冠词"), "an": ("one; an indefinite article before a vowel sound", "一个；用于元音音素前的不定冠词"),
+    "in": ("inside; within", "在……里面；在……期间"), "on": ("on the surface of; about", "在……上面；关于"),
+    "at": ("in or near a place or time", "在某地点或时间"), "for": ("intended for; because of", "为了；给；因为"),
+    "from": ("starting at; originating in", "从；来自"), "with": ("together with; using", "和……一起；用"),
+    "by": ("near; through the action of", "在旁边；由；通过"), "as": ("in the role of; while", "作为；像；当……时"),
+    "into": ("to the inside of", "进入；到……里面"), "between": ("in the space separating two things", "在两者之间"),
+    "under": ("below; subject to", "在……下面；在……之下"), "during": ("throughout a period of time", "在……期间"),
+    "without": ("not having; not using", "没有；不使用"), "against": ("in opposition to; touching", "反对；靠着"),
+    "after": ("later than; following", "在……之后"), "before": ("earlier than", "在……之前"),
+    "through": ("from one side or end to the other", "穿过；从头到尾"), "around": ("surrounding; approximately", "围绕；大约"),
+    "i": ("the speaker", "我"), "you": ("the person or people being addressed", "你；你们"), "he": ("a male person already mentioned", "他"),
+    "she": ("a female person already mentioned", "她"), "it": ("a thing or situation already mentioned", "它；这件事"),
+    "we": ("the speaker and one or more other people", "我们"), "they": ("people or things already mentioned", "他们；她们；它们"),
+    "me": ("the speaker as an object", "我（宾格）"), "him": ("a male person as an object", "他（宾格）"),
+    "her": ("a female person as an object; belonging to her", "她（宾格）；她的"), "us": ("the speaker and others as an object", "我们（宾格）"),
+    "them": ("people or things as an object", "他们；她们；它们（宾格）"), "my": ("belonging to me", "我的"),
+    "your": ("belonging to you", "你的；你们的"), "his": ("belonging to him", "他的"), "its": ("belonging to it", "它的"),
+    "our": ("belonging to us", "我们的"), "their": ("belonging to them", "他们的；她们的；它们的"),
+    "this": ("the person or thing here", "这个；这"), "that": ("the person or thing there; used to introduce a clause", "那个；那；引导从句"),
+    "these": ("the people or things here", "这些"), "those": ("the people or things there", "那些"),
+    "who": ("what person or people", "谁；……的人"), "what": ("what thing or information", "什么"),
+    "which": ("what one or ones", "哪一个；哪些"), "where": ("in or at what place", "在哪里；……的地方"),
+    "when": ("at what time; at the time that", "什么时候；当……时"), "why": ("for what reason", "为什么"), "how": ("in what way", "怎样；如何"),
+    "be": ("to exist; to have a quality or identity", "是；存在；成为"), "am": ("first-person singular form of be", "是（用于 I）"),
+    "is": ("third-person singular form of be", "是（第三人称单数）"), "are": ("present plural form of be", "是（复数或第二人称）"),
+    "was": ("past singular form of be", "是；在（过去式单数）"), "were": ("past plural form of be", "是；在（过去式复数）"),
+    "been": ("past participle of be", "be 的过去分词；曾经是"), "can": ("to be able to; to be allowed to", "能；可以"),
+    "could": ("past or conditional form of can", "能；可以（过去式或委婉语气）"), "may": ("to be allowed to; possibly", "可以；可能"),
+    "might": ("possibly; a less certain form of may", "可能；也许"), "must": ("to be required to; certainly", "必须；一定"),
+    "will": ("used for the future or willingness", "将会；愿意"), "would": ("used for a conditional or polite request", "会；愿意（条件或委婉语气）"),
+    "should": ("used for advice or expectation", "应该；应当"), "do": ("to perform an action; used to form questions and negatives", "做；用于构成疑问和否定"),
+    "does": ("third-person singular form of do", "do 的第三人称单数；做"), "did": ("past form of do", "do 的过去式；做了"),
+    "have": ("to own; to experience", "有；拥有；经历"), "has": ("third-person singular form of have", "have 的第三人称单数；有"),
+    "had": ("past form of have", "have 的过去式；有过"), "not": ("used to make a word or statement negative", "不；没有"),
+    "no": ("not any; a negative answer", "没有；不；否"), "yes": ("an affirmative answer", "是；好的"),
+    "but": ("used to introduce a contrast", "但是；不过"), "or": ("used to show an alternative", "或者；还是"),
+    "if": ("on the condition that; whether", "如果；是否"), "because": ("for the reason that", "因为"),
+    "than": ("used in a comparison", "比；用于比较"), "so": ("therefore; to such a degree", "所以；如此"),
+    "all": ("the whole number or amount", "全部；所有"), "some": ("an unspecified amount or number", "一些；某些"),
+    "any": ("one or more, without specifying which", "任何；一些"), "both": ("the two together", "两者都"),
+    "every": ("each member of a group", "每一个"), "more": ("a greater amount or number", "更多"),
+    "most": ("the greatest amount or number", "最多；大多数"), "much": ("a large amount", "许多；很大程度"),
+    "only": ("and no others; no more than", "只有；仅仅"), "very": ("to a high degree; exact", "非常；正是"),
+    "also": ("in addition; too", "也；还"), "just": ("exactly; only; a short time ago", "正好；只是；刚刚"),
+    "about": ("concerning; approximately", "关于；大约"), "up": ("toward a higher place or level", "向上；提高"),
+    "down": ("toward a lower place or level", "向下；降低"), "out": ("away from the inside", "出去；在外"),
+    "there": ("in or at that place; used to introduce existence", "在那里；用于表示存在"), "here": ("in or at this place", "在这里"),
+    "now": ("at the present time", "现在"), "then": ("at that time; next", "那时；然后"),
+    "first": ("before all others; number one", "第一；首先"), "one": ("the number 1; a single person or thing", "一；一个"),
+    "two": ("the number 2", "二；两个"), "three": ("the number 3", "三；三个"),
+    "something": ("an unspecified thing", "某事；某物"), "anything": ("any thing at all", "任何事物"),
+    "everything": ("all things", "一切；所有事物"), "s": ("the letter s; a common plural or verb ending", "字母 S；常见复数或动词词尾"),
+    "mr": ("a title used before a man's name", "先生"),
+    "it's": ("it is; it has", "it is 或 it has 的缩写"), "i'm": ("I am", "I am 的缩写"),
+    "you're": ("you are", "you are 的缩写"), "he's": ("he is; he has", "he is 或 he has 的缩写"),
+    "that's": ("that is; that has", "that is 或 that has 的缩写"), "there's": ("there is; there has", "there is 或 there has 的缩写"),
+    "i've": ("I have", "I have 的缩写"), "don't": ("do not", "do not 的缩写；不"),
+    "doesn't": ("does not", "does not 的缩写；不"), "didn't": ("did not", "did not 的缩写；没有"),
+    "can't": ("cannot", "不能；不可以"),
+}
+ENGLISH_CORE_GLOSSES.update({
+    "like": ("to enjoy or prefer", "喜欢；想要"), "time": ("a measured period; an occasion", "时间；次数"),
+    "get": ("to obtain; to become", "得到；获得；变得"), "new": ("recently made or discovered", "新的；新近的"),
+    "people": ("human beings as a group", "人们；人民"), "other": ("different or additional", "其他的；另一个"),
+    "good": ("positive, suitable, or of high quality", "好的；合适的；优良的"), "know": ("to have information or understanding", "知道；了解；认识"),
+    "see": ("to perceive with the eyes; to understand", "看见；看到；明白"), "make": ("to create, produce, or cause", "制作；使得；做"),
+    "over": ("above; across; finished", "在……上方；越过；结束"), "think": ("to use the mind; to believe", "思考；认为；想"),
+    "back": ("the rear; toward an earlier place or state", "后面；返回"), "want": ("to desire or need", "想要；需要"),
+    "go": ("to move or travel", "去；走；进行"), "well": ("in a good or satisfactory way", "好地；顺利地；健康的"),
+    "said": ("past form of say", "说了；say 的过去式"), "way": ("a method, direction, or manner", "方法；道路；方式"),
+    "even": ("used to emphasize something unexpected; level", "甚至；即使；平坦的"), "need": ("to require something", "需要；必须"),
+    "really": ("truly; in fact; very", "真正地；事实上；很"), "right": ("correct; the direction opposite left", "正确的；右边；权利"),
+    "work": ("effort or a job; to function", "工作；劳动；运转"), "year": ("a period of about 365 days", "年；一年"),
+    "years": ("more than one year; a long period", "多年；岁月"), "being": ("existing; a living thing", "存在；生物；be 的现在分词"),
+    "day": ("a 24-hour period; daytime", "一天；白天"), "too": ("also; more than is wanted", "也；太；过于"),
+    "going": ("moving or leaving; planned to", "前往；离开；将要"), "off": ("away from; not operating", "离开；关闭；脱离"),
+    "still": ("continuing until now; not moving", "仍然；静止的"), "take": ("to carry, receive, or use", "拿；带；花费；乘坐"),
+    "got": ("past form of get", "得到；变得；get 的过去式"), "many": ("a large number of", "许多；很多"),
+    "never": ("not at any time", "从不；永不"), "life": ("the state or period of being alive", "生命；生活；一生"),
+    "say": ("to speak or express in words", "说；讲；表示"), "world": ("Earth and all its people; a sphere of activity", "世界；地球；领域"),
+    "great": ("very good, important, or large", "很好的；伟大的；巨大的"), "last": ("final; most recent; to continue", "最后的；最近的；持续"),
+    "while": ("a period of time; during the time that", "一会儿；当……时"), "best": ("better than all others", "最好的；最佳"),
+    "such": ("of this or that kind", "这样的；如此的"), "love": ("deep affection; to care for greatly", "爱；热爱"),
+    "man": ("an adult male person; a human being", "男人；人"), "home": ("the place where someone lives", "家；住所；在家"),
+    "long": ("having a great length or duration", "长的；长久的"), "look": ("to direct the eyes; an appearance", "看；看起来；外表"),
+    "use": ("to employ for a purpose", "使用；用途"), "used": ("employed for a purpose; accustomed to", "使用过的；习惯于"),
+    "same": ("not different; identical", "相同的；同样的"), "come": ("to move toward a place or person", "来；来到"),
+    "part": ("a piece or portion of a whole", "部分；零件；角色"), "state": ("a condition; a political region; to express", "状态；州；陈述"),
+    "always": ("at all times", "总是；一直"), "better": ("more good; improved", "更好的；改善的"),
+    "find": ("to discover or locate", "找到；发现"), "help": ("to assist; assistance", "帮助；协助"),
+    "high": ("far above the ground or a normal level", "高的；高水平的"), "little": ("small in size or amount", "小的；少量的"),
+    "old": ("having existed or lived for a long time", "老的；旧的"), "another": ("one more; a different one", "另一个；又一个"),
+    "things": ("objects, matters, or situations", "事物；事情；物品"), "game": ("an activity or contest with rules", "游戏；比赛"),
+    "thing": ("an object, matter, or situation", "东西；事情；事物"), "give": ("to hand, provide, or cause", "给；提供；使得"),
+    "house": ("a building where people live", "房子；住宅"),
+})
 
 
 def lexical_form(value: str) -> bool:
@@ -115,23 +219,49 @@ def extract(language: str, output: Path) -> None:
 
 
 def extract_oewn(output: Path) -> None:
-    import wn
-    if os.environ.get("SMARTLINGO_WN_DATA"):
-        wn.config.data_directory = os.environ["SMARTLINGO_WN_DATA"]
-    wordnet = wn.Wordnet("oewn:2024")
+    """Extract the most frequent everyday English sense.
+
+    The command name is retained for release-script compatibility. Princeton
+    WordNet's SemCor lemma counts rank common senses; OMW supplies concise
+    Chinese lemmas where available. Closed-class words use the curated table
+    above because WordNet intentionally omits many grammatical meanings.
+    """
+    from nltk.corpus import wordnet
     records: list[dict] = []
     for word, rank in candidate_ranks("en").items():
-        synsets = wordnet.synsets(word)
-        definition = next((definition.strip() for synset in synsets for definition in synset.definitions() if definition.strip()), "")
-        if not definition or not learner_ready_gloss(definition):
+        core = ENGLISH_CORE_GLOSSES.get(word.casefold())
+        if core:
+            records.append({"rank": rank, "form": word, "pos": "function", "meaning_en": core[0],
+                            "meaning_zh": core[1], "ipa": "", "entry_id": "curated-core", "source": "wordnet30+curated"})
             continue
-        records.append({"rank": rank, "form": word, "pos": synsets[0].pos, "meaning_en": definition,
-                        "ipa": "", "entry_id": synsets[0].id, "source": "oewn"})
+        bases = {word.casefold()}
+        for pos in (wordnet.NOUN, wordnet.VERB, wordnet.ADJ, wordnet.ADV):
+            base = wordnet.morphy(word, pos)
+            if base:
+                bases.add(base.casefold())
+        ranked_synsets: list[tuple[int, int, object]] = []
+        for index, synset in enumerate(wordnet.synsets(word)):
+            counts = [lemma.count() for lemma in synset.lemmas() if lemma.name().replace("_", " ").casefold() in bases]
+            ranked_synsets.append((max(counts, default=-1), -index, synset))
+        if not ranked_synsets:
+            continue
+        count, _, synset = max(ranked_synsets, key=lambda item: (item[0], item[1]))
+        definition = re.sub(r"\s+", " ", synset.definition()).strip()
+        if count < 0 or not definition or not learner_ready_gloss(definition):
+            continue
+        chinese: list[str] = []
+        for lemma in synset.lemma_names("cmn"):
+            value = lemma.replace("_", " ").strip()
+            if value and value not in chinese:
+                chinese.append(value)
+        records.append({"rank": rank, "form": word, "pos": synset.pos(), "meaning_en": definition,
+                        "meaning_zh": "；".join(chinese[:3]), "ipa": "", "entry_id": synset.name(),
+                        "sense_count": count, "source": "wordnet30+omw"})
     records.sort(key=lambda item: (item["rank"], item["form"]))
     output.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"en: retained {len(records):,} Open English WordNet candidates", file=sys.stderr)
+    print(f"en: retained {len(records):,} corpus-ranked Princeton WordNet candidates", file=sys.stderr)
     if len(records) < 4200:
-        raise SystemExit(f"en: only {len(records)} usable OEWN candidates; at least 4200 are required")
+        raise SystemExit(f"en: only {len(records)} usable WordNet candidates; at least 4200 are required")
 
 
 def sql_unquote(value: str) -> str:
@@ -246,6 +376,12 @@ def translate_glosses(records: list[dict]) -> None:
             value = package.tokenizer.decode(result.hypotheses[0]).strip()
             if package.target_prefix and value.startswith(package.target_prefix):
                 value = value[len(package.target_prefix):].strip()
+            value = re.sub(r"(.)\1{5,}", r"\1", value)
+            value = re.sub(r"(.{2,12})\1{3,}", r"\1", value)
+            value = re.sub(r"\s+", " ", value).strip(" ;；,，")
+            if len(value) > 90:
+                clauses = [part.strip() for part in re.split(r"[。；;]", value) if part.strip()]
+                value = next((part for part in clauses if 2 <= len(part) <= 90), value[:88] + "…")
             cache[original] = value or original
         print(f"translated {min(start + len(batch), len(pending)):,}/{len(pending):,}", file=sys.stderr)
     for record in records:
@@ -279,7 +415,7 @@ def render_language(language: str, source: Path, starter_migration: Path, pronun
             record.update(enriched[record["form"].casefold()])
     source.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     language_name = LANGUAGE_NAMES[language]
-    lexical_comment = "Open English WordNet senses (CC BY 4.0); IPA from eSpeak NG." if language == "en" else "English Wiktionary/Kaikki senses (CC BY-SA 4.0); missing IPA from eSpeak NG."
+    lexical_comment = "Princeton WordNet 3.0 corpus-ranked senses + OMW Chinese lemmas; IPA from eSpeak NG." if language == "en" else "English Wiktionary/Kaikki senses (CC BY-SA 4.0); missing IPA from eSpeak NG."
     lines = [
         f"-- SmartLingo {language_name} frequency catalog v2026.08.20.",
         f"-- wordfreq corpus rank + {lexical_comment}",
@@ -300,10 +436,11 @@ def render_language(language: str, source: Path, starter_migration: Path, pronun
         stable_key = f"{language}.{level}.frequency.{offset}"
         item_id = f"vocab_{language}_{level}_frequency_{offset}_v1"
         guides = json.dumps(pronunciation_guides(record["ipa"]), ensure_ascii=False, separators=(",", ":"))
-        source_url = "https://en-word.net/" if record.get("source") == "oewn" else f"https://kaikki.org/dictionary/{language_name}/"
-        source_license = "CC BY 4.0" if record.get("source") == "oewn" else "CC BY-SA 4.0"
-        source_revision = "Open English WordNet 2024" if record.get("source") == "oewn" else "English Wiktionary dump 2026-08-05; retrieved 2026-08-20"
-        review_method = "wordfreq-rank+open-english-wordnet-sense+automated-linguistic-validation" if record.get("source") == "oewn" else "wordfreq-rank+wiktionary-sense+automated-linguistic-validation"
+        english_source = str(record.get("source") or "").startswith("wordnet30")
+        source_url = "https://wordnet.princeton.edu/" if english_source else f"https://kaikki.org/dictionary/{language_name}/"
+        source_license = "WordNet 3.0 license; OMW 1.4 data license" if english_source else "CC BY-SA 4.0"
+        source_revision = "Princeton WordNet 3.0 + OMW 1.4; retrieved 2026-08-20" if english_source else "English Wiktionary dump 2026-08-05; retrieved 2026-08-20"
+        review_method = "wordfreq-rank+wordnet-lemma-frequency+omw-or-curated-gloss+automated-linguistic-validation" if english_source else "wordfreq-rank+wiktionary-sense+automated-linguistic-validation"
         item_kind = "phrase" if any(character.isspace() for character in record["form"]) else "word"
         values = [item_id, stable_key, "1", language, level, cefr, difficulty, scene, offset, record["form"], record["ipa"],
                   record["meaning_en"], record["meaning_zh"], item_kind, productive, "smartlingo_original", "published",
@@ -327,6 +464,39 @@ def render_language(language: str, source: Path, starter_migration: Path, pronun
     print(f"{language}: rendered {output} with 3972 additions", file=sys.stderr)
 
 
+def render_english_gloss_correction(source: Path, starter_migration: Path, output: Path) -> None:
+    records = json.loads(source.read_text(encoding="utf-8"))
+    starters = existing_forms(starter_migration, "en")
+    chosen = [record for record in records if record["form"].casefold() not in starters and learner_ready_gloss(record["meaning_en"])][:3972]
+    if len(chosen) != 3972 or any(not str(record.get("meaning_zh") or "").strip() for record in chosen):
+        raise SystemExit("English correction requires 3,972 complete bilingual records")
+    lines = [
+        "-- Correct English frequency items to the corpus-most-common sense.",
+        "-- Princeton WordNet lemma counts + OMW Chinese lemmas + curated closed-class glosses.",
+    ]
+    for offset, record in enumerate(chosen, 29):
+        item_id = f"vocab_en_{'beginner' if offset <= 1000 else 'intermediate' if offset <= 2500 else 'advanced'}_frequency_{offset}_v1"
+        lines.append(
+            "UPDATE smartlingo_vocabulary_items SET meaning_en=" + sql_quote(record["meaning_en"]) +
+            ", meaning_zh=" + sql_quote(record["meaning_zh"]) +
+            ", lexical_source_url='https://wordnet.princeton.edu/'" +
+            ", lexical_source_license='WordNet 3.0 license; OMW 1.4 data license'" +
+            ", lexical_source_revision='Princeton WordNet 3.0 + OMW 1.4; retrieved 2026-08-20'" +
+            ", review_method='wordfreq-rank+wordnet-lemma-frequency+omw-or-curated-gloss+automated-linguistic-validation'" +
+            ", updated_at=unixepoch() WHERE id=" + sql_quote(item_id) + ";"
+        )
+    lines.extend([
+        "CREATE TABLE smartlingo_english_gloss_check(value INTEGER CHECK(value=1));",
+        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=4000 FROM smartlingo_vocabulary_items WHERE target_language='en' AND review_status='published';",
+        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='in' AND target_language='en' AND meaning_zh='在……里面；在……期间';",
+        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='be' AND target_language='en' AND meaning_zh='是；存在；成为';",
+        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='day' AND target_language='en' AND meaning_zh='一天；白天';",
+        "DROP TABLE smartlingo_english_gloss_check;",
+    ])
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"en: rendered {output} with 3972 common-sense corrections", file=sys.stderr)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -341,6 +511,10 @@ def main() -> None:
     render_parser.add_argument("--starter-migration", type=Path, required=True)
     render_parser.add_argument("--pronunciation-migration", type=Path, required=True)
     render_parser.add_argument("--out", type=Path, required=True)
+    correction_parser = subparsers.add_parser("render-english-correction")
+    correction_parser.add_argument("--source", type=Path, required=True)
+    correction_parser.add_argument("--starter-migration", type=Path, required=True)
+    correction_parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "extract":
         extract(args.lang, args.out)
@@ -348,6 +522,8 @@ def main() -> None:
         extract_oewn(args.out)
     elif args.command == "render":
         render_language(args.lang, args.source, args.starter_migration, args.pronunciation_migration, args.out)
+    elif args.command == "render-english-correction":
+        render_english_gloss_correction(args.source, args.starter_migration, args.out)
 
 
 if __name__ == "__main__":

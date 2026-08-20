@@ -31,6 +31,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     "0127_clean_vocabulary_meanings.sql",
     "0131_multilingual_pronunciation_guides.sql",
     ...catalogFiles,
+    "0144_english_vocabulary_common_senses.sql",
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
@@ -67,8 +68,17 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
 
   const generated = database.prepare(`SELECT COUNT(*) AS total,
     SUM(review_method LIKE '%automated-linguistic-validation') AS truthfullyLabeled,
-    SUM(lexical_source_license NOT IN ('CC BY 4.0','CC BY-SA 4.0')) AS invalidLicense
+    SUM(lexical_source_license NOT IN ('CC BY 4.0','CC BY-SA 4.0','WordNet 3.0 license; OMW 1.4 data license')) AS invalidLicense
     FROM smartlingo_vocabulary_items WHERE sequence>=29`).get();
   assert.deepEqual({ ...generated }, { total: 47664, truthfullyLabeled: 47664, invalidLicense: 0 });
+
+  const everydayEnglish = database.prepare(`SELECT form,meaning_en AS meaningEn,meaning_zh AS meaningZh
+    FROM smartlingo_vocabulary_items WHERE target_language='en' AND form IN ('in','be','can','see','day','come') ORDER BY form`).all();
+  assert.deepEqual(everydayEnglish.map(row => [row.form, row.meaningZh]), [
+    ["be", "是；存在；成为"], ["can", "能；可以"], ["come", "来；来到"],
+    ["day", "一天；白天"], ["in", "在……里面；在……期间"], ["see", "看见；看到；明白"],
+  ]);
+  assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
+    WHERE target_language='en' AND review_status='published' AND (length(meaning_zh)>100 OR meaning_zh GLOB '*\\\\*')`).get().count, 0);
   database.close();
 });
