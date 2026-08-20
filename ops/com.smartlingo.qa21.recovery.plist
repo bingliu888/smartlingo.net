@@ -6,8 +6,12 @@
   <string>com.smartlingo.qa21.recovery</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/zsh</string>
-    <string>/Users/bingliu/Documents/Codex/Sites/smartlingo.net/scripts/run-codex-qa-recovery.sh</string>
+    <string>/Applications/ChatGPT.app/Contents/Resources/codex</string>
+    <string>exec</string>
+    <string>--approve-for-me</string>
+    <string>--cd</string>
+    <string>/Users/bingliu/Documents/Codex/Sites/smartlingo.net</string>
+    <string>First determine today's America/Los_Angeles date. If it is before 2026-08-21, exit successfully without any action. If it is after 2026-09-10, move /Users/bingliu/Library/LaunchAgents/com.smartlingo.qa21.recovery.plist to /Users/bingliu/Library/LaunchAgents/com.smartlingo.qa21.recovery.completed.plist, then make launchctl bootout gui/501/com.smartlingo.qa21.recovery your final action and exit. During the active window, read docs/qa-21-day-codex-recovery-prompt.md completely and execute it faithfully.</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
@@ -16,15 +20,13 @@
     <key>Minute</key>
     <integer>5</integer>
   </dict>
+  <key>WorkingDirectory</key>
+  <string>/Users/bingliu/Documents/Codex/Sites/smartlingo.net</string>
   <key>EnvironmentVariables</key>
-  <dict>
-    <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-  </dict>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
   <key>StandardOutPath</key>
   <string>/Users/bingliu/Documents/Codex/AutomationLogs/smartlingo-qa21-recovery.log</string>
   <key>StandardErrorPath</key>
   <string>/Users/bingliu/Documents/Codex/AutomationLogs/smartlingo-qa21-recovery-error.log</string>
 </dict>
 </plist>
-

@@ -8,8 +8,8 @@ America/Los_Angeles date:
 1. Inspect the GitHub Actions workflow `SmartLingo 21-day learning QA` for today's run.
    If the scheduled run has not appeared or is still running, wait or dispatch an idempotent
    run with today's `local_date` and observe it to completion.
-2. If it passes, verify production D1 has exactly 2 QA users, 8 passed learner-language runs,
-   and 40 passed five-skill log items for today, and verify the bilingual Project report exists.
+2. If it passes, verify production D1 has exactly 1 campaign QA user, 4 passed learner-language
+   runs, and 20 passed five-skill log items for today, and verify the bilingual Project report exists.
    Make no code change when the evidence is already complete.
 3. If it fails, inspect exact workflow logs and reproduce the failure. Treat missing learning
    functionality, incorrect localization, route errors, storage errors, and UI regressions as
@@ -28,4 +28,3 @@ America/Los_Angeles date:
 7. Ensure every attempt and the final result are visible in the bilingual administrator Project
    report. In the final message, state today's date, issues found, commit and deployment IDs,
    final counts, and any genuine blocker. Do not claim success without production evidence.
-

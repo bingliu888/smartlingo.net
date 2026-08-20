@@ -13,7 +13,6 @@ assert.ok(dayNumber >= 1 && dayNumber <= 21);
 
 const accounts = [
   { userId: "smartlingo-qa-21d-zh", ui: "zh", targets: ["en", "ja", "es", "it"] },
-  { userId: "smartlingo-qa-21d-en", ui: "en", targets: ["zh", "ja", "es", "it"] },
 ];
 const skills = [
   { key: "vocabulary", domain: "vocabulary", seconds: 360 },
@@ -108,26 +107,26 @@ for (const account of accounts) {
   }
 }
 statements.push(`UPDATE smartlingo_qa_test_accounts SET status=CASE WHEN ${dayNumber}=21 THEN 'completed' ELSE status END,updated_at=${now} WHERE status='active';`);
-const projectPassed = passedRuns === 8;
+const projectPassed = passedRuns === 4;
 const report = {
   date: localDate,
   title: {
     zh: `21 天自动学习 QA · 第 ${dayNumber} 天${projectPassed ? "通过" : "失败"}`,
     en: `21-day automated learning QA · Day ${dayNumber} ${projectPassed ? "passed" : "failed"}`,
   },
-  beta: { zh: "查看两个测试用户的五项学习证据", en: "Review five-skill evidence for both QA learners" },
+  beta: { zh: "查看测试用户 1 的五项学习证据", en: "Review five-skill evidence for QA learner 1" },
   completed: projectPassed ? 5 : 0,
   summary: {
     zh: projectPassed
-      ? "两个隔离测试用户完成八组语言课程、二十四项生产页面检查和四十项学习日志；无奖励、付款或排行写入。"
+      ? "测试用户 1 完成四组语言课程、十二项生产页面检查和二十项学习日志；无奖励、付款或排行写入。"
       : `自动学习验收发现 ${failedChecks.length} 项生产页面错误，必须修复、重新部署并重测后才能通过。`,
     en: projectPassed
-      ? "Two isolated QA learners completed eight language-course runs, 24 production page checks, and 40 learning logs without reward, payment, or leaderboard writes."
+      ? "QA learner 1 completed four language-course runs, 12 production page checks, and 20 learning logs without reward, payment, or leaderboard writes."
       : `Automated learning acceptance found ${failedChecks.length} production page failures; fixes, redeployment, and retesting are required before acceptance.`,
   },
   validation: {
-    zh: projectPassed ? ["2 个测试用户", "8 组语言课程", "24 项正式页面检查", "40 项五技能学习日志"] : failedChecks,
-    en: projectPassed ? ["2 QA learners", "8 language-course runs", "24 production page checks", "40 five-skill learning logs"] : failedChecks,
+    zh: projectPassed ? ["测试用户 1", "4 组语言课程", "12 项正式页面检查", "20 项五技能学习日志"] : failedChecks,
+    en: projectPassed ? ["QA learner 1", "4 language-course runs", "12 production page checks", "20 five-skill learning logs"] : failedChecks,
   },
   rollback: {
     zh: "QA 数据使用稳定编号，可安全重复执行；不写入奖励、付款、推荐、排行或证书账本。",

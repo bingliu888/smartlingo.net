@@ -80,11 +80,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Verify two users, eight language runs, and forty skill logs
+      - name: Verify one user, four language runs, and twenty skill logs
         if: steps.date.outputs.run == 'true'
         shell: bash
         run: |
-          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(DISTINCT r.user_id)=2 AND COUNT(DISTINCT r.id)=8 AND COUNT(i.id)=40 AND SUM(i.passed)=40 AND MIN(r.status)='passed' THEN 'QA_DAY_COMPLETE' ELSE 'QA_DAY_INCOMPLETE' END AS verification FROM smartlingo_qa_learning_runs r JOIN smartlingo_qa_learning_log_items i ON i.run_id=r.id WHERE r.local_date='${{ steps.date.outputs.local_date }}';")"
+          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(DISTINCT r.user_id)=1 AND COUNT(DISTINCT r.id)=4 AND COUNT(i.id)=20 AND SUM(i.passed)=20 AND MIN(r.status)='passed' THEN 'QA_DAY_COMPLETE' ELSE 'QA_DAY_INCOMPLETE' END AS verification FROM smartlingo_qa_learning_runs r JOIN smartlingo_qa_learning_log_items i ON i.run_id=r.id WHERE r.local_date='${{ steps.date.outputs.local_date }}';")"
           grep -F 'QA_DAY_COMPLETE' <<<"$result"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

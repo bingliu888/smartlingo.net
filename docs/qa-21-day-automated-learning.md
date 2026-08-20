@@ -4,13 +4,12 @@ This fixed production QA campaign runs from 2026-08-21 through 2026-09-10 at
 03:00 America/Los_Angeles (10:00 UTC during the entire PDT campaign).
 
 - `qa_21d_zh`: Chinese interface; learns English, Japanese, Spanish, and Italian.
-- `qa_21d_en`: English interface; learns Chinese, Japanese, Spanish, and Italian.
 - Each learner-language pair checks the production course, anonymous trial, and Play pages.
 - Each pair then records vocabulary, speaking, listening, writing, and quiz evidence.
-- A successful day contains 8 language runs and 40 skill log items.
+- A successful day contains 4 language runs and 20 skill log items.
 - Every run appends a bilingual pass/fail report to the administrator Project calendar.
 - Stable IDs make same-day retries idempotent.
-- The two accounts use `.invalid` email addresses, disabled passwords, and no Clerk identities.
+- The account uses a `.invalid` email address, disabled password, and no Clerk identity.
 - QA activity enters the standard learning activity calendar with `source_type=qa_21_day`, but
   never enters XP, reward, referral, credit, payment, leaderboard, or certificate ledgers.
 - Scores are deterministic synthetic health-check data. They do not claim microphone capture,
@@ -28,6 +27,9 @@ Codex automation service accepts and lists it; repository files alone do not mak
 
 Because the desktop automation service was unavailable during setup, the installed fallback is a
 user LaunchAgent. Cloud QA starts at 03:00 Pacific and the sandboxed, auto-reviewed Codex recovery
-agent starts at 03:05. Its absolute paths, prompt, logs, date guard, lock, and self-unload behavior
-are versioned in this repository. It uses the existing ChatGPT-authenticated Codex CLI and never
-bypasses the sandbox or approval review.
+agent starts at 03:05. The signed Codex executable is the direct LaunchAgent program so macOS does
+not block an intermediary shell from the Documents workspace. Its paths, prompt, logs, date guard,
+and self-unload behavior are versioned in this repository. It uses the existing
+ChatGPT-authenticated Codex CLI and never
+bypasses the workspace-write sandbox or automatic approval review. `--approve-for-me` selects that
+reviewed workspace sandbox itself, so no incompatible explicit sandbox override is supplied.

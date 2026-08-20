@@ -3,18 +3,17 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const migration = readFileSync(new URL("../drizzle/0128_qa_21_day_learning.sql", import.meta.url), "utf8");
+const singleLearnerMigration = readFileSync(new URL("../drizzle/0129_qa_single_learner.sql", import.meta.url), "utf8");
 const runner = readFileSync(new URL("../scripts/run-qa-21-day-learning.mjs", import.meta.url), "utf8");
 const workflow = readFileSync(new URL("../.github/workflows/qa-21-day-learning.yml", import.meta.url), "utf8");
-const recovery = readFileSync(new URL("../scripts/run-codex-qa-recovery.sh", import.meta.url), "utf8");
 const recoveryPrompt = readFileSync(new URL("../docs/qa-21-day-codex-recovery-prompt.md", import.meta.url), "utf8");
 const launchAgent = readFileSync(new URL("../ops/com.smartlingo.qa21.recovery.plist", import.meta.url), "utf8");
 
-test("two isolated QA accounts cover the requested interface and target languages", () => {
+test("one isolated QA account covers the four requested target languages", () => {
   assert.match(migration, /smartlingo-qa-21d-zh/);
-  assert.match(migration, /smartlingo-qa-21d-en/);
   assert.match(migration, /\["en","ja","es","it"\]/);
-  assert.match(migration, /\["zh","ja","es","it"\]/);
   assert.match(migration, /system-managed-disabled/);
+  assert.match(singleLearnerMigration, /DELETE FROM users WHERE id='smartlingo-qa-21d-en'/);
 });
 
 test("daily runner covers all five skills without awarding XP or rewards", () => {
@@ -32,20 +31,20 @@ test("workflow runs at 3 AM PDT for exactly the fixed 21-day window", () => {
   assert.match(workflow, /cron: "0 10 \* \* \*"/);
   assert.match(workflow, /2026-08-21/);
   assert.match(workflow, /2026-09-10/);
-  assert.match(workflow, /COUNT\(DISTINCT r\.user_id\)=2/);
-  assert.match(workflow, /COUNT\(DISTINCT r\.id\)=8/);
-  assert.match(workflow, /COUNT\(i\.id\)=40/);
-  assert.match(workflow, /SUM\(i\.passed\)=40/);
+  assert.match(workflow, /COUNT\(DISTINCT r\.user_id\)=1/);
+  assert.match(workflow, /COUNT\(DISTINCT r\.id\)=4/);
+  assert.match(workflow, /COUNT\(i\.id\)=20/);
+  assert.match(workflow, /SUM\(i\.passed\)=20/);
 });
 
 test("sandboxed Codex recovery starts after cloud QA and cannot fake success", () => {
   assert.match(launchAgent, /<integer>3<\/integer>/);
   assert.match(launchAgent, /<integer>5<\/integer>/);
-  assert.match(recovery, /--approve-for-me/);
-  assert.match(recovery, /--sandbox workspace-write/);
-  assert.doesNotMatch(recovery, /dangerously-bypass/);
-  assert.match(recovery, /2026-08-21/);
-  assert.match(recovery, /2026-09-10/);
+  assert.match(launchAgent, /--approve-for-me/);
+  assert.doesNotMatch(launchAgent, /danger-full-access/);
+  assert.doesNotMatch(launchAgent, /dangerously-bypass/);
+  assert.match(launchAgent, /2026-08-21/);
+  assert.match(launchAgent, /2026-09-10/);
   assert.match(recoveryPrompt, /Never weaken an assertion/);
   assert.match(recoveryPrompt, /Repeat diagnosis,/);
   assert.match(recoveryPrompt, /payment, reward, referral, leaderboard/);
