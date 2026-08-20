@@ -7,15 +7,16 @@ type Status = "mastered" | "learning" | "unlearned";
 type Mode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
 type Card = {
   id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string;
-  pronunciationZh: string; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl";
+  pronunciationZh: string; pronunciationGuides: Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl";
   status: Status; memoryStage: number; nextMemoryDay: number | null; mode: Mode; dueAt: number | null;
   options: { id: string; form: string; meaningEn: string; meaningZh: string }[];
 };
+type LibraryItem = Pick<Card, "id" | "form" | "targetPhonetic" | "meaningEn" | "meaningZh" | "sceneKey" | "direction" | "status" | "memoryStage">;
 type Summary = { total: number; mastered: number; learning: number; unlearned: number; percent: number; stars: number };
 type Report = Summary & { localDate: string };
 type Payload = {
   localDate: string; targetLanguage: string; level: string; methodology: { days: number[]; minimumModes: number };
-  summary: Summary; dailyDeck: Card[]; items: Card[]; reports: Report[]; correct?: boolean; error?: string;
+  summary: Summary; dailyDeck: Card[]; items: LibraryItem[]; reports: Report[]; correct?: boolean; error?: string;
 };
 type SpeechRecognitionLike = {
   lang: string; interimResults: boolean; continuous: boolean;
@@ -37,6 +38,9 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   const [typed, setTyped] = useState("");
   const [phase, setPhase] = useState<"answer" | "speak" | "done">("answer");
   const [speechMessage, setSpeechMessage] = useState("");
+  const [pronunciationRound, setPronunciationRound] = useState(0);
+  const [pronunciationScores, setPronunciationScores] = useState<number[]>([]);
+  const [coachStatus, setCoachStatus] = useState<"idle" | "model" | "listening" | "scoring" | "complete">("idle");
   const [timeScene, setTimeScene] = useState<"dawn" | "day" | "sunset" | "night">("day");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -93,11 +97,11 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     setData(current => current ? { ...payload, dailyDeck: current.dailyDeck } : payload);
     if (payload.correct) {
       setPhase("speak"); setSpeechMessage(zh ? "答对了！+1 次有效回忆。现在听并跟读。" : "Correct! One retrieval recorded. Now listen and repeat.");
-      playWord();
     } else {
       setPhase("speak"); setSpeechMessage(zh ? `今天先记住：${card.form} · ${meaning(card)}。听一遍再跟读，明天会再次出现。` : `Remember for today: ${card.form} · ${meaning(card)}. Listen and repeat; it returns tomorrow.`);
-      playWord();
     }
+    setPronunciationRound(1); setPronunciationScores([]);
+    window.setTimeout(() => { void runPronunciationTurn(1); }, 250);
   }
 
   function choose(optionId: string) {
@@ -119,23 +123,41 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   function nextCard() {
     setIndex(current => Math.min(current + 1, Math.max(0, cards.length - 1)));
     setTries(0); setWrongIds([]); setTyped(""); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
+    setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
   }
 
-  function repeatAfterMe() {
+  async function runPronunciationTurn(round: number) {
     const browser = window as typeof window & { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
     const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
-    if (!Recognition || !card) { setSpeechMessage(zh ? "浏览器暂不支持语音识别；请跟读后点“完成本卡”。" : "Speech recognition is unavailable; repeat aloud, then finish this card."); return; }
+    if (!Recognition || !card) { setSpeechMessage(zh ? "当前浏览器不支持语音识别，请使用最新版 Safari、Chrome 或 Edge。" : "Speech recognition is unavailable. Use the latest Safari, Chrome, or Edge."); setCoachStatus("idle"); return; }
     const recognition = new Recognition();
     recognition.lang = SPEECH_LOCALES[data?.targetLanguage || ""] || data?.targetLanguage || "en-US";
     recognition.interimResults = false; recognition.continuous = false;
     recognition.onresult = event => {
       const heard = String(event.results?.[0]?.[0]?.transcript || "");
-      const normalize = (value: string) => value.normalize("NFKC").toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
-      const close = normalize(heard) === normalize(card.form) || normalize(heard).includes(normalize(card.form));
-      setSpeechMessage(close ? (zh ? `听到了“${heard}”，发音很棒！` : `I heard “${heard}”. Great pronunciation!`) : (zh ? `听到了“${heard}”。再听一次，慢一点跟读。` : `I heard “${heard}”. Listen once more and repeat slowly.`));
+      setCoachStatus("scoring");
+      void fetch(`/api/classes/${encodeURIComponent(classId)}/vocabulary`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "pronunciation_review", cardId: card.id, transcript: heard, timeZone: zone }),
+      }).then(async response => ({ response, payload: await response.json().catch(() => ({})) as { pronunciationFeedback?: { score: number; feedback: { zh: string; en: string } }; error?: string } }))
+        .then(({ response, payload }) => {
+          if (!response.ok || !payload.pronunciationFeedback) throw new Error(payload.error || "SCORE_FAILED");
+          const score = payload.pronunciationFeedback.score;
+          setPronunciationScores(current => [...current, score]);
+          setSpeechMessage(`${zh ? `第 ${round} 次听到“${heard}”` : `Round ${round}: “${heard}”`} · ${score} ${zh ? "分" : "points"}。${payload.pronunciationFeedback.feedback[lang]}`);
+          if (round >= 5) {
+            setCoachStatus("complete");
+            window.setTimeout(nextCard, 1500);
+          } else {
+            setPronunciationRound(round + 1);
+            window.setTimeout(() => { void runPronunciationTurn(round + 1); }, 900);
+          }
+        }).catch(() => { setCoachStatus("idle"); setSpeechMessage(zh ? "评分暂时失败，请点“继续跟读”重试本轮。" : "Scoring failed. Select “Continue” to retry this round."); });
     };
-    recognition.onerror = () => setSpeechMessage(zh ? "没有听清。请确认麦克风已允许，然后再试。" : "I could not hear clearly. Allow the microphone and try again.");
-    playWord(() => recognition.start());
+    recognition.onerror = () => { setCoachStatus("idle"); setSpeechMessage(zh ? "没有听清。请允许麦克风，然后点“继续跟读”。" : "I could not hear clearly. Allow the microphone, then select “Continue”."); };
+    setCoachStatus("model");
+    setSpeechMessage(zh ? `第 ${round}/5 次：先听示范，然后跟读。` : `Round ${round}/5: listen, then repeat.`);
+    playWord(() => { setCoachStatus("listening"); try { recognition.start(); } catch { setCoachStatus("idle"); } });
   }
 
   const modeLabel: Record<Mode, string> = zh
@@ -160,8 +182,10 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
         {card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {zh ? "播放发音" : "Play word"}</button> : <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3>}
         {tries ? <p className="vm-hint" role="status">{tries === 1 ? (zh ? `提示：这是“${card.sceneKey}”场景词。` : `Hint: this belongs to “${card.sceneKey}”.`) : (zh ? `再提示：开头是“${Array.from(card.form)[0]}”，共 ${Array.from(card.form).length} 个字符。` : `More help: it starts with “${Array.from(card.form)[0]}” and has ${Array.from(card.form).length} characters.`)}</p> : null}
         {phase === "answer" ? textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={zh ? "输入目标语言词语" : "Type the target-language word"}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{zh ? "检查" : "Check"}</button></div> : <div className="vm-options">{card.options.map(option => <button type="button" disabled={busy || wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div> : <div className="vm-speak">
-          <p>{speechMessage}</p><h3>{card.form}</h3>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<span>{zh ? "中文拼音式助读" : "English sound guide"} · {zh ? card.pronunciationZh : card.pronunciationEn}</span>
-          <div><button type="button" onClick={repeatAfterMe}>🎙 {zh ? "听并跟读" : "Listen and repeat"}</button><button type="button" onClick={nextCard}>{zh ? "完成本卡" : "Finish card"} →</button></div>
+          <p>{speechMessage}</p><h3>{card.form}</h3>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<span>{zh ? "当前语言助读（近似）" : "Approximate reading aid"} · {card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span>
+          <div className="vm-rounds" aria-label={zh ? "五次跟读分数" : "Five pronunciation scores"}>{[1,2,3,4,5].map(round => <b className={round <= pronunciationScores.length ? "scored" : round === pronunciationRound ? "active" : ""} key={round}>{pronunciationScores[round - 1] ?? round}</b>)}</div>
+          {pronunciationScores.length ? <strong className="vm-average">{zh ? "平均" : "Average"} {Math.round(pronunciationScores.reduce((sum, score) => sum + score, 0) / pronunciationScores.length)}</strong> : null}
+          <div>{coachStatus === "idle" ? <button type="button" onClick={() => void runPronunciationTurn(Math.max(1, pronunciationRound))}>🎙 {zh ? "继续跟读" : "Continue"}</button> : <button type="button" disabled>{coachStatus === "listening" ? (zh ? "请开始说…" : "Speak now…") : coachStatus === "scoring" ? (zh ? "评分中…" : "Scoring…") : coachStatus === "complete" ? (zh ? "完成，即将下一卡" : "Complete—next card") : (zh ? "正在播放示范…" : "Playing model…")}</button>}<button type="button" disabled={coachStatus !== "idle"} onClick={nextCard}>{zh ? "跳过跟读" : "Skip speaking"} →</button></div>
         </div>}
       </div> : <div className="vm-complete"><span>✦</span><h3>{zh ? "今天的词汇记忆完成了！" : "Today's vocabulary memory is complete!"}</h3><p>{zh ? "明天回来，系统会按到期顺序自动挑选下一组词。" : "Come back tomorrow; due reviews and new words will be selected automatically."}</p></div>}
     </section>
@@ -173,6 +197,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     <section className="vm-report"><header><p>21-DAY REPORT</p><h2>{zh ? "每日词汇成长报告" : "Daily vocabulary growth"}</h2></header><div>{data.reports.map(report => <article key={report.localDate}><time>{report.localDate.slice(5)}</time><span><i style={{ width: `${report.percent}%` }}/></span><strong>{report.percent}%</strong><small>{report.mastered} / {report.learning} / {report.unlearned}</small></article>)}</div><footer><span>● {zh ? "学会了" : "Mastered"}</span><span>↻ {zh ? "正在学" : "Learning"}</span><span>○ {zh ? "还未学" : "Not started"}</span></footer></section>
     </> : null}
     {!data && !error ? <p className="vm-loading">{zh ? "正在整理今天的词卡…" : "Preparing today's cards…"}</p> : null}{error ? <p className="vm-error" role="alert">{error}</p> : null}
+    <style>{`.vm-speak>.vm-rounds{margin-top:18px}.vm-rounds b{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:rgba(255,255,255,.12)}.vm-rounds b.active{outline:3px solid #ffe69a;background:#b57514}.vm-rounds b.scored{background:#fff;color:#0a5e4c}.vm-average{display:block;margin-top:12px;font-size:24px}`}</style>
     <style>{styles}</style>
   </section>;
 }

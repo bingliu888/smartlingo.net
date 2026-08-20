@@ -67,6 +67,40 @@ test("0125 gives every published vocabulary item target and learner-language pro
   assert.throws(() => database.prepare("INSERT INTO smartlingo_vocabulary_items(id,review_status,updated_at) VALUES('incomplete','published',0)").run(), /complete pronunciation guides/);
 });
 
+test("0131 requires a pronunciation aid for every supported interface language", () => {
+  const migration = readFileSync(new URL("../drizzle/0131_multilingual_pronunciation_guides.sql", import.meta.url), "utf8");
+  const database = new DatabaseSync(":memory:");
+  database.exec(`CREATE TABLE smartlingo_vocabulary_items(
+    id TEXT PRIMARY KEY, review_status TEXT NOT NULL, target_phonetic TEXT NOT NULL,
+    pronunciation_en TEXT NOT NULL, pronunciation_zh TEXT NOT NULL, updated_at INTEGER NOT NULL
+  )`);
+  database.prepare("INSERT INTO smartlingo_vocabulary_items VALUES(?,?,?,?,?,0)")
+    .run("word-1", "published", "/həˈloʊ/", "huh-LOH", "hē-lóu");
+  database.exec(migration);
+  const guides = JSON.parse(database.prepare("SELECT pronunciation_guides AS guides FROM smartlingo_vocabulary_items").get().guides);
+  assert.deepEqual(Object.keys(guides).sort(), ["ar", "de", "en", "es", "fr", "hi", "it", "ja", "ko", "pt", "ru", "zh"]);
+  assert.ok(Object.values(guides).every(value => typeof value === "string" && value.length > 0));
+  assert.throws(() => database.prepare(`INSERT INTO smartlingo_vocabulary_items
+    (id,review_status,target_phonetic,pronunciation_en,pronunciation_zh,pronunciation_guides,updated_at)
+    VALUES('word-2','published','/x/','x','x','{"zh":"x","en":"x"}',0)`).run(), /all 12 pronunciation guides/);
+  database.close();
+});
+
+test("21-day vocabulary practice uses the five-turn pronunciation scoring contract", () => {
+  const component = readFileSync(new URL("../components/VocabularyMemoryWorkspace.tsx", import.meta.url), "utf8");
+  const route = readFileSync(new URL("../app/api/classes/[classId]/vocabulary/route.ts", import.meta.url), "utf8");
+  assert.match(component, /runPronunciationTurn/);
+  assert.match(component, /round >= 5/);
+  assert.match(component, /pronunciationScores/);
+  assert.match(component, /pronunciationGuides\?\.\[lang\]/);
+  assert.match(component, /SPEECH_LOCALES\[data\?\.targetLanguage/);
+  assert.match(route, /action === "pronunciation_review"/);
+  assert.match(route, /scorePronunciationTranscript\(item\.form, transcript\)/);
+  assert.match(route, /return Response\.json\(\{ pronunciationFeedback:/);
+  assert.match(route, /catalog\.map\(item => libraryPayload\(item, progress, now\)\)/);
+  assert.doesNotMatch(route, /catalog\.map\(item => \(\{ \.\.\.cardPayload/);
+});
+
 test("0127 keeps learner-facing meanings free of category and language metadata", () => {
   const database = new DatabaseSync(":memory:");
   database.exec("PRAGMA foreign_keys=ON");
@@ -136,13 +170,14 @@ test("follow-me practice shows target phonetics and the current interface langua
   const component = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   const route = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
   assert.match(component, /目标语言音标/);
-  assert.match(component, /中文拼音式助读/);
-  assert.match(component, /English sound guide/);
+  assert.match(component, /当前语言助读（近似）/);
+  assert.match(component, /Approximate reading aid/);
   assert.match(component, /card\.targetPhonetic \|\| card\.pronunciation/);
-  assert.match(component, /card\.pronunciationZh : card\.pronunciationEn/);
+  assert.match(component, /card\.pronunciationGuides\?\.\[lang\]/);
   assert.match(route, /target_phonetic AS targetPhonetic/);
   assert.match(route, /pronunciation_en AS pronunciationEn/);
   assert.match(route, /pronunciation_zh AS pronunciationZh/);
+  assert.match(route, /pronunciation_guides AS pronunciationGuides/);
 });
 
 test("multilingual speech fallback is bounded, server-scored, and does not persist audio", () => {

@@ -51,7 +51,7 @@ jobs:
       - name: Verify every published vocabulary pronunciation guide
         shell: bash
         run: |
-          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(*)=336 AND COUNT(DISTINCT target_language)=12 AND SUM(CASE WHEN target_phonetic<>'' AND pronunciation_en<>'' AND pronunciation_zh<>'' THEN 1 ELSE 0 END)=COUNT(*) THEN 'VOCAB_PRONUNCIATION_COMPLETE' ELSE 'VOCAB_PRONUNCIATION_INCOMPLETE' END AS verification FROM smartlingo_vocabulary_items WHERE review_status='published';")"
+          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(*)=48000 AND COUNT(DISTINCT target_language)=12 AND SUM(level='beginner')=12000 AND SUM(level='intermediate')=18000 AND SUM(level='advanced')=18000 AND SUM(CASE WHEN target_phonetic<>'' AND lexical_source_url<>'' AND lexical_source_license<>'' AND lexical_source_revision<>'' AND review_method<>'' AND json_extract(pronunciation_guides,'$.zh')<>'' AND json_extract(pronunciation_guides,'$.en')<>'' AND json_extract(pronunciation_guides,'$.es')<>'' AND json_extract(pronunciation_guides,'$.ja')<>'' AND json_extract(pronunciation_guides,'$.ko')<>'' AND json_extract(pronunciation_guides,'$.fr')<>'' AND json_extract(pronunciation_guides,'$.de')<>'' AND json_extract(pronunciation_guides,'$.ru')<>'' AND json_extract(pronunciation_guides,'$.it')<>'' AND json_extract(pronunciation_guides,'$.pt')<>'' AND json_extract(pronunciation_guides,'$.ar')<>'' AND json_extract(pronunciation_guides,'$.hi')<>'' THEN 1 ELSE 0 END)=COUNT(*) THEN 'VOCAB_PRONUNCIATION_COMPLETE' ELSE 'VOCAB_PRONUNCIATION_INCOMPLETE' END AS verification FROM smartlingo_vocabulary_items WHERE review_status='published';")"
           grep -F 'VOCAB_PRONUNCIATION_COMPLETE' <<<"$result"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -108,7 +108,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Cleaner My Courses and direct five-skill learning
-          RELEASE_TITLE_ZH: 精简我的课程并直达五项技能
-          RELEASE_NOTES: Keep My Courses focused on active subscribed courses only|Launch Vocabulary, Speaking, Listening, Writing, or Quiz directly from the current course dashboard without choosing a language again|Show SmartCard-style local-time artwork plus explicit daily and overall vocabulary mastery percentages|Require production D1 to contain complete target, English, and Chinese pronunciation guides for all 336 published words across 12 languages|Publish a repeatable live production acceptance plan for anonymous and free-month Chinese-interface learners of English Beginner
-          RELEASE_NOTES_ZH: 我的课程页面仅显示当前有效订阅课程|从当前课程 Dashboard 直接进入词汇、口语、听力、写作或测验，无需再次选择语言|词汇训练使用智慧卡式本地时段背景，并明确显示每日进度和整体掌握百分比|生产 D1 必须确认 12 种语言共 336 个已发布词条全部具备目标语言音标、英文助读和中文助读|发布可重复执行的生产实时验收计划，默认覆盖匿名用户及中文界面学习英语 Beginner 的免费月订阅用户
+          RELEASE_TITLE: Complete twelve-language vocabulary and five-turn pronunciation
+          RELEASE_TITLE_ZH: 完成十二语分级词库与五轮跟读
+          RELEASE_NOTES: Publish exactly 1,000 Beginner, 1,500 Intermediate, and 1,500 Advanced items for every target language|Record standard target phonetics, all twelve interface-language reading aids, source URL, license, revision, and truthful review method on every published row|Use a light library payload while keeping complete options and pronunciation aids on the ten-card daily deck|Run five automatic listen-speak-score turns after each vocabulary answer and show round scores plus the average|Require production D1 to verify all 48,000 published rows before deploying the Worker
+          RELEASE_NOTES_ZH: 为每种目标语言发布精确的 1,000 条 Beginner、1,500 条 Intermediate 和 1,500 条 Advanced 词汇|每条发布数据保存目标语言标准音标、十二种界面语言助读、来源网址、许可、版本和真实审核方式|词库列表使用轻量数据载荷，每日十张卡仍保留完整选项与助读|每次词汇答题后自动完成五轮听、说、评分，并显示每轮分数与平均分|Worker 部署前必须验证生产 D1 的 48,000 条发布数据全部完整

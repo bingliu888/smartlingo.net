@@ -2,6 +2,7 @@ import { createId, getDatabase, getSessionUser } from "@/lib/auth";
 import {
   createVocabularyReviewState,
   scheduleVocabularyReview,
+  scorePronunciationTranscript,
   selectNextVocabularyReviewMode,
   SMARTLINGO_VOCABULARY_MEMORY_DAYS,
   type VocabularyReviewMode,
@@ -15,6 +16,7 @@ type CatalogRow = {
   id: string; stableKey: string; version: string; targetLanguage: string; level: string;
   difficulty: number; sceneKey: string; sequence: number; form: string; pronunciation: string;
   targetPhonetic: string; pronunciationEn: string; pronunciationZh: string;
+  pronunciationGuides: string;
   meaningEn: string; meaningZh: string;
 };
 type ProgressRow = {
@@ -91,6 +93,7 @@ async function catalogFor(database: ReturnType<typeof getDatabase>, targetLangua
   const result = await database.prepare(`SELECT id,stable_key AS stableKey,version,target_language AS targetLanguage,
     level,difficulty,scene_key AS sceneKey,sequence,form,pronunciation,target_phonetic AS targetPhonetic,
     pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,
+    pronunciation_guides AS pronunciationGuides,
     meaning_en AS meaningEn,meaning_zh AS meaningZh
     FROM smartlingo_vocabulary_items WHERE target_language=? AND review_status='published'
     ORDER BY CASE level WHEN 'beginner' THEN 1 WHEN 'intermediate' THEN 2 ELSE 3 END,sequence,id`)
@@ -119,6 +122,11 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
   const options = [item, ...alternatives]
     .sort((a, b) => ((a.sequence * 13 + item.sequence * 7) % 41) - ((b.sequence * 13 + item.sequence * 7) % 41))
     .map(option => ({ id: option.id, form: option.form, meaningEn: option.meaningEn, meaningZh: option.meaningZh }));
+  let pronunciationGuides: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(item.pronunciationGuides) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) pronunciationGuides = parsed as Record<string, string>;
+  } catch { /* Migration constraints keep published rows valid. */ }
   return {
     id: item.id,
     progressKey: progressKey(item),
@@ -128,6 +136,7 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     targetPhonetic: item.targetPhonetic,
     pronunciationEn: item.pronunciationEn,
     pronunciationZh: item.pronunciationZh,
+    pronunciationGuides,
     meaningEn: item.meaningEn,
     meaningZh: item.meaningZh,
     sceneKey: item.sceneKey,
@@ -138,6 +147,22 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     mode: selectNextVocabularyReviewMode(state),
     dueAt: row?.dueAt ?? null,
     options,
+  };
+}
+
+function libraryPayload(item: CatalogRow, progress: Map<string, ProgressRow>, now: number) {
+  const row = progress.get(progressKey(item));
+  const state = memoryState(item, row, now);
+  return {
+    id: item.id,
+    form: item.form,
+    targetPhonetic: item.targetPhonetic,
+    meaningEn: item.meaningEn,
+    meaningZh: item.meaningZh,
+    sceneKey: item.sceneKey,
+    direction: item.targetLanguage === "ar" ? "rtl" as const : "ltr" as const,
+    status: learnerStatus(row),
+    memoryStage: state.consecutiveCorrect,
   };
 }
 
@@ -169,7 +194,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
   const selected = [...due, ...fresh.slice(0, 4), ...started]
     .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
     .slice(0, 10);
-  const items = catalog.map(item => ({ ...cardPayload(item, catalog, progress, now), status: learnerStatus(progress.get(progressKey(item))) }));
+  const items = catalog.map(item => libraryPayload(item, progress, now));
   const reportResult = await database.prepare(`SELECT local_date AS localDate,total_count AS total,mastered_count AS mastered,
     learning_count AS learning,unlearned_count AS unlearned,mastery_percent AS percent,stars
     FROM smartlingo_vocabulary_daily_reports WHERE user_id=? AND path_id=? ORDER BY local_date DESC LIMIT 21`)
@@ -199,10 +224,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   const { classId } = await params;
   const auth = await authorize(request, classId);
   if ("error" in auth) return auth.error;
-  const body = await request.json().catch(() => null) as { cardId?: string; selectedId?: string; answer?: string; mode?: string; timeZone?: string } | null;
-  if (!body?.cardId || (!body.selectedId && !body.answer?.trim()) || !MODES.includes(body.mode as VocabularyReviewMode)) {
-    return Response.json({ error: "A valid card answer and review mode are required" }, { status: 400 });
-  }
+  const body = await request.json().catch(() => null) as {
+    action?: string; cardId?: string; selectedId?: string; answer?: string; mode?: string; timeZone?: string; transcript?: string;
+  } | null;
+  if (!body?.cardId) return Response.json({ error: "A current vocabulary card is required" }, { status: 400 });
   const timeZone = safeTimeZone(body.timeZone || null);
   const now = Math.floor(Date.now() / 1000);
   const localDate = localDateKey(now, timeZone);
@@ -210,6 +235,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   const catalog = await catalogFor(auth.database, auth.access.targetLanguage, level);
   const item = catalog.find(candidate => candidate.id === body.cardId);
   if (!item) return Response.json({ error: "This word is not in the published course vocabulary" }, { status: 409 });
+  if (body.action === "pronunciation_review") {
+    const transcript = typeof body.transcript === "string" ? body.transcript.trim() : "";
+    if (!transcript || transcript.length > 240) {
+      return Response.json({ error: "A short device transcript is required" }, { status: 400 });
+    }
+    return Response.json({ pronunciationFeedback: scorePronunciationTranscript(item.form, transcript) });
+  }
+  if ((!body.selectedId && !body.answer?.trim()) || !MODES.includes(body.mode as VocabularyReviewMode)) {
+    return Response.json({ error: "A valid card answer and review mode are required" }, { status: 400 });
+  }
   const progress = await progressFor(auth.database, auth.user.id, auth.access.pathId);
   const current = progress.get(progressKey(item));
   const state = memoryState(item, current, now);

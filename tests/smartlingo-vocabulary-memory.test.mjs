@@ -24,7 +24,7 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /还未学/);
   assert.match(workspace, /Today's SmartCard practice/);
   assert.match(workspace, /targetPhonetic/);
-  assert.match(workspace, /pronunciationZh/);
+  assert.match(workspace, /pronunciationGuides\?\.\[lang\]/);
   assert.match(workspace, /SpeechRecognition/);
   assert.match(workspace, /practicePercent/);
   assert.match(workspace, /role="progressbar"/);
@@ -40,9 +40,11 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
 
 test("production deployment rejects an incomplete multilingual pronunciation corpus", async () => {
   const workflow = await read("../.github/workflows/deploy-cloudflare.yml");
-  assert.match(workflow, /COUNT\(\*\)=336/);
+  assert.match(workflow, /COUNT\(\*\)=48000/);
   assert.match(workflow, /COUNT\(DISTINCT target_language\)=12/);
-  assert.match(workflow, /target_phonetic<>'' AND pronunciation_en<>'' AND pronunciation_zh<>''/);
+  assert.match(workflow, /SUM\(level='beginner'\)=12000/);
+  assert.match(workflow, /json_extract\(pronunciation_guides,'\$\.hi'\)<>''/);
+  assert.match(workflow, /lexical_source_license<>''/);
   assert.match(workflow, /VOCAB_PRONUNCIATION_COMPLETE/);
 });
 
