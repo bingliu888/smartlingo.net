@@ -8,6 +8,9 @@ const supportedLanguages = ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it"
 const catalogFiles = readdirSync(new URL("../drizzle/", import.meta.url))
   .filter(name => /^01(?:3[2-9]|4[0-3])_.+_vocabulary_catalog\.sql$/.test(name))
   .sort();
+const correctionFiles = readdirSync(new URL("../drizzle/", import.meta.url))
+  .filter(name => /^014[4-7]_english_vocabulary_common_senses\.sql$/.test(name))
+  .sort();
 
 test("the release contains one deterministic 4,000-item catalog migration per language", () => {
   assert.equal(catalogFiles.length, 12);
@@ -22,7 +25,8 @@ test("the release contains one deterministic 4,000-item catalog migration per la
 });
 
 test("the English sense correction is form-keyed across legacy and fresh catalogs", () => {
-  const sql = readFileSync(new URL("../drizzle/0144_english_vocabulary_common_senses.sql", import.meta.url), "utf8");
+  assert.equal(correctionFiles.length, 4);
+  const sql = correctionFiles.map(file => readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8")).join("\n");
   assert.equal((sql.match(/UPDATE smartlingo_vocabulary_items SET meaning_en=/g) || []).length, 4879);
   assert.match(sql, /WHERE target_language='en' AND lower\(form\)=/);
   assert.doesNotMatch(sql, /WHERE id=/);
@@ -39,7 +43,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     "0127_clean_vocabulary_meanings.sql",
     "0131_multilingual_pronunciation_guides.sql",
     ...catalogFiles,
-    "0144_english_vocabulary_common_senses.sql",
+    ...correctionFiles,
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,

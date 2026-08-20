@@ -464,7 +464,7 @@ def render_language(language: str, source: Path, starter_migration: Path, pronun
     print(f"{language}: rendered {output} with 3972 additions", file=sys.stderr)
 
 
-def render_english_gloss_correction(source: Path, starter_migration: Path, output: Path) -> None:
+def render_english_gloss_correction(source: Path, starter_migration: Path, output: Path, part_index: int, part_count: int) -> None:
     records = json.loads(source.read_text(encoding="utf-8"))
     starters = existing_forms(starter_migration, "en")
     # The first production catalog and the corrected fresh-install catalog do
@@ -473,13 +473,19 @@ def render_english_gloss_correction(source: Path, starter_migration: Path, outpu
     # both without coupling meanings to an old sequence ID.
     chosen = [record for record in records if record["rank"] <= 5100 and record["form"].casefold() not in starters and learner_ready_gloss(record["meaning_en"])]
     translate_glosses(chosen)
+    source.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if len(chosen) < 3972 or any(not str(record.get("meaning_zh") or "").strip() for record in chosen):
         raise SystemExit("English correction requires a complete bilingual rank-5,100 union")
+    if part_count < 1 or part_index < 0 or part_index >= part_count:
+        raise SystemExit("Correction part index must be within the requested part count")
+    start = len(chosen) * part_index // part_count
+    end = len(chosen) * (part_index + 1) // part_count
+    part = chosen[start:end]
     lines = [
-        "-- Correct English frequency items to the corpus-most-common sense.",
+        f"-- Correct English frequency items to the corpus-most-common sense, part {part_index + 1}/{part_count}.",
         "-- Princeton WordNet lemma counts + OMW Chinese lemmas + curated closed-class glosses.",
     ]
-    for record in chosen:
+    for record in part:
         lines.append(
             "UPDATE smartlingo_vocabulary_items SET meaning_en=" + sql_quote(record["meaning_en"]) +
             ", meaning_zh=" + sql_quote(record["meaning_zh"]) +
@@ -489,16 +495,17 @@ def render_english_gloss_correction(source: Path, starter_migration: Path, outpu
             ", review_method='wordfreq-rank+wordnet-lemma-frequency+omw-or-curated-gloss+automated-linguistic-validation'" +
             ", updated_at=unixepoch() WHERE target_language='en' AND lower(form)=" + sql_quote(record["form"].casefold()) + ";"
         )
-    lines.extend([
-        "CREATE TABLE smartlingo_english_gloss_check(value INTEGER CHECK(value=1));",
-        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=4000 FROM smartlingo_vocabulary_items WHERE target_language='en' AND review_status='published';",
-        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='in' AND target_language='en' AND meaning_zh='在……里面；在……期间';",
-        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='be' AND target_language='en' AND meaning_zh='是；存在；成为';",
-        "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='day' AND target_language='en' AND meaning_zh='一天；白天';",
-        "DROP TABLE smartlingo_english_gloss_check;",
-    ])
+    if part_index == part_count - 1:
+        lines.extend([
+            "CREATE TABLE smartlingo_english_gloss_check(value INTEGER CHECK(value=1));",
+            "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=4000 FROM smartlingo_vocabulary_items WHERE target_language='en' AND review_status='published';",
+            "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='in' AND target_language='en' AND meaning_zh='在……里面；在……期间';",
+            "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='be' AND target_language='en' AND meaning_zh='是；存在；成为';",
+            "INSERT INTO smartlingo_english_gloss_check SELECT COUNT(*)=1 FROM smartlingo_vocabulary_items WHERE form='day' AND target_language='en' AND meaning_zh='一天；白天';",
+            "DROP TABLE smartlingo_english_gloss_check;",
+        ])
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"en: rendered {output} with {len(chosen)} common-sense corrections", file=sys.stderr)
+    print(f"en: rendered {output} with {len(part)} corrections ({part_index + 1}/{part_count})", file=sys.stderr)
 
 
 def main() -> None:
@@ -519,6 +526,8 @@ def main() -> None:
     correction_parser.add_argument("--source", type=Path, required=True)
     correction_parser.add_argument("--starter-migration", type=Path, required=True)
     correction_parser.add_argument("--out", type=Path, required=True)
+    correction_parser.add_argument("--part-index", type=int, default=0)
+    correction_parser.add_argument("--part-count", type=int, default=1)
     args = parser.parse_args()
     if args.command == "extract":
         extract(args.lang, args.out)
@@ -527,7 +536,7 @@ def main() -> None:
     elif args.command == "render":
         render_language(args.lang, args.source, args.starter_migration, args.pronunciation_migration, args.out)
     elif args.command == "render-english-correction":
-        render_english_gloss_correction(args.source, args.starter_migration, args.out)
+        render_english_gloss_correction(args.source, args.starter_migration, args.out, args.part_index, args.part_count)
 
 
 if __name__ == "__main__":
