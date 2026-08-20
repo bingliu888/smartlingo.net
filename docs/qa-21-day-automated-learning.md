@@ -25,3 +25,9 @@ implement the smallest correct fix, run the full release gate, commit and deploy
 the failed production acceptance until it passes. It must never weaken assertions or fabricate
 evidence to obtain a green result. This recovery automation is considered enabled only after the
 Codex automation service accepts and lists it; repository files alone do not make that claim.
+
+Because the desktop automation service was unavailable during setup, the installed fallback is a
+user LaunchAgent. Cloud QA starts at 03:00 Pacific and the sandboxed, auto-reviewed Codex recovery
+agent starts at 03:05. Its absolute paths, prompt, logs, date guard, lock, and self-unload behavior
+are versioned in this repository. It uses the existing ChatGPT-authenticated Codex CLI and never
+bypasses the sandbox or approval review.
