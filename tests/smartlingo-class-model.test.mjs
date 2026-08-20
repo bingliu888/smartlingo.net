@@ -26,14 +26,20 @@ test("the MVP seeds three fixed monthly courses for all twelve languages", async
 });
 
 test("free first month is durable and course access checks subscription state", async () => {
-  const [enrollment, classroom, learning] = await Promise.all([
+  const [enrollment, paymentActions, classroom, learning] = await Promise.all([
     read("../app/api/classes/[classId]/enroll/route.ts"),
+    read("../components/CoursePaymentActions.tsx"),
     read("../app/api/classes/[classId]/classroom/route.ts"),
     read("../lib/smartlingo-learning-access.ts"),
   ]);
   assert.match(enrollment, /course\.trialDays \* 86_400/);
   assert.match(enrollment, /smartlingo_course_subscriptions/);
   assert.match(enrollment, /firstMonthFree: true/);
+  assert.match(paymentActions, /api\/classes\/\$\{encodeURIComponent\(classId\)\}\/enroll/);
+  assert.match(paymentActions, /开始免费首月/);
+  assert.match(paymentActions, /Start free first month/);
+  assert.match(paymentActions, /response\.ok && data\.enrolled/);
+  assert.match(paymentActions, /window\.location\.assign\(`\/\$\{lang\}\/classes\/\$\{encodeURIComponent\(classId\)\}`\)/);
   assert.match(classroom, /subscriptionStatus === "trialing"/);
   assert.match(learning, /subscription\.trial_ends_at>unixepoch\(\)/);
 });
