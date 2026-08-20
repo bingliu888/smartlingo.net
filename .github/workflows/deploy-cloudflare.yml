@@ -99,7 +99,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Five-turn AI pronunciation coach and vocabulary focus packs
-          RELEASE_TITLE_ZH: 五轮人工智能跟读导师与词汇重点复习包
-          RELEASE_NOTES: Add a person-avatar coach that speaks first, scores five learner repetitions, and shows a round average|Complete versioned human-reviewed vocabulary metadata, five flashcard modes, and deterministic spaced review|Add server-authorized saved words and automatic repeated-error focus packs with cross-device persistence
-          RELEASE_NOTES_ZH: 新增人物头像导师先朗读、连续评分五次用户跟读并显示本轮平均分|完成版本化人工审核词汇元数据、五种词卡模式与确定性间隔复习|新增服务端授权收藏词和自动反复错词复习包，并跨设备保存
+          RELEASE_TITLE: Multilingual pronunciation guides and resilient speech scoring
+          RELEASE_TITLE_ZH: 多语言双层发音助读与稳定语音评分
+          RELEASE_NOTES: Show target-language phonetics plus an English or Chinese-interface sound guide during every follow-me card|Backfill all 336 published vocabulary records across twelve languages in one additive migration|Keep multilingual browser recognition and the audited server transcription fallback aligned with language-aware scoring
+          RELEASE_NOTES_ZH: 每张跟读词卡同时显示目标语言音标，以及英文或中文界面的拼音式助读|通过一次增量迁移补齐十二种语言全部 336 条已发布词汇记录|让多语言浏览器识别与经审计的服务器转写备用路径统一使用语言感知评分

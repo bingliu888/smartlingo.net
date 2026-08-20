@@ -44,6 +44,29 @@ test("migration publishes reviewed starter content and enforces point boundaries
   assert.match(sql, /insufficient SmartLingo course credit/);
 });
 
+test("0125 gives every published vocabulary item target and learner-language pronunciation guides", () => {
+  const migration = readFileSync(new URL("../drizzle/0125_vocabulary_pronunciation_guides.sql", import.meta.url), "utf8");
+  const ids = [...migration.matchAll(/WHERE id='([^']+)'/g)].map(match => match[1]);
+  assert.equal(ids.length, 336);
+  assert.equal(new Set(ids).size, 336);
+  assert.match(migration, /target_phonetic TEXT NOT NULL DEFAULT ''/);
+  assert.match(migration, /pronunciation_en TEXT NOT NULL DEFAULT ''/);
+  assert.match(migration, /pronunciation_zh TEXT NOT NULL DEFAULT ''/);
+  assert.match(migration, /published vocabulary requires complete pronunciation guides/);
+
+  const database = new DatabaseSync(":memory:");
+  database.exec("CREATE TABLE smartlingo_vocabulary_items(id TEXT PRIMARY KEY,review_status TEXT NOT NULL,updated_at INTEGER NOT NULL)");
+  const insert = database.prepare("INSERT INTO smartlingo_vocabulary_items(id,review_status,updated_at) VALUES(?,'published',0)");
+  for (const id of ids) insert.run(id);
+  database.exec(migration);
+  const complete = database.prepare("SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items WHERE target_phonetic<>'' AND pronunciation_en<>'' AND pronunciation_zh<>''").get();
+  assert.equal(complete.count, 336);
+  assert.deepEqual({ ...database.prepare("SELECT target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh FROM smartlingo_vocabulary_items WHERE id='vocab_en_beginner_greetings_1_v1'").get() }, {
+    targetPhonetic: "/həˈloʊ/", pronunciationEn: "huh-LOH", pronunciationZh: "hē-lóu",
+  });
+  assert.throws(() => database.prepare("INSERT INTO smartlingo_vocabulary_items(id,review_status,updated_at) VALUES('incomplete','published',0)").run(), /complete pronunciation guides/);
+});
+
 test("public game and redemption routes keep scores and balances server-authoritative", () => {
   const publicRoute = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
   const redemptionRoute = readFileSync(new URL("../app/api/billing/credits/redeem/route.ts", import.meta.url), "utf8");
@@ -93,6 +116,19 @@ test("single-card game hides other target words and has no submit button", () =>
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);
   assert.doesNotMatch(source, /option\.form/);
+});
+
+test("follow-me practice shows target phonetics and the current interface language sound guide", () => {
+  const component = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
+  const route = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
+  assert.match(component, /目标语言音标/);
+  assert.match(component, /中文拼音式助读/);
+  assert.match(component, /English sound guide/);
+  assert.match(component, /card\.targetPhonetic \|\| card\.pronunciation/);
+  assert.match(component, /card\.pronunciationZh : card\.pronunciationEn/);
+  assert.match(route, /target_phonetic AS targetPhonetic/);
+  assert.match(route, /pronunciation_en AS pronunciationEn/);
+  assert.match(route, /pronunciation_zh AS pronunciationZh/);
 });
 
 test("multilingual speech fallback is bounded, server-scored, and does not persist audio", () => {
