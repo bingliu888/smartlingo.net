@@ -21,6 +21,14 @@ test("the release contains one deterministic 4,000-item catalog migration per la
   }
 });
 
+test("the English sense correction is form-keyed across legacy and fresh catalogs", () => {
+  const sql = readFileSync(new URL("../drizzle/0144_english_vocabulary_common_senses.sql", import.meta.url), "utf8");
+  assert.equal((sql.match(/UPDATE smartlingo_vocabulary_items SET meaning_en=/g) || []).length, 4879);
+  assert.match(sql, /WHERE target_language='en' AND lower\(form\)=/);
+  assert.doesNotMatch(sql, /WHERE id=/);
+  assert.match(sql, /form='in' AND target_language='en' AND meaning_zh='在……里面；在……期间'/);
+});
+
 test("all 48,000 published rows pass level, phonetic, aid, and provenance gates", () => {
   const database = new DatabaseSync(":memory:");
   database.exec("PRAGMA foreign_keys=ON");

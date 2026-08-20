@@ -467,15 +467,19 @@ def render_language(language: str, source: Path, starter_migration: Path, pronun
 def render_english_gloss_correction(source: Path, starter_migration: Path, output: Path) -> None:
     records = json.loads(source.read_text(encoding="utf-8"))
     starters = existing_forms(starter_migration, "en")
-    chosen = [record for record in records if record["form"].casefold() not in starters and learner_ready_gloss(record["meaning_en"])][:3972]
-    if len(chosen) != 3972 or any(not str(record.get("meaning_zh") or "").strip() for record in chosen):
-        raise SystemExit("English correction requires 3,972 complete bilingual records")
+    # The first production catalog and the corrected fresh-install catalog do
+    # not contain exactly the same 3,972 forms. Both draw from ranks <= 5,014,
+    # so updating the bounded rank-5,100 union by actual form safely covers
+    # both without coupling meanings to an old sequence ID.
+    chosen = [record for record in records if record["rank"] <= 5100 and record["form"].casefold() not in starters and learner_ready_gloss(record["meaning_en"])]
+    translate_glosses(chosen)
+    if len(chosen) < 3972 or any(not str(record.get("meaning_zh") or "").strip() for record in chosen):
+        raise SystemExit("English correction requires a complete bilingual rank-5,100 union")
     lines = [
         "-- Correct English frequency items to the corpus-most-common sense.",
         "-- Princeton WordNet lemma counts + OMW Chinese lemmas + curated closed-class glosses.",
     ]
-    for offset, record in enumerate(chosen, 29):
-        item_id = f"vocab_en_{'beginner' if offset <= 1000 else 'intermediate' if offset <= 2500 else 'advanced'}_frequency_{offset}_v1"
+    for record in chosen:
         lines.append(
             "UPDATE smartlingo_vocabulary_items SET meaning_en=" + sql_quote(record["meaning_en"]) +
             ", meaning_zh=" + sql_quote(record["meaning_zh"]) +
@@ -483,7 +487,7 @@ def render_english_gloss_correction(source: Path, starter_migration: Path, outpu
             ", lexical_source_license='WordNet 3.0 license; OMW 1.4 data license'" +
             ", lexical_source_revision='Princeton WordNet 3.0 + OMW 1.4; retrieved 2026-08-20'" +
             ", review_method='wordfreq-rank+wordnet-lemma-frequency+omw-or-curated-gloss+automated-linguistic-validation'" +
-            ", updated_at=unixepoch() WHERE id=" + sql_quote(item_id) + ";"
+            ", updated_at=unixepoch() WHERE target_language='en' AND lower(form)=" + sql_quote(record["form"].casefold()) + ";"
         )
     lines.extend([
         "CREATE TABLE smartlingo_english_gloss_check(value INTEGER CHECK(value=1));",
@@ -494,7 +498,7 @@ def render_english_gloss_correction(source: Path, starter_migration: Path, outpu
         "DROP TABLE smartlingo_english_gloss_check;",
     ])
     output.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"en: rendered {output} with 3972 common-sense corrections", file=sys.stderr)
+    print(f"en: rendered {output} with {len(chosen)} common-sense corrections", file=sys.stderr)
 
 
 def main() -> None:
