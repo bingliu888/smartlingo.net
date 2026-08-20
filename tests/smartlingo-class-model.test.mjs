@@ -35,6 +35,12 @@ test("free first month is durable and course access checks subscription state", 
   assert.match(enrollment, /course\.trialDays \* 86_400/);
   assert.match(enrollment, /smartlingo_course_subscriptions/);
   assert.match(enrollment, /firstMonthFree: true/);
+  assert.match(enrollment, /smartlingo_course_offerings_v3/);
+  assert.match(enrollment, /smartlingo_course_enrollments_v3/);
+  assert.match(enrollment, /smartlingo_course_session_state/);
+  assert.match(enrollment, /ensureLearningEnrollment\(database, course, user\.id, now\)/);
+  assert.match(enrollment, /ON CONFLICT\(user_id,offering_id\) DO UPDATE/);
+  assert.match(enrollment, /ON CONFLICT\(enrollment_id\) DO NOTHING/);
   assert.match(paymentActions, /api\/classes\/\$\{encodeURIComponent\(classId\)\}\/enroll/);
   assert.match(paymentActions, /开始免费首月/);
   assert.match(paymentActions, /Start free first month/);
