@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs, react-hooks/purity */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +12,7 @@ type Props = {
   mode: "audio" | "video";
   room?: RTKClient;
   locale: string;
+  confirmStillAlone: () => Promise<boolean>;
   onExpire: () => void;
 };
 
@@ -18,20 +20,30 @@ type Props = {
 // a ghost speaker. Audio activity is measured from the local microphone track;
 // video activity is measured from small, off-screen frame samples so no image
 // data is stored or sent anywhere.
-export function MediaActivityGuard({ active, mode, room, locale, onExpire }: Props) {
+export function MediaActivityGuard({ active, mode, room, locale, confirmStillAlone, onExpire }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [seconds, setSeconds] = useState(MEDIA_IDLE_CONFIRM_SECONDS);
   const lastActivityRef = useRef(Date.now());
   const lastVideoFrameRef = useRef<Uint8ClampedArray | undefined>(undefined);
   const expiringRef = useRef(false);
+  const checkingAloneRef = useRef(false);
   const onExpireRef = useRef(onExpire);
+  const confirmStillAloneRef = useRef(confirmStillAlone);
   onExpireRef.current = onExpire;
+  confirmStillAloneRef.current = confirmStillAlone;
 
   const continueSession = () => {
     lastActivityRef.current = Date.now();
     lastVideoFrameRef.current = undefined;
     setSeconds(MEDIA_IDLE_CONFIRM_SECONDS);
     setConfirming(false);
+  };
+
+  const leaveSession = () => {
+    if (expiringRef.current) return;
+    expiringRef.current = true;
+    setConfirming(false);
+    onExpireRef.current();
   };
 
   useEffect(() => {
@@ -131,8 +143,20 @@ export function MediaActivityGuard({ active, mode, room, locale, onExpire }: Pro
       if (mode === "audio") sampleAudio();
       else sampleVideo();
       if (Date.now() - lastActivityRef.current >= MEDIA_IDLE_LIMIT_MS) {
-        setSeconds(MEDIA_IDLE_CONFIRM_SECONDS);
-        setConfirming(true);
+        if (checkingAloneRef.current) return;
+        checkingAloneRef.current = true;
+        void confirmStillAloneRef.current().then((stillAlone) => {
+          checkingAloneRef.current = false;
+          if (disposed || !stillAlone) {
+            lastActivityRef.current = Date.now();
+            return;
+          }
+          setSeconds(MEDIA_IDLE_CONFIRM_SECONDS);
+          setConfirming(true);
+        }).catch(() => {
+          checkingAloneRef.current = false;
+          lastActivityRef.current = Date.now();
+        });
       }
     }, 1000);
     return () => {
@@ -165,7 +189,10 @@ export function MediaActivityGuard({ active, mode, room, locale, onExpire }: Pro
         <p className="eyebrow"><span /> {zh ? "连接保护" : "CONNECTION GUARD"}</p>
         <h2>{zh ? "是否继续？" : "Do you want to continue?"}</h2>
         <p>{zh ? `${mode === "video" ? "画面" : "麦克风"}已 3 分钟没有检测到活动。${seconds} 秒后将断开连接并离开会议室。` : `No ${mode === "video" ? "camera motion" : "microphone activity"} was detected for 3 minutes. The connection will close and leave the room in ${seconds} seconds.`}</p>
-        <button type="button" onClick={continueSession}>{zh ? "是，继续" : "Yes, continue"}</button>
+        <div className="media-idle-actions">
+          <button type="button" onClick={continueSession}>{zh ? "是，继续" : "Yes, continue"}</button>
+          <button type="button" className="danger" onClick={leaveSession}>{zh ? "否，离开" : "No, leave"}</button>
+        </div>
       </section>
     </div>
   );

@@ -16,17 +16,17 @@ test("class waiting playlists stay local to each visitor", () => {
   assert.match(room, /ClassPlaylistPlayer/);
   assert.match(room, /enabled=\{playlistEnabled\s*&&\s*!humanStreamActive(?:\s*&&\s*!humanStreamSeen)?\}/);
   assert.doesNotMatch(room, /const mayRelay=active/);
-  assert.match(room, /if\s*\(joined\s*\|\|\s*playlistEnabled\)/);
+  assert.match(room, /shouldAutoJoinClassRoom/);
   assert.match(player, /data-local-playlist="true"/);
-  assert.match(player, /loopsRef\.current >= 5/);
-  assert.match(player, /window\.setTimeout\(finish, 300000\)/);
-  assert.match(player, /playlist-waiting-toggle/);
+  assert.match(player, /playlistLimitReached/);
+  assert.match(player, /PLAYLIST_MAX_ACTIVE_MS/);
+  assert.doesNotMatch(player, /playlist-waiting-toggle/);
   assert.doesNotMatch(player, /RealtimeKit|WebRTC|livestream|captureStream|enableVideo|enableAudio/);
   assert.doesNotMatch(manager, /Group calls do not use a playlist|小组通话模式不使用播放列表/);
   assert.match(manager, /each visitor plays|每位访客/);
 
   const stylePath = [
-    "app/classrooms/classrooms.css",
+    "app/classes/classes.css",
     "app/[lang]/classrooms/classrooms.css",
   ].find((path) => fs.existsSync(new URL("../" + path, import.meta.url)));
   assert.ok(stylePath);

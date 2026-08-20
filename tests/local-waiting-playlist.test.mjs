@@ -10,15 +10,16 @@ test("waiting playback stays local and the retired relay has no runtime path", (
   const media = read("app/api/classrooms/[code]/media/route.ts");
   const player = read("components/ClassPlaylistPlayer.tsx");
 
-  assert.match(client, /mediaState\?\.streamActive && !joined && !joining\.current/);
+  assert.match(client, /shouldAutoJoinClassRoom\(mediaState\)/);
   assert.match(client, /ClassPlaylistPlayer/);
-  assert.doesNotMatch(client + join + media, /playlistRelay|class_playlist_relay_claims|LiveClassPlaylistBroadcaster/);
+  assert.doesNotMatch(client + join + media, /playlistRelay|class_playlist_relay_claims|ClassPlaylistBroadcaster/);
   assert.match(player, /<video/);
   assert.doesNotMatch(player, /RealtimeKit|livestream|captureStream|enableAudio|enableVideo/);
 });
 
-test("local waiting state survives the idle-room timeout", () => {
+test("local waiting state does not create an idle WebRTC room", () => {
   const client = read("components/live-class-room-client.tsx");
-  assert.match(client, /if \(joined \|\| playlistEnabled\)/);
+  assert.doesNotMatch(client, /if \(joined \|\| playlistEnabled\)/);
+  assert.match(client, /enabled=\{playlistEnabled && !humanStreamActive && !humanStreamSeen\}/);
   assert.match(client, /navigator\.sendBeacon/);
 });

@@ -45,8 +45,8 @@ export async function POST(
           .slice(0, 80) || "Guest";
     let providerMeetingId = room.providerMeetingId;
     if (
-      (body.start || body.publish) &&
-      access.manager &&
+      body.publish &&
+      (access.manager || room.realtimeMode === "group_call") &&
       !room.streamActive &&
       !providerMeetingId
     ) {

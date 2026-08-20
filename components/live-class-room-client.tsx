@@ -18,6 +18,12 @@ import {
   ClassVideoContentShare,
 } from "@/components/class-screen-share";
 import { MediaActivityGuard } from "@/components/MediaActivityGuard";
+import { LoneParticipantGuard } from "@/components/LoneParticipantGuard";
+import {
+  formatConnectionDuration,
+  mediaGridLayout,
+  shouldAutoJoinClassRoom,
+} from "@/lib/class-realtime-participant-state";
 
 type RealtimeMode = "group_call" | "webinar" | "livestream";
 type Room = {
@@ -43,6 +49,8 @@ type StageRequest = {
 };
 type Media = {
   streamActive: boolean;
+  providerMeetingId?: string | null;
+  screenShareActive?: boolean;
   streamingMode: "audio" | "video";
   realtimeMode: RealtimeMode;
   manager: boolean;
@@ -66,9 +74,7 @@ type PlaylistResponse = {
   items: Array<{ id: string }>;
   state: PlaylistState | null;
 };
-type PlaylistWindow = Window & {
-  __smartClassStopPlaylist?: () => Promise<void>;
-};
+type PlaylistWindow = Window;
 
 function MicIcon() {
   return (
@@ -526,7 +532,7 @@ function VideoGrid({
     };
   }, [client]);
   void revision;
-  const peerMap = new Map<string, { id: string; name?: string }>();
+  const peerMap = new Map<string, { id: string; name?: string; videoEnabled?: boolean; videoTrack?: MediaStreamTrack }>();
   [
     client.participants.joined,
     client.participants.active,
@@ -536,7 +542,12 @@ function VideoGrid({
     map
       .toArray()
       .forEach((peer) =>
-        peerMap.set(peer.id, { id: peer.id, name: peer.name }),
+        peerMap.set(peer.id, {
+          id: peer.id,
+          name: peer.name,
+          videoEnabled: peer.videoEnabled,
+          videoTrack: peer.videoTrack as MediaStreamTrack | undefined,
+        }),
       ),
   );
   discovered.forEach((id) => {
@@ -548,7 +559,10 @@ function VideoGrid({
           "Participant",
       });
   });
-  const peers = [...peerMap.values()];
+  const peers = [...peerMap.values()].filter((peer) =>
+    Boolean(peer.videoEnabled || peer.videoTrack?.readyState === "live"),
+  );
+  const tileCount = (local.enabled && local.track ? 1 : 0) + peers.length;
   useEffect(() => {
     const element = ref.current,
       track = local.track;
@@ -584,7 +598,8 @@ function VideoGrid({
   return (
     <div
       className={`class-video-grid${full ? " fullscreen" : ""}`}
-      data-count={(local.enabled ? 1 : 0) + peers.length}
+      data-count={tileCount}
+      data-layout={mediaGridLayout(tileCount)}
     >
       {local.enabled && local.track && (
         <button
@@ -655,8 +670,19 @@ function ConnectedRoom({
     [error, setError] = useState(""),
     [listening, setListening] = useState(true),
     [blocked, setBlocked] = useState(false),
-    [speakerEmail, setSpeakerEmail] = useState("");
+    [speakerEmail, setSpeakerEmail] = useState(""),
+    [connectedSeconds, setConnectedSeconds] = useState(0),
+    [confirmLeave, setConfirmLeave] = useState(false);
   const subscribedPeers = useRef(new Set<string>());
+  const cameraBeforeScreenShare = useRef(false);
+  useEffect(() => {
+    const started = Date.now();
+    const timer = window.setInterval(
+      () => setConnectedSeconds(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
   useEffect(() => {
     if (room.realtimeMode === "livestream" && role === "viewer") return;
     let alive = true;
@@ -700,9 +726,9 @@ function ConnectedRoom({
     await fetch(`/api/classrooms/${room.code}/media`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "heartbeat", identity }),
+      body: JSON.stringify({ action: "heartbeat", identity, mic, camera }),
     });
-  }, [identity, room.code]);
+  }, [camera, identity, mic, room.code]);
   useEffect(() => {
     void load();
     const timer = window.setInterval(() => void load(), 3000);
@@ -749,7 +775,7 @@ function ConnectedRoom({
           }),
         });
         const result = (await response.json().catch(() => ({}))) as { error?: string };
-        if (!response.ok) throw new Error(result.error || "Unable to request the stage");
+        if (!response.ok) throw new Error(result.error || (lang === "zh" ? "举手请求未发送，请重新进入课堂后再试。" : "The hand-raise request was not sent. Rejoin the class and try again."));
         setError("Hand raised. Waiting for the host to approve.");
         await load();
         return;
@@ -822,6 +848,7 @@ function ConnectedRoom({
               : room.realtimeMode === "webinar"
                 ? "Webinar · 9 on stage"
                 : "Livestream · 9 speakers"}
+            {` · ${formatConnectionDuration(connectedSeconds)}`}
           </small>
         </div>
         <nav>
@@ -858,6 +885,15 @@ function ConnectedRoom({
               manager={manager && room.streamingMode === "video"}
               lang={lang}
               onError={setError}
+              onSharingChange={(sharing) => {
+                if (sharing) {
+                  cameraBeforeScreenShare.current = camera;
+                  if (camera) void change(mic, false);
+                } else if (cameraBeforeScreenShare.current) {
+                  cameraBeforeScreenShare.current = false;
+                  void change(mic, true);
+                }
+              }}
             />
           )}{" "}
           {room.streamingMode === "video" && (
@@ -866,9 +902,11 @@ function ConnectedRoom({
               code={room.code}
               identity={identity}
               mic={mic}
+              camera={camera}
               manager={manager}
               lang={lang}
               onError={setError}
+              onMedia={change}
               apiBase="/api/classrooms"
             />
           )}
@@ -882,11 +920,22 @@ function ConnectedRoom({
           >
             <SpeakerIcon off={!listening} />
           </button>
-          <button className="leave" onClick={onLeave}>
+          <button className="leave" onClick={() => setConfirmLeave(true)}>
             {lang === "zh" ? "离开" : "Leave"}
           </button>
         </nav>
       </header>
+      {confirmLeave && (
+        <div className="media-idle-backdrop" role="presentation">
+          <section className="media-idle-dialog" role="dialog" aria-modal="true">
+            <h2>{lang === "zh" ? "离开课堂？" : "Leave the classroom?"}</h2>
+            <div className="media-idle-actions">
+              <button type="button" onClick={() => setConfirmLeave(false)}>{lang === "zh" ? "继续" : "Continue"}</button>
+              <button type="button" className="danger" onClick={onLeave}>{lang === "zh" ? "离开" : "Leave"}</button>
+            </div>
+          </section>
+        </div>
+      )}
       {error && (
         <p className="class-room-error" role="alert">
           {error}
@@ -1031,8 +1080,7 @@ export function LiveClassRoomClient({
     [humanStreamActive, setHumanStreamActive] = useState(false),
     [humanStreamSeen, setHumanStreamSeen] = useState(false),
     [hasAudience, setHasAudience] = useState(true),
-    joining = useRef(false),
-    idleSince = useRef<number | null>(null);
+    joining = useRef(false);
   const disconnect = useCallback(
     async (report = true) => {
       const audioTrack = client?.self.audioTrack,
@@ -1129,6 +1177,7 @@ export function LiveClassRoomClient({
             identity,
             mic: nextMic,
             camera: nextCamera,
+            authorizeOnly: true,
           }),
         });
         if (!approval.ok)
@@ -1138,6 +1187,16 @@ export function LiveClassRoomClient({
           );
         if (nextMic) await next?.self.enableAudio(preparedAudioTrack);
         if (nextCamera) await next?.self.enableVideo(preparedVideoTrack);
+        await fetch(`/api/classrooms/${room.code}/media`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            action: "media",
+            identity,
+            mic: nextMic,
+            camera: nextCamera,
+          }),
+        });
         setRole(data.role || "viewer");
         setMic(nextMic);
         setCamera(nextCamera);
@@ -1160,13 +1219,15 @@ export function LiveClassRoomClient({
   const changeMedia = useCallback(
     async (nextMic: boolean, nextCamera: boolean) => {
       if (nextMic || nextCamera) setLocalPublisherStarted(true);
-      if (role !== "viewer" || nextMic || nextCamera) {
-        let permission: MediaStream | null = null;
-        if (role === "viewer" && (nextMic || nextCamera)) permission = await navigator.mediaDevices.getUserMedia({ audio: nextMic, video: nextCamera });
-        await connect({ publish: true, nextMic, nextCamera, preparedAudioTrack: permission?.getAudioTracks()[0], preparedVideoTrack: permission?.getVideoTracks()[0] });
+      if (role === "viewer" && (nextMic || nextCamera)) {
+        const permission = await navigator.mediaDevices.getUserMedia({
+          audio: nextMic,
+          video: nextCamera ? { facingMode: "user" } : false,
+        });
+        await connect({ publish: true, nextMic, nextCamera, preparedAudioTrack: permission.getAudioTracks()[0], preparedVideoTrack: permission.getVideoTracks()[0] });
         return;
       }
-      const response = await fetch(`/api/classrooms/${room.code}/media`, {
+      const approval = await fetch(`/api/classrooms/${room.code}/media`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -1174,29 +1235,48 @@ export function LiveClassRoomClient({
           identity,
           mic: nextMic,
           camera: nextCamera,
+          authorizeOnly: true,
         }),
       });
-      if (!response.ok)
+      if (!approval.ok)
         throw new Error(
-          ((await response.json().catch(() => ({}))) as { error?: string })
+          ((await approval.json().catch(() => ({}))) as { error?: string })
             .error || "Unable to change media",
         );
       const audioTrack = client?.self.audioTrack,
         videoTrack = client?.self.videoTrack;
-      if (nextMic) await client?.self.enableAudio();
+      let permission: MediaStream | undefined;
+      if ((nextMic && !mic) || (nextCamera && !camera))
+        permission = await navigator.mediaDevices.getUserMedia({
+          audio: nextMic && !mic,
+          video: nextCamera && !camera ? { facingMode: "user" } : false,
+        });
+      if (nextMic && !mic)
+        await client?.self.enableAudio(permission?.getAudioTracks()[0]);
       else {
-        await client?.self.disableAudio();
-        audioTrack?.stop();
+        if (!nextMic && mic) {
+          await client?.self.disableAudio();
+          audioTrack?.stop();
+        }
       }
-      if (nextCamera) await client?.self.enableVideo();
+      if (nextCamera && !camera)
+        await client?.self.enableVideo(permission?.getVideoTracks()[0]);
       else {
-        await client?.self.disableVideo();
-        videoTrack?.stop();
+        if (!nextCamera && camera) {
+          await client?.self.disableVideo();
+          videoTrack?.stop();
+        }
       }
+      const response = await fetch(`/api/classrooms/${room.code}/media`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "media", identity, mic: nextMic, camera: nextCamera }),
+      });
+      if (!response.ok) throw new Error("Unable to synchronize media state");
       setMic(nextMic);
       setCamera(nextCamera);
     },
-    [client, connect, identity, role, room.code],
+    [camera, client, connect, identity, mic, role, room.code],
   );
   const reportLeave = useCallback(() => {
     void fetch(`/api/classrooms/${room.code}/media`, {
@@ -1210,21 +1290,15 @@ export function LiveClassRoomClient({
     await disconnect(true);
     window.location.assign(`/${lang}/classrooms/${room.code}`);
   }, [disconnect, lang, room.code]);
-  useEffect(() => {
-    if (joined || playlistEnabled) {
-      idleSince.current = null;
-      return;
-    }
-    if (idleSince.current === null) idleSince.current = Date.now();
-    const remaining = Math.max(0, 60000 - (Date.now() - idleSince.current)),
-      idle = window.setTimeout(leave, remaining);
-    return () => window.clearTimeout(idle);
-  }, [connecting, joined, leave, playlistEnabled]);
-  useEffect(() => {
-    if (!joined || room.realtimeMode === "livestream" || hasAudience) return;
-    const idle = window.setTimeout(leave, 60000);
-    return () => window.clearTimeout(idle);
-  }, [hasAudience, joined, leave, room.realtimeMode]);
+  const confirmStillAlone = useCallback(async () => {
+    const response = await fetch(
+      `/api/classrooms/${room.code}/media?identity=${encodeURIComponent(identity)}`,
+      { cache: "no-store" },
+    );
+    if (!response.ok) return false;
+    const state = (await response.json()) as Media;
+    return !state.users.some((user) => user.identity !== identity);
+  }, [identity, room.code]);
   useEffect(() => {
     let alive = true;
     const check = async () => {
@@ -1258,7 +1332,7 @@ export function LiveClassRoomClient({
         setHumanStreamActive(nextHumanStreamActive);
         if (nextHumanStreamActive) setHumanStreamSeen(true);
       }
-      if (mediaState?.streamActive && !joined && !joining.current)
+      if (mediaState && shouldAutoJoinClassRoom(mediaState) && !joined && !joining.current)
         void connect();
       if (
         mediaState &&
@@ -1342,13 +1416,11 @@ export function LiveClassRoomClient({
               ? "Start this site's independent live media session. Microphone and camera remain off until selected."
               : "You join automatically as a viewer when streaming starts. No device permission is requested."}
           </p>
-          {manager && (
-            <button
-              disabled={connecting}
-              onClick={() => void connect({ start: true })}
-            >
-              {lang === "zh" ? "开始直播" : "Start live streaming"}
-            </button>
+          {(manager || room.realtimeMode === "group_call") && (
+            <div className="class-waiting-media-actions">
+              <button disabled={connecting} onClick={() => void changeMedia(true, false)} aria-label={lang === "zh" ? "开启麦克风" : "Turn on microphone"}><MicIcon /></button>
+              {room.streamingMode === "video" && <button disabled={connecting} onClick={() => void changeMedia(false, true)} aria-label={lang === "zh" ? "开启摄像头" : "Turn on camera"}><CameraIcon /></button>}
+            </div>
           )}
           {error && <p role="alert">{error}</p>}
         </section>
@@ -1363,6 +1435,13 @@ export function LiveClassRoomClient({
         mode={room.streamingMode}
         room={client}
         locale={lang}
+        confirmStillAlone={confirmStillAlone}
+        onExpire={() => void leave()}
+      />
+      <LoneParticipantGuard
+        active={joined && room.realtimeMode !== "livestream" && !hasAudience}
+        locale={lang}
+        confirmStillAlone={confirmStillAlone}
         onExpire={() => void leave()}
       />
       <RealtimeKitProvider value={client}>

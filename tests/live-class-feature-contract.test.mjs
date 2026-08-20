@@ -46,7 +46,7 @@ test("course entrances replace the standalone classroom directory", () => {
 test("viewer join is permission-free and video tiles support fullscreen", () => {
   const room = read("components/live-class-room-client.tsx");
   const css = read("app/[lang]/classrooms/classrooms.css");
-  assert.match(room, /mediaState\?\.streamActive && !joined && !joining\.current/);
+  assert.match(room,/shouldAutoJoinClassRoom\(mediaState\)/);
   assert.doesNotMatch(room, /const mayRelay=active/);
   assert.match(room, /setInterval\(\(\) => void check\(\), 3000\)/);
   assert.match(room, /300000/);

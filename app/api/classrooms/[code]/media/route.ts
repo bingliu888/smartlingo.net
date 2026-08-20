@@ -25,7 +25,7 @@ export async function GET(
     .run();
   const activePresence = await db
     .prepare(
-      "SELECT 1 AS active FROM live_class_media_presence WHERE room_id=? AND active=1 AND last_seen_at>? LIMIT 1",
+      "SELECT 1 AS active FROM live_class_media_presence WHERE room_id=? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>? LIMIT 1",
     )
     .bind(room.id, now - 45)
     .first<{ active: number }>();
@@ -123,6 +123,7 @@ export async function GET(
     );
   return Response.json({
     streamActive,
+    providerMeetingId: streamActive ? room.providerMeetingId : null,
     streamingMode: room.streamingMode,
     realtimeMode: room.realtimeMode,
     manager: access.manager,
@@ -156,6 +157,7 @@ export async function POST(
       mediaKind?: "audio" | "video";
       approve?: boolean;
       email?: string;
+      authorizeOnly?: boolean;
     },
     user = await getSessionUser(request),
     access = await classAccess(room, user, true),
@@ -293,9 +295,15 @@ export async function POST(
   if (body.action === "heartbeat") {
     await db
       .prepare(
-        "UPDATE live_class_media_presence SET last_seen_at=?,active=1 WHERE room_id=? AND identity=?",
+        "UPDATE live_class_media_presence SET mic_on=COALESCE(?,mic_on),camera_on=COALESCE(?,camera_on),last_seen_at=?,active=1 WHERE room_id=? AND identity=?",
       )
-      .bind(now, room.id, identity)
+      .bind(
+        typeof body.mic === "boolean" ? (body.mic ? 1 : 0) : null,
+        typeof body.camera === "boolean" ? (body.camera ? 1 : 0) : null,
+        now,
+        room.id,
+        identity,
+      )
       .run();
     return Response.json({ ok: true });
   }
@@ -375,6 +383,7 @@ export async function POST(
           { status: 409 },
         );
     }
+    if (body.authorizeOnly) return Response.json({ ok: true });
     await db
       .prepare(
         "UPDATE live_class_media_presence SET mic_on=?,camera_on=?,last_seen_at=?,active=1 WHERE room_id=? AND identity=?",

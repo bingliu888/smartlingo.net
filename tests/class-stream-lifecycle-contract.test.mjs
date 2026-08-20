@@ -15,8 +15,8 @@ test("the final manager publisher closes streaming even while viewers remain", (
   assert.match(client, /humanStreamSeen/);
   assert.match(client, /enabled=\{playlistEnabled\s*&&\s*!humanStreamActive\s*&&\s*!humanStreamSeen\}/);
   assert.match(client, /humanStreamActive/);
-  assert.match(client, /room\.realtimeMode === "livestream" \|\| hasAudience/);
-  assert.match(client, /window\.setTimeout\(leave, 60000\)/);
+  assert.match(client, /<LoneParticipantGuard/);
+  assert.match(client, /confirmStillAlone=\{confirmStillAlone\}/);
   assert.match(client, /user\.identity !== identity && !user\.isManager/);
   assert.match(media, /isManager: Boolean\(userId && managerIds\.has\(userId\)\)/);
 });
@@ -26,6 +26,6 @@ test("webinar promotion keeps the viewer connected until device permission is re
   const reconnect = client.indexOf("await connect({", permission);
   assert.ok(permission >= 0);
   assert.ok(reconnect > permission);
-  assert.match(client, /preparedAudioTrack:\s*permission\?\.getAudioTracks\(\)\[0\]/);
-  assert.match(client, /preparedVideoTrack:\s*permission\?\.getVideoTracks\(\)\[0\]/);
+  assert.match(client, /preparedAudioTrack:\s*permission\.getAudioTracks\(\)\[0\]/);
+  assert.match(client, /preparedVideoTrack:\s*permission\.getVideoTracks\(\)\[0\]/);
 });
