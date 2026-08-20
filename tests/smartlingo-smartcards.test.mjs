@@ -62,6 +62,9 @@ test("pronunciation transcript scoring tolerates case and punctuation but reject
   assert.equal(scoreSmartCardPronunciation("مرحبًا", "مرحبا", "marḥaban").passed, true);
   assert.equal(scoreSmartCardPronunciation("こんにちは", "konnichiwa", "konnichiwa").passed, true);
   assert.equal(scoreSmartCardPronunciation("你好", "ni hao", "nǐ hǎo").passed, true);
+  assert.deepEqual(scoreSmartCardPronunciation("Hallo", "Halo", "HAH-loh", "de"), { score: 100, passed: true });
+  assert.deepEqual(scoreSmartCardPronunciation("ciao", "Chao", "chow", "it"), { score: 100, passed: true });
+  assert.equal(scoreSmartCardPronunciation("Hello", "Helo", "", "en").passed, false);
 });
 
 test("microphone failures distinguish denied permission from a retryable device error", () => {

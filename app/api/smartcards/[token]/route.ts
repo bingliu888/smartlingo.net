@@ -108,7 +108,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   if (body.action === "check-pronunciation") {
     const transcripts = Array.isArray(body.transcripts) ? body.transcripts : typeof body.transcript === "string" ? [body.transcript] : [];
     if (!card || transcripts.length < 1 || transcripts.length > 5 || transcripts.some(item => typeof item !== "string" || !item.trim() || item.length > 160)) return withCookie(Response.json({ error: "Pronunciation sample is invalid" }, { status: 400 }), guest);
-    const ranked = transcripts.map(transcript => ({ transcript, ...scoreSmartCardPronunciation(card.form, transcript, card.pronunciation) })).sort((left,right) => right.score-left.score);
+    const ranked = transcripts.map(transcript => ({ transcript, ...scoreSmartCardPronunciation(card.form, transcript, card.pronunciation, value.deck.targetLanguage) })).sort((left,right) => right.score-left.score);
     return withCookie(Response.json(ranked[0]), guest);
   }
   if (body.action === "claim") {
@@ -136,7 +136,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       const transcripts = submitted.transcripts.filter((item): item is string => typeof item === "string" && item.length <= 160);
       if (choices.length !== submitted.choices.length || transcripts.length !== submitted.transcripts.length || choices.length < 1) return withCookie(Response.json({ error: "Game evidence is invalid" }, { status: 400 }), guest);
       const correctAt = choices.indexOf(expected.id); if (correctAt >= 0) correctCount += 1; wrongCount += correctAt >= 0 ? correctAt : choices.length;
-      const speechScores = transcripts.map(item => scoreSmartCardPronunciation(expected.form,item,expected.pronunciation).score); if (speechScores.some(score => score >= 85)) pronunciationPasses += 1;
+      const speechScores = transcripts.map(item => scoreSmartCardPronunciation(expected.form,item,expected.pronunciation,value.deck.targetLanguage).score); if (speechScores.some(score => score >= 85)) pronunciationPasses += 1;
       safeEvidence.push({ cardId: expected.id, choices, speechScores });
     }
     const score = Math.max(0,Math.min(850,POLICY.startingPoints + correctCount * POLICY.correctPoints - wrongCount * POLICY.wrongPenalty + pronunciationPasses * POLICY.pronunciationPoints));

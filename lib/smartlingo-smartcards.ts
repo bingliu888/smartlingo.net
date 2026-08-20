@@ -72,6 +72,20 @@ function recognitionForms(value: string) {
   return [...new Set([compact, withoutOptionalMarks])];
 }
 
+function languageRecognitionForms(value: string, language: string) {
+  const forms = recognitionForms(value);
+  const languageCode = language.trim().toLowerCase();
+  if (languageCode === "de") {
+    return [...new Set(forms.flatMap(form => [form, form.replace(/([a-z])\1+/g, "$1")]))];
+  }
+  if (languageCode === "it") {
+    // Short Italian words such as "ciao" are sometimes returned in a phonetic
+    // spelling ("chao") even when the transcription language is Italian.
+    return [...new Set(forms.flatMap(form => [form, form.replace(/ci(?=[aou])/g, "ch")]))];
+  }
+  return forms;
+}
+
 function editDistance(left: string, right: string) {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
   for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
@@ -89,10 +103,10 @@ function editDistance(left: string, right: string) {
 
 /** Browser speech recognition supplies a transcript, never an identity or an
  * accent label. The transcript is scored transiently and is not persisted. */
-export function scoreSmartCardPronunciation(target: string, transcript: string, pronunciation = "") {
+export function scoreSmartCardPronunciation(target: string, transcript: string, pronunciation = "", language = "") {
   const aliases = pronunciation && !/^\/.+\/$/.test(pronunciation.trim()) ? [pronunciation] : [];
-  const expectedForms = [target, ...aliases].flatMap(recognitionForms);
-  const heardForms = recognitionForms(transcript);
+  const expectedForms = [target, ...aliases].flatMap(value => languageRecognitionForms(value, language));
+  const heardForms = languageRecognitionForms(transcript, language);
   if (!expectedForms.length || !heardForms.length) return { score: 0, passed: false };
   const score = Math.max(...expectedForms.flatMap(expected => heardForms.map(heard => {
     const distance = editDistance(expected, heard);

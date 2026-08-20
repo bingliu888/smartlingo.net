@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   try {
     const result = await transcribeSmartAiSpeech({ subject, audio, language: card.targetLanguage, deps: { database } });
     const transcript = result.value;
-    return Response.json({ transcript, ...scoreSmartCardPronunciation(card.form, transcript, card.pronunciation) });
+    return Response.json({ transcript, ...scoreSmartCardPronunciation(card.form, transcript, card.pronunciation, card.targetLanguage) });
   } catch (error) {
     const status = isSmartAiGatewayError(error) ? error.status : 503;
     return Response.json({ error: "Pronunciation analysis is temporarily unavailable" }, { status });
