@@ -86,6 +86,7 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
     "public_guru",
     "scoring",
     "speaking_feedback",
+    "transcription",
     "writing_feedback",
   ]);
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.public_guru.failureMode, "local_fallback");
@@ -109,8 +110,32 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
     assert.equal(gateway.SMARTAI_FEATURE_POLICIES[feature].model, "gpt-5.6-luna");
   }
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.model, "omni-moderation-latest");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.transcription.model, "gpt-4o-mini-transcribe");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-2");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
+});
+
+test("short multilingual pronunciation audio uses the audited transcription gateway", async () => {
+  const gateway = await importGateway();
+  let providerRequest;
+  const result = await gateway.transcribeSmartAiSpeech({
+    subject: "guest:test:smartcard-speech",
+    language: "ja",
+    audio: new Blob([new Uint8Array(512)], { type: "audio/webm" }),
+    deps: {
+      apiKey: "test-only",
+      database: fakeDatabase(),
+      fetch: async (url, init) => {
+        providerRequest = { url: String(url), model: init.body.get("model"), language: init.body.get("language"), file: init.body.get("file") };
+        return Response.json({ text: "こんにちは" });
+      },
+    },
+  });
+  assert.deepEqual(result, { value: "こんにちは", fallback: false });
+  assert.equal(providerRequest.url, "https://api.openai.com/v1/audio/transcriptions");
+  assert.equal(providerRequest.model, "gpt-4o-mini-transcribe");
+  assert.equal(providerRequest.language, "ja");
+  assert.equal(providerRequest.file.type, "audio/webm");
 });
 
 test("AI provider origins and secret names exist only in the unified gateway across runtime and client artifacts", async () => {

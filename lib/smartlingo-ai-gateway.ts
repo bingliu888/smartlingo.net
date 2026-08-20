@@ -8,6 +8,7 @@ export type SmartAiFeature =
   | "writing_feedback"
   | "scoring"
   | "moderation"
+  | "transcription"
   | "image"
   | "live_voice";
 
@@ -129,6 +130,16 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     maxWindowInputUnits: 120_000,
     timeoutMs: 10_000,
     failureMode: "quarantine",
+  },
+  transcription: {
+    model: "gpt-4o-mini-transcribe",
+    maxInputUnits: 750_000,
+    maxOutputUnits: 200,
+    windowSeconds: 60,
+    requestsPerWindow: 30,
+    maxWindowInputUnits: 8_000_000,
+    timeoutMs: 20_000,
+    failureMode: "unavailable",
   },
   image: {
     model: "gpt-image-2",
@@ -960,6 +971,49 @@ export async function openSmartAiLiveVoice(input: {
     }
     throw error;
   }
+}
+
+export async function transcribeSmartAiSpeech(input: {
+  subject: string;
+  audio: Blob;
+  language: string;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  if (!(input.audio instanceof Blob) || input.audio.size < 256 || input.audio.size > 750_000) {
+    throw new SmartAiGatewayError(input.audio?.size > 750_000 ? "request_too_large" : "invalid_request");
+  }
+  const language = input.language.trim().toLowerCase();
+  if (!/^[a-z]{2}$/.test(language)) throw new SmartAiGatewayError("invalid_request");
+  return executeGateway({
+    feature: "transcription",
+    subject: input.subject,
+    inputUnits: input.audio.size,
+    deps: input.deps,
+    request: (apiKey, subjectHash, signal, model) => {
+      const form = new FormData();
+      const extension = input.audio.type.includes("mp4") ? "mp4" : input.audio.type.includes("ogg") ? "ogg" : input.audio.type.includes("wav") ? "wav" : "webm";
+      form.set("file", input.audio, `pronunciation.${extension}`);
+      form.set("model", model);
+      form.set("language", language);
+      form.set("response_format", "json");
+      form.set("prompt", `A learner is saying one short vocabulary item in ${language}. Transcribe only what is spoken.`);
+      return dependencies(input.deps).fetch("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "OpenAI-Safety-Identifier": subjectHash,
+        },
+        body: form,
+        signal,
+      });
+    },
+    read: async response => {
+      const payload = await response.json().catch(() => null) as { text?: unknown } | null;
+      const text = typeof payload?.text === "string" ? payload.text.trim() : "";
+      if (!text || text.length > 200) throw new SmartAiGatewayError("invalid_response");
+      return { value: text, outputUnits: text.length };
+    },
+  });
 }
 
 export function safeSmartAiError(

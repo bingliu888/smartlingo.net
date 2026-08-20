@@ -75,16 +75,30 @@ test("single-card game hides other target words and has no submit button", () =>
   const source = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   assert.match(source, /请跟我说/);
   assert.match(source, /SpeechRecognition/);
+  assert.match(source, /new MediaRecorder\(stream\)/);
   assert.match(source, /getUserMedia/);
   assert.match(source, /AI 读完后会自动听您跟读/);
   assert.match(source, /重新检查麦克风/);
-  assert.match(source, /Microphone permission timed out/);
+  assert.match(source, /正在分析发音/);
+  assert.match(source, /4500/);
+  assert.match(source, /\/speech/);
   assert.match(source, /permission\.state === "granted"/);
   assert.match(source, /maxAlternatives = 5/);
   assert.doesNotMatch(source, /开始说/);
+  assert.doesNotMatch(source, /听并跟读/);
+  assert.doesNotMatch(source, /Listen & speak/);
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);
   assert.doesNotMatch(source, /option\.form/);
+});
+
+test("multilingual speech fallback is bounded, server-scored, and does not persist audio", () => {
+  const route = readFileSync(new URL("../app/api/smartcards/[token]/speech/route.ts", import.meta.url), "utf8");
+  assert.match(route, /MAX_AUDIO_BYTES = 750_000/);
+  assert.match(route, /transcribeSmartAiSpeech/);
+  assert.match(route, /scoreSmartCardPronunciation/);
+  assert.match(route, /target_language AS targetLanguage/);
+  assert.doesNotMatch(route, /put\(|INSERT INTO|UPDATE /);
 });
 
 test("game navigation keeps target language, progress, local-time art, and score feedback", () => {

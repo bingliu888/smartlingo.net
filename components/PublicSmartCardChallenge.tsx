@@ -58,6 +58,7 @@ type Recognition = {
     onend: (() => void) | null;
     start(): void;
     stop(): void;
+    abort?(): void;
 };
 const speechLang: Record<string, string> = { en: "en-US", zh: "zh-CN", es: "es-ES", ja: "ja-JP", ko: "ko-KR", fr: "fr-FR", de: "de-DE", ru: "ru-RU", it: "it-IT", pt: "pt-BR", ar: "ar-SA", hi: "hi-IN" };
 export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }: {
@@ -76,7 +77,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const [message, setMessage] = useState("");
     const [busy, setBusy] = useState(false);
     const [listening, setListening] = useState(false);
-    const [micState, setMicState] = useState<"idle" | "requesting" | "listening" | "denied" | "unsupported" | "error">("idle");
+    const [micState, setMicState] = useState<"idle" | "requesting" | "listening" | "analyzing" | "denied" | "unsupported" | "error">("idle");
     const [timeScene, setTimeScene] = useState<"dawn" | "day" | "sunset" | "night">("day");
     const [daySeed, setDaySeed] = useState(0);
     const [scoreEffect, setScoreEffect] = useState<{ id: number; amount: number } | null>(null);
@@ -95,6 +96,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     } | null>(null);
     const evidence = useRef<Evidence[]>([]);
     const recognitionRef = useRef<Recognition | null>(null);
+    const speechCleanupRef = useRef<() => void>(() => undefined);
     const advanceTimer = useRef<number | undefined>(undefined);
     const scoreTimer = useRef<number | undefined>(undefined);
     const scoreEventId = useRef(0);
@@ -105,7 +107,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const microphoneApproved = useRef(false);
     const load = useCallback(async () => { const response = await fetch(`/api/smartcards/${encodeURIComponent(token)}`, { cache: "no-store" }); const payload = await response.json().catch(() => ({})) as Payload; if (!response.ok)
         throw new Error(payload.error); setData(payload); setPoints(payload.policy?.startingPoints || 100); }, [token]);
-    useEffect(() => { const timer = window.setTimeout(() => { const local = new Date(); const hour = local.getHours(); setTimeScene(hour >= 5 && hour < 10 ? "dawn" : hour >= 10 && hour < 17 ? "day" : hour >= 17 && hour < 21 ? "sunset" : "night"); setDaySeed(Math.floor(new Date(local.getFullYear(), local.getMonth(), local.getDate()).getTime() / 86400000)); void load().catch(() => setMessage(zh ? "找不到这套 SmartCard。" : "This SmartCard deck is unavailable.")); }, 0); return () => { window.clearTimeout(timer); recognitionRef.current?.stop(); window.clearTimeout(advanceTimer.current); window.clearTimeout(scoreTimer.current); window.speechSynthesis?.cancel(); void audioRef.current?.close(); }; }, [load, zh]);
+    useEffect(() => { const timer = window.setTimeout(() => { const local = new Date(); const hour = local.getHours(); setTimeScene(hour >= 5 && hour < 10 ? "dawn" : hour >= 10 && hour < 17 ? "day" : hour >= 17 && hour < 21 ? "sunset" : "night"); setDaySeed(Math.floor(new Date(local.getFullYear(), local.getMonth(), local.getDate()).getTime() / 86400000)); void load().catch(() => setMessage(zh ? "找不到这套 SmartCard。" : "This SmartCard deck is unavailable.")); }, 0); return () => { window.clearTimeout(timer); speechCleanupRef.current(); recognitionRef.current?.stop(); window.clearTimeout(advanceTimer.current); window.clearTimeout(scoreTimer.current); window.speechSynthesis?.cancel(); void audioRef.current?.close(); }; }, [load, zh]);
     useEffect(() => {
         if (!data?.signedIn || !data.provisionalPoints || claimAttempted.current)
             return;
@@ -180,17 +182,18 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     finally {
         setBusy(false);
     } }
-    async function startListening() { if (!card || listening || micState === "requesting")
-        return; const browser = window as typeof window & {
-        SpeechRecognition?: new () => Recognition;
-        webkitSpeechRecognition?: new () => Recognition;
-    }; const Constructor = browser.SpeechRecognition || browser.webkitSpeechRecognition; if (!Constructor) {
+    async function startListening() { if (!card || listening || micState === "requesting" || micState === "analyzing")
+        return;
+    speechCleanupRef.current();
+    setMicState("requesting");
+    setMessage(zh ? "正在准备麦克风…" : "Preparing the microphone…");
+    if (!navigator.mediaDevices?.getUserMedia) {
         setListening(false);
         setMicState("unsupported");
-        setMessage(zh ? "浏览器不支持语音识别；跟读后点“我已跟读”。" : "Speech recognition is unavailable. Repeat aloud, then tap “I said it”.");
+        setMessage(zh ? "浏览器不支持麦克风练习；跟读后点“我已跟读”。" : "Microphone practice is unavailable. Repeat aloud, then tap “I said it”.");
         return;
     }
-    setMicState("requesting");
+    let stream: MediaStream;
     try {
         if (!microphoneApproved.current && navigator.permissions?.query) {
             try {
@@ -200,14 +203,8 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
             }
             catch (error) { if (error instanceof DOMException && error.name === "NotAllowedError") throw error; }
         }
-        if (!microphoneApproved.current && navigator.mediaDevices?.getUserMedia) {
-            setMessage(zh ? "正在请求麦克风权限…" : "Requesting microphone permission…");
-            let permissionTimer: number | undefined;
-            const access = navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => { stream.getTracks().forEach(track => track.stop()); microphoneApproved.current = true; });
-            const timeout = new Promise<never>((_, reject) => { permissionTimer = window.setTimeout(() => reject(new DOMException("Microphone permission timed out", "TimeoutError")), 12000); });
-            try { await Promise.race([access, timeout]); }
-            finally { window.clearTimeout(permissionTimer); }
-        }
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        microphoneApproved.current = true;
     }
     catch (error) {
         const failure = smartCardMicrophoneFailure(error instanceof DOMException ? error.name : "");
@@ -218,17 +215,123 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
             : (zh ? "浏览器没有打开麦克风。请检查网站权限后点“重新检查麦克风”，或点“我已跟读”继续。" : "The browser did not open the microphone. Check site permission and tap “Check microphone again”, or use “I said it” to continue."));
         return;
     }
-    const recognition = new Constructor(); recognitionRef.current = recognition; recognition.lang = speechLang[data?.deck?.targetLanguage || ""] || "en-US"; recognition.continuous = false; recognition.interimResults = false; recognition.maxAlternatives = 5; setListening(true); setMicState("listening"); setMessage(""); recognition.onresult = event => { const result = event.results[0]; const transcripts = Array.from({ length: Math.min(result?.length || 0, 5) }, (_, position) => result?.[position]?.transcript || "").filter(Boolean); void checkSpeech(transcripts); }; recognition.onerror = event => { const failure = smartCardMicrophoneFailure(event.error || ""); if (failure === "denied") microphoneApproved.current = false; setListening(false); setMicState(failure === "denied" ? "denied" : "error"); setMessage(failure === "denied" ? (zh ? "麦克风未获允许。请在浏览器的网站设置中允许麦克风，然后点“重新检查麦克风”。" : "Microphone access was denied. Allow it in this site's browser settings, then tap “Check microphone again”.") : (zh ? "没有听清楚，请点“听并跟读”再试一次。" : "I couldn't hear that. Tap “Listen & speak” to try again.")); }; recognition.onend = () => { setListening(false); setMicState(current => current === "listening" ? "idle" : current); }; try {
-        recognition.start();
-    }
-    catch {
+
+    const browser = window as typeof window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition; };
+    const Constructor = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    let recorder: MediaRecorder | null = null;
+    let recognition: Recognition | null = null;
+    let fallbackTimer = 0;
+    let settled = false;
+    const chunks: Blob[] = [];
+    const stopTracks = () => stream.getTracks().forEach(track => track.stop());
+    const stopRecorder = () => { if (recorder && recorder.state !== "inactive") recorder.stop(); else stopTracks(); };
+    const dispose = () => {
+        window.clearTimeout(fallbackTimer);
+        if (recognition) { recognition.onresult = null; recognition.onerror = null; recognition.onend = null; try { recognition.abort?.(); } catch { try { recognition.stop(); } catch { /* already stopped */ } } }
+        if (recorder) { recorder.ondataavailable = null; recorder.onstop = null; }
+        stopRecorder();
+        stopTracks();
+        recognitionRef.current = null;
+    };
+    speechCleanupRef.current = dispose;
+
+    const acceptNativeResult = (transcripts: string[]) => {
+        if (settled || !transcripts.length) return;
+        settled = true;
+        dispose();
+        speechCleanupRef.current = () => undefined;
         setListening(false);
-        setMicState("error");
-        setMessage(zh ? "暂时无法启动麦克风，请重试或点“我已跟读”。" : "The microphone could not start. Retry or use “I said it”.");
-    } }
-    async function checkSpeech(transcripts: string[]) { if (!card || !transcripts.length)
+        setMicState("idle");
+        void checkSpeech(transcripts);
+    };
+    const uploadRecording = async (audio: Blob) => {
+        setListening(false);
+        setMicState("analyzing");
+        setMessage(zh ? "正在分析发音…" : "Analyzing pronunciation…");
+        const form = new FormData();
+        form.set("cardId", card.id);
+        form.set("audio", new File([audio], `pronunciation-${Date.now()}`, { type: audio.type || "audio/webm" }));
+        try {
+            const response = await fetch(`/api/smartcards/${encodeURIComponent(token)}/speech`, { method: "POST", body: form });
+            const result = await response.json().catch(() => ({})) as { transcript?: string; score?: number; passed?: boolean };
+            if (!response.ok || !result.transcript) throw new Error("transcription failed");
+            setMicState("idle");
+            await checkSpeech([result.transcript], result);
+        }
+        catch {
+            setMicState("error");
+            setMessage(zh ? "暂时无法分析发音，请点“重新检查麦克风”再试，或点“我已跟读”继续。" : "Pronunciation analysis is temporarily unavailable. Try the microphone again, or use “I said it” to continue.");
+        }
+    };
+
+    if (typeof MediaRecorder !== "undefined") {
+        try {
+            recorder = new MediaRecorder(stream);
+            recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+            recorder.onstop = () => {
+                stopTracks();
+                if (settled) return;
+                settled = true;
+                speechCleanupRef.current = () => undefined;
+                const audio = new Blob(chunks, { type: recorder?.mimeType || "audio/webm" });
+                if (audio.size < 256) {
+                    setListening(false);
+                    setMicState("error");
+                    setMessage(zh ? "没有听到声音，请点“重新检查麦克风”再试。" : "I couldn't hear anything. Check the microphone and try again.");
+                    return;
+                }
+                void uploadRecording(audio);
+            };
+            recorder.start();
+        }
+        catch { recorder = null; }
+    }
+
+    if (Constructor) {
+        recognition = new Constructor();
+        recognitionRef.current = recognition;
+        recognition.lang = speechLang[data?.deck?.targetLanguage || ""] || "en-US";
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 5;
+        recognition.onresult = event => {
+            const result = event.results[0];
+            acceptNativeResult(Array.from({ length: Math.min(result?.length || 0, 5) }, (_, position) => result?.[position]?.transcript || "").filter(Boolean));
+        };
+        recognition.onerror = () => { /* The timed recording remains the multilingual fallback. */ };
+        recognition.onend = () => { recognitionRef.current = null; };
+        try { recognition.start(); } catch { recognition = null; recognitionRef.current = null; }
+    }
+
+    setListening(true);
+    setMicState("listening");
+    setMessage("");
+    if (!recorder) {
+        stopTracks();
+        if (!recognition) {
+            setListening(false);
+            setMicState("unsupported");
+            setMessage(zh ? "浏览器不支持语音识别；跟读后点“我已跟读”。" : "Speech recognition is unavailable. Repeat aloud, then tap “I said it”.");
+        }
+        else fallbackTimer = window.setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            dispose();
+            setListening(false);
+            setMicState("error");
+            setMessage(zh ? "没有听清楚，请点“重新检查麦克风”再试。" : "I couldn't hear that. Check the microphone and try again.");
+        }, 6000);
+        return;
+    }
+    fallbackTimer = window.setTimeout(() => {
+        if (settled) return;
+        try { recognition?.abort?.(); } catch { try { recognition?.stop(); } catch { /* already stopped */ } }
+        stopRecorder();
+    }, 4500);
+    }
+    async function checkSpeech(transcripts: string[], reviewed?: { transcript?: string; score?: number; passed?: boolean }) { if (!card || !transcripts.length)
         return; try {
-        const result = await post({ action: "check-pronunciation", cardId: card.id, transcripts });
+        const result = reviewed?.transcript ? reviewed : await post({ action: "check-pronunciation", cardId: card.id, transcripts });
         evidence.current[index].transcripts.push(String(result.transcript || transcripts[0]));
         if (result.passed) {
             setPoints(value => value + policy.pronunciationPoints);
@@ -267,7 +370,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const targetLanguage = data?.deck?.targetLanguage || (token.startsWith("starter-") ? token.slice(8) : ""); const backHref = gameMode === "challenge" ? `/${lang}/play/challenge?language=${targetLanguage}` : `/${lang}/play?language=${targetLanguage}`; const hintShade=gameMode==="challenge"?"rgba(3,38,35,.44)":answerTries>=2?"rgba(5,118,75,.18)":answerTries===1?"rgba(151,92,0,.28)":"rgba(3,38,35,.4)"; const cardStyle = { backgroundImage: `linear-gradient(${hintShade},${hintShade}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: `${15 + ((daySeed + index * 17) % 70)}% center`, backgroundSize: "cover", textShadow: "0 3px 14px #001",transition:"background-image .35s" } as CSSProperties;
     return <main className="smart-game"><header><Link href={backHref}>← {gameMode === "challenge" ? (zh ? "挑战日历" : "Challenge calendar") : (zh ? "返回游戏" : "Back to games")}</Link><div className={`score ${scoreEffect ? (scoreEffect.amount > 0 ? "score-gain" : "score-loss") : ""}`}><span>{gameMode==="challenge"?(zh?"当前冠军成绩":"CURRENT WINNER"):(zh ? "课程积分" : "COURSE POINTS")}</span><strong>{gameMode==="challenge"?(currentLeader.score||"—"):points}</strong>{gameMode==="challenge"&&currentLeader.name?<small>{currentLeader.name}</small>:null}{gameMode!=="challenge"&&scoreEffect ? <i key={scoreEffect.id}>{scoreEffect.amount > 0 ? "+" : ""}{scoreEffect.amount}</i> : null}</div><p>{gameMode === "challenge" ? (zh ? "今日智慧卡挑战 · 每题一次机会" : "Today's challenge · one chance per question") : (data?.deck?.title || "SmartCard")}</p></header>
     {card && phase !== "complete" ? <section className="game-board"><div className="progress"><span style={{ width: `${((index + 1) / cards.length) * 100}%` }}/><b>{index + 1} / {cards.length}</b></div><button style={cardStyle} className={`word-card scene-${timeScene} ${flipped ? "flipped" : ""}`} onClick={() => {if(gameMode!=="challenge")setFlipped(value => !value);}}><small className="card-count">{index + 1} / {cards.length}</small>{gameMode==="challenge"?<small>⏱ {countdown}s</small>:null}<small>{card.sceneKey}</small><strong>{flipped ? (zh ? card.meaningZh : card.meaningEn) : card.form}</strong>{flipped && card.pronunciation ? <em>{card.pronunciation}</em> : null}<span>{gameMode==="challenge"?(zh?"5 秒内选择答案 · 不提供提示":"Choose within 5 seconds · no hints"):(flipped ? (zh ? "点一下返回单词" : "Tap to see the word") : (zh ? "点一下查看意思" : "Tap to see the meaning"))}</span></button>
-      {phase === "answer" ? <div className="answer-step"><h2>{gameMode==="challenge"?(zh?`只有一次机会 · ${countdown} 秒`:`One chance · ${countdown} seconds`):(zh ? "这个词是什么意思？" : "What does this word mean?")}</h2><div>{options.map(option => <button key={option.id} disabled={busy || chosenIds.includes(option.id) || (gameMode==="challenge"&&!challengeSessionId)} onClick={() => void choose(option.id)}>{zh ? option.meaningZh : option.meaningEn}</button>)}</div></div> : <div className="speech-step"><div className="coach" aria-hidden="true"><span>AI</span><i>●</i></div><div><h2>{zh ? <>请跟我说 <b>{card.form}</b></> : <>Repeat after me: <b>{card.form}</b></>}</h2><p aria-live="polite">{micState === "requesting" ? (zh ? "正在请求麦克风权限…" : "Requesting microphone permission…") : listening ? (zh ? "正在听您说…" : "Listening…") : (zh ? "AI 读完后会自动听您跟读；最多练习 3 次。" : "After AI speaks, the microphone listens automatically. You have up to 3 tries.")}</p><nav><button disabled={listening || micState === "requesting"} onClick={() => speak(card.form, () => { void startListening(); })}>🔊 {zh ? "听并跟读" : "Listen & speak"}</button>{micState === "denied" || micState === "error" ? <button onClick={() => { void startListening(); }}>🎙 {zh ? "重新检查麦克风" : "Check microphone again"}</button> : null}<button onClick={() => { setMessage(zh ? "已完成跟读，继续下一张。" : "Repeat complete. Moving on."); advanceTimer.current = window.setTimeout(nextCard, 500); }}>{zh ? "我已跟读" : "I said it"}</button></nav><small>{zh ? "首次使用请选择“允许”。语音只用于即时评分，不保存录音或文字。" : "Choose Allow the first time. Speech is scored transiently; audio and transcripts are not stored."}</small></div></div>}
+      {phase === "answer" ? <div className="answer-step"><h2>{gameMode==="challenge"?(zh?`只有一次机会 · ${countdown} 秒`:`One chance · ${countdown} seconds`):(zh ? "这个词是什么意思？" : "What does this word mean?")}</h2><div>{options.map(option => <button key={option.id} disabled={busy || chosenIds.includes(option.id) || (gameMode==="challenge"&&!challengeSessionId)} onClick={() => void choose(option.id)}>{zh ? option.meaningZh : option.meaningEn}</button>)}</div></div> : <div className="speech-step"><div className="coach" aria-hidden="true"><span>AI</span><i>●</i></div><div><h2>{zh ? <>请跟我说 <b>{card.form}</b></> : <>Repeat after me: <b>{card.form}</b></>}</h2><p aria-live="polite">{micState === "requesting" ? (zh ? "正在准备麦克风…" : "Preparing the microphone…") : micState === "analyzing" ? (zh ? "正在分析发音…" : "Analyzing pronunciation…") : listening ? (zh ? "正在听您说…" : "Listening…") : (zh ? "AI 读完后会自动听您跟读；最多练习 3 次。" : "After AI speaks, the microphone listens automatically. You have up to 3 tries.")}</p><nav>{micState === "denied" || micState === "error" ? <button onClick={() => { void startListening(); }}>🎙 {zh ? "重新检查麦克风" : "Check microphone again"}</button> : null}<button onClick={() => { speechCleanupRef.current(); setListening(false); setMessage(zh ? "已完成跟读，继续下一张。" : "Repeat complete. Moving on."); advanceTimer.current = window.setTimeout(nextCard, 500); }}>{zh ? "我已跟读" : "I said it"}</button></nav><small>{zh ? "首次使用请选择“允许”。语音只用于即时评分，不保存录音或文字。" : "Choose Allow the first time. Speech is scored transiently; audio and transcripts are not stored."}</small></div></div>}
       {message ? <p className="feedback" role="status">{message}</p> : null}</section> : null}
     {phase === "complete" ? <section className="finish"><span>★</span><h1>{gameMode==="challenge"?(zh?"挑战完成！":"Challenge complete!"):(zh ? "本轮完成！" : "Round complete!")}</h1><strong>{finalResult?.score ?? points}</strong><p>{gameMode==="challenge"?(finalResult?.claimRequired?(zh?"注册或登录后，成绩才会进入今日排行榜。":"Sign in or create an account to enter today's leaderboard."):finalResult?.bonusPercent?(zh?`您超过了当时冠军；若保持第一，次日结算奖励将加成 ${finalResult.bonusPercent}%。`:`You beat the current leader. Stay first and tomorrow's winner reward gets a ${finalResult.bonusPercent}% bonus.`):(zh?"成绩已进入排行榜。次日首次有人查看日历时，将结算并奖励冠军。":"Your score is on the leaderboard. The winner is rewarded when someone first checks the calendar tomorrow.")):(finalResult?.claimRequired ? (zh ? "注册或登录即可把本轮积分保存到课程积分账户。" : "Sign in or create an account to save these course points.") : finalResult?.replayOnly ? (zh ? "您已领取过本卡组版本的奖励；这次成绩作为练习记录。" : "You already claimed this deck version; this replay is practice only.") : (zh ? `${finalResult?.claimedPoints || 0} 分已存入您的课程积分账户。` : `${finalResult?.claimedPoints || 0} points were saved to your course-credit account.`))}</p>{finalResult?.claimRequired ? <Link href={`/${lang}/auth/sign-up?returnTo=${encodeURIComponent(`/${lang}/smartcards/${token}${gameMode==="challenge"?"?mode=challenge":""}`)}`}>{gameMode==="challenge"?(zh?"登录并进入排行榜":"Sign in and enter ranking"):(zh ? "免费注册并保留积分" : "Create a free account and keep points")} →</Link> : null}{gameMode==="challenge"?<Link href={backHref}>{zh?"查看挑战日历":"View challenge calendar"} →</Link>:<button onClick={replay}>{zh ? "再玩一轮" : "Play again"}</button>}{message ? <p className="feedback">{message}</p> : null}</section> : null}
     <style>{`.smart-game{min-height:100vh;padding:24px clamp(14px,4vw,52px) 70px;background:radial-gradient(circle at 85% 0,#bfffe6,transparent 30%),#f7f3ea;color:#153129}.smart-game>header,.game-board,.finish{width:min(940px,100%);margin:auto}.smart-game>header{min-height:115px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}.smart-game>header>a{color:#087d62;font-weight:850}.smart-game>header>p{grid-column:1;margin:0;color:#63766e}.score{grid-area:1/2/3;min-width:160px;padding:14px 22px;border-radius:22px;background:#123f35;color:#fff;text-align:center;box-shadow:0 13px 30px #123f3530}.score span{display:block;color:#8ff0cf;font-size:10px;font-weight:900;letter-spacing:.09em}.score strong{display:block;font-size:46px;line-height:1}.game-board,.finish{padding:clamp(18px,4vw,38px);border:1px solid #b8d2c8;border-radius:28px;background:#fff;box-shadow:0 20px 60px #163c3012}.progress{height:10px;position:relative;margin-bottom:18px;border-radius:99px;background:#e5eee9}.progress span{height:100%;display:block;border-radius:99px;background:#18b68e;transition:width .3s}.progress b{position:absolute;right:0;top:15px;color:#718078;font-size:11px}.word-card{width:100%;min-height:300px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:23px;background:linear-gradient(145deg,#123f35,#087d62);color:#fff;cursor:pointer}.word-card small{color:#90e7cb;text-transform:uppercase}.word-card strong{font-size:clamp(43px,8vw,76px);line-height:1}.word-card em{color:#c3eadd;font-size:19px}.word-card span{margin-top:25px;color:#a4e6d1;font-weight:800}.answer-step,.speech-step{margin-top:20px}.answer-step h2,.speech-step h2{font-size:22px}.answer-step>div{display:grid;grid-template-columns:1fr 1fr;gap:10px}.answer-step button,.speech-step button,.finish button,.finish a{min-height:55px;padding:12px 17px;border:1px solid #bfd3ca;border-radius:15px;background:#f0f8f4;color:#153129;font-weight:850;cursor:pointer}.answer-step button:hover{border-color:#087d62;background:#dffff2}.answer-step button:disabled{opacity:.4}.speech-step{padding:20px;display:grid;grid-template-columns:84px 1fr;gap:20px;border-radius:20px;background:#edfff7}.coach{width:76px;height:76px;display:grid;place-items:center;position:relative;border-radius:50%;background:#123f35;color:#fff;font-weight:950}.coach i{position:absolute;right:0;bottom:4px;color:#23dba9;font-size:12px}.speech-step h2{margin:0}.speech-step h2 b{color:#087d62}.speech-step p{color:#5d7169}.speech-step nav{display:flex;gap:8px;flex-wrap:wrap}.speech-step button:first-child{background:#087d62;color:#fff}.speech-step small{display:block;margin-top:12px;color:#667b72}.feedback{margin:16px 0 0;padding:13px;border-radius:13px;background:#123f35;color:#fff;font-weight:850;text-align:center}.finish{text-align:center}.finish>span{font-size:70px;color:#ffc533}.finish h1{margin:0;font-size:clamp(40px,7vw,70px)}.finish>strong{display:block;color:#087d62;font-size:clamp(70px,13vw,130px);line-height:1}.finish>p{max-width:600px;margin:10px auto 24px;color:#5c7068;font-size:18px}.finish>a,.finish>button{display:inline-flex;margin:6px;align-items:center;text-decoration:none}.finish>a{background:#087d62;color:#fff}@media(max-width:600px){.smart-game>header{grid-template-columns:1fr auto}.score{min-width:112px;padding:12px}.score strong{font-size:38px}.answer-step>div{grid-template-columns:1fr}.speech-step{grid-template-columns:1fr}.coach{width:62px;height:62px}.word-card{min-height:245px}.speech-step nav button{width:100%}}`}</style></main>;
