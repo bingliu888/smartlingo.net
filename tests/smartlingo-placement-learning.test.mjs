@@ -62,6 +62,22 @@ test("class dashboard starts a focused tabbed session with a compact bottom-righ
   assert.match(workspace, /position:fixed;right:max\(18px,env\(safe-area-inset-right\)\)/);
 });
 
+test("anonymous Beginner trial is public, interactive in memory, and never persists learner data", async () => {
+  const [coursePage, trialPage, trial] = await Promise.all([
+    read("../app/[lang]/programs/[language]/page.tsx"),
+    read("../app/[lang]/programs/[language]/trial/page.tsx"),
+    read("../components/AnonymousBeginnerTrial.tsx"),
+  ]);
+  assert.match(coursePage, /Free to Play[^]*Free Trial/);
+  assert.match(coursePage, /programs\/\$\{language\}\/trial/);
+  assert.match(trialPage, /getBeginnerSessionVocabularyDeck/);
+  assert.match(trialPage, /buildDailyPracticeItem/);
+  assert.doesNotMatch(trialPage, /requestUser|redirect\(|getDatabase|smartlingo_course_enrollments/);
+  assert.match(trial, /Everything stays in this page's memory/);
+  assert.match(trial, /useState<Skill>/);
+  assert.doesNotMatch(trial, /fetch\(|localStorage|sessionStorage|indexedDB|\/api\//);
+});
+
 test("repetition records a local preview and returns AI feedback in the interface language", async () => {
   const workspace = await read("../components/LearningWorkspace.tsx");
   const route = await read("../app/api/classes/[classId]/learning/route.ts");

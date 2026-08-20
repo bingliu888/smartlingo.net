@@ -28,6 +28,7 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/",
     "/classes",
     "/programs",
+    "/programs/en/trial",
     "/classes/course_en_basic/learn",
     "/classes/course_en_basic/learn/session",
     "/classes/course_en_basic/vocabulary",
@@ -116,7 +117,7 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {
-  for (const page of ["home", "classes", "programs", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
+  for (const page of ["home", "classes", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
   }
   assert.match(runnerSource, /requiredHooks/);

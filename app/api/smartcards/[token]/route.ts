@@ -3,7 +3,7 @@ import { scoreSmartCardPronunciation } from "@/lib/smartlingo-smartcards";
 
 export const dynamic = "force-dynamic";
 const COOKIE = "sl_guest_cards";
-const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100, challengeSeconds: 5, winnerBonusBasisPoints: 1000 } as const;
+const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100, challengeSeconds: 10, winnerBonusBasisPoints: 1000 } as const;
 
 type Deck = { id: string; ownerUserId: string; ownerName: string; classId: string | null; targetLanguage: string; level: string; title: string; version: number };
 type Card = { id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string; pronunciationZh: string; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number };

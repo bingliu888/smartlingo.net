@@ -67,6 +67,19 @@ test("0125 gives every published vocabulary item target and learner-language pro
   assert.throws(() => database.prepare("INSERT INTO smartlingo_vocabulary_items(id,review_status,updated_at) VALUES('incomplete','published',0)").run(), /complete pronunciation guides/);
 });
 
+test("0127 keeps learner-facing meanings free of category and language metadata", () => {
+  const database = new DatabaseSync(":memory:");
+  database.exec("PRAGMA foreign_keys=ON");
+  applyTrackedMigrations(database, readMigrationManifest());
+  database.exec(readFileSync(new URL("../drizzle/0127_clean_vocabulary_meanings.sql", import.meta.url), "utf8"));
+  assert.deepEqual({ ...database.prepare("SELECT COUNT(*) AS total,SUM(instr(meaning_en,' · ')>0 OR instr(meaning_zh,' · ')>0) AS decorated FROM smartlingo_vocabulary_items WHERE source_type='smartlingo_original'").get() }, { total: 336, decorated: 0 });
+  assert.deepEqual({ ...database.prepare("SELECT meaning_en AS meaningEn,meaning_zh AS meaningZh FROM smartlingo_vocabulary_items WHERE id='vocab_es_beginner_greetings_4_v1'").get() }, {
+    meaningEn: "excuse me; sorry",
+    meaningZh: "劳驾；对不起",
+  });
+  database.close();
+});
+
 test("public game and redemption routes keep scores and balances server-authoritative", () => {
   const publicRoute = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
   const redemptionRoute = readFileSync(new URL("../app/api/billing/credits/redeem/route.ts", import.meta.url), "utf8");
@@ -116,6 +129,7 @@ test("single-card game hides other target words and has no submit button", () =>
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);
   assert.doesNotMatch(source, /option\.form/);
+  assert.doesNotMatch(source, /<small>\{card\.sceneKey\}<\/small>/);
 });
 
 test("follow-me practice shows target phonetics and the current interface language sound guide", () => {
@@ -183,7 +197,7 @@ test("0042 makes daily challenges timed, single-chance, and settle winners once"
   assert.match(sql, /smartlingo_smartcard_timed_sessions/);
   assert.match(sql, /smartlingo_smartcard_daily_settlement_uq/);
   assert.match(sql, /smartlingo_course_credit_winner_insert_trg/);
-  assert.match(route, /challengeSeconds: 5/);
+  assert.match(route, /challengeSeconds: 10/);
   assert.match(route, /new Date\(nowMs\)\.toISOString\(\)\.slice\(0,10\)/);
   assert.match(route, /nowMs-session\.questionStartedMs>POLICY\.challengeSeconds\*1000/);
   assert.match(route, /current_index=\?/);
