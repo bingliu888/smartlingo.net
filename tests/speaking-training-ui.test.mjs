@@ -4,8 +4,9 @@ import test from "node:test";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
-test("daily practice opens durable vocab or immersive speaking training", async () => {
-  const [learnPage, trainingMenu, sessionPage, placementPage, learningRoute, workspace] = await Promise.all([
+test("the subscribed course dashboard opens each training skill without another language choice", async () => {
+  const [studio, learnPage, trainingMenu, sessionPage, placementPage, learningRoute, workspace] = await Promise.all([
+    read("../components/ClassStudio.tsx"),
     read("../app/[lang]/classes/[classId]/learn/page.tsx"),
     read("../components/CourseTrainingMenu.tsx"),
     read("../app/[lang]/classes/[classId]/learn/session/page.tsx"),
@@ -14,6 +15,15 @@ test("daily practice opens durable vocab or immersive speaking training", async 
     read("../components/LearningWorkspace.tsx"),
   ]);
 
+  assert.match(studio, /class-skill-launcher/);
+  assert.match(studio, /learningLinks\(item\)/);
+  assert.match(studio, /\/vocabulary/);
+  assert.match(studio, /training=dialogue/);
+  assert.match(studio, /training=listening/);
+  assert.match(studio, /training=writing/);
+  assert.match(studio, /training=quiz/);
+  assert.match(studio, /无需再次选择语言或参加分级测试/);
+  assert.doesNotMatch(studio, /开始五项技能学习/);
   assert.match(learnPage, /CourseTrainingMenu/);
   for (const training of ["Vocabulary", "Speaking", "Listening", "Writing", "Quiz"]) assert.match(trainingMenu, new RegExp(training));
   assert.match(trainingMenu, /\/vocabulary/);

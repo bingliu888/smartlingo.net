@@ -46,12 +46,26 @@ test("admins and course co-hosts can edit while fixed price remains immutable", 
   assert.doesNotMatch(detail.match(/if \(input\.action === "update_official_course"[\s\S]*?return Response\.json\(\{ ok: true/)?.[0] || "", /price_cents/);
 });
 
-test("Class Studio lists joined and available fixed courses without creation economics", async () => {
+test("Class Studio lists only subscribed courses and routes discovery to Choose courses", async () => {
   const studio = await read("../components/ClassStudio.tsx");
   assert.match(studio, /context\.joinedClasses/);
-  assert.match(studio, /context\.availableClasses/);
-  assert.match(studio, /开始免费首月/);
-  assert.match(studio, /会员不能创建课程或自行定价/);
+  assert.doesNotMatch(studio, /context\.availableClasses/);
+  assert.match(studio, /选择课程/);
+  assert.match(studio, /\$\{lang\}\/programs/);
   assert.match(studio, /CourseClassroomTile/);
   assert.doesNotMatch(studio, /70 \/ 30|Stripe Connect|我创建的班级/);
+});
+
+test("each subscribed course exposes five direct training entries tied to its class id", async () => {
+  const [studio, session, learning] = await Promise.all([
+    read("../components/ClassStudio.tsx"),
+    read("../app/[lang]/classes/[classId]/learn/session/page.tsx"),
+    read("../app/api/classes/[classId]/learning/route.ts"),
+  ]);
+  assert.match(studio, /const encodedClassId = encodeURIComponent\(item\.id\)/);
+  for (const route of ["training=dialogue", "training=listening", "training=writing", "training=quiz"]) assert.match(studio, new RegExp(route));
+  assert.match(studio, /classes\/\$\{encodedClassId\}\/vocabulary/);
+  assert.match(session, /initialSkill=\{query\.training === "quiz" \? "exam"/);
+  assert.match(learning, /access\.classKind === "official_course"[\s\S]*fixedCoursePlacement\(access\)/);
+  assert.match(learning, /entryMode: "fixed_course"/);
 });

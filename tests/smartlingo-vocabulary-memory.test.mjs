@@ -26,12 +26,24 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /targetPhonetic/);
   assert.match(workspace, /pronunciationZh/);
   assert.match(workspace, /SpeechRecognition/);
+  assert.match(workspace, /practicePercent/);
+  assert.match(workspace, /role="progressbar"/);
+  assert.match(workspace, /learning-world-\$\{timeScene\}\.jpg/);
+  assert.match(workspace, /data\.summary\.percent/);
   assert.match(page, /VocabularyMemoryWorkspace/);
   assert.match(menu, /\/vocabulary/);
   assert.match(migration, /successful_dates/);
   assert.match(migration, /first_learned_at/);
   assert.match(migration, /mastered_at/);
   assert.match(migration, /CHECK\(mastered_count\+learning_count\+unlearned_count=total_count\)/);
+});
+
+test("production deployment rejects an incomplete multilingual pronunciation corpus", async () => {
+  const workflow = await read("../.github/workflows/deploy-cloudflare.yml");
+  assert.match(workflow, /COUNT\(\*\)=336/);
+  assert.match(workflow, /COUNT\(DISTINCT target_language\)=12/);
+  assert.match(workflow, /target_phonetic<>'' AND pronunciation_en<>'' AND pronunciation_zh<>''/);
+  assert.match(workflow, /VOCAB_PRONUNCIATION_COMPLETE/);
 });
 
 test("daily deck prioritizes due reviews, limits new words, and reports real published totals", async () => {

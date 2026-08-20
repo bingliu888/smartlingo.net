@@ -65,20 +65,21 @@ test("necessary product and infrastructure names stay intact", async () => {
   assert.match(packages, /SMARTLINGO/);
 });
 
-test("Chinese class, pricing, programs, and retired Admin UI are truthful", async () => {
-  const [classes, pricing, programs, adminPage, adminApi, auth] = await Promise.all([
+test("Chinese My Courses, catalog, pricing, and retired Admin UI are truthful", async () => {
+  const [classes, pricing, programs, packages, adminPage, adminApi, auth] = await Promise.all([
     source("components/ClassStudio.tsx"),
     source("app/[lang]/pricing/page.tsx"),
     source("app/[lang]/programs/page.tsx"),
+    source("lib/smartlingo-course-packages.ts"),
     source("app/[lang]/admin/classes/page.tsx"),
     source("app/api/admin/classes/route.ts"),
     source("app/[lang]/auth/[mode]/page.tsx"),
   ]);
 
-  for (const label of ["三级课程", "第一个月免费", "会员不能创建课程或自行定价", "Webinar 教课室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
-  assert.match(classes, /初期/);
-  assert.match(classes, /中级/);
-  assert.match(classes, /高级/);
+  for (const label of ["这里只显示您已订阅的课程", "选择课程", "第一个月免费", "Webinar 教课室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
+  assert.match(packages, /初期课程/);
+  assert.match(packages, /中级课程/);
+  assert.match(packages, /高级课程/);
   assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
   assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
   assert.match(programs, /选择课程/);

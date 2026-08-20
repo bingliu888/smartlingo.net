@@ -37,6 +37,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   const [typed, setTyped] = useState("");
   const [phase, setPhase] = useState<"answer" | "speak" | "done">("answer");
   const [speechMessage, setSpeechMessage] = useState("");
+  const [timeScene, setTimeScene] = useState<"dawn" | "day" | "sunset" | "night">("day");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const zone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
@@ -53,8 +54,17 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     return () => window.clearTimeout(timer);
   }, [load, zh]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const hour = new Date().getHours();
+      setTimeScene(hour < 7 ? "dawn" : hour < 17 ? "day" : hour < 20 ? "sunset" : "night");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const cards = data?.dailyDeck || [];
   const card = cards[index] || null;
+  const practicePercent = cards.length ? Math.round(((index + 1) / cards.length) * 100) : 0;
   const filtered = (data?.items || []).filter(item => item.status === tab);
   const meaning = (item: { meaningZh: string; meaningEn: string }) => zh ? item.meaningZh : item.meaningEn;
   const textMode = card?.mode === "spelling" || card?.mode === "cloze";
@@ -143,9 +153,9 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     </section>
 
     <section className="vm-practice" aria-labelledby="vm-practice-title">
-      <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{zh ? "今日智慧卡练习" : "Today's SmartCard practice"}</h2></div><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length}</span></strong></header>
-      {card && phase !== "done" ? <div className={`vm-card tries-${tries}`} dir={card.direction}>
-        <div className="vm-progress"><span style={{ width: `${(index + 1) / Math.max(1, cards.length) * 100}%` }}/></div>
+      <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{zh ? "今日智慧卡练习" : "Today's SmartCard practice"}</h2></div><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length} · {practicePercent}%</span></strong></header>
+      {card && phase !== "done" ? <div className={`vm-card tries-${tries}`} dir={card.direction} style={{ backgroundImage: `linear-gradient(${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"},${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
+        <div className="vm-progress" role="progressbar" aria-label={zh ? "今日词卡进度" : "Today's card progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={practicePercent}><span style={{ width: `${practicePercent}%` }}/></div>
         <div className="vm-card-scene"><span>{SCENES[card.sceneKey] || "✨"}</span><small>{modeLabel[card.mode]} · {zh ? `记忆阶段 ${card.memoryStage}/5` : `Memory stage ${card.memoryStage}/5`}</small></div>
         {card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {zh ? "播放发音" : "Play word"}</button> : <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3>}
         {tries ? <p className="vm-hint" role="status">{tries === 1 ? (zh ? `提示：这是“${card.sceneKey}”场景词。` : `Hint: this belongs to “${card.sceneKey}”.`) : (zh ? `再提示：开头是“${Array.from(card.form)[0]}”，共 ${Array.from(card.form).length} 个字符。` : `More help: it starts with “${Array.from(card.form)[0]}” and has ${Array.from(card.form).length} characters.`)}</p> : null}

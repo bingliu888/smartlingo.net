@@ -101,7 +101,7 @@ test("home and Choose course route languages through a separate detail page or a
   assert.ok(layouts.get(834).card >= 240);
 });
 
-test("Courses is login-gated and separates joined from available fixed plans", async () => {
+test("My Courses is login-gated and shows only subscribed courses with a catalog exit", async () => {
   const [page, detailPage, studio] = await Promise.all([
     read("../app/[lang]/classes/page.tsx"),
     read("../app/[lang]/classes/[classId]/page.tsx"),
@@ -114,13 +114,12 @@ test("Courses is login-gated and separates joined from available fixed plans", a
   }
   assert.match(page, /initialTargetLanguage=\{query\.target\}/);
   assert.match(studio, /context\.joinedClasses/);
-  assert.match(studio, /context\.availableClasses/);
+  assert.doesNotMatch(studio, /context\.availableClasses/);
   assert.match(studio, /我的课程/);
-  assert.match(studio, /可订阅课程/);
-  assert.match(studio, /开始免费首月/);
+  assert.match(studio, /href=\{`\/\$\{lang\}\/programs`\}/);
+  assert.match(studio, /选择课程/);
   assert.doesNotMatch(studio, /我创建的班级|创建私有班级/);
   assert.match(studio, /t\.joined/);
   assert.match(studio, /CoursePaymentActions/);
-  assert.match(studio, /查看课程与付款/);
   assert.doesNotMatch(studio, /subscribe\(item\)/);
 });
