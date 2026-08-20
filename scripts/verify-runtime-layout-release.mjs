@@ -14,6 +14,7 @@ const verifier = join(projectRoot, "scripts", "verify-runtime-layout-webkit.mjs"
 const protectedPages = [
   "/zh/classes",
   "/zh/classes/course_en_basic/learn",
+  "/zh/classes/course_en_basic/vocabulary",
   "/zh/dashboard",
   "/zh/messages",
   "/zh/messages/live/layout-check",
@@ -26,6 +27,7 @@ const protectedPages = [
 const protectedApis = [
   "/api/classes",
   "/api/classes/course_en_basic/learning",
+  "/api/classes/course_en_basic/vocabulary?timeZone=America%2FLos_Angeles",
   "/api/community",
   "/api/messages",
   "/api/messages?thread=layout-check",
@@ -217,9 +219,9 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
       cwd: projectRoot,
       env: isolatedEnv,
     });
-    const evidence = verified.stdout.match(/WebKit runtime layout verified: 210\/210[^\n]*/)?.[0];
+    const evidence = verified.stdout.match(/WebKit runtime layout verified: 220\/220[^\n]*/)?.[0];
     if (!evidence) {
-      throw new Error(`Full 210/210 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+      throw new Error(`Full 220/220 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
     }
     await writeFile(join(tmpdir(), "smartlingo-layout-release-evidence.txt"), `${evidence}\n`, { mode: 0o600 });
     process.stderr.write(`${evidence}\n`);

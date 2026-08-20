@@ -132,10 +132,10 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     ? { recognition: "看词选义", recall: "看义找词", listening: "听音辨义", spelling: "拼写回忆", cloze: "主动填词" }
     : { recognition: "Word → meaning", recall: "Meaning → word", listening: "Listen → meaning", spelling: "Spelling recall", cloze: "Active completion" };
 
-  return <section className="vm-shell">
-    <header className="vm-hero"><div><p>SMARTLINGO · 21-DAY MEMORY</p><h1>{zh ? "每天十张卡，把新词变成长久记忆" : "Ten daily cards. Turn new words into lasting memory."}</h1><span>{zh ? "第 1、3、7、14、21 天跨日回忆，并完成至少三种题型后才计入“学会了”。" : "A word becomes mastered only after retrieval on days 1, 3, 7, 14 and 21 across at least three modes."}</span></div><Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>← {zh ? "返回课程" : "Back to course"}</Link></header>
+  return <section className="vm-shell" data-layout-ready={data ? "true" : undefined} data-layout-overlap-check="vocabulary-memory">
+    <header className="vm-hero" data-layout-overlap-check="vocabulary-hero"><div><p>SMARTLINGO · 21-DAY MEMORY</p><h1>{zh ? "每天十张卡，把新词变成长久记忆" : "Ten daily cards. Turn new words into lasting memory."}</h1><span>{zh ? "第 1、3、7、14、21 天跨日回忆，并完成至少三种题型后才计入“学会了”。" : "A word becomes mastered only after retrieval on days 1, 3, 7, 14 and 21 across at least three modes."}</span></div><Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>← {zh ? "返回课程" : "Back to course"}</Link></header>
 
-    {data ? <><section className="vm-dashboard" aria-label={zh ? "词汇学习总览" : "Vocabulary overview"}>
+    {data ? <><section className="vm-dashboard" data-layout-overlap-check="vocabulary-dashboard" aria-label={zh ? "词汇学习总览" : "Vocabulary overview"}>
       <div className="vm-score"><span>{zh ? "已学会比例" : "Mastery"}</span><strong>{data.summary.percent}%</strong><div aria-label={`${data.summary.stars} / 5`}>{[1,2,3,4,5].map(star => <b className={star <= data.summary.stars ? "on" : ""} key={star}>★</b>)}</div><small>{data.summary.mastered} / {data.summary.total} {zh ? "个已发布课程词条" : "published course words"}</small></div>
       <div className="vm-stat mastered"><i>✓</i><span>{zh ? "学会了" : "Mastered"}</span><strong>{data.summary.mastered}</strong></div>
       <div className="vm-stat learning"><i>↻</i><span>{zh ? "正在学" : "Learning"}</span><strong>{data.summary.learning}</strong></div>

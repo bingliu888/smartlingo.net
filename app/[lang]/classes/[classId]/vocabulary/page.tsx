@@ -17,7 +17,7 @@ export default async function VocabularyPage({ params }: { params: Promise<{ lan
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/vocabulary`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
-  return <main className="vocabulary-memory-page">
+  return <main className="vocabulary-memory-page" data-layout-page="vocabulary-memory">
     <SiteHeader lang={lang}/>
     <VocabularyMemoryWorkspace lang={lang} classId={classId}/>
     <SiteFooter lang={lang}/>
