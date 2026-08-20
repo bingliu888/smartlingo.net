@@ -26,9 +26,10 @@ test("the MVP seeds three fixed monthly courses for all twelve languages", async
 });
 
 test("free first month is durable and course access checks subscription state", async () => {
-  const [enrollment, paymentActions, classroom, learning] = await Promise.all([
+  const [enrollment, paymentActions, reconciliation, classroom, learning] = await Promise.all([
     read("../app/api/classes/[classId]/enroll/route.ts"),
     read("../components/CoursePaymentActions.tsx"),
+    read("../drizzle/0130_reconcile_browser_test_learner.sql"),
     read("../app/api/classes/[classId]/classroom/route.ts"),
     read("../lib/smartlingo-learning-access.ts"),
   ]);
@@ -46,6 +47,13 @@ test("free first month is durable and course access checks subscription state", 
   assert.match(paymentActions, /Start free first month/);
   assert.match(paymentActions, /response\.ok && data\.enrolled/);
   assert.match(paymentActions, /window\.location\.assign\(`\/\$\{lang\}\/classes\/\$\{encodeURIComponent\(classId\)\}`\)/);
+  assert.match(reconciliation, /smartlingo_course_subscriptions/);
+  assert.match(reconciliation, /smartlingo_course_enrollments_v3/);
+  assert.match(reconciliation, /smartlingo_course_session_state/);
+  assert.match(reconciliation, /bingliu\+smartlingo-test1@cybeye\.com/);
+  assert.match(reconciliation, /subscription\.class_id='course_en_basic'/);
+  assert.match(reconciliation, /subscription\.status='trialing' AND subscription\.trial_ends_at>unixepoch\(\)/);
+  assert.doesNotMatch(reconciliation, /WHEN 'intermediate'|ELSE 365/);
   assert.match(classroom, /subscriptionStatus === "trialing"/);
   assert.match(learning, /subscription\.trial_ends_at>unixepoch\(\)/);
 });
