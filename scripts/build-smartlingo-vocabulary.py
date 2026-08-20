@@ -314,7 +314,9 @@ def render_language(language: str, source: Path, starter_migration: Path, pronun
         lines.append("INSERT INTO smartlingo_vocabulary_items "
           "(id,stable_key,version,target_language,level,cefr_band,difficulty,scene_key,sequence,form,pronunciation,meaning_en,meaning_zh,item_kind,productive,source_type,review_status,target_phonetic,pronunciation_en,pronunciation_zh,pronunciation_guides,pronunciation_guide_version,lexical_source_url,lexical_source_license,lexical_source_revision,review_method,created_at,updated_at) VALUES(" + ",".join(quoted) + ",unixepoch(),unixepoch());")
     lines.extend([
-        "CREATE TEMP TABLE smartlingo_vocab_release_check(value INTEGER CHECK(value=1));",
+        # Cloudflare D1 rejects TEMP schema writes during remote migrations.
+        # A short-lived ordinary table keeps the same fail-closed assertion.
+        "CREATE TABLE smartlingo_vocab_release_check(value INTEGER CHECK(value=1));",
         f"INSERT INTO smartlingo_vocab_release_check SELECT COUNT(*)=4000 FROM smartlingo_vocabulary_items WHERE target_language={sql_quote(language)} AND review_status='published';",
         f"INSERT INTO smartlingo_vocab_release_check SELECT COUNT(*)=1000 FROM smartlingo_vocabulary_items WHERE target_language={sql_quote(language)} AND level='beginner' AND review_status='published';",
         f"INSERT INTO smartlingo_vocab_release_check SELECT COUNT(*)=1500 FROM smartlingo_vocabulary_items WHERE target_language={sql_quote(language)} AND level='intermediate' AND review_status='published';",
