@@ -614,6 +614,9 @@ export interface VocabularyReviewState {
   readonly dueAt: number | null;
   readonly consecutiveCorrect: number;
   readonly recentCorrectModes: readonly VocabularyReviewMode[];
+  readonly successfulDates: readonly string[];
+  readonly firstLearnedAt: number | null;
+  readonly masteredAt: number | null;
   readonly lapseCount: number;
   readonly lastGrade: VocabularyReviewGrade | null;
   readonly lastReviewedAt: number | null;
@@ -623,9 +626,30 @@ export interface VocabularyReviewEvent {
   readonly grade: VocabularyReviewGrade;
   readonly mode: VocabularyReviewMode;
   readonly reviewedAt: number;
+  readonly localDate: string;
 }
 
 const DAY_MS = 86_400_000;
+export const SMARTLINGO_VOCABULARY_MEMORY_DAYS = [1, 3, 7, 14, 21] as const;
+
+function validDateKey(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00Z`));
+}
+
+function memoryDay(firstDate: string, currentDate: string) {
+  return Math.floor((Date.parse(`${currentDate}T00:00:00Z`) - Date.parse(`${firstDate}T00:00:00Z`)) / DAY_MS) + 1;
+}
+
+export function vocabularyMemoryStage(successfulDates: readonly string[]) {
+  const dates = [...new Set(successfulDates.filter(validDateKey))].sort();
+  if (!dates.length) return 0;
+  let stage = 0;
+  for (const date of dates) {
+    if (stage >= SMARTLINGO_VOCABULARY_MEMORY_DAYS.length) break;
+    if (memoryDay(dates[0], date) >= SMARTLINGO_VOCABULARY_MEMORY_DAYS[stage]) stage += 1;
+  }
+  return stage;
+}
 
 export function createVocabularyReviewState(
   sampleId: string,
@@ -638,6 +662,9 @@ export function createVocabularyReviewState(
     dueAt,
     consecutiveCorrect: 0,
     recentCorrectModes: [],
+    successfulDates: [],
+    firstLearnedAt: null,
+    masteredAt: null,
     lapseCount: 0,
     lastGrade: null,
     lastReviewedAt: null,
@@ -649,6 +676,7 @@ export function scheduleVocabularyReview(
   event: VocabularyReviewEvent,
 ): VocabularyReviewState {
   if (!Number.isFinite(event.reviewedAt)) throw new Error("reviewedAt must be a finite timestamp");
+  if (!validDateKey(event.localDate)) throw new Error("localDate must be YYYY-MM-DD");
   if (event.grade === "suspend") {
     return {
       ...state,
@@ -662,31 +690,36 @@ export function scheduleVocabularyReview(
   if (event.grade === "again") {
     return {
       ...state,
-      status: "learning",
-      intervalDays: 0,
-      dueAt: event.reviewedAt + 10 * 60_000,
-      consecutiveCorrect: 0,
-      recentCorrectModes: [],
+      status: state.successfulDates.length ? "review" : "learning",
+      intervalDays: 1,
+      dueAt: event.reviewedAt + DAY_MS,
       lapseCount: state.lapseCount + 1,
       lastGrade: event.grade,
       lastReviewedAt: event.reviewedAt,
     };
   }
 
-  const recentCorrectModes = [...state.recentCorrectModes, event.mode].slice(-3);
-  const consecutiveCorrect = Math.min(3, state.consecutiveCorrect + 1);
-  const mastered = consecutiveCorrect >= 3 && new Set(recentCorrectModes).size >= 3;
-  const multiplier = event.grade === "hard" ? 1.2 : event.grade === "good" ? 2.5 : 4;
-  const minimumDays = event.grade === "hard" ? 1 : event.grade === "good" ? 2 : 4;
-  const intervalDays = Math.max(minimumDays, Math.round(Math.max(1, state.intervalDays) * multiplier));
+  const successfulDates = [...new Set([...state.successfulDates, event.localDate])].sort();
+  const recentCorrectModes = [...new Set([...state.recentCorrectModes, event.mode])].slice(-5);
+  const memoryStage = vocabularyMemoryStage(successfulDates);
+  const consecutiveCorrect = memoryStage;
+  const mastered = memoryStage === SMARTLINGO_VOCABULARY_MEMORY_DAYS.length
+    && new Set(recentCorrectModes).size >= 3;
+  const firstDate = successfulDates[0];
+  const elapsedDay = memoryDay(firstDate, event.localDate);
+  const nextMilestone = SMARTLINGO_VOCABULARY_MEMORY_DAYS[memoryStage];
+  const intervalDays = mastered ? 0 : Math.max(1, (nextMilestone ?? 21) - elapsedDay);
 
   return {
     ...state,
     status: mastered ? "mastered" : "review",
     intervalDays,
-    dueAt: event.reviewedAt + intervalDays * DAY_MS,
+    dueAt: mastered ? null : event.reviewedAt + intervalDays * DAY_MS,
     consecutiveCorrect,
     recentCorrectModes,
+    successfulDates,
+    firstLearnedAt: state.firstLearnedAt ?? event.reviewedAt,
+    masteredAt: mastered ? (state.masteredAt ?? event.reviewedAt) : null,
     lastGrade: event.grade,
     lastReviewedAt: event.reviewedAt,
   };

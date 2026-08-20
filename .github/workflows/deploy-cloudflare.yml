@@ -99,7 +99,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Multilingual pronunciation guides and resilient speech scoring
-          RELEASE_TITLE_ZH: 多语言双层发音助读与稳定语音评分
-          RELEASE_NOTES: Show target-language phonetics plus an English or Chinese-interface sound guide during every follow-me card|Backfill all 336 published vocabulary records across twelve languages in one additive migration|Keep multilingual browser recognition and the audited server transcription fallback aligned with language-aware scoring
-          RELEASE_NOTES_ZH: 每张跟读词卡同时显示目标语言音标，以及英文或中文界面的拼音式助读|通过一次增量迁移补齐十二种语言全部 336 条已发布词汇记录|让多语言浏览器识别与经审计的服务器转写备用路径统一使用语言感知评分
+          RELEASE_TITLE: 21-day SmartCard vocabulary memory and growth reports
+          RELEASE_TITLE_ZH: 21 天智慧卡词汇记忆与成长报告
+          RELEASE_NOTES: Add a database-backed daily SmartCard practice that prioritizes due reviews and introduces at most four new published words|Require successful retrieval on days 1, 3, 7, 14 and 21 across at least three modes before permanent mastery|Add attractive Mastered, Learning and Not started tabs with real published totals, five-star progress and daily snapshots|Keep target-language phonetics and the learner-interface pronunciation guide visible during follow-me practice
+          RELEASE_NOTES_ZH: 新增数据库驱动的每日智慧卡练习，优先安排到期复习且每天最多加入四个已发布新词|只有在第 1、3、7、14、21 天完成跨日回忆并覆盖至少三种题型后才标记永久掌握|新增学会了、正在学、还未学三类词汇页，并按真实发布词量展示五星进度与每日报告|跟读练习继续显示目标语言音标和符合学习者界面语言的发音助读

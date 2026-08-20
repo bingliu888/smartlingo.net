@@ -86,6 +86,9 @@ type VocabularyProgressRow = {
   lapseCount: number;
   lastScore: number | null;
   isFocused: number;
+  successfulDates: string;
+  firstLearnedAt: number | null;
+  masteredAt: number | null;
   dueAt: number | null;
   lastReviewedAt: number | null;
   updatedAt: number;
@@ -306,7 +309,18 @@ function parseModes(value: string) {
   try {
     const modes = JSON.parse(value) as unknown;
     return Array.isArray(modes)
-      ? modes.filter(isVocabularyMode).slice(-3)
+      ? modes.filter(isVocabularyMode).slice(-5)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseSuccessfulDates(value: string) {
+  try {
+    const dates = JSON.parse(value) as unknown;
+    return Array.isArray(dates)
+      ? dates.filter((date): date is string => typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)).slice(-24)
       : [];
   } catch {
     return [];
@@ -320,8 +334,11 @@ function reviewState(sampleId: string, row: VocabularyProgressRow | null, nowMil
     status: row.status === "new" ? "learning" : row.status,
     intervalDays: Math.max(0, Number(row.intervalDays || 0)),
     dueAt: row.dueAt === null ? null : Number(row.dueAt) * 1000,
-    consecutiveCorrect: Math.max(0, Math.min(3, Number(row.reviewBox || 0))),
+    consecutiveCorrect: Math.max(0, Math.min(5, Number(row.reviewBox || 0))),
     recentCorrectModes: parseModes(row.modesSeen),
+    successfulDates: parseSuccessfulDates(row.successfulDates),
+    firstLearnedAt: row.firstLearnedAt === null ? null : Number(row.firstLearnedAt) * 1000,
+    masteredAt: row.masteredAt === null ? null : Number(row.masteredAt) * 1000,
     lapseCount: Math.max(0, Number(row.lapseCount || 0)),
     lastGrade: null,
     lastReviewedAt: row.lastReviewedAt === null ? null : Number(row.lastReviewedAt) * 1000,
@@ -1005,6 +1022,7 @@ async function vocabularyProgress(
     review_box AS reviewBox, interval_days AS intervalDays,
     review_count AS reviewCount, correct_count AS correctCount,
     lapse_count AS lapseCount, last_score AS lastScore, is_focused AS isFocused,
+    successful_dates AS successfulDates, first_learned_at AS firstLearnedAt, mastered_at AS masteredAt,
     due_at AS dueAt, last_reviewed_at AS lastReviewedAt, updated_at AS updatedAt
     FROM smartlingo_vocabulary_progress
     WHERE user_id = ? AND path_id = ? AND word_key = ? AND word_version = ? LIMIT 1`)
@@ -1021,6 +1039,9 @@ function publicProgress(row: VocabularyProgressRow | null) {
     lapseCount: Number(row.lapseCount || 0),
     lastScore: row.lastScore,
     isFocused: Boolean(row.isFocused),
+    successfulDates: parseSuccessfulDates(row.successfulDates),
+    firstLearnedAt: row.firstLearnedAt,
+    masteredAt: row.masteredAt,
     dueAt: row.dueAt,
     lastReviewedAt: row.lastReviewedAt,
   } : {
@@ -1032,6 +1053,9 @@ function publicProgress(row: VocabularyProgressRow | null) {
     lapseCount: 0,
     lastScore: null,
     isFocused: false,
+    successfulDates: [],
+    firstLearnedAt: null,
+    masteredAt: null,
     dueAt: null,
     lastReviewedAt: null,
   };
@@ -2002,21 +2026,23 @@ export async function POST(
         grade: body.grade,
         mode: body.mode,
         reviewedAt: now * 1000,
+        localDate: today,
       });
       const correctIncrement = body.grade === "hard" || body.grade === "good" || body.grade === "easy" ? 1 : 0;
       const lapseIncrement = body.grade === "again" ? 1 : 0;
       await auth.database.prepare(`INSERT INTO smartlingo_vocabulary_progress
         (id, user_id, path_id, class_id, word_key, word_version, status, modes_seen,
          review_box, interval_days, review_count, correct_count, lapse_count,
-         last_score, due_at, last_reviewed_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+         last_score, successful_dates, first_learned_at, mastered_at, due_at, last_reviewed_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id, path_id, word_key, word_version) DO UPDATE SET
           class_id = excluded.class_id, status = excluded.status, modes_seen = excluded.modes_seen,
           review_box = excluded.review_box, interval_days = excluded.interval_days,
           review_count = smartlingo_vocabulary_progress.review_count + 1,
           correct_count = smartlingo_vocabulary_progress.correct_count + ?,
           lapse_count = smartlingo_vocabulary_progress.lapse_count + ?,
-          last_score = excluded.last_score, due_at = excluded.due_at,
+          last_score = excluded.last_score, successful_dates = excluded.successful_dates,
+          first_learned_at = excluded.first_learned_at, mastered_at = excluded.mastered_at, due_at = excluded.due_at,
           last_reviewed_at = excluded.last_reviewed_at, updated_at = excluded.updated_at`)
         .bind(
           createId(),
@@ -2032,6 +2058,9 @@ export async function POST(
           correctIncrement,
           lapseIncrement,
           score,
+          JSON.stringify(scheduled.successfulDates),
+          scheduled.firstLearnedAt === null ? null : Math.floor(scheduled.firstLearnedAt / 1000),
+          scheduled.masteredAt === null ? null : Math.floor(scheduled.masteredAt / 1000),
           scheduled.dueAt === null ? null : Math.floor(scheduled.dueAt / 1000),
           now,
           now,

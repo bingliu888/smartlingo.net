@@ -16,7 +16,7 @@ test("daily practice opens durable vocab or immersive speaking training", async 
 
   assert.match(learnPage, /CourseTrainingMenu/);
   for (const training of ["Vocabulary", "Speaking", "Listening", "Writing", "Quiz"]) assert.match(trainingMenu, new RegExp(training));
-  assert.match(trainingMenu, /training=vocabulary/);
+  assert.match(trainingMenu, /\/vocabulary/);
   assert.match(trainingMenu, /training=dialogue/);
   assert.match(trainingMenu, /training=quiz/);
   assert.match(trainingMenu, /training=listening/);

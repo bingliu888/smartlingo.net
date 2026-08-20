@@ -176,26 +176,29 @@ test("placement scoring is deterministic, balanced across five skills, and produ
   assert.deepEqual({ score: skipped.score, skipped: skipped.skipped }, { score: 0, skipped: true });
 });
 
-test("vocabulary mastery requires three consecutive correct answers in three different modes", () => {
+test("vocabulary mastery requires five cross-day milestones and three different modes", () => {
   let repeated = createVocabularyReviewState("sl-vocab-en-schedule-001", 0);
-  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recognition", reviewedAt: 1_000 });
-  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recognition", reviewedAt: 2_000 });
-  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recall", reviewedAt: 3_000 });
-  assert.equal(repeated.consecutiveCorrect, 3);
-  assert.equal(repeated.status, "review", "repeating one mode must not count as three-mode mastery");
+  const at = date => Date.parse(`${date}T12:00:00Z`);
+  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recognition", reviewedAt: at("2026-08-01"), localDate: "2026-08-01" });
+  repeated = scheduleVocabularyReview(repeated, { grade: "good", mode: "recall", reviewedAt: at("2026-08-01") + 1_000, localDate: "2026-08-01" });
+  assert.equal(repeated.consecutiveCorrect, 1, "same-day repetitions must not advance long-term memory");
+  assert.equal(repeated.status, "review");
 
-  let varied = scheduleVocabularyReview(repeated, { grade: "again", mode: "cloze", reviewedAt: 4_000 });
-  assert.equal(varied.consecutiveCorrect, 0);
-  assert.deepEqual(varied.recentCorrectModes, []);
-  varied = scheduleVocabularyReview(varied, { grade: "good", mode: "recognition", reviewedAt: 5_000 });
-  varied = scheduleVocabularyReview(varied, { grade: "hard", mode: "recall", reviewedAt: 6_000 });
-  varied = scheduleVocabularyReview(varied, { grade: "easy", mode: "listening", reviewedAt: 7_000 });
+  let varied = scheduleVocabularyReview(repeated, { grade: "again", mode: "cloze", reviewedAt: at("2026-08-02"), localDate: "2026-08-02" });
+  assert.equal(varied.consecutiveCorrect, 1, "a lapse must preserve earlier cross-day evidence");
+  assert.deepEqual(varied.recentCorrectModes, ["recognition", "recall"]);
+  varied = scheduleVocabularyReview(varied, { grade: "good", mode: "listening", reviewedAt: at("2026-08-03"), localDate: "2026-08-03" });
+  varied = scheduleVocabularyReview(varied, { grade: "hard", mode: "recognition", reviewedAt: at("2026-08-07"), localDate: "2026-08-07" });
+  varied = scheduleVocabularyReview(varied, { grade: "good", mode: "recall", reviewedAt: at("2026-08-14"), localDate: "2026-08-14" });
+  assert.equal(varied.status, "review");
+  varied = scheduleVocabularyReview(varied, { grade: "easy", mode: "listening", reviewedAt: at("2026-08-21"), localDate: "2026-08-21" });
   assert.equal(varied.status, "mastered");
-  assert.equal(varied.consecutiveCorrect, 3);
+  assert.equal(varied.consecutiveCorrect, 5);
   assert.deepEqual(varied.recentCorrectModes, ["recognition", "recall", "listening"]);
-  assert.ok(varied.dueAt > 7_000);
+  assert.equal(varied.dueAt, null);
+  assert.equal(varied.successfulDates.length, 5);
 
-  const suspended = scheduleVocabularyReview(varied, { grade: "suspend", mode: "cloze", reviewedAt: 8_000 });
+  const suspended = scheduleVocabularyReview(varied, { grade: "suspend", mode: "cloze", reviewedAt: at("2026-08-22"), localDate: "2026-08-22" });
   assert.equal(suspended.status, "suspended");
   assert.equal(suspended.dueAt, null);
 });

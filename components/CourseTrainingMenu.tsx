@@ -15,7 +15,7 @@ export function CourseTrainingMenu({ lang, classId }: { lang: "zh" | "en"; class
   }, [classId]);
   const base = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session`;
   const items = [
-    { key: "vocab", icon: "Aa", title: zh ? "词汇" : "Vocabulary", copy: zh ? "词卡 · 主动回忆 · 连续掌握" : "Flashcards · active recall · mastery", href: `${base}?training=vocabulary` },
+    { key: "vocab", icon: "Aa", title: zh ? "每日词汇" : "Daily vocabulary", copy: zh ? "智慧卡 · 21 天记忆 · 掌握报告" : "SmartCards · 21-day memory · reports", href: `/${lang}/classes/${encodeURIComponent(classId)}/vocabulary` },
     { key: "speaking", icon: "◉", title: zh ? "口语" : "Speaking", copy: zh ? "跟我说 · 回答我 · 即时纠正" : "Repeat · answer · instant correction", href: `${base}?training=dialogue` },
     { key: "listening", icon: "◒", title: zh ? "听力" : "Listening", copy: zh ? "听辨语音 · 理解语境" : "Sound recognition · context", href: `${base}?training=listening` },
     { key: "writing", icon: "✎", title: zh ? "写作" : "Writing", copy: zh ? "组织表达 · 修改建议" : "Structured writing · guided revision", href: `${base}?training=writing` },

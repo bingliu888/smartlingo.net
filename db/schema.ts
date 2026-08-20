@@ -1890,6 +1890,9 @@ export const lingoVocabularyProgress = sqliteTable("smartlingo_vocabulary_progre
   lapseCount: integer("lapse_count").notNull().default(0),
   lastScore: integer("last_score"),
   isFocused: integer("is_focused", { mode: "boolean" }).notNull().default(false),
+  successfulDates: text("successful_dates").notNull().default("[]"),
+  firstLearnedAt: integer("first_learned_at"),
+  masteredAt: integer("mastered_at"),
   dueAt: integer("due_at"),
   lastReviewedAt: integer("last_reviewed_at"),
   createdAt: integer("created_at").notNull(),
@@ -1906,8 +1909,32 @@ export const lingoVocabularyProgress = sqliteTable("smartlingo_vocabulary_progre
   `),
   check("smartlingo_vocabulary_progress_score_ck", sql`${table.lastScore} IS NULL OR ${table.lastScore} BETWEEN 0 AND 100`),
   check("smartlingo_vocabulary_progress_focus_ck", sql`${table.isFocused} IN (0, 1)`),
+  check("smartlingo_vocabulary_progress_success_dates_ck", sql`json_valid(${table.successfulDates}) AND json_type(${table.successfulDates}) = 'array' AND length(${table.successfulDates}) <= 512`),
   uniqueIndex("smartlingo_vocabulary_progress_word_uq").on(table.userId, table.pathId, table.wordKey, table.wordVersion),
   index("smartlingo_vocabulary_progress_user_due_idx").on(table.userId, table.status, table.dueAt),
   index("smartlingo_vocabulary_progress_path_status_idx").on(table.pathId, table.status),
   index("smartlingo_vocabulary_progress_class_idx").on(table.classId, table.updatedAt),
+]);
+
+/** Immutable daily snapshots make long-term vocabulary growth visible without
+ * rewriting history when the published curriculum later grows. */
+export const lingoVocabularyDailyReports = sqliteTable("smartlingo_vocabulary_daily_reports", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pathId: text("path_id").notNull().references(() => lingoLanguagePaths.id, { onDelete: "restrict" }),
+  classId: text("class_id").references(() => lingoClasses.id, { onDelete: "set null" }),
+  localDate: text("local_date").notNull(),
+  totalCount: integer("total_count").notNull(),
+  masteredCount: integer("mastered_count").notNull(),
+  learningCount: integer("learning_count").notNull(),
+  unlearnedCount: integer("unlearned_count").notNull(),
+  masteryPercent: integer("mastery_percent").notNull(),
+  stars: integer("stars").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_vocabulary_daily_report_counts_ck", sql`${table.totalCount} >= 0 AND ${table.masteredCount} >= 0 AND ${table.learningCount} >= 0 AND ${table.unlearnedCount} >= 0 AND ${table.masteredCount} + ${table.learningCount} + ${table.unlearnedCount} = ${table.totalCount}`),
+  check("smartlingo_vocabulary_daily_report_percent_ck", sql`${table.masteryPercent} BETWEEN 0 AND 100 AND ${table.stars} BETWEEN 0 AND 5`),
+  uniqueIndex("smartlingo_vocabulary_daily_report_uq").on(table.userId, table.pathId, table.localDate),
+  index("smartlingo_vocabulary_daily_report_history_idx").on(table.userId, table.pathId, table.localDate),
 ]);

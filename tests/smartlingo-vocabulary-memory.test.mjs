@@ -1,0 +1,44 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const read = path => readFile(new URL(path, import.meta.url), "utf8");
+
+test("21-day vocabulary center is database-backed, server-graded, and fully bilingual", async () => {
+  const [route, workspace, page, menu, migration] = await Promise.all([
+    read("../app/api/classes/[classId]/vocabulary/route.ts"),
+    read("../components/VocabularyMemoryWorkspace.tsx"),
+    read("../app/[lang]/classes/[classId]/vocabulary/page.tsx"),
+    read("../components/CourseTrainingMenu.tsx"),
+    read("../drizzle/0126_vocabulary_21_day_memory.sql"),
+  ]);
+  assert.match(route, /smartlingo_vocabulary_items/);
+  assert.match(route, /review_status='published'/);
+  assert.match(route, /const correct = expectedMode/);
+  assert.match(route, /selectedId === item\.id/);
+  assert.match(route, /SMARTLINGO_VOCABULARY_MEMORY_DAYS/);
+  assert.match(route, /smartlingo_vocabulary_daily_reports/);
+  assert.doesNotMatch(workspace, /answerKey|correctOption/);
+  assert.match(workspace, /学会了/);
+  assert.match(workspace, /正在学/);
+  assert.match(workspace, /还未学/);
+  assert.match(workspace, /Today's SmartCard practice/);
+  assert.match(workspace, /targetPhonetic/);
+  assert.match(workspace, /pronunciationZh/);
+  assert.match(workspace, /SpeechRecognition/);
+  assert.match(page, /VocabularyMemoryWorkspace/);
+  assert.match(menu, /\/vocabulary/);
+  assert.match(migration, /successful_dates/);
+  assert.match(migration, /first_learned_at/);
+  assert.match(migration, /mastered_at/);
+  assert.match(migration, /CHECK\(mastered_count\+learning_count\+unlearned_count=total_count\)/);
+});
+
+test("daily deck prioritizes due reviews, limits new words, and reports real published totals", async () => {
+  const route = await read("../app/api/classes/[classId]/vocabulary/route.ts");
+  assert.match(route, /const due = started\.filter/);
+  assert.match(route, /fresh\.slice\(0, 4\)/);
+  assert.match(route, /\.slice\(0, 10\)/);
+  assert.match(route, /const total = catalog\.length/);
+  assert.match(route, /percent <= 0 \? 0 : Math\.min\(5, Math\.ceil\(percent \/ 20\)\)/);
+});
