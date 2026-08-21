@@ -1,5 +1,8 @@
 import { createId, getDatabase, type SessionUser } from "./auth";
 import { normalizeCollegePricing, type CollegeAccessType } from "./smartlingo-college-policy";
+import { sortCollegesByCode } from "./smartlingo-college-sort";
+
+export { sortCollegesByCode } from "./smartlingo-college-sort";
 
 export type { CollegeAccessType } from "./smartlingo-college-policy";
 export type CollegeTag = { id: string; slug: string; nameEn: string; nameZh: string; sortOrder: number; active: number };
@@ -60,10 +63,10 @@ export async function colleges(filters: { query?: string; tag?: string; access?:
     AND (?=0 OR college.owner_user_id=? OR EXISTS(SELECT 1 FROM smartlingo_college_courses mine_course
       JOIN smartlingo_language_class_members mine_member ON mine_member.class_id=mine_course.course_id
       WHERE mine_course.college_id=college.id AND mine_member.user_id=? AND mine_member.status='active'))
-    ORDER BY college.updated_at DESC LIMIT 100`)
+    ORDER BY college.code ASC LIMIT 100`)
     .bind(query,query,query,query,query,query,access,access,tag,tag,mine ? 1 : 0,userId,userId)
     .run<CollegeRow>();
-  return result.results || [];
+  return sortCollegesByCode(result.results || []);
 }
 
 export async function collegeCourses(collegeId: string) {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { normalizeCollegePricing } from "../lib/smartlingo-college-policy.ts";
+import { sortCollegesByCode } from "../lib/smartlingo-college-sort.ts";
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),"utf8");
 
@@ -18,6 +19,15 @@ test("college migration creates isolated structure, four tags, four colleges, an
   for(const label of ["General","Finance","Lifestyle","Sports","通用","金融","生活方式","体育"])assert.match(migration,new RegExp(label));
   for(const code of ["820101","820102","820103","820104"])assert.match(migration,new RegExp(code));
   assert.match(migration,/introductory_course_id TEXT NOT NULL UNIQUE REFERENCES smartlingo_language_classes/);
+});
+
+test("college catalog uses the four requested specialties and adds the three administrator courses",async()=>{
+  const migration=await read("drizzle/0151_college_catalog.sql");
+  for(const label of ["Language College","Business College","Career College","Test Prep College","语言学院","商务学院","职业学院","备考学院"])assert.match(migration,new RegExp(label));
+  for(const tag of ["General","Professional","Test Prep","通用","专业","备考"])assert.match(migration,new RegExp(`name_(?:en|zh)='${tag}'`));
+  assert.match(migration,/active=0/);
+  for(const course of ["course_en_basic","course_en_intermediate","course_en_advanced"])assert.match(migration,new RegExp(course));
+  assert.deepEqual(sortCollegesByCode([{code:"820104"},{code:"820101"},{code:"820103"},{code:"820102"}]).map(item=>item.code),["820101","820102","820103","820104"]);
 });
 
 test("creating a college atomically creates and places its introduction",async()=>{
