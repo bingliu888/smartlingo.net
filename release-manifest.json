@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
-  "releaseId": "randomized-active-learning-qa-v1",
+  "releaseId": "real-user-qa-gloss-quality-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Add timed deep-learning sessions to multilingual QA", "zh": "为多语言真实 QA 增加随机深度学习时段" },
+  "title": { "en": "Correct beginner glosses found by real-user multilingual QA", "zh": "修正多语言真实用户 QA 发现的初级词义" },
   "purpose": {
-    "en": "Make every 03:00 real-user QA run actively learn each target language for a reproducible random 1–5 minute minimum and generate legitimate score evidence.",
-    "zh": "让每天凌晨 3 点的真实用户 QA 为每种目标语言执行可复现随机 1–5 分钟的最低有效学习，并生成真实分数证据。"
+    "en": "Turn defects discovered during a live four-language learner round into forward-only, tested vocabulary corrections.",
+    "zh": "把四语言真实学习轮次发现的内容缺陷转化为前向、可验证的词汇修正。"
   },
   "features": {
     "en": [
-      "Assign English, Japanese, Spanish, and Italian independent 1–5 minute minimum active-learning sessions each day.",
-      "Rotate a deep-focus skill while preserving full Course, Learn through play, and Everyday Speaking coverage.",
-      "Require a displayed server-graded score and persisted learning log for every target language."
+      "Replace unnatural beginner Chinese glosses discovered in Spanish and Italian practice.",
+      "Apply the same president-title correction to matching French, Portuguese, and Russian beginner entries.",
+      "Preserve all 48,000 published vocabulary rows, phonetics, learner guides, and progress records."
     ],
     "zh": [
-      "每天分别为英语、日语、西班牙语和意大利语分配 1–5 分钟最低有效学习时段。",
-      "轮换一项深度学习重点，同时保留课程、边玩边学和生活口语的完整覆盖。",
-      "要求每种目标语言都有界面显示的服务器判分及持久学习日志。"
+      "修正西班牙语和意大利语练习中发现的不自然初级中文释义。",
+      "把同类职务名称修正同步应用到法语、葡萄牙语和俄语初级词条。",
+      "保留全部 48,000 个已发布词条、音标、助读和用户学习进度。"
     ]
   },
   "affected": {
-    "en": ["03:00 real-user QA plan", "Four-language active-learning evidence", "Administrator Project QA report"],
-    "zh": ["凌晨 3 点真实用户 QA 计划", "四语言有效学习证据", "管理员 Project QA 报告"]
+    "en": ["Beginner vocabulary glosses", "Multilingual SmartCard answer choices", "Administrator Project release report"],
+    "zh": ["初级词汇释义", "多语言智慧卡答案选项", "管理员 Project 发布报告"]
   },
   "changes": {
     "en": [
-      "Generate a deterministic daily session plan whose random minute assignments remain stable during same-day retries.",
-      "Count only active feedback-producing learning actions; exclude login, navigation, loading, idle waits, repairs, and deployment time.",
-      "Record planned versus measured minutes, deep-focus activity, displayed score, and persisted score-log evidence in Project."
+      "Add a forward-only database migration for the affected high-frequency beginner entries.",
+      "Use concise learner-facing senses for president, really, nobody, and the feminine form of new/news.",
+      "Add exact regression assertions so the corrected meanings cannot silently regress."
     ],
     "zh": [
-      "生成确定性的每日学习计划，使随机分钟数在同日重试时保持一致。",
-      "只计算会产生反馈的真实学习操作；登录、导航、加载、空等、修复与部署时间均不计入。",
-      "在 Project 记录计划/实测分钟、深度重点、界面分数及持久分数日志证据。"
+      "为受影响的高频初级词条增加前向数据库迁移。",
+      "为“总统/主席”“真的/确实”“没有人”和阴性“新的/消息”提供简洁学习释义。",
+      "增加精确回归断言，防止修正后的词义静默退化。"
     ]
   },
   "validation": {
     "en": [
-      "Behavior tests prove every daily duration is between one and five minutes, same-day plans are reproducible, and all five duration values occur across the campaign.",
-      "The route preflight exposes the required real-session plan but remains explicitly barred from claiming login, score, or learning evidence.",
-      "The real-user prompt forbids passive waiting and synthetic score rows while retaining all four languages and all required learning surfaces."
+      "A signed-in Chrome learner completed English, Japanese, Spanish, and Italian Course, Play, and Everyday Speaking coverage.",
+      "Server-graded daily quizzes displayed 100/100 and persisted learning logs for the tested languages.",
+      "Vocabulary catalog and D1 migration suites pass with 48,000 rows and zero foreign-key violations."
     ],
     "zh": [
-      "行为测试证明每日时长均为 1–5 分钟，同日计划可复现，且整个周期覆盖全部五种分钟值。",
-      "路线预检会输出真实会话计划，但明确不能声称已经登录、判分或完成学习。",
-      "真实用户提示禁止被动等待和伪造分数记录，同时保留四种语言及全部学习区域。"
+      "已登录 Chrome 测试学员完成英语、日语、西班牙语和意大利语的课程、边玩边学与生活口语覆盖。",
+      "受测语言的服务器每日测验显示 100/100，并保存真实学习日志。",
+      "词汇目录与 D1 迁移测试通过：48,000 个词条，外键违规为零。"
     ]
   },
   "deferred": {
-    "en": ["The next scheduled real-user execution supplies the first measured timed-session score evidence; this release validates and deploys the automation contract itself."],
-    "zh": ["下一次定时真实用户执行将产生首份计时学习分数证据；本次发布验证并部署自动化契约本身。"]
+    "en": ["Acoustic pronunciation scoring remains device-dependent; this controlled Chrome round verified microphone recovery and skip paths but did not claim a human voice score."],
+    "zh": ["声学发音评分仍取决于设备输入；本次受控 Chrome 轮次验证了麦克风恢复与跳过路径，但不宣称获得真人语音分数。"]
   },
   "siteAdaptations": {
-    "en": ["This automation update is SmartLingo-only and does not alter learning data or schedules on other portfolio sites."],
-    "zh": ["本自动化更新仅适用于 SmartLingo，不改变其他站点的学习数据或计划。"]
+    "en": ["This vocabulary-data correction is SmartLingo-only and does not change other portfolio sites."],
+    "zh": ["本词汇数据修正仅适用于 SmartLingo，不改变其他站点。"]
   }
 }

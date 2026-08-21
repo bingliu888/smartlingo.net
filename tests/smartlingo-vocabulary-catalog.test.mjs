@@ -46,6 +46,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     ...catalogFiles,
     ...correctionFiles,
     japaneseCorrectionFile,
+    "0043_beginner_gloss_quality.sql",
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
@@ -117,6 +118,18 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
   assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
     WHERE target_language='ja' AND level='beginner' AND review_status='published'
     AND (meaning_zh GLOB '*思维；思维*' OR meaning_zh GLOB '*感觉；感觉*')`).get().count, 0);
+
+  const curatedBeginnerGlosses = database.prepare(`SELECT target_language AS language,form,meaning_en AS meaningEn,meaning_zh AS meaningZh
+    FROM smartlingo_vocabulary_items
+    WHERE (target_language='es' AND form='presidente')
+       OR (target_language='it' AND form IN ('davvero','nessuno','nuova'))
+    ORDER BY target_language,form`).all();
+  assert.deepEqual(curatedBeginnerGlosses.map(row => [row.language, row.form, row.meaningEn, row.meaningZh]), [
+    ["es", "presidente", "president; chairperson; leader", "总统；主席；负责人"],
+    ["it", "davvero", "really; truly; in fact", "真的；确实；事实上"],
+    ["it", "nessuno", "no one; nobody; none", "没有人；没有任何一个"],
+    ["it", "nuova", "new (feminine singular); news", "新的（阴性单数）；消息"],
+  ]);
   database.close();
 });
 
