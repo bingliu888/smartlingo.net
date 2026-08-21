@@ -26,6 +26,10 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /targetPhonetic/);
   assert.match(workspace, /pronunciationGuides\?\.\[lang\]/);
   assert.match(workspace, /SpeechRecognition/);
+  assert.match(workspace, /speechSynthesis\.cancel\(\);\s*finish\(\)/);
+  assert.match(workspace, /listeningWatchdog = window\.setTimeout/);
+  assert.match(workspace, /recognition\.onend = recoverListening/);
+  assert.match(workspace, /也可以跳过本词/);
   assert.match(workspace, /useRepeatAfterMePreference/);
   assert.match(workspace, /startFromWord/);
   assert.match(workspace, /vm-pagination/);

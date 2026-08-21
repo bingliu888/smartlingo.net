@@ -1,60 +1,58 @@
 {
   "schemaVersion": 1,
-  "releaseId": "real-user-qa-course-detail-fix-v1",
+  "releaseId": "vocabulary-speech-recovery-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Make real-user QA the release authority", "zh": "以真实用户验收作为发布标准" },
+  "title": { "en": "Keep multilingual vocabulary speaking recoverable", "zh": "确保多语言词汇跟读始终可继续" },
   "purpose": {
-    "en": "Replace synthetic learning claims with signed-in Chrome acceptance and repair the course-detail failure discovered by the real QA learner.",
-    "zh": "停止把合成记录当作学习通过，改用 Chrome 真实登录验收，并修复真实测试账号发现的课程详情故障。"
+    "en": "Repair the stuck model-audio and microphone states discovered by signed-in Japanese vocabulary testing so learners can always continue or skip.",
+    "zh": "修复真实账号日语词汇测试发现的示范音频与麦克风卡死状态，确保学习者始终可以继续或跳过。"
   },
   "features": {
     "en": [
-      "Run the 21-day acceptance with one real Chinese-interface learner across English, Japanese, Spanish, and Italian.",
-      "Require Course five-skill learning, Learn through play, and Everyday Speaking for every selected language.",
-      "Fix signed-in course details that remained on an endless loading state because the API queried the wrong course-classroom column."
+      "Bound every vocabulary model-audio turn with a language-aware watchdog.",
+      "Recover automatically when speech recognition ends without a transcript.",
+      "Restore both Continue and Skip controls after microphone or speech-engine failures."
     ],
     "zh": [
-      "21 天验收使用一个中文界面真实测试账号，覆盖英语、日语、西班牙语和意大利语。",
-      "每种所选语言必须完成课程五项学习、边玩边学和生活口语三组验收。",
-      "修复登录后课程详情因 API 查询错误课程教室列而永久停留在加载状态的问题。"
+      "为每次词汇示范朗读增加按词长限制的超时保护。",
+      "语音识别结束但没有返回文字时自动恢复操作状态。",
+      "麦克风或系统语音失败后重新开放“继续跟读”和“跳过本词”。"
     ]
   },
   "affected": {
-    "en": ["Course detail API", "Course detail loading UI", "21-day QA workflow", "Local 3 AM QA recovery task", "Project QA reporting rules"],
-    "zh": ["课程详情接口", "课程详情加载界面", "21 天 QA 工作流", "本机凌晨 3 点 QA 恢复任务", "Project QA 报告规则"]
+    "en": ["Course vocabulary SmartCards", "Multilingual model audio", "Speech-recognition recovery", "Real-user QA"],
+    "zh": ["课程词汇智慧卡", "多语言示范朗读", "语音识别恢复", "真实用户 QA"]
   },
   "changes": {
     "en": [
-      "Use smartlingo_course_classrooms.course_id consistently for detail and course-update authorization queries.",
-      "Display a visible API error during course-detail loading instead of leaving an unexplained spinner.",
-      "Restrict GitHub Actions to anonymous route preflight artifacts and prohibit database or Project learning writes from those checks.",
-      "Make the local Codex task reuse or establish a real Clerk session through Gmail and Chrome, repair defects, deploy, and retest from the failed step."
+      "Cancel a stalled speech-synthesis utterance and advance to microphone listening after a bounded delay.",
+      "Handle recognition error, empty end, start failure, and a twelve-second no-result timeout through one recovery path.",
+      "Keep the recovery message explicit and leave Skip available instead of trapping the learner."
     ],
     "zh": [
-      "课程详情和课程更新权限查询统一使用 smartlingo_course_classrooms.course_id。",
-      "课程详情加载失败时显示明确接口错误，不再无提示地永久等待。",
-      "GitHub Actions 仅生成匿名路由前置检查产物，禁止由此写入学习数据库或 Project 通过记录。",
-      "本机 Codex 任务通过 Gmail 与 Chrome 复用或建立真实 Clerk 会话，自动修复、发布并从失败步骤重测。"
+      "示范朗读超过限定时间时取消卡住的语音，并继续进入麦克风监听。",
+      "将识别错误、空结束、启动失败和十二秒无结果统一导向可恢复状态。",
+      "恢复提示明确说明麦克风权限与跳过选项，不再把学习者锁在禁用按钮上。"
     ]
   },
   "validation": {
     "en": [
-      "Regression contracts verify the deployed course-classroom schema, visible loading errors, route-only cloud workflow, and real-account QA requirements.",
-      "The real QA learner reproduced the production course-detail failure before the fix; production retesting continues after deployment.",
-      "Full repository release gates and shared multi-site policy gates must pass before deployment."
+      "The signed-in Chinese-interface test learner reproduced the Japanese vocabulary lock before the fix.",
+      "Regression contracts cover synthesis timeout, recognition timeout, empty recognition end, and the visible skip recovery message.",
+      "TypeScript, sensitive-data scan, and all 307 repository tests pass before deployment."
     ],
     "zh": [
-      "回归契约验证已部署课程教室表结构、可见加载错误、仅路由云端工作流和真实账号 QA 要求。",
-      "真实 QA 学员已在修复前复现生产课程详情故障；发布后继续完成生产重测。",
-      "部署前必须通过仓库全量发布门禁与共享多站点策略门禁。"
+      "中文界面真实测试账号已在修复前复现日语词汇跟读锁死。",
+      "回归契约覆盖朗读超时、识别超时、无结果结束和可见跳过恢复提示。",
+      "发布前 TypeScript、敏感数据扫描和仓库全部 307 项测试均已通过。"
     ]
   },
   "deferred": {
-    "en": ["Microphone speech scoring remains capability-dependent; the daily report must mark an unavailable browser or permission as blocked, never passed."],
-    "zh": ["麦克风发音评分仍取决于浏览器能力和权限；不可用时日报必须标记为阻塞，不能标记通过。"]
+    "en": ["Automated speech scoring remains dependent on a real audio input; unavailable test-runner audio is reported as capability-limited, never passed."],
+    "zh": ["自动发音评分仍依赖真实音频输入；测试运行器没有音频输入时标记为能力受限，绝不误报通过。"]
   },
   "siteAdaptations": {
-    "en": ["This release changes SmartLingo learning QA and its course-detail schema use only; it does not alter other portfolio sites."],
-    "zh": ["本次发布仅调整 SmartLingo 学习 QA 与课程详情表结构使用，不改变其他站点。"]
+    "en": ["This recovery is specific to SmartLingo vocabulary pronunciation practice and does not alter other portfolio sites."],
+    "zh": ["本次恢复仅针对 SmartLingo 词汇发音练习，不改变其他站点。"]
   }
 }

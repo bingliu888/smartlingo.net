@@ -23,8 +23,10 @@ type Payload = {
 type SpeechRecognitionLike = {
   lang: string; interimResults: boolean; continuous: boolean;
   start(): void;
+  abort?(): void;
   onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
   onerror: (() => void) | null;
+  onend: (() => void) | null;
 };
 
 const SPEECH_LOCALES: Record<string, string> = { zh: "zh-CN", en: "en-US", es: "es-ES", ja: "ja-JP", ko: "ko-KR", fr: "fr-FR", de: "de-DE", ru: "ru-RU", it: "it-IT", pt: "pt-BR", ar: "ar-SA", hi: "hi-IN" };
@@ -88,8 +90,20 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     const utterance = new SpeechSynthesisUtterance(card.form);
     utterance.lang = SPEECH_LOCALES[data?.targetLanguage || ""] || data?.targetLanguage || "en-US";
     utterance.rate = .72;
-    utterance.onend = () => after?.();
-    utterance.onerror = () => after?.();
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(watchdog);
+      after?.();
+    };
+    const watchdog = window.setTimeout(() => {
+      window.speechSynthesis.cancel();
+      finish();
+    }, Math.min(8000, Math.max(3000, Array.from(card.form).length * 500 + 1800)));
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    window.speechSynthesis.resume();
     window.speechSynthesis.speak(utterance);
   }
 
@@ -161,7 +175,18 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     const recognition = new Recognition();
     recognition.lang = SPEECH_LOCALES[data?.targetLanguage || ""] || data?.targetLanguage || "en-US";
     recognition.interimResults = false; recognition.continuous = false;
+    let heardResult = false;
+    let listeningWatchdog = 0;
+    const stopListeningWatchdog = () => window.clearTimeout(listeningWatchdog);
+    const recoverListening = () => {
+      if (heardResult) return;
+      stopListeningWatchdog();
+      setCoachStatus("idle");
+      setSpeechMessage(zh ? "没有听清。请允许麦克风，然后点“继续跟读”；也可以跳过本词。" : "I could not hear clearly. Allow the microphone and select “Continue”, or skip this word.");
+    };
     recognition.onresult = event => {
+      heardResult = true;
+      stopListeningWatchdog();
       const heard = String(event.results?.[0]?.[0]?.transcript || "");
       setCoachStatus("scoring");
       void fetch(`/api/classes/${encodeURIComponent(classId)}/vocabulary`, {
@@ -182,10 +207,22 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
           }
         }).catch(() => { setCoachStatus("idle"); setSpeechMessage(zh ? "评分暂时失败，请点“继续跟读”重试本轮。" : "Scoring failed. Select “Continue” to retry this round."); });
     };
-    recognition.onerror = () => { setCoachStatus("idle"); setSpeechMessage(zh ? "没有听清。请允许麦克风，然后点“继续跟读”。" : "I could not hear clearly. Allow the microphone, then select “Continue”."); };
+    recognition.onerror = recoverListening;
+    recognition.onend = recoverListening;
     setCoachStatus("model");
     setSpeechMessage(zh ? `第 ${round}/5 次：先听示范，然后跟读。` : `Round ${round}/5: listen, then repeat.`);
-    playWord(() => { setCoachStatus("listening"); try { recognition.start(); } catch { setCoachStatus("idle"); } });
+    playWord(() => {
+      setCoachStatus("listening");
+      try {
+        recognition.start();
+        listeningWatchdog = window.setTimeout(() => {
+          try { recognition.abort?.(); } catch { /* recognition already ended */ }
+          recoverListening();
+        }, 12000);
+      } catch {
+        recoverListening();
+      }
+    });
   }
 
   const modeLabel: Record<Mode, string> = zh
