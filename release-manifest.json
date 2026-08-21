@@ -1,72 +1,68 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartclass-colleges-and-access-copy-v1",
+  "releaseId": "smartlingo-sentence-builder-learning-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Add SmartLingo colleges and unified course access labels", "zh": "增加 SmartLingo 学院并统一课程访问标签" },
+  "title": { "en": "Add free trial entry and sentence-builder listening and writing", "zh": "增加免费试学入口及点词组句听力与写作" },
   "purpose": {
-    "en": "Adapt the verified SmartClass college release through source commit f110278 for SmartLingo while preserving its fixed language-course catalog, subscription model, and independent infrastructure.",
-    "zh": "把截至源提交 f110278 已验证的 SmartClass 学院版本适配到 SmartLingo，同时保留其固定语言课程目录、订阅模型与独立基础设施。"
+    "en": "Make the existing anonymous Beginner trial easy to find from Play and turn course listening and writing into approachable ten-question word-tile games.",
+    "zh": "让用户可从“边玩边学”直接找到现有匿名初级试学，并把课程听力与写作升级为易用的每轮十题点词组句游戏。"
   },
   "features": {
     "en": [
-      "Add Choose College navigation, a home Colleges section before Courses, six-digit entry, Browse colleges, and My colleges.",
-      "Add searchable college discovery with General, Finance, Lifestyle, and Sports tags plus Open, Referred, and Private access filters.",
-      "Seed four SmartLingo colleges, each with its own price policy, automatic introductory course, and course table.",
-      "Let the permanent administrator create colleges and tags, update college access and pricing, and add existing SmartLingo courses to a college.",
-      "Use Open course / 公开课程, Referred course / 推荐课程, Private course / 专属课堂 and the matching college labels."
+      "Add a prominent Free Trial tile to Play after the learner chooses one of twelve target languages.",
+      "Let anonymous learners enter the existing five-skill Beginner trial without signing up or writing progress to an account or database.",
+      "Add normal-speed and slow listening controls, shuffled word tiles, an answer workspace, immediate feedback, and ten-question progress.",
+      "Add translation-led writing exercises that learners complete by arranging target-language words.",
+      "Publish a deterministic 120-sentence bank for every one of the twelve languages and three course levels."
     ],
     "zh": [
-      "增加“选择学院”导航及位于课程区之前的首页学院区，支持六位编号进入、浏览学院和我的学院。",
-      "增加学院搜索、通用/金融/生活方式/体育标签，以及公开、推荐、专属访问筛选。",
-      "预置四个 SmartLingo 学院；每个学院都有独立价格策略、自动导论课程和课程表。",
-      "永久管理员可创建学院与标签、更新学院访问和价格，并把现有 SmartLingo 课程加入学院。",
-      "统一使用 Open course / 公开课程、Referred course / 推荐课程、Private course / 专属课堂及对应学院标签。"
+      "用户选择十二种目标语言之一后，在“边玩边学”增加醒目的“免费试学”卡片。",
+      "访客无需注册即可进入现有五项初级课程试学，进度不写入账户或数据库。",
+      "增加正常与慢速听音、乱序词块、组句区、即时反馈及十题进度。",
+      "增加按界面语言提示、用目标语言词块完成的写作练习。",
+      "为十二种语言、三个课程等级中的每一门课程发布稳定的 120 句练习库。"
     ]
   },
   "affected": {
-    "en": ["Home and shared navigation", "College directory, detail, and create routes", "Administrator dashboard and college-tag API", "Course detail, enrollment, and classroom entitlement", "D1 migration 0150 and Project release report"],
-    "zh": ["首页与共享导航", "学院目录、详情与创建路由", "管理员面板与学院标签 API", "课程详情、加入与课程教室权益", "D1 迁移 0150 与 Project 发布日报"]
+    "en": ["Play language game hub", "Anonymous Beginner five-skill trial", "Subscribed course listening and writing tabs", "Server-reconstructed daily practice scoring", "Project release report"],
+    "zh": ["边玩边学语言游戏页", "匿名初级五项试学", "已订阅课程听力与写作标签", "服务器重建式每日练习评分", "Project 发布日报"]
   },
   "changes": {
     "en": [
-      "Add site-owned college, tag, assignment, and college-course tables without importing SmartClass runtime code or data.",
-      "Create a subject introduction atomically with every new college and keep later course assignments independent.",
-      "Place the flexible college-number edit box left of the localized Enter button at every supported viewport.",
-      "Extend subject-course enrollment so Open courses join free and Referred courses use their configured trial days before payment.",
-      "Expand the bilingual WebKit release matrix from 230 to 260 combinations to cover college browse, detail, and create pages."
+      "Create an original, versioned sentence-exercise module with twelve everyday destinations and ten task patterns per course level.",
+      "Select ten unique questions deterministically for each course date while keeping the full 120-item bank stable.",
+      "Reuse one responsive sentence-builder component in both anonymous trial and signed-in learning instead of maintaining divergent exercise UIs.",
+      "Submit the completed ten-answer round through the existing daily task API and reconstruct the same immutable round on the server before scoring.",
+      "Advance the SmartLingo learning content version so prior daily task evidence cannot collide with the new exercise contract."
     ],
     "zh": [
-      "增加站点独立的学院、标签、标签分配和学院课程表，不导入 SmartClass 运行时代码或数据。",
-      "每次创建学院时原子创建一门学科导论课程，后续课程分配继续保持独立。",
-      "在所有支持视口中，学院编号输入框位于左侧，本地化“进入”按钮位于右侧。",
-      "扩展学科课程加入逻辑：公开课程免费加入，推荐课程按配置天数体验后再付款。",
-      "把中英文 WebKit 发布矩阵从 230 组扩展到 260 组，覆盖学院浏览、详情与创建页面。"
+      "新增原创且带版本的句子练习模块，每个课程等级包含十二个生活目的地与十种任务句型。",
+      "按课程日期稳定抽取十道不重复题，同时保持完整 120 题库不变。",
+      "匿名试学与登录后课程共用一个响应式组句组件，避免两套学习界面分叉。",
+      "完成十题后沿用现有每日任务 API 提交，并由服务器重建同一不可变题组后评分。",
+      "提升 SmartLingo 学习内容版本，避免旧的每日任务记录与新练习协议冲突。"
     ]
   },
   "validation": {
     "en": [
       "Shared policy, architecture, base-feature consistency, and portfolio contract gates pass.",
-      "The production build, sensitive-data scan, artifact validation, and all repository tests pass.",
-      "The WebKit runtime layout matrix passes 260/260 combinations across 26 routes, two languages, and five phone, iPad, and desktop viewports."
+      "The production build, sensitive-data scan, artifact validation, lint, and all 319 repository tests pass.",
+      "Automated contracts verify 36 course banks at exactly 120 unique sentence exercises each and ten unique daily items.",
+      "The WebKit runtime layout matrix passes 260/260 combinations across 26 routes, two interface languages, and five phone, iPad, and desktop viewports."
     ],
     "zh": [
       "共享规则、架构、基础功能一致性及全站合约门禁通过。",
-      "生产构建、敏感数据扫描、产物验证及全部仓库测试通过。",
-      "WebKit 运行时布局矩阵 260/260 通过，覆盖 26 条路由、两种语言及五种手机、iPad 与桌面视口。"
+      "生产构建、敏感数据扫描、产物验证、代码检查及全部 319 项仓库测试通过。",
+      "自动合约确认 36 门课程均恰有 120 道不重复句子练习，每日题组含十道不重复题。",
+      "WebKit 运行时布局矩阵 260/260 通过，覆盖 26 条路由、两种界面语言及五种手机、iPad 与桌面视口。"
     ]
   },
   "deferred": {
-    "en": ["This portfolio migration does not run cross-site live RealtimeKit browser sessions; existing SmartLingo realtime contracts remain automated and unchanged."],
-    "zh": ["本次跨站迁移不执行跨站 RealtimeKit 实时浏览器会话；SmartLingo 现有实时合约继续由自动测试覆盖且未改变。"]
+    "en": ["Speech synthesis uses each browser's installed target-language voice; voice timbre can differ across Safari, Chrome, Windows, and Android."],
+    "zh": ["语音合成使用浏览器安装的目标语言语音；Safari、Chrome、Windows 与 Android 的音色可能不同。"]
   },
   "siteAdaptations": {
-    "en": [
-      "Unlike SmartClass Supervisor creation, SmartLingo college and tag creation remains permanent-administrator-only and reuses its site-owned fixed language courses.",
-      "SmartLingo keeps its locale-prefixed routes, independent D1/R2, Clerk, RealtimeKit, OpenAI/DeepSeek, payment, GitHub, and Cloudflare boundaries."
-    ],
-    "zh": [
-      "不同于 SmartClass Supervisor 创建方式，SmartLingo 的学院与标签创建仍仅限永久管理员，并复用本站独立的固定语言课程。",
-      "SmartLingo 保留语言前缀路由及独立 D1/R2、Clerk、RealtimeKit、OpenAI/DeepSeek、支付、GitHub 与 Cloudflare 边界。"
-    ]
+    "en": ["The new exercise bank stays inside SmartLingo and changes no shared identity, commerce, classroom, or external-service boundary."],
+    "zh": ["新练习库仅属于 SmartLingo，不改变共享身份、商业、课程教室或外部服务边界。"]
   }
 }

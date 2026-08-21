@@ -22,6 +22,13 @@ import {
   scorePronunciationTranscript,
   toClientPlacementQuestions,
 } from "../lib/smartlingo-learning.ts";
+import {
+  SMARTLINGO_SENTENCES_PER_COURSE,
+  SMARTLINGO_SENTENCES_PER_ROUND,
+  buildCourseSentenceBank,
+  buildDailySentenceRound,
+  gradeSentenceRound,
+} from "../lib/smartlingo-sentence-exercises.ts";
 
 test("daily session plans fill exactly 15, 30, 45, or 60 minutes", () => {
   for (const minutes of [15, 30, 45, 60]) {
@@ -264,6 +271,32 @@ test("daily five-skill tasks are stable, localized, client-safe, and graded from
     () => buildDailyPracticeItem("hi", "reading", "2026-02-30", "en"),
     /valid calendar date/,
   );
+});
+
+test("every language and course level has 120 stable sentence exercises and a ten-item daily round", () => {
+  for (const language of SMARTLINGO_LEARNING_LANGUAGE_CODES) {
+    for (const level of ["beginner", "intermediate", "advanced"]) {
+      const bank = buildCourseSentenceBank(language, level);
+      assert.equal(bank.length, SMARTLINGO_SENTENCES_PER_COURSE);
+      assert.equal(new Set(bank.map(item => item.id)).size, SMARTLINGO_SENTENCES_PER_COURSE);
+      assert.ok(bank.every(item => item.targetSentence && item.translation.zh && item.translation.en && item.anchorVocabulary));
+      const round = buildDailySentenceRound(language, level, "2026-08-21", "listening");
+      assert.equal(round.length, SMARTLINGO_SENTENCES_PER_ROUND);
+      assert.equal(new Set(round.map(item => item.id)).size, SMARTLINGO_SENTENCES_PER_ROUND);
+      const perfect = gradeSentenceRound(round, JSON.stringify(round.map(item => item.targetSentence)), "listening", "zh");
+      assert.deepEqual({ score: perfect.score, correct: perfect.correctCount }, { score: 100, correct: 10 });
+    }
+  }
+});
+
+test("listening and writing daily tasks expose ten word-builder exercises without exposing a scoring key", () => {
+  for (const skill of ["listening", "writing"]) {
+    const task = buildDailyPracticeItem("ja", skill, "2026-08-21", "zh", "beginner");
+    assert.equal(task.sentenceExercises.length, 10);
+    assert.ok(task.sentenceExercises.every(item => item.answerTokens.length >= 2));
+    assert.equal("correctAnswer" in task.sentenceExercises[0], false);
+    assert.equal(skill === "listening" ? Boolean(task.sentenceExercises[0].audioText) : !task.sentenceExercises[0].audioText, true);
+  }
 });
 
 test("the learning calendar is a single-column five-skill log with community activity and no flags", async () => {

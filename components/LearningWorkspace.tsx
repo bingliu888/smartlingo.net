@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
 import { SmartCardStudio } from "./SmartCardStudio";
+import { SentenceBuilderRound } from "./SentenceBuilderRound";
 
 type Lang = "zh" | "en";
 type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
@@ -100,6 +101,13 @@ type PracticeTask = {
   speechLocale?: string;
   direction?: "ltr" | "rtl";
   options?: PracticeOption[];
+  sentenceExercises?: {
+    id: string;
+    scenario: string;
+    prompt: string;
+    audioText?: string;
+    answerTokens: string[];
+  }[];
   estimatedMinutes?: number;
   status?: "available" | "completed" | "skipped";
   score?: number | null;
@@ -1721,7 +1729,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               <p className="sl-task-label">{t.prompt}</p>
               <h4>{task.prompt}</h4>
               {task.context ? <div className="sl-task-context"><span>{t.context}</span><p>{task.context}</p></div> : null}
-              {task.audioText ? <button className="sl-audio-action" type="button" onClick={() => playText(task.audioText || "", task.speechLocale)}>▶ {t.play}</button> : null}
+              {task.audioText && !task.sentenceExercises?.length ? <button className="sl-audio-action" type="button" onClick={() => playText(task.audioText || "", task.speechLocale)}>▶ {t.play}</button> : null}
               {done ? <>
                 <p className={`sl-task-status ${task.status}`}>
                   {task.status === "completed" ? t.completed : t.skipped}
@@ -1736,7 +1744,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
                   <small>{t.contentVersion} {task.feedback.contentVersion}</small>
                 </section> : null}
               </> : <>
-                {task.options?.length ? <div className="sl-task-options">
+                {(skill === "listening" || skill === "writing") && task.sentenceExercises?.length ? <SentenceBuilderRound lang={lang} mode={skill} speechLocale={task.speechLocale || "en-US"} exercises={task.sentenceExercises} onComplete={serialized => setAnswers(current => ({ ...current, [skill]: serialized }))}/> : task.options?.length ? <div className="sl-task-options">
                   {task.options.map(option => {
                     const value = taskOptionValue(option);
                     return <button className={answer === value ? "selected" : ""} aria-pressed={answer === value} type="button" onClick={() => setAnswers(current => ({ ...current, [skill]: value }))} key={value}>{option.label}</button>;
@@ -1750,7 +1758,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
                   <button type="button" disabled={dictating === "dialogue" || Boolean(busyKey)} onClick={() => startDialogueTraining(task, "answer")}>{dialogueMode === "answer" ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "回答我" : "Answer me")}</button>
                   <small>{lang === "zh" ? "导师会先开口，再聆听并纠正您的回答。" : "The tutor speaks first, then listens and corrects your response."}</small>
                 </div> : null}
-                {skill === "writing" && !task.options?.length ? <button className="sl-voice-action" type="button" disabled={dictating === skill} onClick={() => startDictation(skill, task.speechLocale)}>
+                {skill === "writing" && !task.options?.length && !task.sentenceExercises?.length ? <button className="sl-voice-action" type="button" disabled={dictating === skill} onClick={() => startDictation(skill, task.speechLocale)}>
                   ◉ {dictating === skill ? t.listeningNow : t.voice}
                 </button> : null}
                 <div className="sl-task-actions">

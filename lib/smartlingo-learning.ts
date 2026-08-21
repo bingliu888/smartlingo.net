@@ -1,12 +1,17 @@
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
 import {
+  buildDailySentenceRound,
+  gradeSentenceRound,
+  tokenizeSentence,
+} from "./smartlingo-sentence-exercises.ts";
+import {
   SMARTLINGO_BEGINNER_VOCABULARY_VERSION,
   beginnerVocabularySceneForDay,
   beginnerVocabularySeedsForDay,
   type SmartLingoBeginnerScene,
 } from "./smartlingo-beginner-vocabulary.ts";
 
-export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-03.1" as const;
+export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-21.1" as const;
 
 export const SMARTLINGO_LEARNING_LANGUAGE_CODES = [
   "zh",
@@ -748,6 +753,13 @@ export interface DailyPracticeItem {
   readonly context?: string;
   readonly audioText?: string;
   readonly options?: readonly { readonly id: string; readonly label: string }[];
+  readonly sentenceExercises?: readonly {
+    readonly id: string;
+    readonly scenario: string;
+    readonly prompt: string;
+    readonly audioText?: string;
+    readonly answerTokens: readonly string[];
+  }[];
   readonly estimatedMinutes: number;
   readonly direction: "ltr" | "rtl";
 }
@@ -791,17 +803,34 @@ export function buildDailyPracticeItem(
   levelOverride?: SmartLingoLevel,
 ): DailyPracticeItem {
   const question = buildDailyInternalQuestion(language, skill, date, levelOverride);
+  const level = levelOverride ?? question.level;
+  const sentenceExercises = skill === "listening" || skill === "writing"
+    ? buildDailySentenceRound(language, level, date, skill).map(exercise => ({
+      id: exercise.id,
+      scenario: exercise.scenario,
+      prompt: skill === "listening"
+        ? (uiLang === "zh" ? "选择听到的内容" : "Build what you hear")
+        : exercise.translation[uiLang],
+      audioText: skill === "listening" ? exercise.targetSentence : undefined,
+      answerTokens: tokenizeSentence(exercise.targetSentence, language),
+    }))
+    : undefined;
   return {
     taskId: question.id,
     contentVersion: question.contentVersion,
     language,
     skill,
-    level: question.level,
+    level,
     date,
-    prompt: localize(question.prompt, uiLang),
-    context: typeof question.context === "string" ? question.context : question.context?.[uiLang],
-    audioText: question.audioText,
+    prompt: sentenceExercises
+      ? skill === "listening"
+        ? (uiLang === "zh" ? "听句子，再按正确顺序点选词语。每轮 10 题。" : "Listen, then choose the words in the correct order. Ten questions per round.")
+        : (uiLang === "zh" ? "阅读提示，再用所学语言按正确顺序组句。每轮 10 题。" : "Read the prompt, then build the sentence in the language you are learning. Ten questions per round.")
+      : localize(question.prompt, uiLang),
+    context: sentenceExercises ? undefined : typeof question.context === "string" ? question.context : question.context?.[uiLang],
+    audioText: sentenceExercises ? undefined : question.audioText,
     options: question.options?.map(option => ({ id: option.id, label: localize(option.label, uiLang) })),
+    sentenceExercises,
     estimatedMinutes: question.estimatedMinutes,
     direction: language === "ar" ? "rtl" : "ltr",
   };
@@ -816,6 +845,12 @@ export function gradeDailyPracticeItem(
   skipped = false,
   levelOverride?: SmartLingoLevel,
 ): PlacementAnswerScore {
+  if (!skipped && (skill === "listening" || skill === "writing")) {
+    const question = buildDailyInternalQuestion(language, skill, date, levelOverride);
+    const level = levelOverride ?? question.level;
+    const result = gradeSentenceRound(buildDailySentenceRound(language, level, date, skill), answer, skill, "en");
+    return { questionId: question.id, skill, round: question.round, level, score: result.score, skipped: false };
+  }
   return scorePlacementAnswer(buildDailyInternalQuestion(language, skill, date, levelOverride), answer, skipped);
 }
 

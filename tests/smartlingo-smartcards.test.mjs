@@ -200,6 +200,8 @@ test("game navigation keeps target language, progress, local-time art, and score
   assert.match(course, /免费游戏/);
   assert.match(play, /smartcards\/starter-\$\{language\}/);
   assert.match(play, /play\/challenge\?language=\$\{language\}/);
+  assert.match(play, /programs\/\$\{language\}\/trial/);
+  assert.match(play, /免费试学/);
   assert.match(challenge, /isSmartLingoCommunityLanguage/);
   assert.match(calendar, /leaderboard\?month=\$\{month\}&language=/);
   assert.match(calendar, /mode=challenge&language=\$\{targetLanguage\}/);
