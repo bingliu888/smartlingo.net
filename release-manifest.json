@@ -1,58 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "vocabulary-speech-recovery-v1",
+  "releaseId": "real-user-multilingual-qa-report-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Keep multilingual vocabulary speaking recoverable", "zh": "确保多语言词汇跟读始终可继续" },
+  "title": { "en": "Publish the signed-in multilingual learning QA result", "zh": "发布真实登录多语言学习验收结果" },
   "purpose": {
-    "en": "Repair the stuck model-audio and microphone states discovered by signed-in Japanese vocabulary testing so learners can always continue or skip.",
-    "zh": "修复真实账号日语词汇测试发现的示范音频与麦克风卡死状态，确保学习者始终可以继续或跳过。"
+    "en": "Record the completed signed-in Chrome acceptance for Course learning, Learn through play, Everyday Speaking, and the vocabulary speech recovery across four target languages.",
+    "zh": "记录真实账号在 Chrome 完成的四语言课程学习、边玩边学、生活口语与词汇跟读恢复验收。"
   },
   "features": {
     "en": [
-      "Bound every vocabulary model-audio turn with a language-aware watchdog.",
-      "Recover automatically when speech recognition ends without a transcript.",
-      "Restore both Continue and Skip controls after microphone or speech-engine failures."
+      "Verify English, Japanese, Spanish, and Italian through one signed-in Chinese-interface learner.",
+      "Complete and persist the five course skills plus the daily quiz for the newly joined Japanese, Spanish, and Italian courses.",
+      "Verify Course, Learn through play, Everyday Speaking, and AI entry tabs for all four joined languages."
     ],
     "zh": [
-      "为每次词汇示范朗读增加按词长限制的超时保护。",
-      "语音识别结束但没有返回文字时自动恢复操作状态。",
-      "麦克风或系统语音失败后重新开放“继续跟读”和“跳过本词”。"
+      "使用一个中文界面真实学习账号验收英语、日语、西班牙语和意大利语。",
+      "新加入的日语、西班牙语和意大利语课程均完成并保存五项技能及每日测验。",
+      "验证四种已加入语言均显示课程、边玩边学、生活口语和咨询 AI 入口标签。"
     ]
   },
   "affected": {
-    "en": ["Course vocabulary SmartCards", "Multilingual model audio", "Speech-recognition recovery", "Real-user QA"],
-    "zh": ["课程词汇智慧卡", "多语言示范朗读", "语音识别恢复", "真实用户 QA"]
+    "en": ["Real-user QA report", "Four-language Dashboard", "Course learning logs", "Vocabulary pronunciation recovery", "Play and Everyday Speaking"],
+    "zh": ["真实用户 QA 报告", "四语言用户面板", "课程学习日志", "词汇跟读恢复", "边玩边学与生活口语"]
   },
   "changes": {
     "en": [
-      "Cancel a stalled speech-synthesis utterance and advance to microphone listening after a bounded delay.",
-      "Handle recognition error, empty end, start failure, and a twelve-second no-result timeout through one recovery path.",
-      "Keep the recovery message explicit and leave Skip available instead of trapping the learner."
+      "Create no-charge 30-day app-local access for the Japanese, Spanish, and Italian test courses and verify all five course entries.",
+      "Persist real vocabulary reviews, reading, writing, listening, dialogue, and server-graded quiz evidence from the test learner.",
+      "Confirm the speech watchdog restores Continue and Skip in Japanese, Spanish, and Italian when the Chrome test session has no audio input."
     ],
     "zh": [
-      "示范朗读超过限定时间时取消卡住的语音，并继续进入麦克风监听。",
-      "将识别错误、空结束、启动失败和十二秒无结果统一导向可恢复状态。",
-      "恢复提示明确说明麦克风权限与跳过选项，不再把学习者锁在禁用按钮上。"
+      "为日语、西班牙语和意大利语测试课程建立不收费的 30 天应用内试学资格，并验证全部五项课程入口。",
+      "由真实测试账号保存词汇复习、阅读、写作、听力、对话及服务器判分测验记录。",
+      "确认 Chrome 测试会话没有音频输入时，日语、西班牙语和意大利语的超时保护都会恢复继续与跳过按钮。"
     ]
   },
   "validation": {
     "en": [
-      "The signed-in Chinese-interface test learner reproduced the Japanese vocabulary lock before the fix.",
-      "Regression contracts cover synthesis timeout, recognition timeout, empty recognition end, and the visible skip recovery message.",
-      "TypeScript, sensitive-data scan, and all 307 repository tests pass before deployment."
+      "Japanese, Spanish, and Italian each show 1,000 Beginner words, twenty words per page, phonetics, persisted progress, and a recoverable pronunciation flow.",
+      "Japanese, Spanish, and Italian daily quizzes each scored 100/100; their learning calendars contain all five skill categories. Existing English five-skill evidence, Play, and Everyday Speaking were also verified.",
+      "The Dashboard shows all four joined languages in every learning area, the introducer balance remains zero, and the browser error log is empty.",
+      "TypeScript, sensitive-data scan, all 307 repository tests, and production deployment run 32498418381 pass."
     ],
     "zh": [
-      "中文界面真实测试账号已在修复前复现日语词汇跟读锁死。",
-      "回归契约覆盖朗读超时、识别超时、无结果结束和可见跳过恢复提示。",
-      "发布前 TypeScript、敏感数据扫描和仓库全部 307 项测试均已通过。"
+      "日语、西班牙语和意大利语均显示 1000 个初级词、每页 20 词、音标、持久进度和可恢复跟读流程。",
+      "日语、西班牙语和意大利语每日测验均为 100/100，学习日历均包含五项技能；现有英语五项记录、边玩边学和生活口语也已验证。",
+      "用户面板在每个学习区域显示四种已加入语言，介绍人积分仍为 0，浏览器错误日志为空。",
+      "TypeScript、敏感数据扫描、仓库全部 307 项测试和生产部署 32498418381 均已通过。"
     ]
   },
   "deferred": {
-    "en": ["Automated speech scoring remains dependent on a real audio input; unavailable test-runner audio is reported as capability-limited, never passed."],
-    "zh": ["自动发音评分仍依赖真实音频输入；测试运行器没有音频输入时标记为能力受限，绝不误报通过。"]
+    "en": ["Acoustic pronunciation scoring was not passed: the controlled Chrome session supplied no real audio input. Recovery and manual continuation passed, while acoustic scoring remains capability-limited."],
+    "zh": ["声学发音评分未标记通过：受控 Chrome 会话没有提供真实音频输入。恢复与手动继续已通过，声学评分仍标记为能力受限。"]
   },
   "siteAdaptations": {
-    "en": ["This recovery is specific to SmartLingo vocabulary pronunciation practice and does not alter other portfolio sites."],
-    "zh": ["本次恢复仅针对 SmartLingo 词汇发音练习，不改变其他站点。"]
+    "en": ["This report records SmartLingo test-account learning evidence only and does not alter other portfolio sites."],
+    "zh": ["本报告仅记录 SmartLingo 测试账号学习证据，不改变其他站点。"]
   }
 }
