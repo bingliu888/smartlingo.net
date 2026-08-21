@@ -36,6 +36,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   const [tries, setTries] = useState(0);
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [typed, setTyped] = useState("");
+  const [revealed, setRevealed] = useState(false);
   const [phase, setPhase] = useState<"answer" | "speak" | "done">("answer");
   const [speechMessage, setSpeechMessage] = useState("");
   const [pronunciationRound, setPronunciationRound] = useState(0);
@@ -122,7 +123,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
 
   function nextCard() {
     setIndex(current => Math.min(current + 1, Math.max(0, cards.length - 1)));
-    setTries(0); setWrongIds([]); setTyped(""); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
+    setTries(0); setWrongIds([]); setTyped(""); setRevealed(false); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
     setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
   }
 
@@ -179,9 +180,9 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
       {card && phase !== "done" ? <div className={`vm-card tries-${tries}`} dir={card.direction} style={{ backgroundImage: `linear-gradient(${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"},${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
         <div className="vm-progress" role="progressbar" aria-label={zh ? "今日词卡进度" : "Today's card progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={practicePercent}><span style={{ width: `${practicePercent}%` }}/></div>
         <div className="vm-card-scene"><span>{SCENES[card.sceneKey] || "✨"}</span><small>{modeLabel[card.mode]} · {zh ? `记忆阶段 ${card.memoryStage}/5` : `Memory stage ${card.memoryStage}/5`}</small></div>
-        {card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {zh ? "播放发音" : "Play word"}</button> : <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3>}
+        {phase === "answer" && !revealed ? <button className="vm-study-card" type="button" onClick={() => setRevealed(true)}><strong>{card.form}</strong>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<small>{zh ? "点一下翻卡查看释义" : "Tap to flip and see the meaning"}</small></button> : card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {zh ? "播放发音" : "Play word"}</button> : <h3>{phase === "answer" && revealed ? meaning(card) : card.mode === "recall" || textMode ? meaning(card) : card.form}</h3>}
         {tries ? <p className="vm-hint" role="status">{tries === 1 ? (zh ? `提示：这是“${card.sceneKey}”场景词。` : `Hint: this belongs to “${card.sceneKey}”.`) : (zh ? `再提示：开头是“${Array.from(card.form)[0]}”，共 ${Array.from(card.form).length} 个字符。` : `More help: it starts with “${Array.from(card.form)[0]}” and has ${Array.from(card.form).length} characters.`)}</p> : null}
-        {phase === "answer" ? textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={zh ? "输入目标语言词语" : "Type the target-language word"}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{zh ? "检查" : "Check"}</button></div> : <div className="vm-options">{card.options.map(option => <button type="button" disabled={busy || wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div> : <div className="vm-speak">
+        {phase === "answer" ? !revealed ? null : textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={zh ? "输入目标语言词语" : "Type the target-language word"}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{zh ? "检查" : "Check"}</button></div> : <div className="vm-options">{card.options.map(option => <button type="button" disabled={busy || wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div> : <div className="vm-speak">
           <p>{speechMessage}</p><h3>{card.form}</h3>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<span>{zh ? "当前语言助读（近似）" : "Approximate reading aid"} · {card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span>
           <div className="vm-rounds" aria-label={zh ? "五次跟读分数" : "Five pronunciation scores"}>{[1,2,3,4,5].map(round => <b className={round <= pronunciationScores.length ? "scored" : round === pronunciationRound ? "active" : ""} key={round}>{pronunciationScores[round - 1] ?? round}</b>)}</div>
           {pronunciationScores.length ? <strong className="vm-average">{zh ? "平均" : "Average"} {Math.round(pronunciationScores.reduce((sum, score) => sum + score, 0) / pronunciationScores.length)}</strong> : null}
@@ -198,6 +199,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     </> : null}
     {!data && !error ? <p className="vm-loading">{zh ? "正在整理今天的词卡…" : "Preparing today's cards…"}</p> : null}{error ? <p className="vm-error" role="alert">{error}</p> : null}
     <style>{`.vm-speak>.vm-rounds{margin-top:18px}.vm-rounds b{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:rgba(255,255,255,.12)}.vm-rounds b.active{outline:3px solid #ffe69a;background:#b57514}.vm-rounds b.scored{background:#fff;color:#0a5e4c}.vm-average{display:block;margin-top:12px;font-size:24px}`}</style>
+    <style>{`.vm-study-card{width:100%;min-height:260px;margin:24px 0;padding:28px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}.vm-study-card strong{font-size:clamp(38px,7vw,76px);overflow-wrap:anywhere}.vm-study-card b,.vm-study-card small{color:#d0e7df}`}</style>
     <style>{styles}</style>
   </section>;
 }

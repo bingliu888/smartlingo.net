@@ -1,79 +1,83 @@
 {
   "schemaVersion": 1,
-  "releaseId": "visible-free-trial-cta-v1",
+  "releaseId": "complete-vocabulary-trial-v1",
   "site": "smartlingo.net",
   "title": {
-    "en": "Restore the visible Free Trial course entry",
-    "zh": "恢复清晰可见的课程免费试学入口"
+    "en": "Complete the 1,000-word Beginner vocabulary trial",
+    "zh": "补齐初级课程 1,000 词完整试学"
   },
   "purpose": {
-    "en": "Make the anonymous Beginner Free Trial clearly visible beside Free to Play on every language course detail page and verify the complete production entry flow.",
-    "zh": "让每个语言课程详情页的匿名初级免费试学按钮清晰显示在免费游戏右侧，并验证完整生产入口流程。"
+    "en": "Replace the old ten-word anonymous vocabulary demo with the published Beginner catalog, a SmartCard learning loop, status reports, and a daily progress score.",
+    "zh": "用正式发布的 Beginner 词库、完整智慧卡学习循环、状态报告和今日进度分替换旧的 10 词匿名演示。"
   },
   "features": {
     "en": [
-      "Restore the missing dark SmartLingo hero shell on every localized language course detail page.",
-      "Render Free Trial immediately to the right of Free to Play with a visible high-contrast outline.",
-      "Preserve the target language in the anonymous Beginner trial URL and expose all five trial learning skills.",
-      "Keep anonymous trial activity in page memory without account or database writes."
+      "Read all 1,000 published Beginner words through a new anonymous GET-only catalog endpoint without learner-data writes.",
+      "Practice ten daily SmartCards through flip-to-meaning, answer-with-hints, and five repeat-after-AI pronunciation rounds.",
+      "Show a large daily progress score plus Mastered, Learning, and Pending tabs with counts and paged word lists.",
+      "Require the same flip-before-answer study step in the signed-in 21-day vocabulary center."
     ],
     "zh": [
-      "恢复所有本地化语言课程详情页缺失的 SmartLingo 深色 Hero 外壳。",
-      "把免费试学紧邻免费游戏右侧显示，并提供清晰的高对比度描边。",
-      "在匿名初级试学 URL 中保留目标语言，并提供全部五项试学技能。",
-      "匿名试学操作仅保存在当前页面内存，不写入账户或数据库。"
+      "通过新的匿名只读 GET 词库接口读取全部 1,000 个已发布 Beginner 词条，不写入学习者数据。",
+      "每日练习 10 张智慧卡，依次完成翻卡看释义、带提示答题和五轮跟 AI 跟读。",
+      "显示醒目的今日进度分，以及带数量和分页词表的学会了、正在学、还未学三栏报告。",
+      "登录后的 21 天词汇中心同样必须先翻卡学习再答题。"
     ]
   },
   "affected": {
     "en": [
-      "Chinese and English language course detail routes",
       "Anonymous Beginner trial routes for all twelve target languages",
-      "Project release history for this production fix"
+      "Published Beginner vocabulary read API",
+      "Signed-in course vocabulary memory workspace",
+      "Project release history"
     ],
     "zh": [
-      "中英文界面的语言课程详情路由",
       "十二种目标语言的匿名初级试学路由",
-      "本次生产修复的项目发布历史"
+      "已发布 Beginner 词汇只读接口",
+      "登录课程的词汇记忆中心",
+      "项目发布历史"
     ]
   },
   "changes": {
     "en": [
-      "Wrap the shared header and course hero in the existing SmartLingo dark hero surface.",
-      "Use the shared responsive action row so all three course actions remain visible and wrap safely.",
-      "Add regression checks for the hero shell, action row, trial link, and no-persistence contract."
+      "Build deterministic ten-card daily decks and four-choice questions from the language's published Beginner catalog.",
+      "Keep anonymous statuses and scores in React page memory only and reset them on refresh.",
+      "Provide retry hints only in practice, microphone-denial guidance, and a no-speech-recognition completion fallback.",
+      "Render word lists in bounded batches of 100 to keep older iPads responsive."
     ],
     "zh": [
-      "用现有 SmartLingo 深色 Hero 表面包裹共享页头和课程 Hero。",
-      "采用共享响应式操作栏，确保三个课程操作都清晰可见并安全换行。",
-      "增加 Hero 外壳、操作栏、试学链接和不持久化约束的回归检查。"
+      "从目标语言正式发布的 Beginner 词库确定性生成每日 10 卡和四选一题组。",
+      "匿名状态和分数仅保存在 React 页面内存中，刷新即重置。",
+      "仅练习模式提供逐次提示，并加入麦克风拒绝说明和无语音识别时的完成后备路径。",
+      "词表每次最多显示 100 个，保持旧款 iPad 的响应速度。"
     ]
   },
   "validation": {
     "en": [
-      "All 297 automated site tests, TypeScript checks, lint, production build, artifact validation, and sensitive-data scan",
-      "Phone, iPad portrait, iPad landscape, and desktop responsive visibility and overflow checks",
-      "Production Safari and Chrome checks of button visibility, right-side placement, target-language URL, and five-skill anonymous trial"
+      "All 297 automated site tests, including the 48,000-row multilingual vocabulary and pronunciation corpus",
+      "Verified production build, artifact validation, sensitive-data scan, and source-drift checks",
+      "Chrome and Safari tests of the Chinese-interface Japanese Beginner trial, flip flow, report counts, responsive containment, and production catalog"
     ],
     "zh": [
-      "全部 297 项自动化测试、TypeScript、Lint、生产构建、产物校验和敏感信息扫描",
-      "手机、iPad 竖屏、iPad 横屏和桌面端的按钮可见性及溢出检查",
-      "使用生产 Safari 与 Chrome 验证按钮可见、右侧位置、目标语言 URL 和五项匿名试学"
+      "全部 297 项自动化测试，包括 48,000 条多语言词汇和音标语料校验",
+      "已验证生产构建、产物、敏感信息扫描和源码漂移检查",
+      "使用 Chrome 与 Safari 验证中文界面学习日语初级试学、翻卡流程、报告数量、响应式容纳和生产词库"
     ]
   },
   "deferred": {
     "en": [
-      "Signed-in subscription and realtime classroom flows were intentionally unchanged and were not rerun for this public anonymous-entry UI fix."
+      "Live microphone scoring requires the user's browser permission and spoken input; the production UI and retry/fallback states were verified without retaining audio or transcripts."
     ],
     "zh": [
-      "本次仅修复公开匿名入口 UI，未改动登录订阅与实时课堂流程，因此未重新执行这些流程。"
+      "实时发音评分需要用户允许浏览器麦克风并实际开口；生产环境已验证权限说明、重试和后备状态，且不保留音频或文字。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep smartlingo.net data, identity, deployment credentials, production resources, and anonymous no-write behavior isolated."
+      "Keep SmartLingo vocabulary data, learner progress, identity, and deployment resources site-local; anonymous trial access is read-only."
     ],
     "zh": [
-      "保持 smartlingo.net 的数据、身份系统、部署凭据、生产资源及匿名不写库行为完全独立。"
+      "SmartLingo 词汇数据、学习进度、身份系统和部署资源均保持本站独立；匿名试学只读访问。"
     ]
   }
 }

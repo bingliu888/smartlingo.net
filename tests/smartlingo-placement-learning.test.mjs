@@ -62,11 +62,12 @@ test("class dashboard starts a focused tabbed session with a compact bottom-righ
   assert.match(workspace, /position:fixed;right:max\(18px,env\(safe-area-inset-right\)\)/);
 });
 
-test("anonymous Beginner trial is public, interactive in memory, and never persists learner data", async () => {
-  const [coursePage, trialPage, trial] = await Promise.all([
+test("anonymous Beginner trial is public, reads the published catalog, and never persists learner data", async () => {
+  const [coursePage, trialPage, trial, catalogRoute] = await Promise.all([
     read("../app/[lang]/programs/[language]/page.tsx"),
     read("../app/[lang]/programs/[language]/trial/page.tsx"),
     read("../components/AnonymousBeginnerTrial.tsx"),
+    read("../app/api/vocabulary/trial/route.ts"),
   ]);
   assert.match(coursePage, /Free to Play[^]*Free Trial/);
   assert.match(coursePage, /programs\/\$\{language\}\/trial/);
@@ -75,9 +76,15 @@ test("anonymous Beginner trial is public, interactive in memory, and never persi
   assert.match(trialPage, /getBeginnerSessionVocabularyDeck/);
   assert.match(trialPage, /buildDailyPracticeItem/);
   assert.doesNotMatch(trialPage, /requestUser|redirect\(|getDatabase|smartlingo_course_enrollments/);
-  assert.match(trial, /Everything stays in this page's memory/);
+  assert.match(trial, /progress stays in this page/);
   assert.match(trial, /useState<Skill>/);
-  assert.doesNotMatch(trial, /fetch\(|localStorage|sessionStorage|indexedDB|\/api\//);
+  assert.match(trial, /fetch\(`\/api\/vocabulary\/trial\?language=/);
+  assert.match(trial, /method: "GET"/);
+  assert.doesNotMatch(trial, /localStorage|sessionStorage|indexedDB|method: "POST"/);
+  assert.match(catalogRoute, /level='beginner'/);
+  assert.match(catalogRoute, /review_status='published'/);
+  assert.match(catalogRoute, /dailyDeck\(catalog, localDate\)/);
+  assert.doesNotMatch(catalogRoute, /INSERT INTO|UPDATE smartlingo|DELETE FROM|export async function POST/);
 });
 
 test("repetition records a local preview and returns AI feedback in the interface language", async () => {
