@@ -16,6 +16,7 @@ The numerical targets are SmartLingo curriculum targets. They are aligned to CEF
 - Frequency ordering: `wordfreq` corpus frequencies (CC BY-SA 4.0 data; Apache-2.0 software).
 - English lexical senses: Princeton WordNet 3.0, ranked with its corpus lemma counts under the WordNet 3.0 license. Open Multilingual Wordnet 1.4 supplies concise Chinese lemmas when present; an explicit tested core map covers grammatical words WordNet intentionally omits.
 - Other-language lexical senses and dictionary IPA: English Wiktionary dump dated 2026-08-05, extracted by Wiktextract/Kaikki (CC BY-SA 4.0; retrieved 2026-08-20).
+- Japanese Beginner sense correction: EDRDG JMdict daily release retrieved 2026-08-20 (CC BY-SA 4.0). The correction chooses an applicable common JMdict sense by matching the catalog gloss, applies explicit core-grammar overrides, and replaces non-learner media abbreviations or bare fragments with common dictionary words.
 - Missing IPA fallback: eSpeak NG linguistic rules. The stored output is release data; eSpeak is not a production dependency.
 - Chinese gloss draft: Argos Translate English-to-Chinese offline model when no OMW or explicit core gloss is available. Automated length and repetition gates run before release; this field is never represented as human translated.
 
@@ -39,5 +40,6 @@ The builder and migrations reject a release unless:
 4. the 21-day vocabulary API returns cumulative catalogs by subscribed course level;
 5. pronunciation feedback is transient, runs for five turns, and does not store microphone audio or transcripts.
 6. common English function words and inflections resolve to their everyday learner meaning, not chemical symbols, place abbreviations, surnames, or other rare homographs.
+7. Japanese Beginner homographs resolve to the catalog's intended learner sense, generated Chinese glosses are concise and non-repetitive, and media abbreviations are excluded.
 
 The reproducible offline builder is [`scripts/build-smartlingo-vocabulary.py`](../scripts/build-smartlingo-vocabulary.py). It is not imported by the production application.

@@ -11,6 +11,7 @@ const catalogFiles = readdirSync(new URL("../drizzle/", import.meta.url))
 const correctionFiles = readdirSync(new URL("../drizzle/", import.meta.url))
   .filter(name => /^014[4-7]_english_vocabulary_common_senses\.sql$/.test(name))
   .sort();
+const japaneseCorrectionFile = "0148_japanese_beginner_common_senses.sql";
 
 test("the release contains one deterministic 4,000-item catalog migration per language", () => {
   assert.equal(catalogFiles.length, 12);
@@ -44,6 +45,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     "0131_multilingual_pronunciation_guides.sql",
     ...catalogFiles,
     ...correctionFiles,
+    japaneseCorrectionFile,
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
@@ -79,7 +81,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
   assert.equal(incomplete.count, 0);
 
   const generated = database.prepare(`SELECT COUNT(*) AS total,
-    SUM(review_method LIKE '%automated-linguistic-validation') AS truthfullyLabeled,
+    SUM(review_method LIKE '%automated-linguistic-validation' OR review_method LIKE 'jmdict-applicable-common-sense%') AS truthfullyLabeled,
     SUM(lexical_source_license NOT IN ('CC BY 4.0','CC BY-SA 4.0','WordNet 3.0 license; OMW 1.4 data license')) AS invalidLicense
     FROM smartlingo_vocabulary_items WHERE sequence>=29`).get();
   assert.deepEqual({ ...generated }, { total: 47664, truthfullyLabeled: 47664, invalidLicense: 0 });
@@ -92,5 +94,38 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
   ]);
   assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
     WHERE target_language='en' AND review_status='published' AND (length(meaning_zh)>100 OR meaning_zh GLOB '*\\\\*')`).get().count, 0);
+
+  const japaneseBeginner = database.prepare(`SELECT COUNT(*) AS total,
+    SUM(length(meaning_zh)>50 OR meaning_zh LIKE '%QQ%' OR trim(meaning_zh)='') AS unsafe,
+    SUM(lexical_source_url='https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project') AS jmdict
+    FROM smartlingo_vocabulary_items WHERE target_language='ja' AND level='beginner' AND review_status='published'`).get();
+  assert.deepEqual({ ...japaneseBeginner }, { total: 1000, unsafe: 0, jmdict: 972 });
+  const japaneseExamples = database.prepare(`SELECT form,meaning_en AS meaningEn,meaning_zh AS meaningZh
+    FROM smartlingo_vocabulary_items WHERE target_language='ja' AND level='beginner'
+    AND form IN ('家','ここ','紹介','せ','たち') ORDER BY form`).all();
+  assert.deepEqual(japaneseExamples.map(row => [row.form, row.meaningEn, row.meaningZh]), [
+    ["ここ", "here; this place, area, or part (near the speaker) (Can be juxtaposed with a phrase with で (de) or に (ni).)", "这里"],
+    ["せ", "causative verb stem (make; let)", "让；使（动词变化的一部分）"],
+    ["たち", "plural suffix for people", "……们（复数后缀）"],
+    ["家", "a house", "家；房屋"],
+    ["紹介", "introduction; introducing someone", "介绍；引见"],
+  ]);
+  const excludedJapaneseForms = ["M", "S", "L", "CM", "V", "G", "U", "OK", "PC", "DVD"];
+  const placeholders = excludedJapaneseForms.map(() => "?").join(",");
+  assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
+    WHERE target_language='ja' AND level='beginner' AND form IN (${placeholders})`).get(...excludedJapaneseForms).count, 0);
+  assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
+    WHERE target_language='ja' AND level='beginner' AND review_status='published'
+    AND (meaning_zh GLOB '*思维；思维*' OR meaning_zh GLOB '*感觉；感觉*')`).get().count, 0);
   database.close();
+});
+
+test("the Japanese correction is forward-only, reproducible, and source-attributed", () => {
+  const sql = readFileSync(new URL(`../drizzle/${japaneseCorrectionFile}`, import.meta.url), "utf8");
+  const builder = readFileSync(new URL("../scripts/build-japanese-gloss-correction.py", import.meta.url), "utf8");
+  assert.equal((sql.match(/UPDATE smartlingo_vocabulary_items SET /g) || []).length, 972);
+  assert.match(sql, /EDRDG JMdict_e, CC BY-SA 4\.0/);
+  assert.match(builder, /build_jmdict_index/);
+  assert.match(builder, /applicable_gloss/);
+  assert.doesNotMatch(builder, /write_text\([^)]*0135/);
 });

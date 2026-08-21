@@ -77,5 +77,5 @@ export async function GET(request: Request) {
     summary: { total: catalog.length, mastered: 0, learning: 0, unlearned: catalog.length, percent: 0, stars: 0 },
     dailyDeck: dailyDeck(catalog, localDate),
     items,
-  }, { headers: { "cache-control": "public, max-age=300" } });
+  }, { headers: { "cache-control": "no-store" } });
 }

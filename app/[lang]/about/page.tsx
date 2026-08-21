@@ -15,6 +15,7 @@ const copy = {
       ["People and AI together", "Public text Ask Guru offers a starting point. Signed-in members may use microphone and live-audio practice while classmates connect through Community, messages, and direct or group Live Chat."],
       ["Transparent class payments", "The planned Stripe Connect flow applies a one-time 15% discount to each learner’s first successful payment in a class, then splits the discounted pre-tax amount 70% to the class owner and 30% to the platform."],
       ["Referral boundary", "Introducer points apply only to successful platform subscription charges under published rules. Member-created class purchases and owner payouts never generate introducer points, and the program remains single-level."],
+      ["Vocabulary sources", "Vocabulary senses include Wiktionary/Wiktextract data and Japanese EDRDG JMdict data under CC BY-SA 4.0. Automated drafts pass release gates and are identified as automated rather than human translation."],
     ],
   },
   zh: {
@@ -28,6 +29,7 @@ const copy = {
       ["真人与人工智能共同学习", "公开文字智能导师提供起点；登录会员可使用麦克风和实时语音，并通过社区、消息、私聊或群组实时聊天与同学连接。"],
       ["班级付款透明", "计划采用 Stripe Connect：每位学员在每个班级的首次成功付款享一次八五折，再以折后税前金额为基础向班主分配七成、平台分配三成。"],
       ["推荐奖励边界", "介绍人积分只适用于规则公布后成功收取的平台订阅费。会员创建班级的购买与班主收款永不产生介绍人积分，推荐关系只保留一层。"],
+      ["词汇数据来源", "词汇释义包含采用 CC BY-SA 4.0 的 Wiktionary/Wiktextract 数据及日语 EDRDG JMdict 数据。自动生成的释义必须通过发布门禁，并明确属于自动处理而非人工翻译。"],
     ],
   },
 } as const;
@@ -49,6 +51,12 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
         <h1>{t.title}</h1>
         <p className="ai-legal-intro">{t.intro}</p>
         <div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div>
+        <p className="ai-legal-intro">
+          {lang === "zh" ? "词汇数据鸣谢：" : "Vocabulary attribution: "}
+          <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project">EDRDG JMdict</a>
+          {lang === "zh" ? "，许可：" : ", licensed under "}
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+        </p>
       </article>
       <SiteFooter lang={lang}/>
     </main>
