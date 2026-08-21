@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate detailed release manifest
+        run: node scripts/release-manifest.mjs --require-current-commit
+
       - name: Verify session, course rooms, and payment contracts
         run: node --test tests/subscription-crypto-contract.test.mjs tests/course-student-management.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
 
@@ -108,7 +111,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          RELEASE_TITLE: Complete twelve-language vocabulary and five-turn pronunciation
-          RELEASE_TITLE_ZH: 完成十二语分级词库与五轮跟读
-          RELEASE_NOTES: Publish exactly 1,000 Beginner, 1,500 Intermediate, and 1,500 Advanced items for every target language|Record standard target phonetics, all twelve interface-language reading aids, source URL, license, revision, and truthful review method on every published row|Rank English homographs by WordNet corpus frequency and explicitly cover grammatical words so IN, Be, and other abbreviations cannot replace everyday meanings|Use a light library payload while keeping complete options and pronunciation aids on the ten-card daily deck|Run five automatic listen-speak-score turns after each vocabulary answer and show round scores plus the average|Require production D1 to verify all 48,000 published rows before deploying the Worker
-          RELEASE_NOTES_ZH: 为每种目标语言发布精确的 1,000 条 Beginner、1,500 条 Intermediate 和 1,500 条 Advanced 词汇|每条发布数据保存目标语言标准音标、十二种界面语言助读、来源网址、许可、版本和真实审核方式|英语同形词按 WordNet 语料频次选择常用义，并显式覆盖语法词，防止 IN、Be 等缩写或符号取代日常词义|词库列表使用轻量数据载荷，每日十张卡仍保留完整选项与助读|每次词汇答题后自动完成五轮听、说、评分，并显示每轮分数与平均分|Worker 部署前必须验证生产 D1 的 48,000 条发布数据全部完整
+
+
+      - name: Verify current production Project release details
+        run: node scripts/verify-production-release-report.mjs

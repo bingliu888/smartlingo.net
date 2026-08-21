@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "releaseId": "project-release-details-v1",
+  "site": "smartlingo.net",
+  "title": {
+    "en": "Manifest-driven detailed Project release reports",
+    "zh": "由发布清单驱动的详细项目报告"
+  },
+  "purpose": {
+    "en": "Make every smartlingo.net Project report describe the exact deployment instead of reusing stale or generic release text.",
+    "zh": "确保 smartlingo.net 的每份项目报告准确说明本次部署，不再复用过期或笼统的发布文案。"
+  },
+  "features": {
+    "en": [
+      "Add a site-local, release-specific manifest as the source of Project report titles and notes.",
+      "Validate required release purpose, scope, implementation, verification, and deferred-test details before deployment.",
+      "Show the current release details with the exact commit and GitHub Actions run in Project history.",
+      "Fail production verification unless the latest matching commit contains this manifest's title and deployment purpose."
+    ],
+    "zh": [
+      "新增站点独立、本次发布专属的清单，作为项目报告标题和说明的来源。",
+      "部署前校验发布目的、范围、实现、验证和延后测试等必填详情。",
+      "在项目历史中显示本次发布详情、精确 commit 和 GitHub Actions 运行记录。",
+      "只有最新匹配 commit 同时包含本清单标题与部署目的时，生产验证才可通过。"
+    ]
+  },
+  "affected": {
+    "en": [
+      "Project and release-history pages",
+      "GitHub Actions production deployment pipeline",
+      "Project runtime deployment-report reconciliation"
+    ],
+    "zh": [
+      "项目与发布历史页面",
+      "GitHub Actions 正式部署流水线",
+      "项目运行时发布报告对账"
+    ]
+  },
+  "changes": {
+    "en": [
+      "Replace workflow-level stale release copy with versioned repository data.",
+      "Preserve the site's existing branding, Project schema, cloud bindings, and historical release records.",
+      "Replace history-wide string searches with exact current-build semantic verification."
+    ],
+    "zh": [
+      "使用仓库内版本化数据替代工作流中的过期固定发布文案。",
+      "保留本站品牌、项目数据结构、云资源绑定和历史发布记录。",
+      "使用当前构建精确语义校验替代对全部历史记录的字符串搜索。"
+    ]
+  },
+  "validation": {
+    "en": [
+      "Release-manifest schema and semantic-detail validation",
+      "Existing site automated contract tests, type checks, and production build",
+      "Successful Cloudflare deployment and production Project report inspection"
+    ],
+    "zh": [
+      "发布清单结构与语义详情校验",
+      "本站既有自动化契约测试、类型检查和正式构建",
+      "Cloudflare 成功部署及生产项目报告内容检查"
+    ]
+  },
+  "deferred": {
+    "en": [
+      "Full cross-site interactive realtime testing is intentionally not required for this reporting-pipeline migration."
+    ],
+    "zh": [
+      "本次报告流水线迁移按全站发布规则不执行逐站完整实时互动测试。"
+    ]
+  },
+  "siteAdaptations": {
+    "en": [
+      "Keep smartlingo.net data, identity, deployment credentials, and production resources isolated."
+    ],
+    "zh": [
+      "保持 smartlingo.net 的数据、身份系统、部署凭据和生产资源完全独立。"
+    ]
+  }
+}
