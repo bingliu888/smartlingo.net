@@ -7,6 +7,7 @@ import { getDatabase, getSessionUser } from "../../../lib/auth";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { DashboardLearningHub, type DashboardJoinedCourse } from "../../../components/DashboardLearningHub";
+import { DashboardDailySprint } from "../../../components/DashboardDailySprint";
 import "./dashboard-tuneup.css";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
       <span data-layout-overlap-check="dashboard-start" style={{ display: "block", height: 1 }} />
       <div className="dashboard-wrap">
         <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p></div>
+        <DashboardDailySprint lang={lang} courses={joinedCourses}/>
         <DashboardLearningHub lang={lang} courses={joinedCourses}/>
         <MembershipPanel lang={lang} />
         <div className="dashboard-grid">

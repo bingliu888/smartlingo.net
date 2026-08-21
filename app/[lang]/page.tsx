@@ -161,13 +161,13 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div className="lingo-actions">
               <Link className="primary-button" href="#home-everyday">{lang === "zh" ? "生活口语" : "Everyday speaking"} →</Link>
               <Link className="secondary-button" href="#home-play">{lang === "zh" ? "边玩边学" : "Learn through play"}</Link>
-              <Link className="secondary-button" href="#home-colleges">{lang === "zh" ? "选择学院" : "Choose College"}</Link>
               <Link className="secondary-button" href="#home-courses">{lang === "zh" ? "选择课程" : "Choose course"}</Link>
+              <Link className="secondary-button" href="#home-colleges">{lang === "zh" ? "选择学院" : "Choose College"}</Link>
               <Link className="text-link" href="#home-ai">{lang === "zh" ? "咨询AI" : "Ask AI"}</Link>
             </div>
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>
           </div>
-          <div className="lingo-hero-visual">
+          <Link className="lingo-hero-visual" href={`/${lang}/play`} aria-label={lang === "zh" ? "打开边玩边学，开始今日任务" : "Open Learn through play for today's task"}>
             <img
               className="lingo-community-art"
               src="/smartlingo-language-community-1600.png"
@@ -175,15 +175,15 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               height="858"
               alt={lang === "zh" ? "来自不同背景的学习者在人工智能语音导师帮助下共同练习语言" : "Learners from different backgrounds practicing language together with an AI voice coach"}
             />
-          <aside className="lingo-coach-card" aria-label={lang === "zh" ? "语言训练示例" : "Language practice example"}>
+          <div className="lingo-coach-card">
             <header><span>{t.coachLabel}</span><b>12 XP</b></header>
-            <div className="lingo-speech-orb" aria-hidden="true"><i/><i/><i/><i/></div>
             <h2>{t.coachTitle}</h2>
             <p>{t.coachPrompt}</p>
             <div className="lingo-listening"><span aria-hidden="true">●</span>{t.coachStatus}</div>
             <dl>{t.skills.map(([label, score]) => <div key={label}><dt>{label}</dt><dd>{score}</dd></div>)}</dl>
-          </aside>
+            <strong className="lingo-task-action">{lang === "zh" ? "进入边玩边学" : "Open Learn through play"} →</strong>
           </div>
+          </Link>
         </section>
       </div>
       <HomeLearningChoices lang={lang}/>
@@ -193,16 +193,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <div className="lingo-loop-grid">{t.loop.map(([number, title, body]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
       </section>
 
-      <section className="lingo-section lingo-college-section" id="home-colleges" data-layout-fill="home-colleges">
-        <div className="lingo-heading"><p className="section-kicker">COLLEGES</p><h2>{lang==="zh"?"进入一个连接课程与同学的学院。":"Enter a college that connects courses and learners."}</h2><p>{lang==="zh"?"输入学院编号直达，或浏览学院与我的学院。每个学院都有导论课程和自己的课程表。":"Enter a college number, browse all colleges, or return to My colleges. Every college has an introductory course and its own course table."}</p></div>
-        <JoinCollegeByCode lang={lang}/>
-        <div className="college-directory-actions"><Link className="primary-button" href={`/${lang}/colleges`}>{lang==="zh"?"浏览学院":"Browse colleges"}</Link><Link className="secondary-button" href={`/${lang}/colleges?view=mine`}>{lang==="zh"?"我的学院":"My colleges"}</Link></div>
-      </section>
-
       <section className="lingo-section lingo-class-section" id="home-courses">
         <div className="lingo-heading"><p className="section-kicker">{t.classKicker}</p><h2>{t.classTitle}</h2><p>{t.classBody}</p></div>
         <div className="lingo-class-grid">{t.classCards.map(([title, body], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
         <Link className="primary-button" href={`/${lang}/classes`}>{t.classes} →</Link>
+      </section>
+
+      <section className="lingo-section lingo-college-section" id="home-colleges" data-layout-fill="home-colleges">
+        <div className="lingo-heading"><p className="section-kicker">COLLEGES</p><h2>{lang==="zh"?"进入一个连接课程与同学的学院。":"Enter a college that connects courses and learners."}</h2><p>{lang==="zh"?"输入学院编号直达，或浏览学院与我的学院。每个学院都有导论课程和自己的课程表。":"Enter a college number, browse all colleges, or return to My colleges. Every college has an introductory course and its own course table."}</p></div>
+        <JoinCollegeByCode lang={lang}/>
+        <div className="college-directory-actions"><Link className="primary-button" href={`/${lang}/colleges`}>{lang==="zh"?"浏览学院":"Browse colleges"}</Link><Link className="secondary-button" href={`/${lang}/colleges?view=mine`}>{lang==="zh"?"我的学院":"My colleges"}</Link></div>
       </section>
 
       <section className="lingo-money-section">

@@ -1,64 +1,64 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-daily-sprint-rank-redeem-v1",
+  "releaseId": "smartlingo-todays-sprint-discovery-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Daily Sprint, rankings, and reward store", "zh": "每日速成、排行榜与积分兑换" },
+  "title": { "en": "Make Today’s Sprint the primary learning entry", "zh": "将今日速成提升为主要学习入口" },
   "purpose": {
-    "en": "Give subscribed learners a short, configurable five-skill learning loop and turn earned course reward points into visible progress and owned digital rewards.",
-    "zh": "为已订阅学员提供可选时长的五技能速成学习闭环，并让课程奖励积分同时体现为排行榜成绩和可拥有的数字奖励。"
+    "en": "Make the short five-skill session easy to discover from the home page, Play, a subscribed course, and the signed-in learner dashboard while clarifying the Course and College order.",
+    "zh": "让五技能短时学习可从首页、边玩边学、已订阅课程和登录用户面板轻松进入，并统一课程与学院的先后顺序。"
   },
   "features": {
     "en": [
-      "Add Daily Sprint as the first course learning choice with 5, 10, 15, or 20 minutes and a 10-minute default.",
-      "Run one mixed five-skill round per five minutes: ten vocabulary items with follow-me practice, reading, listening word order, translated writing word order, and speaking.",
-      "Add server-graded daily and weekly Sprint rankings to Play.",
-      "Add a Play reward store where signed-in learners can redeem course reward points for account-owned digital items."
+      "Place Choose course before Choose College in the shared header, home actions, and home content flow.",
+      "Redesign the home Today task as one image, gradient overlay, learning summary, and full-card link to Play.",
+      "Make Today’s Sprint the first Play tile with twelve-language selection and 5, 10, 15, or 20 minutes; ten minutes remains selected by default.",
+      "Add a top Today’s Sprint dashboard panel with joined-language tiles, an independent time choice per language, and an Add language tile."
     ],
     "zh": [
-      "把每日速成设为课程学习第一项，可选 5、10、15 或 20 分钟，默认 10 分钟。",
-      "每 5 分钟完成一轮五技能混合学习：10 个词汇与跟读、阅读、听力组句、母语提示写作组句和口语。",
-      "在边玩边学中增加由服务器评分的每日与每周速成排行榜。",
-      "在边玩边学中增加积分兑换页，登录学员可使用课程奖励积分拥有数字物品。"
+      "在共享导航、首页操作区和首页内容流中，把选择课程放在选择学院之前。",
+      "把首页今日任务重做为图片、渐变信息层、学习摘要和整卡可点击入口。",
+      "将今日速成设为边玩边学第一项，支持十二种语言及 5、10、15、20 分钟选择，默认 10 分钟。",
+      "在登录用户面板顶部新增今日速成区，按已加入语言显示卡片，每张独立选时，并提供添加语言入口。"
     ]
   },
   "affected": {
-    "en": ["Subscribed course dashboard", "Daily Sprint", "Play rankings", "Reward redemption", "Administrator Project report"],
-    "zh": ["已订阅课程面板", "每日速成", "边玩边学排行榜", "积分兑换", "管理员 Project 报告"]
+    "en": ["Shared header", "Home page", "Play page", "Course learning menu", "Member dashboard", "Sprint rankings", "Administrator Project report"],
+    "zh": ["共享导航", "首页", "边玩边学", "课程学习菜单", "用户面板", "速成排行榜", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Build each Sprint from the course's reviewed vocabulary and 120-sentence bank without exposing answer keys to the client.",
-      "Persist Sprint plans and completed server-derived scores for authenticated active course members.",
-      "Create a versioned digital reward catalog, redemption ownership records, and an atomic reward-point ledger debit.",
-      "Keep anonymous Play browsing public while requiring sign-in for personal balances, ownership, Sprint entry, and redemption."
+      "Rename learner-facing Daily Sprint copy to Today’s Sprint while retaining the existing server-authoritative plan and scoring model.",
+      "Route Play selections to the chosen language’s Beginner-course Sprint with the selected duration.",
+      "Use active joined-course data for dashboard language tiles and prefer the language’s Beginner course when available.",
+      "Keep sign-in, active course membership, server grading, rankings, and reward boundaries unchanged."
     ],
     "zh": [
-      "每日速成使用课程已审核词汇和 120 句题库生成，客户端不暴露答案。",
-      "仅为已登录且课程有效的学员保存速成计划和服务器计算的完成分数。",
-      "建立带版本的数字奖励目录、兑换拥有记录和原子化奖励积分扣账。",
-      "匿名用户仍可浏览边玩边学；个人余额、物品拥有、速成学习和兑换均要求登录。"
+      "将面向学员的每日速成名称统一为今日速成，同时保留现有服务器权威计划与评分模型。",
+      "边玩边学选择完成后进入所选语言的初级课程今日速成，并携带所选时长。",
+      "用户面板语言卡来自有效已加入课程数据，有初级课程时优先使用该课程。",
+      "登录、有效课程会员、服务器评分、排行榜和奖励边界保持不变。"
     ]
   },
   "validation": {
     "en": [
-      "TypeScript compilation and the production build pass.",
-      "All 324 repository tests pass, including duration, unique vocabulary, server scoring, route authorization, UI, and migration contracts.",
-      "The D1 migration applies successfully to a local Wrangler database, including the reward ledger rebuild and redemption triggers.",
-      "Shared site policy, architecture, base-feature consistency, and all 11 SmartLingo shared contracts pass."
+      "TypeScript, changed-file ESLint, sensitive-data scan, and the production build pass.",
+      "The full repository suite passes after updating the intentional Course-before-College contract.",
+      "WebKit runtime layout passes 260/260 checks across 26 routes, Chinese and English, and five phone, iPad, and desktop viewports.",
+      "Shared policy, architecture, base-feature consistency, and all 11 SmartLingo shared contracts pass."
     ],
     "zh": [
-      "TypeScript 编译与正式构建通过。",
-      "仓库 324 项测试全部通过，包括时长、唯一词汇、服务器评分、路由授权、界面和迁移合同。",
-      "D1 迁移已在本地 Wrangler 数据库成功执行，包括奖励账本重建与兑换触发器。",
-      "共享站点政策、架构、基础功能一致性及 SmartLingo 全部 11 项共享合同通过。"
+      "TypeScript、本次文件 ESLint、敏感数据扫描和正式构建通过。",
+      "更新明确的课程先于学院合同后，全仓测试通过。",
+      "WebKit 运行布局通过 260/260 项：26 个路由、中英文和 5 种手机、iPad、桌面尺寸。",
+      "共享政策、架构、基础功能一致性及 SmartLingo 全部 11 项共享合同通过。"
     ]
   },
   "deferred": {
-    "en": ["Automated browser QA cannot supply a real human microphone sample; speech permission and non-audio fallback remain covered by contracts and production UI checks."],
-    "zh": ["自动浏览器验收无法提供真人麦克风语音样本；语音权限与无音频回退仍由合同测试及正式站界面检查覆盖。"]
+    "en": ["Automated production browser QA cannot provide a real human speech sample; it verifies navigation and the microphone-ready state without inventing a pronunciation score."],
+    "zh": ["自动正式站浏览器验收无法提供真人语音样本；它会验证导航与麦克风就绪状态，但不会伪造发音成绩。"]
   },
   "siteAdaptations": {
-    "en": ["This is a SmartLingo learning feature. It reuses the existing course vocabulary, sentence, speech, membership, and reward boundaries without changing other sites."],
-    "zh": ["这是 SmartLingo 专属学习功能，复用现有课程词汇、句子、语音、会员与奖励边界，不改变其他站点。"]
+    "en": ["This release changes SmartLingo learning discovery only and does not alter other portfolio sites or their navigation."],
+    "zh": ["本次只调整 SmartLingo 学习入口，不改变其他站点及其导航。"]
   }
 }

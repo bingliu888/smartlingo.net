@@ -11,8 +11,9 @@ type Area = "everyday" | "play" | "courses" | "ai";
 type Choice = { id: string; titleZh: string; titleEn: string; bodyZh: string; bodyEn: string; image?: string; icon?: string };
 
 const PLAY_CHOICES: Choice[] = [
+  { id: "sprint", icon: "⚡", titleZh: "今日速成", titleEn: "Today’s Sprint", bodyZh: "选择 5–20 分钟，混合练习五项技能。", bodyEn: "Choose 5–20 minutes of mixed five-skill practice." },
   { id: "practice", icon: "◇", titleZh: "智慧卡练习", titleEn: "Smart Card Practice", bodyZh: "看词、选义、听读、开口说。", bodyEn: "See, choose, listen, and speak." },
-  { id: "challenge", icon: "⚡", titleZh: "智慧卡挑战", titleEn: "Smart Card Challenge", bodyZh: "每日限时挑战、排名与课程积分。", bodyEn: "Daily timed rounds, rankings, and course credit." },
+  { id: "challenge", icon: "🏆", titleZh: "智慧卡挑战", titleEn: "Smart Card Challenge", bodyZh: "每日限时挑战、排名与课程积分。", bodyEn: "Daily timed rounds, rankings, and course credit." },
 ];
 const COURSE_CHOICES: Choice[] = [
   { id: "basic", icon: "A1", titleZh: "初期课程", titleEn: "Beginner", bodyZh: "核心词汇、发音、听力与引导口语。", bodyEn: "Core vocabulary, pronunciation, listening, and guided speaking." },
@@ -38,7 +39,7 @@ export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
 
   function href(area: Area, choice: string, language: string) {
     if (area === "everyday") return `/${lang}/play/everyday?language=${language}&scene=${choice}`;
-    if (area === "play") return choice === "challenge" ? `/${lang}/play/challenge?language=${language}` : `/${lang}/smartcards/starter-${language}`;
+    if (area === "play") return choice === "sprint" ? `/${lang}/play?language=${language}` : choice === "challenge" ? `/${lang}/play/challenge?language=${language}` : `/${lang}/smartcards/starter-${language}`;
     if (area === "courses") return `/${lang}/classes/course_${language}_${choice}`;
     return `/${lang}/assistant?language=${language}&mode=${choice}`;
   }

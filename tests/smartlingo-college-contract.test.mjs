@@ -44,7 +44,7 @@ test("directory supports code entry, search, tags, access filters, and My colleg
   assert.ok(entry.indexOf("<input")<entry.indexOf("<button"));
   assert.match(entry,/zh\?"进入":"Enter"/);
   assert.match(header,/Choose College/);assert.match(header,/选择学院/);
-  assert.ok(home.indexOf('id="home-colleges"')<home.indexOf('id="home-courses"'));
+  assert.ok(home.indexOf('id="home-courses"')<home.indexOf('id="home-colleges"'));
 });
 
 test("college course table supports introduction, add course, and localized access labels",async()=>{

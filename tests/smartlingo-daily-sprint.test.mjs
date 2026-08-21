@@ -45,16 +45,37 @@ test("Daily Sprint scoring is server-derived across all five skills", () => {
 test("course and Play surfaces expose Daily Sprint, rankings, and digital redemption", () => {
   const menu = readFileSync(new URL("../components/CourseTrainingMenu.tsx", import.meta.url), "utf8");
   const play = readFileSync(new URL("../app/[lang]/play/page.tsx", import.meta.url), "utf8");
+  const playPicker = readFileSync(new URL("../components/PlayDailySprintPicker.tsx", import.meta.url), "utf8");
+  const dashboard = readFileSync(new URL("../app/[lang]/dashboard/page.tsx", import.meta.url), "utf8");
+  const dashboardSprint = readFileSync(new URL("../components/DashboardDailySprint.tsx", import.meta.url), "utf8");
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
   const rewardsRoute = readFileSync(new URL("../app/api/rewards/redeem/route.ts", import.meta.url), "utf8");
-  assert.match(menu, /每日速成/);
+  assert.match(menu, /今日速成/);
   assert.match(menu, /\[5,10,15,20\]/);
+  assert.match(play, /PlayDailySprintPicker/);
+  assert.match(playPicker, /今日速成/);
+  assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
+  assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
   assert.match(play, /play\/rankings/);
   assert.match(play, /play\/redeem/);
+  assert.match(dashboard, /DashboardDailySprint/);
+  assert.match(dashboardSprint, /添加新语言/);
+  assert.match(dashboardSprint, /minutes\[language\.code\] \|\| 10/);
   assert.match(sprintRoute, /requireOfficialClassMembership/);
   assert.match(sprintRoute, /status='completed'/);
   assert.match(rewardsRoute, /smartlingo_course_credit_ledger/);
   assert.match(rewardsRoute, /digital_redeem/);
+});
+
+test("course navigation precedes college navigation and the home task is one linked image card", () => {
+  const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
+  const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
+  assert.ok(header.indexOf("选择课程") < header.indexOf("选择学院"));
+  assert.ok(home.indexOf('href="#home-courses"') < home.indexOf('href="#home-colleges"'));
+  assert.ok(home.indexOf('id="home-courses"') < home.indexOf('id="home-colleges"'));
+  assert.match(home, /className="lingo-hero-visual" href=\{`\/\$\{lang\}\/play`\}/);
+  assert.match(home, /lingo-community-art/);
+  assert.match(home, /lingo-task-action/);
 });
 
 test("migration adds idempotent rank and redemption ownership boundaries", () => {

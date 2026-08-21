@@ -10,8 +10,8 @@ function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
   return <>
     <Link href={`/${lang}/play/everyday`}>{zh ? "生活口语" : "Everyday speaking"}</Link>
     <Link href={`/${lang}/play`}>{zh ? "边玩边学" : "Learn through play"}</Link>
-    <Link href={`/${lang}/colleges`}>{zh ? "选择学院" : "Choose College"}</Link>
     <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
+    <Link href={`/${lang}/colleges`}>{zh ? "选择学院" : "Choose College"}</Link>
     <Link href={`/${lang}/assistant`}>{zh ? "咨询AI" : "Ask AI"}</Link>
   </>;
 }
