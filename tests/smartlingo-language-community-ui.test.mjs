@@ -43,7 +43,9 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.match(menu, /currentInterface.*language\.code === lang/s);
   assert.match(menu, /interface-language-current">\{currentInterface\.nativeName\}/);
   assert.doesNotMatch(menu, /interface-language-current">\{current\.nativeName\}/);
-  assert.match(menu, /window\.location\.assign\(`\/\$\{lang\}#\$\{anchor\}`\)/);
+  assert.match(menu, /const renderedLanguage: Lang = code === "zh" \? "zh" : "en"/);
+  assert.match(menu, /window\.location\.assign\(localizedPath\(window\.location\.pathname, renderedLanguage\)\)/);
+  assert.doesNotMatch(menu, /rememberTargetLanguage\(code\)/);
   assert.doesNotMatch(`${header}\n${menu}`, /I speak|我会说|母语选择/iu);
   assert.doesNotMatch(`${menu}\n${chooser}\n${home}`, /[\u{1F1E6}-\u{1F1FF}]{2}/u);
   assert.doesNotMatch(`${menu}\n${chooser}\n${css}`, /interface-language-flag|lingo-community-flag/);

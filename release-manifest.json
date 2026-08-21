@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartclass-header-menu-v1",
+  "releaseId": "smartclass-header-menu-v2-interface-locale",
   "site": "smartlingo.net",
   "title": {"en": "Unify the responsive header menu", "zh": "统一响应式页眉菜单"},
   "purpose": {"en": "Bring SmartLingo's public and signed-in navigation to the proven SmartClass hamburger interaction while keeping all twelve text-only language choices available on desktop and mobile.", "zh": "将 SmartLingo 登录前后导航统一为已验证的 SmartClass 汉堡菜单交互，并在桌面和移动端保留全部 12 种纯文字语言选项。"},

@@ -10,6 +10,8 @@ type Lang = "en" | "zh";
 
 const TARGET_LANGUAGE_KEY = "smartlingo-target-language";
 const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
+const INTERFACE_LANGUAGE_KEY = "smartlingo-interface-language";
+const INTERFACE_LANGUAGE_EVENT = "smartlingo-interface-language-change";
 
 export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
   window.localStorage.setItem(TARGET_LANGUAGE_KEY, code);
@@ -21,6 +23,15 @@ function subscribeToTargetLanguage(update: () => void) {
   window.addEventListener("storage", update);
   return () => {
     window.removeEventListener(TARGET_LANGUAGE_EVENT, update);
+    window.removeEventListener("storage", update);
+  };
+}
+
+function subscribeToInterfaceLanguage(update: () => void) {
+  window.addEventListener(INTERFACE_LANGUAGE_EVENT, update);
+  window.addEventListener("storage", update);
+  return () => {
+    window.removeEventListener(INTERFACE_LANGUAGE_EVENT, update);
     window.removeEventListener("storage", update);
   };
 }
@@ -40,9 +51,9 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
   const zh = lang === "zh";
   const menu = useRef<HTMLDetailsElement>(null);
   const selected = useSyncExternalStore(
-    subscribeToTargetLanguage,
+    subscribeToInterfaceLanguage,
     () => {
-      const saved = window.localStorage.getItem(TARGET_LANGUAGE_KEY);
+      const saved = window.localStorage.getItem(INTERFACE_LANGUAGE_KEY);
       return isCommunityLanguage(saved) ? saved : lang;
     },
     () => lang,
@@ -70,23 +81,14 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
     ?? SMARTLINGO_LANGUAGE_COMMUNITIES[0];
 
   function choose(code: SmartLingoCommunityLanguage) {
-    rememberTargetLanguage(code);
+    window.localStorage.setItem(INTERFACE_LANGUAGE_KEY, code);
+    window.dispatchEvent(new Event(INTERFACE_LANGUAGE_EVENT));
     if (menu.current) menu.current.open = false;
     onNavigate?.();
 
-    if (code === "zh" || code === "en") {
-      window.localStorage.setItem("smartlingo-language", code);
-      window.location.assign(localizedPath(window.location.pathname, code));
-      return;
-    }
-
-    const anchor = `language-community-${code}`;
-    if (window.location.pathname === `/${lang}` || window.location.pathname === `/${lang}/`) {
-      window.history.pushState(null, "", `#${anchor}`);
-      window.requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "center" }));
-      return;
-    }
-    window.location.assign(`/${lang}#${anchor}`);
+    const renderedLanguage: Lang = code === "zh" ? "zh" : "en";
+    window.localStorage.setItem("smartlingo-language", renderedLanguage);
+    window.location.assign(localizedPath(window.location.pathname, renderedLanguage));
   }
 
   const options = SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
