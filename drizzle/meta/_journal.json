@@ -309,6 +309,90 @@
       "when": 1787329741000,
       "tag": "0043_beginner_gloss_quality",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1787331000000,
+      "tag": "0044_vocabulary_quality_zh",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1787331001000,
+      "tag": "0045_vocabulary_quality_en",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1787331002000,
+      "tag": "0046_vocabulary_quality_es",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1787331003000,
+      "tag": "0047_vocabulary_quality_ja",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1787331004000,
+      "tag": "0048_vocabulary_quality_ko",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1787331005000,
+      "tag": "0049_vocabulary_quality_fr",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1787331006000,
+      "tag": "0050_vocabulary_quality_de",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1787331007000,
+      "tag": "0051_vocabulary_quality_ru",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1787331008000,
+      "tag": "0052_vocabulary_quality_it",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1787331009000,
+      "tag": "0053_vocabulary_quality_pt",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1787331010000,
+      "tag": "0054_vocabulary_quality_ar",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1787331011000,
+      "tag": "0055_vocabulary_quality_hi",
+      "breakpoints": true
     }
   ]
 }

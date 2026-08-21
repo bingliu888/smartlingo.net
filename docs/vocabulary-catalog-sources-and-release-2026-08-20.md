@@ -42,4 +42,28 @@ The builder and migrations reject a release unless:
 6. common English function words and inflections resolve to their everyday learner meaning, not chemical symbols, place abbreviations, surnames, or other rare homographs.
 7. Japanese Beginner homographs resolve to the catalog's intended learner sense, generated Chinese glosses are concise and non-repetitive, and media abbreviations are excluded.
 
+## 2026-08-21 quality sweep
+
+A complete replay audit of all 48,000 published rows found that the original
+large-batch Argos pass could repeat a translated clause many times, emit
+private-use or malformed characters, preserve dictionary markup, or choose an
+unhelpful inflection description. The forward-only `0044`–`0055` migrations
+repair 9,898 affected rows without changing catalog identity, course level,
+sequence, IPA, pronunciation aids, or learner progress keys.
+
+The release audit now rejects:
+
+- repeated clauses, repeated character runs, excessive gloss length, private-use characters, and broken markup;
+- Chinese glosses with no Han text or leaked long English fragments;
+- obsolete/offensive dictionary labels presented as learner definitions;
+- inflection, synonym, diminutive, and alternative-form descriptions presented instead of a usable meaning; and
+- mismatches in the reviewed high-frequency grammar-word gold set for Spanish, French, German, Russian, Italian, Portuguese, Arabic, Hindi, and Korean.
+
+The gold set is stored in
+[`data/smartlingo-vocabulary-common-overrides.json`](../data/smartlingo-vocabulary-common-overrides.json).
+The audit and repair tools are
+[`scripts/audit-smartlingo-vocabulary-quality.mjs`](../scripts/audit-smartlingo-vocabulary-quality.mjs)
+and [`scripts/repair-smartlingo-vocabulary.py`](../scripts/repair-smartlingo-vocabulary.py).
+The automated release contract requires exactly 48,000 rows and zero findings.
+
 The reproducible offline builder is [`scripts/build-smartlingo-vocabulary.py`](../scripts/build-smartlingo-vocabulary.py). It is not imported by the production application.

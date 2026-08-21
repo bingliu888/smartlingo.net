@@ -166,14 +166,14 @@ def clean_gloss(entry: dict) -> str:
         for gloss in sense.get("glosses") or []:
             value = re.sub(r"\s+", " ", str(gloss)).strip()
             value = re.sub(r"\s*\([^)]*(?:obsolete|archaic|historical)[^)]*\)\s*", " ", value, flags=re.I).strip()
-            if 1 <= len(value) <= 180:
+            if 1 <= len(value) <= 180 and learner_ready_gloss(value):
                 return value
     return ""
 
 
 def learner_ready_gloss(value: str) -> bool:
     return not re.match(
-        r"^(?:feminine|masculine|plural|singular|comparative|superlative|past|present|inflection|conjugation|alternative (?:form|spelling)) of\b",
+        r"^(?:(?:feminine|masculine|plural|singular|comparative|superlative|past|present|inflection|conjugation|participle|alternative (?:form|spelling)|synonym|diminutive|noun of place) of|elative degree of|(?:attributive|non-reduplicated) form[^;,.]* of)\b",
         value.strip(), flags=re.I,
     )
 
