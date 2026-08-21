@@ -19,6 +19,9 @@ export const SMARTLINGO_LAYOUT_LANGUAGES = Object.freeze(["zh", "en"]);
 export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/",
   "/classes",
+  "/colleges",
+  "/college/820101",
+  "/college/create",
   "/programs",
   "/programs/en/trial",
   "/classes/course_en_basic/learn",
@@ -44,6 +47,7 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
 
 export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
   "/classes",
+  "/college/create",
   "/classes/course_en_basic/learn",
   "/classes/course_en_basic/learn/session",
   "/classes/course_en_basic/vocabulary",
@@ -58,6 +62,9 @@ export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
 const expectedPageNames = Object.freeze({
   "/": "home",
   "/classes": "courses",
+  "/colleges": "colleges",
+  "/college/820101": "college-detail",
+  "/college/create": "college-create",
   "/programs": "programs",
   "/programs/en/trial": "anonymous-trial",
   "/classes/course_en_basic/learn": "learning",
@@ -84,6 +91,9 @@ const expectedPageNames = Object.freeze({
 const requiredHooks = Object.freeze({
   "/": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
   "/classes": {},
+  "/colleges": { fills: 1 },
+  "/college/820101": { fills: 1 },
+  "/college/create": { fills: 1 },
   "/programs": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
   "/programs/en/trial": { fills: 3, readableCopy: 1, textFits: 1 },
   "/classes/course_en_basic/learn": { fills: 2, readableCopy: 1, textFits: 1 },

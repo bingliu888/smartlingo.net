@@ -57,7 +57,7 @@ test("member-led courses and commerce follow the approved boundaries", async () 
 
   assert.match(joined, /任何已登录会员都可|每位登录会员都可/);
   assert.match(joined, /老师或协调员/);
-  assert.match(joined, /私有课程/);
+  assert.match(joined, /专属课堂/);
   assert.match(joined, /15%|八五折/);
   assert.match(joined, /70%|七成/);
   assert.match(joined, /30%|三成/);

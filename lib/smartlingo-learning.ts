@@ -125,7 +125,7 @@ function vocabularySample(
 
 /**
  * Small, original seed content for deterministic placement and daily-practice
- * fallbacks. It is not a third-party item bank. Public course content should
+ * fallbacks. It is not a third-party item bank. Open course content should
  * continue to use reviewed, immutable versions before broader publication.
  */
 export const SMARTLINGO_VOCABULARY_SAMPLES = {

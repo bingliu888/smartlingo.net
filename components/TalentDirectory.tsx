@@ -15,7 +15,7 @@ export function TalentDirectory({ lang }: { lang: "en" | "zh" }) {
     },
     {
       name: zh ? "老师" : "Teacher",
-      body: zh ? "使用经批准的语言路径准备私有课程、带领练习并支持学员。" : "Use an approved language path to prepare a private course, lead practice, and support learners.",
+      body: zh ? "使用经批准的语言路径准备专属课堂、带领练习并支持学员。" : "Use an approved language path to prepare a private course, lead practice, and support learners.",
     },
     {
       name: zh ? "协调员" : "Coordinator",
@@ -55,7 +55,7 @@ export function TalentDirectory({ lang }: { lang: "en" | "zh" }) {
       </div>
       <aside className="talent-boundary">
         {zh
-          ? "每位登录会员都可作为老师或协调员准备私有课程；进入公开目录和启用真实收费前须完成适用审核。"
+          ? "每位登录会员都可作为老师或协调员准备专属课堂；进入公开目录和启用真实收费前须完成适用审核。"
           : "Every signed-in member may prepare a private course as teacher or coordinator; public listing and live payment require the applicable review."}
       </aside>
     </section>

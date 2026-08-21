@@ -9,7 +9,7 @@ test("ordinary members cannot create courses or set fees", async () => {
   assert.match(route, /MEMBER_COURSE_CREATION_DISABLED/);
   assert.match(route, /status: 403/);
   assert.match(route, /canCreatePrivateClass: false/);
-  assert.doesNotMatch(studio, /createClass|创建私有课程|priceCents: Math\.round/);
+  assert.doesNotMatch(studio, /createClass|创建专属课堂|priceCents: Math\.round/);
 });
 
 test("the MVP seeds three fixed monthly courses for all twelve languages", async () => {

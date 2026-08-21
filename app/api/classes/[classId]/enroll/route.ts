@@ -3,7 +3,7 @@ import { cleanText } from "../../../../../lib/smartlingo-classes";
 
 type Course = {
   id: string; priceCents: number; trialDays: number; capacity: number; enrollmentCount: number;
-  targetLanguage: string; packageTier: "basic" | "intermediate" | "advanced";
+  targetLanguage: string; packageTier: "basic" | "intermediate" | "advanced"; classKind: "official_course" | "subject";
 };
 
 async function ensureLearningEnrollment(database: ReturnType<typeof getDatabase>, course: Course, userId: string, now: number) {
@@ -38,10 +38,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   const classId = cleanText((await params).classId, 100);
   const database = getDatabase();
   const course = await database.prepare(`SELECT c.id,c.price_cents AS priceCents,c.trial_days AS trialDays,c.capacity,
-    c.target_language AS targetLanguage,c.package_tier AS packageTier,
+    c.target_language AS targetLanguage,c.package_tier AS packageTier,c.class_kind AS classKind,
     COALESCE(SUM(CASE WHEN m.role='student' AND m.status='active' THEN 1 ELSE 0 END),0) AS enrollmentCount
     FROM smartlingo_language_classes c LEFT JOIN smartlingo_language_class_members m ON m.class_id=c.id
-    WHERE c.id=? AND c.class_kind='official_course' AND c.status='open' AND c.visibility='public'
+    WHERE c.id=? AND c.class_kind IN ('official_course','subject') AND c.status='open' AND c.visibility='public'
     GROUP BY c.id LIMIT 1`).bind(classId).first<Course>();
   if (!course) return Response.json({ error: "Course not found" }, { status: 404 });
   if (Number(course.enrollmentCount) >= course.capacity) return Response.json({ error: "This course is full" }, { status: 409 });
@@ -50,6 +50,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
     FROM smartlingo_course_subscriptions WHERE class_id=? AND user_id=? LIMIT 1`)
     .bind(classId, user.id).first<{ status: string; trialEndsAt: number }>();
   const now = Math.floor(Date.now() / 1000);
+  if (course.priceCents === 0) {
+    await database.prepare(`INSERT INTO smartlingo_language_class_members
+      (id,class_id,user_id,role,status,joined_at,updated_at) VALUES(?,?,?,'student','active',?,?)
+      ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status='active',updated_at=excluded.updated_at`)
+      .bind(createId(), classId, user.id, now, now).run();
+    try {
+      const learningEnrollmentId = await ensureLearningEnrollment(database, course, user.id, now);
+      return Response.json({ enrolled: true, charged: false, classId, subscriptionStatus: "open", learningEnrollmentId });
+    } catch {
+      return Response.json({ error: "The course learning plan is not available" }, { status: 409 });
+    }
+  }
   if (existing?.status === "active" || (existing?.status === "trialing" && existing.trialEndsAt > now)) {
     try {
       const learningEnrollmentId = await ensureLearningEnrollment(database, course, user.id, now);
