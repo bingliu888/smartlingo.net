@@ -122,7 +122,7 @@ test("0021 adds Arabic and Hindi communities plus placement, daily activity, and
     "owner_class_official_ar",
     "owner_class_official_hi",
   ]) assert.match(migration, new RegExp(`'${value}'`));
-  assert.match(migration, /smartlingo placement requires an active official language course membership/);
+  assert.match(migration, /smartlingo placement requires an active official language class membership/);
   assert.match(migration, /'vocabulary', 'reading', 'writing', 'listening', 'dialogue'/);
   assert.match(migration, /json_valid\(`modes_seen`\).*json_type\(`modes_seen`\) = 'array'/s);
   assert.match(migration, /FOREIGN KEY \(`attempt_id`\) REFERENCES `smartlingo_placement_attempts`/);
