@@ -1,60 +1,58 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-real-listening-writing-qa-v1",
+  "releaseId": "smartlingo-qa-day1-blocked-report-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Strengthen real-user Listening and Writing QA", "zh": "强化真实用户听力与写作组句验收" },
+  "title": { "en": "Publish day-one real-learning QA evidence", "zh": "发布首日真实学习验收证据" },
   "purpose": {
-    "en": "Make the 03:00 Pacific real-user task verify the complete sentence-builder interaction instead of treating a tab visit or audio click as learning evidence.",
-    "zh": "让太平洋时间凌晨 3 点的真实用户任务验证完整组句交互，不再把打开标签或播放音频当作学习证据。"
+    "en": "Publish the August 21 production QA evidence and its microphone and administrator-ledger blockers without claiming a full pass.",
+    "zh": "发布 8 月 21 日正式站验收证据及麦克风与管理员账本复核受阻项，不声称全量通过。"
   },
   "features": {
     "en": [
-      "Require a prerequisite check of all 36 official course banks at exactly 120 prebuilt sentences per course.",
-      "Require Listening to play a hidden target-language prompt, arrange target-language word tiles, check the answer, show feedback, and advance progress.",
-      "Require Writing to show a learner-language prompt, arrange target-language word tiles to match its meaning, check the answer, show feedback, and advance progress.",
-      "Keep the installed local real-user LaunchAgent at 03:00 Pacific and correct the automation documentation to match it."
+      "Add a bilingual administrator Project report for day one of the 21-day real-learning campaign.",
+      "Record per-language planned and measured minutes, deep-focus skill, Course, SmartCard, Everyday Speaking, quiz, and learning-log evidence.",
+      "Label unavailable microphone scoring and administrator-level ledger verification as blocked."
     ],
     "zh": [
-      "真实测试开始前确认 36 门正式课程每门恰有 120 句预置题库。",
-      "听力必须播放不直接显示的目标语言句子、点选目标语言词块组句、检查答案、显示反馈并推进进度。",
-      "写作必须显示学生语言提示、点选目标语言词块完成同义句、检查答案、显示反馈并推进进度。",
-      "保留已安装的凌晨 3 点真实用户 LaunchAgent，并修正文档中的时间说明。"
+      "在管理员 Project 中加入 21 天真实学习计划首日双语报告。",
+      "逐语记录计划与实测分钟、深度技能、课程、SmartCard、生活口语、测验与学习日志证据。",
+      "将不可用的麦克风评分与管理员级账本复核明确标记为受阻。"
     ]
   },
   "affected": {
-    "en": ["03:00 real-user QA instructions", "21-day QA documentation", "QA contract tests", "Project release report"],
-    "zh": ["凌晨 3 点真实用户测试说明", "21 天测试文档", "测试合约", "Project 发布日报"]
+    "en": ["Administrator Project report", "August 21 production QA evidence", "Release metadata"],
+    "zh": ["管理员 Project 报告", "8 月 21 日正式站验收证据", "发布元数据"]
   },
   "changes": {
     "en": [
-      "Define visible pass criteria for prompt direction, tile language, feedback state, and question-counter transition in both modes.",
-      "Explicitly reject opening the tab, playing audio alone, or clicking unordered tiles as a pass.",
-      "Preserve the existing four-language, five-skill, Play, Everyday Speaking, active-minute, legitimate-score, and browser-cleanup requirements."
+      "Append a dated report to the versioned Project fallback so the runtime document reconciler exposes it without overwriting historical reports.",
+      "Use only the anonymized learner key and non-secret production evidence.",
+      "Keep the report explicitly blocked where real speech input or administrator-only read access was unavailable."
     ],
     "zh": [
-      "为两种模式明确提示方向、词块语言、反馈状态与题号变化等可见通过标准。",
-      "明确规定仅打开标签、仅播放音频或乱序点词均不能算通过。",
-      "保留四种语言、五项技能、边玩边学、生活口语、有效学习时长、真实评分及浏览器清理要求。"
+      "向版本化 Project 回退文档追加当日报告，由运行时文档对账器合并展示且不覆盖历史报告。",
+      "只使用匿名学习者键与非敏感正式站证据。",
+      "真实语音输入或管理员只读权限不可用时，报告明确保持受阻。"
     ]
   },
   "validation": {
     "en": [
-      "Shared policy, architecture, base-feature consistency, and SmartLingo shared-contract gates pass.",
-      "The sentence exercise and QA contracts pass and confirm 36 banks, 120 sentences per bank, and ten distinct daily items per skill.",
-      "The production route preflight passes all 16 Course, Trial, Play, and Everyday Speaking checks for English, Japanese, Spanish, and Italian."
+      "Sentence and QA contracts pass for 36 course banks, 120 sentences per bank, and ten unique daily Listening and Writing items.",
+      "The August 21 route preflight passed all 16 anonymous production route checks.",
+      "Real signed-in Chrome evidence covers four target languages, five Course skills, SmartCard, Everyday Speaking navigation, server quiz scores, persisted learning logs, and a clean console."
     ],
     "zh": [
-      "共享规则、架构、基础功能一致性及 SmartLingo 共享合约门禁通过。",
-      "句子题库与测试合约通过，确认 36 个题库、每库 120 句，以及每项技能每日 10 道不同题。",
-      "英语、日语、西班牙语和意大利语的课程、试学、边玩边学及生活口语共 16 项生产路由预检全部通过。"
+      "句子与测试合同通过：36 个课程题库、每库 120 句，Listening 与 Writing 每日各 10 道唯一题。",
+      "8 月 21 日匿名正式站 route preflight 的 16 项检查全部通过。",
+      "真实登录 Chrome 证据覆盖四种目标语言、课程五技能、SmartCard、生活口语导航、服务器测验分数、持久化学习日志及无错误控制台。"
     ]
   },
   "deferred": {
-    "en": ["The real signed-in Chrome learning round runs as the local 03:00 task and reports any external Gmail, Clerk, microphone, or browser blocker without fabricating a pass."],
-    "zh": ["真实登录 Chrome 学习轮次由本机凌晨 3 点任务执行；若 Gmail、Clerk、麦克风或浏览器受阻，会如实报告而不会伪造通过。"]
+    "en": ["Real microphone scoring and administrator-only ledger verification remain blocked and require a later authorized retry."],
+    "zh": ["真实麦克风评分与管理员专属账本复核仍受阻，需要后续授权重试。"]
   },
   "siteAdaptations": {
-    "en": ["This release tightens SmartLingo QA evidence only and changes no learner data, scoring logic, course content, identity, commerce, or classroom boundary."],
-    "zh": ["本次只收紧 SmartLingo 测试证据，不改变学习数据、评分逻辑、课程内容、身份、商业或课程教室边界。"]
+    "en": ["This release publishes SmartLingo-specific QA evidence only and changes no learner data, scoring logic, course content, identity, commerce, or classroom boundary."],
+    "zh": ["本次只发布 SmartLingo 专属验收证据，不改变学习数据、评分逻辑、课程内容、身份、商业或课程教室边界。"]
   }
 }

@@ -273,6 +273,50 @@ export const projectReports: ProjectReport[] = [
     },
   },
   { date: "2026-08-16", title: { zh: "实时课堂媒体隔离发布 · 2026-08-16 10:33 PDT", en: "Realtime classroom media isolation release · 2026-08-16 10:33 PDT" }, beta: { zh: "查看发布说明", en: "View release notes" }, completed: 4, summary: { zh: "实时课堂候场播放、发布连接与安全保护完成统一。", en: "Realtime classroom waiting playback, publisher connection timing, and safeguards are aligned." }, validation: { zh: ["相关契约测试通过", "生产构建通过"], en: ["Relevant contract tests pass", "Production build passes"] }, rollback: { zh: "可回滚至上一云端运行版本。", en: "Rollback to the previous Cloudflare Worker release." }, next: { zh: "按需在站点专用任务中执行真实用户测试。", en: "Run real-user testing in the dedicated site task when requested." } },
+  {
+    date: "2026-08-21",
+    title: {
+      zh: "21 天真实学习验收第 1 天 · 语音输入受阻",
+      en: "21-day real-learning acceptance, day 1 · speech input blocked",
+    },
+    beta: {
+      zh: "查看四语真实学习证据与受阻项",
+      en: "Review four-language real-learning evidence and blockers",
+    },
+    completed: 24,
+    summary: {
+      zh: "匿名测试学习者 qa_test_learner_1 在正式站中文界面完成英语、日语、西班牙语和意大利语的课程五技能、SmartCard 与生活口语导航验收。四语均超过当天计划的有效学习分钟并显示持久化服务器测验 100/100；生活口语能播放短语、保持目标语言与推进幻灯片，但 Chrome 自动化无法提供真实麦克风语音，因此四语语音评分均标记为受阻，本日不判定为全量通过。",
+      en: "The anonymized learner qa_test_learner_1 used the production Chinese interface for English, Japanese, Spanish, and Italian Course five-skill, SmartCard, and Everyday Speaking navigation acceptance. Every language exceeded its planned active-learning minutes and displayed a persisted 100/100 server quiz score. Everyday Speaking played phrases, preserved the target language, and advanced slides, but Chrome automation could not supply real microphone speech, so speech scoring is blocked for all four languages and the day is not reported as a full pass.",
+    },
+    validation: {
+      zh: [
+        "正式地址：https://smartlingo.net；界面语言为中文；登录页可见身份与匿名测试键一致；浏览器控制台未发现错误或警告",
+        "英语：计划 1 分钟，学习日志计量 7 分钟，深度技能为口语；课程五技能、SmartCard 作答与生活口语播放/导航完成；测验 100/100 且刷新后仍显示；真实麦克风评分受阻",
+        "日语：计划 5 分钟，学习日志计量 20 分钟，深度技能为写作；额外检查两道逐词组句题，均显示错误反馈并推进题号；课程、SmartCard 与生活口语完成；测验 100/100 且学习日志可见；真实麦克风评分受阻",
+        "西班牙语：计划 2 分钟，学习日志计量 20 分钟，深度技能为词汇；课程、额外词汇反馈、SmartCard 与生活口语完成；写作和听力均显示错误反馈并由 1/10 推进到 2/10；测验 100/100 且学习日志可见；真实麦克风评分受阻",
+        "意大利语：计划 5 分钟，学习日志计量 21 分钟，深度技能为词汇；课程、额外词汇反馈、SmartCard 与生活口语完成；写作和听力均显示错误反馈并由 1/10 推进到 2/10；测验 100/100 且学习日志可见；真实麦克风评分受阻",
+        "句子合同通过：36 门正式课程每门恰有 120 句，Listening 与 Writing 每日各有 10 道唯一题；当天 GitHub route preflight 16/16 路由成功，且仅作为匿名路由证据",
+        "未进入支付、推荐、证书、挑战或排行榜流程；SmartCard 只完成单题，页面积分为未完成整轮前的临时分，不触发领取；在只使用指定学习者的约束下无法执行管理员数据库级账本复核，因此账本复核保持受阻而非声称通过",
+      ],
+      en: [
+        "Production URL: https://smartlingo.net; interface language was Chinese; the visible signed-in identity matched the anonymized test key; no browser console errors or warnings were observed",
+        "English: 1 minute planned, 7 learning-log minutes measured, speaking deep focus; five Course skills, a SmartCard answer, and Everyday Speaking playback/navigation completed; quiz remained 100/100 after refresh; real microphone scoring blocked",
+        "Japanese: 5 minutes planned, 20 learning-log minutes measured, writing deep focus; two extra word-order questions showed incorrect feedback and advanced the counter; Course, SmartCard, and Everyday Speaking completed; quiz 100/100 and learning log visible; real microphone scoring blocked",
+        "Spanish: 2 minutes planned, 20 learning-log minutes measured, vocabulary deep focus; Course, extra vocabulary feedback, SmartCard, and Everyday Speaking completed; Writing and Listening both showed incorrect feedback and advanced from 1/10 to 2/10; quiz 100/100 and learning log visible; real microphone scoring blocked",
+        "Italian: 5 minutes planned, 21 learning-log minutes measured, vocabulary deep focus; Course, extra vocabulary feedback, SmartCard, and Everyday Speaking completed; Writing and Listening both showed incorrect feedback and advanced from 1/10 to 2/10; quiz 100/100 and learning log visible; real microphone scoring blocked",
+        "Sentence contracts passed: all 36 official courses expose exactly 120 sentences, with ten unique daily Listening and Writing items; the day's GitHub route preflight passed 16/16 routes and was treated only as anonymous route evidence",
+        "No payment, referral, certificate, challenge, or leaderboard flow was entered; only one SmartCard item was completed, so its displayed points remained provisional before a full-round claim. Admin-level database ledger verification was unavailable under the exactly-one-test-learner constraint and is therefore blocked rather than reported as passed",
+      ],
+    },
+    rollback: {
+      zh: "本记录只发布真实验收证据，不改变课程、评分、身份、商业或学习数据；如报告展示异常，可回滚到上一成功边缘运行提交。",
+      en: "This record publishes real acceptance evidence only and changes no course, scoring, identity, commerce, or learner data; roll back to the previous successful Worker commit if report rendering regresses.",
+    },
+    next: {
+      zh: "恢复可提供真实语音输入的 Chrome 麦克风能力后重试四语生活口语评分，并由授权管理员只读复核测试学习者的支付、推荐、证书、课程积分、挑战奖励与排行榜账本。",
+      en: "Retry four-language Everyday Speaking scoring when Chrome can provide real microphone input, then have an authorized administrator read-only verify the learner's payment, referral, certificate, course-credit, challenge-reward, and leaderboard ledgers.",
+    },
+  },
 ];
 
 export const taskById = (id: string) => projectTasks.find(task => task.id === id);
