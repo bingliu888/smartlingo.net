@@ -125,7 +125,7 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { l
   }
 
   if (unauthorized) return <section className="smartlingo-class-studio class-auth-required"><p className="section-kicker">{t.eyebrow}</p><h1>{t.title}</h1><p>{t.intro}</p><Link className="primary-button" href={`/${lang}/auth/login?returnTo=${encodeURIComponent(initialClassId ? `/${lang}/classes/${initialClassId}` : `/${lang}/classes`)}`}>{t.signIn} →</Link><Styles/></section>;
-  if (!context || (initialClassId && !detail)) return <section className="smartlingo-class-studio class-loading">SmartLingo…<Styles/></section>;
+  if (!context || (initialClassId && !detail)) return <section className="smartlingo-class-studio class-loading" aria-live="polite"><div><strong>SmartLingo…</strong>{notice && <p className="class-notice">{notice}</p>}</div><Styles/></section>;
 
   if (detail) {
     const item = detail.class;

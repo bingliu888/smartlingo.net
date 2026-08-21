@@ -1,64 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "learning-hub-repeat-and-vocabulary-v1",
+  "releaseId": "real-user-qa-course-detail-fix-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Tune up the multilingual learning hub", "zh": "升级多语言学习中心" },
+  "title": { "en": "Make real-user QA the release authority", "zh": "以真实用户验收作为发布标准" },
   "purpose": {
-    "en": "Make speaking, vocabulary, play, courses, and AI easier to discover while sharing one persistent repeat-after-me preference across learning activities.",
-    "zh": "让生活口语、词汇、游戏、课程和 AI 更容易选择，并在学习活动之间共享一个持久的跟读开关。"
+    "en": "Replace synthetic learning claims with signed-in Chrome acceptance and repair the course-detail failure discovered by the real QA learner.",
+    "zh": "停止把合成记录当作学习通过，改用 Chrome 真实登录验收，并修复真实测试账号发现的课程详情故障。"
   },
   "features": {
     "en": [
-      "Default Repeat after me to on in Everyday Speaking and vocabulary practice, with one browser-global preference that persists across scenarios.",
-      "Add vocabulary speech scoring, twenty-word library pages, and click-any-word practice starting points.",
-      "Replace the primary menu with Everyday speaking, Learn through play, Choose course, and Ask AI.",
-      "Add four homepage sliders that select an activity first and one of twelve target languages second.",
-      "Group signed-in learning areas by joined target-language tabs on the Dashboard."
+      "Run the 21-day acceptance with one real Chinese-interface learner across English, Japanese, Spanish, and Italian.",
+      "Require Course five-skill learning, Learn through play, and Everyday Speaking for every selected language.",
+      "Fix signed-in course details that remained on an endless loading state because the API queried the wrong course-classroom column."
     ],
     "zh": [
-      "生活口语和词汇练习默认开启跟读，并使用一个可跨场景保留的浏览器全局开关。",
-      "词汇练习加入发音评分、每页二十词和点击任意词开始学习。",
-      "主菜单调整为生活口语、边玩边学、选择课程和咨询AI。",
-      "首页新增四个滑动选择区，先选内容，再从十二种目标语言中选择。",
-      "登录后的用户面板按已加入的目标语言标签组织学习区域。"
+      "21 天验收使用一个中文界面真实测试账号，覆盖英语、日语、西班牙语和意大利语。",
+      "每种所选语言必须完成课程五项学习、边玩边学和生活口语三组验收。",
+      "修复登录后课程详情因 API 查询错误课程教室列而永久停留在加载状态的问题。"
     ]
   },
   "affected": {
-    "en": ["Homepage", "Shared header", "Everyday Speaking", "Vocabulary memory workspace and API", "AI assistant targeting", "Member Dashboard", "Project release history"],
-    "zh": ["首页", "共享页头", "生活口语", "词汇记忆工作区与接口", "AI 目标语言", "会员用户面板", "项目发布历史"]
+    "en": ["Course detail API", "Course detail loading UI", "21-day QA workflow", "Local 3 AM QA recovery task", "Project QA reporting rules"],
+    "zh": ["课程详情接口", "课程详情加载界面", "21 天 QA 工作流", "本机凌晨 3 点 QA 恢复任务", "Project QA 报告规则"]
   },
   "changes": {
     "en": [
-      "Store only the repeat preference in localStorage; speech transcripts and scores remain transient.",
-      "Allow vocabulary API daily decks to begin at an explicitly selected catalog word while preserving due-review behavior otherwise.",
-      "Pass selected target language and practice mode into Ask AI prompts and browser speech recognition.",
-      "Show only languages represented by active joined courses on signed-in Dashboard tabs."
+      "Use smartlingo_course_classrooms.course_id consistently for detail and course-update authorization queries.",
+      "Display a visible API error during course-detail loading instead of leaving an unexplained spinner.",
+      "Restrict GitHub Actions to anonymous route preflight artifacts and prohibit database or Project learning writes from those checks.",
+      "Make the local Codex task reuse or establish a real Clerk session through Gmail and Chrome, repair defects, deploy, and retest from the failed step."
     ],
     "zh": [
-      "本地仅保存跟读开关；语音文本和评分仍为临时状态。",
-      "词汇接口可从用户明确选择的目录词开始每日练习，其余情况仍保留到期复习逻辑。",
-      "将所选目标语言和练习模式传入咨询AI提示及浏览器语音识别。",
-      "登录后的用户面板只显示活跃已加入课程所对应的语言标签。"
+      "课程详情和课程更新权限查询统一使用 smartlingo_course_classrooms.course_id。",
+      "课程详情加载失败时显示明确接口错误，不再无提示地永久等待。",
+      "GitHub Actions 仅生成匿名路由前置检查产物，禁止由此写入学习数据库或 Project 通过记录。",
+      "本机 Codex 任务通过 Gmail 与 Chrome 复用或建立真实 Clerk 会话，自动修复、发布并从失败步骤重测。"
     ]
   },
   "validation": {
     "en": [
-      "Automated contracts cover global Repeat after me behavior, twenty-word pagination, click-to-start vocabulary, four navigation entries, homepage sliders, Dashboard tabs, and AI language targeting.",
-      "Production build, sensitive-data scan, artifact validation, and the full repository regression suite pass.",
-      "Chrome production checks cover the anonymous selection flow, speaking preference persistence, responsive layouts, and signed-in learning surfaces where an existing session is available."
+      "Regression contracts verify the deployed course-classroom schema, visible loading errors, route-only cloud workflow, and real-account QA requirements.",
+      "The real QA learner reproduced the production course-detail failure before the fix; production retesting continues after deployment.",
+      "Full repository release gates and shared multi-site policy gates must pass before deployment."
     ],
     "zh": [
-      "自动契约覆盖全局跟读、每页二十词、点击词汇开始、四项菜单、首页滑块、用户面板语言标签和 AI 目标语言。",
-      "生产构建、敏感数据扫描、产物校验和仓库全量回归通过。",
-      "Chrome 生产验收覆盖匿名选择流程、跟读偏好保留、响应式布局，以及存在登录会话时的会员学习界面。"
+      "回归契约验证已部署课程教室表结构、可见加载错误、仅路由云端工作流和真实账号 QA 要求。",
+      "真实 QA 学员已在修复前复现生产课程详情故障；发布后继续完成生产重测。",
+      "部署前必须通过仓库全量发布门禁与共享多站点策略门禁。"
     ]
   },
   "deferred": {
-    "en": ["Automatic pronunciation scoring depends on browser SpeechRecognition support and microphone permission; listening and manual practice remain available otherwise."],
-    "zh": ["自动发音评分取决于浏览器 SpeechRecognition 支持和麦克风权限；其他情况下仍可听读与人工练习。"]
+    "en": ["Microphone speech scoring remains capability-dependent; the daily report must mark an unavailable browser or permission as blocked, never passed."],
+    "zh": ["麦克风发音评分仍取决于浏览器能力和权限；不可用时日报必须标记为阻塞，不能标记通过。"]
   },
   "siteAdaptations": {
-    "en": ["This release changes only SmartLingo learning flows; no other portfolio site requires the domain-specific vocabulary or speaking behavior."],
-    "zh": ["本次发布仅调整 SmartLingo 学习流程；其他站点不需要同步其专属词汇或口语逻辑。"]
+    "en": ["This release changes SmartLingo learning QA and its course-detail schema use only; it does not alter other portfolio sites."],
+    "zh": ["本次发布仅调整 SmartLingo 学习 QA 与课程详情表结构使用，不改变其他站点。"]
   }
 }

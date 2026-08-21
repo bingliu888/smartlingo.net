@@ -73,7 +73,7 @@ export async function GET(
         OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch())) LIMIT 1`)
     .bind(classId, user.id, detail.classKind).first<{ role: string; status: string }>();
   const isOwner = detail.ownerUserId === user.id;
-  const room = await getDatabase().prepare(`SELECT room_id AS roomId FROM smartlingo_course_classrooms WHERE class_id=? LIMIT 1`)
+  const room = await getDatabase().prepare(`SELECT room_id AS roomId FROM smartlingo_course_classrooms WHERE course_id=? LIMIT 1`)
     .bind(classId).first<{ roomId: string }>();
   const coAdmin = room ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
     .bind(room.roomId, user.id).first() : null;
@@ -115,7 +115,7 @@ export async function PATCH(
   const classId = cleanText((await params).classId, 100);
   const current = await classDetail(classId);
   if (!current) return Response.json({ error: "Course not found" }, { status: 404 });
-  const linkedRoom = await getDatabase().prepare(`SELECT cc.room_id AS roomId FROM smartlingo_course_classrooms cc WHERE cc.class_id=? LIMIT 1`)
+  const linkedRoom = await getDatabase().prepare(`SELECT cc.room_id AS roomId FROM smartlingo_course_classrooms cc WHERE cc.course_id=? LIMIT 1`)
     .bind(classId).first<{ roomId: string }>();
   const coAdmin = linkedRoom ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
     .bind(linkedRoom.roomId, user.id).first() : null;
