@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LanguageCommunityChooser } from "../../components/LanguageCommunityChooser";
+import { HomeLearningChoices } from "../../components/HomeLearningChoices";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
 
@@ -150,17 +150,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
     <main className="lingo-home" data-layout-page="home">
       <div className="lingo-hero-shell">
         <SiteHeader lang={lang}/>
-        <LanguageCommunityChooser lang={lang}/>
         <section className="lingo-hero">
           <div className="lingo-hero-copy" data-readable-copy="home-hero-copy">
             <p className="section-kicker">{t.eyebrow}</p>
             <h2 data-layout-text-fit="home-hero-title">{t.title}</h2>
             <p>{t.intro}</p>
             <div className="lingo-actions">
-              <Link className="primary-button" href={`/${lang}/smartcards`}>{lang === "zh" ? "无需登录，免费挑战" : "Try free — no sign-in"} →</Link>
-              <Link className="secondary-button" href={`/${lang}/auth/sign-up`}>{t.start}</Link>
-              <Link className="secondary-button" href={`/${lang}/classes`}>{t.classes}</Link>
-              <Link className="text-link" href={`/${lang}/assistant`}>{t.voice}</Link>
+              <Link className="primary-button" href="#home-everyday">{lang === "zh" ? "生活口语" : "Everyday speaking"} →</Link>
+              <Link className="secondary-button" href="#home-play">{lang === "zh" ? "边玩边学" : "Learn through play"}</Link>
+              <Link className="secondary-button" href="#home-courses">{lang === "zh" ? "选择课程" : "Choose course"}</Link>
+              <Link className="text-link" href="#home-ai">{lang === "zh" ? "咨询AI" : "Ask AI"}</Link>
             </div>
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>
           </div>
@@ -183,11 +182,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           </div>
         </section>
       </div>
-
-      <section className="lingo-section" style={{ paddingTop: 72, paddingBottom: 72 }}>
-        <div className="lingo-heading"><p className="section-kicker">PLAY · SMART CARD</p><h2>{lang === "zh" ? "先玩会、开口说，再决定是否注册。" : "Play, speak, then decide about an account."}</h2><p>{lang === "zh" ? "十二种语言都有公开智慧卡：每次只看一个词，选择含义，听智能导师示范，再开口跟读。每轮从 100 个待领取课程积分开始，完成后登录即可保留；打开游戏、注册或领取都不会自动订阅。" : "Every language has public Smart Cards: see one word, choose its meaning, listen to the AI coach, and repeat aloud. Each round starts with 100 provisional course points; finish and sign in to keep them. Playing, registering, or claiming never starts a subscription."}</p></div>
-        <div className="lingo-actions"><Link className="primary-button" href={`/${lang}/smartcards`}>{lang === "zh" ? "选择语言开始" : "Choose a language"} →</Link><Link className="secondary-button" href={`/${lang}/smartcards/starter-en`}>{lang === "zh" ? "直接试学英语" : "Try English now"}</Link></div>
-      </section>
+      <HomeLearningChoices lang={lang}/>
 
       <section className="lingo-section lingo-loop-section">
         <div className="lingo-heading"><p className="section-kicker">{t.loopKicker}</p><h2>{t.loopTitle}</h2><p>{t.loopBody}</p></div>

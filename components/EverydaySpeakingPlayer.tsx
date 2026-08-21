@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
+import { useRepeatAfterMePreference } from "./useRepeatAfterMePreference";
 
 type Slide = {
   id: string;
@@ -40,7 +41,9 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState("");
   const [bestScore, setBestScore] = useState(0);
+  const [repeatAfterMe, setRepeatAfterMe] = useRepeatAfterMePreference();
   const timerRef = useRef<number | null>(null);
+  const listenRef = useRef<() => void>(() => undefined);
   const slide = slides[index];
 
   const clearTimer = useCallback(() => {
@@ -64,7 +67,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setMessage(zh ? "AI 正在示范，请听完后跟读。" : "Listen to the AI, then repeat.");
     const speech = (window as unknown as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
     if (!speech) {
-      timerRef.current = window.setTimeout(() => move(index + 1), 8000);
+      timerRef.current = window.setTimeout(() => repeatAfterMe ? listenRef.current() : move(index + 1), repeatAfterMe ? 300 : 8000);
       return clearTimer;
     }
     speech.cancel();
@@ -72,14 +75,16 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     utterance.lang = speechLocale;
     utterance.rate = .76;
     const schedule = () => {
-      setMessage(zh ? "轮到您：请跟我说。也可点麦克风获得即时评分。" : "Your turn: repeat after me. Use the microphone for an instant score.");
-      timerRef.current = window.setTimeout(() => move(index + 1), 8000);
+      setMessage(repeatAfterMe
+        ? (zh ? "轮到您：请跟我说，AI 会自动评分。" : "Your turn: repeat after me for an automatic score.")
+        : (zh ? "“跟我读”已关闭；本页会继续自动播放。" : "Repeat after me is off; autoplay will continue."));
+      timerRef.current = window.setTimeout(() => repeatAfterMe ? listenRef.current() : move(index + 1), repeatAfterMe ? 450 : 8000);
     };
     utterance.onend = schedule;
     utterance.onerror = schedule;
     speech.speak(utterance);
     return () => { clearTimer(); speech.cancel(); };
-  }, [clearTimer, complete, index, move, paused, slide, speechLocale, started, zh]);
+  }, [clearTimer, complete, index, move, paused, repeatAfterMe, slide, speechLocale, started, zh]);
 
   function begin() {
     setStarted(true);
@@ -128,6 +133,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setMessage(zh ? "正在听您说……" : "Listening to you…");
     try { recognition.start(); } catch { setListening(false); }
   }
+  listenRef.current = listen;
 
   function replay() {
     clearTimer();
@@ -163,10 +169,12 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
       <button onClick={() => move(0)} disabled={index === 0} aria-label={zh ? "第一张" : "First slide"}>≪</button>
       <button onClick={() => move(index - 1)} disabled={index === 0} aria-label={zh ? "上一张" : "Previous slide"}>‹</button>
       <button className="everyday-mic" onClick={listen} disabled={!started || complete || listening}>🎙 {listening ? (zh ? "正在听" : "Listening") : (zh ? "跟读评分" : "Score my speech")}</button>
+      <button className={`everyday-repeat-toggle${repeatAfterMe ? " on" : ""}`} type="button" aria-pressed={repeatAfterMe} onClick={() => setRepeatAfterMe(!repeatAfterMe)}>{zh ? `跟我读：${repeatAfterMe ? "开" : "关"}` : `Repeat: ${repeatAfterMe ? "On" : "Off"}`}</button>
       <button onClick={() => move(index + 1)} disabled={complete} aria-label={zh ? "下一张" : "Next slide"}>›</button>
       <button onClick={() => move(slides.length - 1)} disabled={index === slides.length - 1} aria-label={zh ? "最后一张" : "Last slide"}>≫</button>
       <button className="everyday-pause" onClick={togglePause} disabled={!started || complete}>{paused ? (zh ? "▶ 继续" : "▶ Play") : (zh ? "Ⅱ 暂停" : "Ⅱ Pause")}</button>
       <Link className="everyday-quit" href={`/${lang}/play/everyday?language=${language}`}>{zh ? "退出" : "Quit"}</Link>
     </div>
+    <style>{`.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}@media(max-width:620px){.everyday-controls .everyday-repeat-toggle{grid-column:span 2}}`}</style>
   </section>;
 }

@@ -38,6 +38,9 @@ test("the player includes autoplay, speech scoring, complete navigation controls
   assert.match(player, /slides\.length/);
   assert.match(player, /move\(0\)/);
   assert.match(player, /move\(slides\.length - 1\)/);
+  assert.match(player, /useRepeatAfterMePreference/);
+  assert.match(player, /repeatAfterMe \? listenRef\.current\(\)/);
+  assert.match(player, /aria-pressed=\{repeatAfterMe\}/);
 });
 
 test("mobile header never displays the separate account icon beside the hamburger", async () => {

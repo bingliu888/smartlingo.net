@@ -54,27 +54,23 @@ test("the shared header uses one accessible twelve-language text dropdown withou
 });
 
 test("home and Choose course route languages through a separate detail page or an existing course", async () => {
-  const [home, chooser, planner, programs, detail, css] = await Promise.all([
+  const [home, choices, planner, programs, detail, css] = await Promise.all([
     read("../app/[lang]/page.tsx"),
-    read("../components/LanguageCommunityChooser.tsx"),
+    read("../components/HomeLearningChoices.tsx"),
     read("../components/LearningPathPlanner.tsx"),
     read("../app/[lang]/programs/page.tsx"),
     read("../app/[lang]/programs/[language]/page.tsx"),
     read("../app/globals.css"),
   ]);
 
-  assert.match(home, /<LanguageCommunityChooser lang=\{lang\}/);
-  assert.equal((chooser.match(/<h1/g) || []).length, 1);
+  assert.match(home, /<HomeLearningChoices lang=\{lang\}/);
   assert.equal((home.match(/<h1/g) || []).length, 0);
   assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);
-  assert.match(chooser, /您想学习哪种语言/);
-  assert.match(chooser, /下一页会显示课程详情与学习选项/);
-  assert.match(chooser, /joined \? "joined" : ""/);
-  assert.match(chooser, /已加入 · 进入课程/);
-  assert.match(chooser, /Joined · Open course/);
-  assert.match(chooser, /\/programs\/\$\{encodeURIComponent\(code\)\}/);
-  assert.doesNotMatch(chooser, /\/enroll|\/placement|auth\/login\?returnTo=/);
-  assert.match(chooser, /openLanguage/);
+  assert.match(choices, /先选择想做什么，再选择语言/);
+  assert.match(choices, /Choose what to do, then choose a language/);
+  assert.match(choices, /SMARTLINGO_LANGUAGE_COMMUNITIES\.map/);
+  assert.match(choices, /course_\$\{language\}_\$\{choice\}/);
+  assert.doesNotMatch(choices, /\/enroll|\/placement|auth\/login\?returnTo=/);
   assert.match(programs, /<LearningPathPlanner lang=\{lang\} catalogOnly\/>/);
   assert.match(planner, /openCatalogLanguage/);
   assert.match(planner, /joined[\s\S]*?\/classes\/\$\{encodeURIComponent\(joined\.id\)\}/);
@@ -82,7 +78,7 @@ test("home and Choose course route languages through a separate detail page or a
   assert.match(detail, /SMARTLINGO_COURSE_PACKAGES/);
   assert.match(detail, /首月免费/);
   assert.match(detail, /fixedCourseId\(language, course\.tier\)/);
-  assert.doesNotMatch(chooser, /selectedLanguage|lingo-training-menu|>Vocab<|>Speaking</);
+  assert.doesNotMatch(choices, /lingo-training-menu|>Vocab<|>Speaking</);
   assert.doesNotMatch(css, /\.lingo-training-menu\{/);
   assert.match(css, /\.lingo-community-grid\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(max-width:820px\)\{\.lingo-hero-shell/);
@@ -101,7 +97,7 @@ test("home and Choose course route languages through a separate detail page or a
     assert.ok(layout.popover <= width - 28, `${width}px language menu must retain 14px side gutters`);
     assert.ok(
       Math.abs((layout.card * layout.columns) + (11 * (layout.columns - 1)) - layout.inner) < 0.01,
-      `${width}px community cards must consume the complete inner panel without overflow`,
+      `${width}px learning cards must consume the complete inner panel without overflow`,
     );
   }
   assert.ok(layouts.get(390).card >= 350);

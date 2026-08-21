@@ -38,7 +38,7 @@ test("course entrances replace the standalone classroom directory", () => {
   const community = read("app/[lang]/community/page.tsx");
   assert.match(home, /classes/);
   assert.doesNotMatch(home, /classrooms\?view=mine/);
-  assert.match(dashboard, /classes\?mine=1/);
+  assert.match(dashboard, /DashboardLearningHub/);
   assert.doesNotMatch(dashboard, /classrooms\?view=mine/);
   assert.match(community, /redirect\(`\/\$\{lang\}\/programs`\)/);
 });

@@ -49,7 +49,7 @@ test("renders the SmartLingo language-learning foundation", async () => {
   const html = await response.text();
   assert.match(html, /SmartLingo/);
   assert.match(html, /从第一天开始，开口说一门新语言/);
-  for (const language of ["中文", "英语", "西班牙语", "日语", "韩语", "法语", "德语", "俄语", "意大利语", "葡萄牙语", "阿拉伯语", "印地语"]) {
+  for (const language of ["中文", "English", "Español", "日本語", "한국어", "Français", "Deutsch", "Русский", "Italiano", "Português", "العربية", "हिन्दी"]) {
     assert.match(html, new RegExp(language));
   }
   for (const skill of ["词汇", "阅读", "写作", "听力", "对话"]) assert.match(html, new RegExp(skill));
@@ -62,8 +62,9 @@ test("renders the SmartLingo language-learning foundation", async () => {
   assert.match(html, /社区/);
   assert.doesNotMatch(html, /href="\/zh\/community"/);
   assert.match(html, />选择课程<\/a>/);
-  assert.match(html, />游戏<\/a>/);
-  assert.match(html, />咨询专家<\/a>/);
+  assert.match(html, />生活口语<\/a>/);
+  assert.match(html, />边玩边学<\/a>/);
+  assert.match(html, />咨询AI<\/a>/);
   assert.match(html, /\/zh\/project/);
   assert.match(html, />项目</);
   assert.match(html, /消息与实时聊天/);

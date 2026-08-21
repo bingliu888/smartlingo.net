@@ -8,9 +8,10 @@ import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
 function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
   const zh = lang === "zh";
   return <>
+    <Link href={`/${lang}/play/everyday`}>{zh ? "生活口语" : "Everyday speaking"}</Link>
+    <Link href={`/${lang}/play`}>{zh ? "边玩边学" : "Learn through play"}</Link>
     <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
-    <Link href={`/${lang}/play`}>{zh ? "游戏" : "Play"}</Link>
-    <Link href={`/${lang}/assistant`}>{zh ? "咨询专家" : "Ask Guru"}</Link>
+    <Link href={`/${lang}/assistant`}>{zh ? "咨询AI" : "Ask AI"}</Link>
   </>;
 }
 

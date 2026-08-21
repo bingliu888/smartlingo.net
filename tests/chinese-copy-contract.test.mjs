@@ -15,7 +15,7 @@ test("Chinese shared controls and account notices remain localized", async () =>
 
   assert.match(header, /SmartLingo 首页/);
   assert.match(header, /主导航/);
-  for (const label of ["选择课程", "咨询专家"]) assert.match(header, new RegExp(label));
+  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(header, new RegExp(label));
   assert.match(footer, /页脚导航/);
   assert.match(footer, /从第一天开口 · 人工智能导师 · 三级课程 · 首月免费/);
   assert.match(language, /切换为英文/);
@@ -43,7 +43,7 @@ test("Chinese public, dashboard, Project, and legal copy uses language-learning 
   assert.match(members, /消息与实时聊天/);
   assert.match(membership, /免费方案/);
   assert.match(membership, /平台订阅推荐/);
-  assert.match(dashboard, /实时智能语音对话/);
+  assert.match(dashboard, /DashboardLearningHub/);
   assert.match(project, /二十天交付节奏/);
   assert.match(privacy, /语音与人工智能训练/);
   assert.match(terms, /会员自主开班/);

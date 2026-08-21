@@ -6,6 +6,7 @@ import { TextSizeControl } from "../../../components/TextSizeControl";
 import { getDatabase, getSessionUser } from "../../../lib/auth";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
+import { DashboardLearningHub, type DashboardJoinedCourse } from "../../../components/DashboardLearningHub";
 import "./dashboard-tuneup.css";
 
 export const dynamic = "force-dynamic";
@@ -64,21 +65,23 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   const t = copy[lang];
   const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2 WHERE user_id = ?")
     .bind(user.id).first<{ count: number }>())?.count ?? 0;
+  const joinedCourseResult = await getDatabase().prepare(`SELECT c.id,c.title,c.target_language AS targetLanguage,
+      COALESCE(c.package_tier,c.level,'beginner') AS packageTier
+    FROM smartlingo_language_classes c
+    JOIN smartlingo_language_class_members member ON member.class_id=c.id
+    WHERE member.user_id=? AND member.status='active' AND c.status='open' AND c.class_kind='official_course'
+    ORDER BY c.target_language,CASE c.package_tier WHEN 'basic' THEN 1 WHEN 'intermediate' THEN 2 ELSE 3 END,c.title`)
+    .bind(user.id).run<DashboardJoinedCourse>();
+  const joinedCourses = joinedCourseResult.results ?? [];
   return (
     <main className="dashboard-page" data-layout-page="dashboard" data-layout-ready="true" data-layout-overlap-check="dashboard-page">
       <SiteHeader lang={lang} />
       <span data-layout-overlap-check="dashboard-start" style={{ display: "block", height: 1 }} />
       <div className="dashboard-wrap">
         <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p></div>
-        <section className="dashboard-voice-panel">
-          <span className="dashboard-voice-icon" aria-hidden="true" />
-          <div><p className="section-kicker">{t.voiceKicker}</p><h2>{t.voiceTitle}</h2><p>{t.voiceBody}</p></div>
-          <a className="dashboard-voice-cta" href={`/${lang}/assistant`}>{t.voiceAction} <span aria-hidden="true">→</span></a>
-        </section>
+        <DashboardLearningHub lang={lang} courses={joinedCourses}/>
         <MembershipPanel lang={lang} />
-        <section className="dashboard-voice-panel"><span className="dashboard-voice-icon" aria-hidden="true"/><div><p className="section-kicker">MY COURSES</p><h2>{lang === "zh" ? "我的课程" : "My Courses"}</h2><p>{lang === "zh" ? "查看已创建或加入的课程及其教室。" : "View courses you create or join and enter each course course room."}</p></div><a className="dashboard-voice-cta" href={`/${lang}/classes?mine=1`}>{lang === "zh" ? "打开我的课程" : "Open My Courses"} →</a></section>
         <div className="dashboard-grid">
-          <section className="progress-card"><div className="card-top"><span>{t.progress}</span><strong>{lang === "zh" ? "开始" : "START"}</strong></div><div className="progress-track"><i style={{ width: "0%" }} /></div><div className="lesson-preview"><span>语</span><div><h2>{t.next}</h2><p>{t.nextBody}</p><a className="primary-button" href={`/${lang}/classes?mine=1`}>{t.action} <span>→</span></a></div></div></section>
           <section className="dashboard-cert-card"><div className="dashboard-cert-count"><span aria-hidden="true">SL</span><strong>{certificateCount.toLocaleString()}</strong></div><div><p className="section-kicker">SMARTLINGO CERTS</p><h2>{t.certs}</h2><p>{t.certsBody}</p><a className="primary-button" href={`/${lang}/certificates`}>{t.certsAction} <span>→</span></a></div></section>
           <aside className="account-card" id="account"><h2>{t.account}</h2><dl><div><dt>{lang === "zh" ? "邮箱" : "Email"}</dt><dd>{user.email}</dd></div><div><dt>{t.language}</dt><dd>{lang === "zh" ? "中文" : "English"}</dd></div></dl><TextSizeControl lang={lang} /><LogoutButton lang={lang} label={t.signOut} /></aside>
           <section className="coming-card"><div className="mini-table gc-mini-network" aria-hidden="true"><span>{lang === "zh" ? "免费" : "FREE"}</span><span>{lang === "zh" ? "进阶" : "PLUS"}</span><i>{lang === "zh" ? "协调" : "COORD"}</i><span>{lang === "zh" ? "开班" : "CLASS"}</span><span>{lang === "zh" ? "社区" : "SOCIAL"}</span></div><div><p className="section-kicker">{lang === "zh" ? "平台方案" : "PLATFORM PLANS"}</p><h2>{t.coming}</h2><p>{t.comingBody}</p></div></section>

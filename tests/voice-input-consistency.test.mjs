@@ -9,7 +9,7 @@ test("Ask Guru text stays public while microphone access requires sign-in", asyn
   ]);
 
   assert.match(assistant, /SpeechRecognition \|\| speechWindow\.webkitSpeechRecognition/);
-  assert.match(assistant, /instance\.lang = zh \? "zh-CN" : "en-US"/);
+  assert.match(assistant, /instance\.lang = speechLocale \|\| \(zh \? "zh-CN" : "en-US"\)/);
   assert.match(assistant, /instance\.continuous = true/);
   assert.match(assistant, /instance\.interimResults = true/);
   assert.match(assistant, /result\[0\]\.transcript/);
@@ -25,15 +25,16 @@ test("Ask Guru text stays public while microphone access requires sign-in", asyn
   assert.doesNotMatch(page, /requestUser|signedIn|auth\/login/);
 });
 
-test("signed-in dashboard exposes a bilingual voice CTA to the existing Ask Guru page", async () => {
-  const [dashboard, styles] = await Promise.all([
+test("signed-in dashboard exposes joined-language learning tabs including AI practice", async () => {
+  const [dashboard, hub] = await Promise.all([
     readFile(new URL("../app/[lang]/dashboard/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/[lang]/dashboard/dashboard-tuneup.css", import.meta.url), "utf8"),
+    readFile(new URL("../components/DashboardLearningHub.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(dashboard, /voiceAction: "Live Audio AI Chat"/);
-  assert.match(dashboard, /voiceAction: "实时智能语音对话"/);
-  assert.match(dashboard, /className="dashboard-voice-cta" href=\{`\/\$\{lang\}\/assistant`\}/);
-  assert.match(styles, /\.dashboard-voice-panel\{/);
-  assert.match(styles, /@media\(max-width:760px\).*\.dashboard-voice-cta\{grid-column:1\/-1;width:100%\}/s);
+  assert.match(dashboard, /<DashboardLearningHub/);
+  assert.match(hub, /courses: DashboardJoinedCourse\[\]/);
+  assert.match(hub, /role="tablist"/);
+  assert.match(hub, /`\/\$\{lang\}\/assistant\?language=\$\{language\.code\}`/);
+  assert.match(hub, /生活口语/);
+  assert.match(hub, /边玩边学/);
 });

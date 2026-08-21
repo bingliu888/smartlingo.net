@@ -178,7 +178,7 @@ async function writeReport(database: ReturnType<typeof getDatabase>, userId: str
       summary.unlearned, summary.percent, summary.stars, now, now).run();
 }
 
-async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false) {
+async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "") {
   const level = access.packageTier || access.level || "beginner";
   const now = Math.floor(Date.now() / 1000);
   const catalog = await catalogFor(database, access.targetLanguage, level);
@@ -191,9 +191,12 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
   const fresh = catalog.filter(item => learnerStatus(progress.get(progressKey(item))) === "unlearned")
     .sort((a, b) => ((a.sequence + daySeed) % Math.max(1, catalog.length)) - ((b.sequence + daySeed) % Math.max(1, catalog.length)));
   const due = started.filter(item => (progress.get(progressKey(item))?.dueAt ?? 0) <= now);
-  const selected = [...due, ...fresh.slice(0, 4), ...started]
-    .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
-    .slice(0, 10);
+  const startIndex = startWordId ? catalog.findIndex(item => item.id === startWordId) : -1;
+  const selected = startIndex >= 0
+    ? [...catalog.slice(startIndex), ...catalog.slice(0, startIndex)].slice(0, 10)
+    : [...due, ...fresh.slice(0, 4), ...started]
+      .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
+      .slice(0, 10);
   const items = catalog.map(item => libraryPayload(item, progress, now));
   const reportResult = await database.prepare(`SELECT local_date AS localDate,total_count AS total,mastered_count AS mastered,
     learning_count AS learning,unlearned_count AS unlearned,mastery_percent AS percent,stars
@@ -217,7 +220,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
   if ("error" in auth) return auth.error;
   const timeZone = safeTimeZone(new URL(request.url).searchParams.get("timeZone"));
   const localDate = localDateKey(Math.floor(Date.now() / 1000), timeZone);
-  return Response.json(await responsePayload(auth.database, auth.user.id, auth.access, localDate));
+  const startWordId = new URL(request.url).searchParams.get("startWordId") || "";
+  return Response.json(await responsePayload(auth.database, auth.user.id, auth.access, localDate, false, startWordId));
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ classId: string }> }) {

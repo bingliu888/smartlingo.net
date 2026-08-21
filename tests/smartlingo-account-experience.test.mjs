@@ -27,7 +27,7 @@ test("dashboard presents three platform plans without gating member-created cour
   assert.match(panel, /不开启开班资格门槛/);
   assert.match(panel, /介绍人积分只在平台成功收取订阅费后产生/);
   assert.match(panel, /课程购买、班主收款、Stripe Connect 转账、退款、争议和打赏一律不产生介绍人积分/);
-  assert.match(dashboard, /\/classes\?mine=1/);
+  assert.match(dashboard, /DashboardLearningHub/);
   assert.doesNotMatch(joined, /白银会员|黄金会员|铂金会员|BACC|授权码|license key/i);
 });
 

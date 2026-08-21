@@ -3,8 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("English and Chinese routes use matching content", async () => {
-  const [home, assistant, live] = await Promise.all([
+  const [home, choices, assistant, live] = await Promise.all([
     readFile(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/HomeLearningChoices.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/assistant/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/assistant/live/route.ts", import.meta.url), "utf8"),
   ]);
@@ -20,8 +21,7 @@ test("English and Chinese routes use matching content", async () => {
   assert.match(home, /三类积分独立记账、可追溯/);
   assert.match(home, /Verified SmartCard challenge points can offset only a SmartLingo course month/);
   assert.match(home, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
-  assert.match(home, /Try free — no sign-in/);
-  assert.match(home, /无需登录，免费挑战/);
+  for (const label of ["Everyday speaking", "生活口语", "Learn through play", "边玩边学", "Choose a course", "选择课程", "Ask AI", "咨询AI"]) assert.match(choices, new RegExp(label));
   assert.match(home, /Messages & Live Chat/);
   assert.match(home, /AI Guru & live audio/);
   assert.match(home, /人工智能导师与实时语音/);

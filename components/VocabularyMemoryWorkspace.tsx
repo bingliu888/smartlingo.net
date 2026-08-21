@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRepeatAfterMePreference } from "./useRepeatAfterMePreference";
+import { vocabularyLibraryPage } from "../lib/smartlingo-learning-hub";
 
 type Status = "mastered" | "learning" | "unlearned";
 type Mode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
@@ -45,10 +47,14 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   const [timeScene, setTimeScene] = useState<"dawn" | "day" | "sunset" | "night">("day");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [repeatAfterMe, setRepeatAfterMe] = useRepeatAfterMePreference();
   const zone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
 
-  const load = useCallback(async () => {
-    const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/vocabulary?timeZone=${encodeURIComponent(zone)}`, { cache: "no-store" });
+  const load = useCallback(async (startWordId?: string) => {
+    const query = new URLSearchParams({ timeZone: zone });
+    if (startWordId) query.set("startWordId", startWordId);
+    const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/vocabulary?${query}`, { cache: "no-store" });
     const payload = await response.json().catch(() => ({})) as Payload;
     if (!response.ok) throw new Error(payload.error || "LOAD_FAILED");
     setData(payload);
@@ -71,6 +77,8 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   const card = cards[index] || null;
   const practicePercent = cards.length ? Math.round(((index + 1) / cards.length) * 100) : 0;
   const filtered = (data?.items || []).filter(item => item.status === tab);
+  const pageResult = vocabularyLibraryPage(filtered, libraryPage);
+  const { page: visiblePage, pageCount, items: pageItems } = pageResult;
   const meaning = (item: { meaningZh: string; meaningEn: string }) => zh ? item.meaningZh : item.meaningEn;
   const textMode = card?.mode === "spelling" || card?.mode === "cloze";
 
@@ -96,13 +104,19 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     setBusy(false);
     if (!response.ok) { setError(payload.error || (zh ? "提交失败，请再试一次。" : "Unable to save. Try again.")); return; }
     setData(current => current ? { ...payload, dailyDeck: current.dailyDeck } : payload);
+    setPronunciationScores([]);
     if (payload.correct) {
-      setPhase("speak"); setSpeechMessage(zh ? "答对了！+1 次有效回忆。现在听并跟读。" : "Correct! One retrieval recorded. Now listen and repeat.");
+      setPhase("speak"); setSpeechMessage(repeatAfterMe ? (zh ? "答对了！+1 次有效回忆。现在听并跟读。" : "Correct! One retrieval recorded. Now listen and repeat.") : (zh ? "答对了！“跟我读”已关闭，听完示范后进入下一词。" : "Correct! Repeat is off; the next word follows the model audio."));
     } else {
-      setPhase("speak"); setSpeechMessage(zh ? `今天先记住：${card.form} · ${meaning(card)}。听一遍再跟读，明天会再次出现。` : `Remember for today: ${card.form} · ${meaning(card)}. Listen and repeat; it returns tomorrow.`);
+      setPhase("speak"); setSpeechMessage(repeatAfterMe ? (zh ? `今天先记住：${card.form} · ${meaning(card)}。听一遍再跟读，明天会再次出现。` : `Remember for today: ${card.form} · ${meaning(card)}. Listen and repeat; it returns tomorrow.`) : (zh ? `今天先记住：${card.form} · ${meaning(card)}。“跟我读”已关闭。` : `Remember for today: ${card.form} · ${meaning(card)}. Repeat is off.`));
     }
-    setPronunciationRound(1); setPronunciationScores([]);
-    window.setTimeout(() => { void runPronunciationTurn(1); }, 250);
+    if (repeatAfterMe) {
+      setPronunciationRound(1);
+      window.setTimeout(() => { void runPronunciationTurn(1); }, 250);
+    } else {
+      setPronunciationRound(0);
+      playWord(() => window.setTimeout(nextCard, 900));
+    }
   }
 
   function choose(optionId: string) {
@@ -125,6 +139,19 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     setIndex(current => Math.min(current + 1, Math.max(0, cards.length - 1)));
     setTries(0); setWrongIds([]); setTyped(""); setRevealed(false); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
     setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
+  }
+
+  async function startFromWord(wordId: string) {
+    if (busy) return;
+    setBusy(true); setError("");
+    try {
+      await load(wordId);
+      setIndex(0); setTries(0); setWrongIds([]); setTyped(""); setRevealed(false); setPhase("answer");
+      setSpeechMessage(""); setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
+      document.getElementById("vm-practice")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch {
+      setError(zh ? "暂时无法从这个词开始，请稍后重试。" : "Unable to start from this word. Try again shortly.");
+    } finally { setBusy(false); }
   }
 
   async function runPronunciationTurn(round: number) {
@@ -175,8 +202,8 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
       <div className="vm-stat new"><i>＋</i><span>{zh ? "还未学" : "Not started"}</span><strong>{data.summary.unlearned}</strong></div>
     </section>
 
-    <section className="vm-practice" aria-labelledby="vm-practice-title">
-      <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{zh ? "今日智慧卡练习" : "Today's SmartCard practice"}</h2></div><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length} · {practicePercent}%</span></strong></header>
+    <section className="vm-practice" id="vm-practice" aria-labelledby="vm-practice-title">
+      <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{zh ? "今日智慧卡练习" : "Today's SmartCard practice"}</h2></div><div className="vm-practice-tools"><button type="button" aria-pressed={repeatAfterMe} className={repeatAfterMe ? "on" : ""} onClick={() => setRepeatAfterMe(!repeatAfterMe)}>{zh ? `跟我读：${repeatAfterMe ? "开" : "关"}` : `Repeat: ${repeatAfterMe ? "On" : "Off"}`}</button><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length} · {practicePercent}%</span></strong></div></header>
       {card && phase !== "done" ? <div className={`vm-card tries-${tries}`} dir={card.direction} style={{ backgroundImage: `linear-gradient(${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"},${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
         <div className="vm-progress" role="progressbar" aria-label={zh ? "今日词卡进度" : "Today's card progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={practicePercent}><span style={{ width: `${practicePercent}%` }}/></div>
         <div className="vm-card-scene"><span>{SCENES[card.sceneKey] || "✨"}</span><small>{modeLabel[card.mode]} · {zh ? `记忆阶段 ${card.memoryStage}/5` : `Memory stage ${card.memoryStage}/5`}</small></div>
@@ -191,8 +218,10 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
       </div> : <div className="vm-complete"><span>✦</span><h3>{zh ? "今天的词汇记忆完成了！" : "Today's vocabulary memory is complete!"}</h3><p>{zh ? "明天回来，系统会按到期顺序自动挑选下一组词。" : "Come back tomorrow; due reviews and new words will be selected automatically."}</p></div>}
     </section>
 
-    <section className="vm-library"><header><div><p>VOCABULARY LIBRARY</p><h2>{zh ? "我的课程词汇" : "My course vocabulary"}</h2></div><div role="tablist">{(["mastered","learning","unlearned"] as Status[]).map(status => <button role="tab" aria-selected={tab === status} className={tab === status ? "active" : ""} onClick={() => setTab(status)} key={status}>{status === "mastered" ? (zh ? "学会了" : "Mastered") : status === "learning" ? (zh ? "正在学" : "Learning") : (zh ? "还未学" : "Not started")} <b>{data.summary[status]}</b></button>)}</div></header>
-      <div className="vm-word-grid">{filtered.map(item => <article key={item.id}><span>{SCENES[item.sceneKey] || "Aa"}</span><div><strong dir={item.direction}>{item.form}</strong>{item.targetPhonetic ? <small>{item.targetPhonetic}</small> : null}<p>{meaning(item)}</p><em>{item.status === "mastered" ? (zh ? "永久掌握" : "Mastered") : item.status === "learning" ? `${zh ? "记忆阶段" : "Stage"} ${item.memoryStage}/5` : (zh ? "等待首次学习" : "Ready to learn")}</em></div></article>)}</div>
+    <section className="vm-library"><header><div><p>VOCABULARY LIBRARY</p><h2>{zh ? "我的课程词汇" : "My course vocabulary"}</h2></div><div role="tablist">{(["mastered","learning","unlearned"] as Status[]).map(status => <button role="tab" aria-selected={tab === status} className={tab === status ? "active" : ""} onClick={() => { setTab(status); setLibraryPage(1); }} key={status}>{status === "mastered" ? (zh ? "学会了" : "Mastered") : status === "learning" ? (zh ? "正在学" : "Learning") : (zh ? "还未学" : "Not started")} <b>{data.summary[status]}</b></button>)}</div></header>
+      <p className="vm-library-note">{zh ? `每页 20 个词；点击任意词即可从该词开始一组智慧卡。当前显示 ${pageResult.start}–${pageResult.end} / ${filtered.length}。` : `Twenty words per page. Select any word to start a SmartCard set there. Showing ${pageResult.start}–${pageResult.end} of ${filtered.length}.`}</p>
+      <div className="vm-word-grid">{pageItems.map(item => <button className="vm-word-start" type="button" onClick={() => void startFromWord(item.id)} disabled={busy} key={item.id}><span>{SCENES[item.sceneKey] || "Aa"}</span><div><strong dir={item.direction}>{item.form}</strong>{item.targetPhonetic ? <small>{item.targetPhonetic}</small> : null}<p>{meaning(item)}</p><em>{item.status === "mastered" ? (zh ? "永久掌握" : "Mastered") : item.status === "learning" ? `${zh ? "记忆阶段" : "Stage"} ${item.memoryStage}/5` : (zh ? "点击开始学习" : "Select to start")}</em></div></button>)}</div>
+      <nav className="vm-pagination" aria-label={zh ? "词汇分页" : "Vocabulary pages"}><button type="button" disabled={visiblePage <= 1} onClick={() => setLibraryPage(page => Math.max(1, page - 1))}>← {zh ? "上一页" : "Previous"}</button><span>{visiblePage} / {pageCount}</span><button type="button" disabled={visiblePage >= pageCount} onClick={() => setLibraryPage(page => Math.min(pageCount, page + 1))}>{zh ? "下一页" : "Next"} →</button></nav>
     </section>
 
     <section className="vm-report"><header><p>21-DAY REPORT</p><h2>{zh ? "每日词汇成长报告" : "Daily vocabulary growth"}</h2></header><div>{data.reports.map(report => <article key={report.localDate}><time>{report.localDate.slice(5)}</time><span><i style={{ width: `${report.percent}%` }}/></span><strong>{report.percent}%</strong><small>{report.mastered} / {report.learning} / {report.unlearned}</small></article>)}</div><footer><span>● {zh ? "学会了" : "Mastered"}</span><span>↻ {zh ? "正在学" : "Learning"}</span><span>○ {zh ? "还未学" : "Not started"}</span></footer></section>
@@ -200,6 +229,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     {!data && !error ? <p className="vm-loading">{zh ? "正在整理今天的词卡…" : "Preparing today's cards…"}</p> : null}{error ? <p className="vm-error" role="alert">{error}</p> : null}
     <style>{`.vm-speak>.vm-rounds{margin-top:18px}.vm-rounds b{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:rgba(255,255,255,.12)}.vm-rounds b.active{outline:3px solid #ffe69a;background:#b57514}.vm-rounds b.scored{background:#fff;color:#0a5e4c}.vm-average{display:block;margin-top:12px;font-size:24px}`}</style>
     <style>{`.vm-study-card{width:100%;min-height:260px;margin:24px 0;padding:28px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}.vm-study-card strong{font-size:clamp(38px,7vw,76px);overflow-wrap:anywhere}.vm-study-card b,.vm-study-card small{color:#d0e7df}`}</style>
+    <style>{`.vm-practice-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.vm-practice-tools>button{min-height:42px;padding:0 15px;border:1px solid #b5c6bf;border-radius:999px;background:#eef2f0;color:#40564e;font-weight:850}.vm-practice-tools>button.on{border-color:#087d62;background:#ddf7ed;color:#076650}.vm-practice-tools>strong{font-size:34px;color:#087d62}.vm-practice-tools>strong span{color:#8a9691;font-size:17px}.vm-library-note{margin:20px 0 0;color:#60716b;line-height:1.6}.vm-word-grid .vm-word-start{min-width:0;padding:17px;display:flex;gap:13px;border:1px solid #d8e1dd;border-radius:16px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}.vm-word-grid .vm-word-start:hover,.vm-word-grid .vm-word-start:focus-visible{border-color:#087d62;background:#effaf5;transform:translateY(-2px)}.vm-word-grid .vm-word-start:disabled{opacity:.55}.vm-word-grid .vm-word-start>span{font-size:28px}.vm-word-grid .vm-word-start>div{min-width:0}.vm-pagination{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:14px}.vm-pagination button{min-height:44px;padding:0 17px;border:1px solid #b9cec5;border-radius:999px;background:#fff;color:#08745e;font-weight:850}.vm-pagination button:disabled{opacity:.4}.vm-pagination span{font-weight:900}@media(max-width:600px){.vm-practice>header{align-items:flex-start;flex-direction:column}.vm-practice-tools{width:100%;justify-content:space-between}}`}</style>
     <style>{styles}</style>
   </section>;
 }

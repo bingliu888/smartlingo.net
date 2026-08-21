@@ -1,60 +1,64 @@
 {
   "schemaVersion": 1,
-  "releaseId": "everyday-speaking-scenes-v1",
+  "releaseId": "learning-hub-repeat-and-vocabulary-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Launch twelve Everyday Speaking scenes", "zh": "上线十二个生活口语场景" },
+  "title": { "en": "Tune up the multilingual learning hub", "zh": "升级多语言学习中心" },
   "purpose": {
-    "en": "Give anonymous beginners a free, visual, listen-and-repeat route into practical spoken language while correcting the responsive header so the hamburger is the only separate mobile action.",
-    "zh": "为匿名初学者提供免费、图像化、听读跟练的实用口语入口，同时修正响应式页头，使汉堡按钮成为移动模式唯一的独立操作。"
+    "en": "Make speaking, vocabulary, play, courses, and AI easier to discover while sharing one persistent repeat-after-me preference across learning activities.",
+    "zh": "让生活口语、词汇、游戏、课程和 AI 更容易选择，并在学习活动之间共享一个持久的跟读开关。"
   },
   "features": {
     "en": [
-      "Add Airport, Hotel, Restaurant, Hospital, Coffee shop, School, Library, Grocery store, Train and metro, Pharmacy, Bank, and Police help desk scenes.",
-      "Provide twelve automatic slides in every scene for each of SmartLingo's twelve target languages, using the existing reviewed survival-language forms and pronunciation guides.",
-      "Add local AI-generated scene art, target-language speech synthesis, repeat-after-me prompts, transient browser speech scoring, replay, pause, quit, and complete slide navigation.",
-      "Replace the Course detail back button with a language-preserving Everyday Speaking entry."
+      "Default Repeat after me to on in Everyday Speaking and vocabulary practice, with one browser-global preference that persists across scenarios.",
+      "Add vocabulary speech scoring, twenty-word library pages, and click-any-word practice starting points.",
+      "Replace the primary menu with Everyday speaking, Learn through play, Choose course, and Ask AI.",
+      "Add four homepage sliders that select an activity first and one of twelve target languages second.",
+      "Group signed-in learning areas by joined target-language tabs on the Dashboard."
     ],
     "zh": [
-      "新增机场、酒店、餐厅、医院、咖啡店、学校、图书馆、食品店、车站、药店、银行和警察服务台场景。",
-      "每个场景为 SmartLingo 十二种目标语言分别提供十二张自动幻灯片，复用现有已审核的生存口语与音标数据。",
-      "加入本地原创 AI 场景图、目标语言语音示范、跟我读提示、浏览器内临时口语评分、重玩、暂停、退出和完整翻页控制。",
-      "将课程详情页的返回按钮替换为保留目标语言参数的生活口语入口。"
+      "生活口语和词汇练习默认开启跟读，并使用一个可跨场景保留的浏览器全局开关。",
+      "词汇练习加入发音评分、每页二十词和点击任意词开始学习。",
+      "主菜单调整为生活口语、边玩边学、选择课程和咨询AI。",
+      "首页新增四个滑动选择区，先选内容，再从十二种目标语言中选择。",
+      "登录后的用户面板按已加入的目标语言标签组织学习区域。"
     ]
   },
   "affected": {
-    "en": ["Course detail actions", "New /:lang/play/everyday scene library and player", "Shared responsive header", "Project release history"],
-    "zh": ["课程详情操作区", "新增 /:lang/play/everyday 场景库与播放器", "共享响应式页头", "项目发布历史"]
+    "en": ["Homepage", "Shared header", "Everyday Speaking", "Vocabulary memory workspace and API", "AI assistant targeting", "Member Dashboard", "Project release history"],
+    "zh": ["首页", "共享页头", "生活口语", "词汇记忆工作区与接口", "AI 目标语言", "会员用户面板", "项目发布历史"]
   },
   "changes": {
     "en": [
-      "At the 1100-pixel hamburger breakpoint, hide the separate desktop account area and language control while retaining the full account area inside the drawer.",
-      "Organize each lesson as polite opening, scene essentials, and task completion, aligned to beginner immediate-need communication.",
-      "Keep anonymous lesson progress and pronunciation scores page-local with no database writes."
+      "Store only the repeat preference in localStorage; speech transcripts and scores remain transient.",
+      "Allow vocabulary API daily decks to begin at an explicitly selected catalog word while preserving due-review behavior otherwise.",
+      "Pass selected target language and practice mode into Ask AI prompts and browser speech recognition.",
+      "Show only languages represented by active joined courses on signed-in Dashboard tabs."
     ],
     "zh": [
-      "在 1100 像素汉堡断点同步隐藏独立桌面账户区与语言控件，完整账户入口仍保留在抽屉内。",
-      "每课按礼貌开场、场景关键词和完成基本任务组织，符合初学者即时需求沟通目标。",
-      "匿名课程进度和发音分数仅保留在当前页面，不写入数据库。"
+      "本地仅保存跟读开关；语音文本和评分仍为临时状态。",
+      "词汇接口可从用户明确选择的目录词开始每日练习，其余情况仍保留到期复习逻辑。",
+      "将所选目标语言和练习模式传入咨询AI提示及浏览器语音识别。",
+      "登录后的用户面板只显示活跃已加入课程所对应的语言标签。"
     ]
   },
   "validation": {
     "en": [
-      "All twelve languages, twelve scenes, twelve slides per scene, images, pronunciation fields, player controls, and course links are covered by regression tests.",
-      "Production build, sensitive-data scan, and artifact validation pass.",
-      "Chrome responsive checks cover 390x844, 430x932, 820x1180, 1180x820, and 1440x900 without horizontal overflow."
+      "Automated contracts cover global Repeat after me behavior, twenty-word pagination, click-to-start vocabulary, four navigation entries, homepage sliders, Dashboard tabs, and AI language targeting.",
+      "Production build, sensitive-data scan, artifact validation, and the full repository regression suite pass.",
+      "Chrome production checks cover the anonymous selection flow, speaking preference persistence, responsive layouts, and signed-in learning surfaces where an existing session is available."
     ],
     "zh": [
-      "回归测试覆盖十二种语言、十二个场景、每场十二张幻灯片、图片、音标、播放器控件和课程入口。",
-      "生产构建、敏感数据扫描和发布产物验证通过。",
-      "Chrome 响应式检查覆盖 390x844、430x932、820x1180、1180x820 和 1440x900，均无横向溢出。"
+      "自动契约覆盖全局跟读、每页二十词、点击词汇开始、四项菜单、首页滑块、用户面板语言标签和 AI 目标语言。",
+      "生产构建、敏感数据扫描、产物校验和仓库全量回归通过。",
+      "Chrome 生产验收覆盖匿名选择流程、跟读偏好保留、响应式布局，以及存在登录会话时的会员学习界面。"
     ]
   },
   "deferred": {
-    "en": ["Automatic pronunciation scoring depends on browser SpeechRecognition support; listening and manual repeat practice remain available when it is unsupported or microphone permission is denied."],
-    "zh": ["自动发音评分取决于浏览器 SpeechRecognition 支持；不支持或麦克风未授权时，听读与人工跟练仍可正常使用。"]
+    "en": ["Automatic pronunciation scoring depends on browser SpeechRecognition support and microphone permission; listening and manual practice remain available otherwise."],
+    "zh": ["自动发音评分取决于浏览器 SpeechRecognition 支持和麦克风权限；其他情况下仍可听读与人工练习。"]
   },
   "siteAdaptations": {
-    "en": ["The Everyday Speaking feature is SmartLingo-specific; only the generic responsive-header contract was audited across the portfolio."],
-    "zh": ["生活口语属于 SmartLingo 专属功能；跨站审计仅覆盖通用响应式页头契约。"]
+    "en": ["This release changes only SmartLingo learning flows; no other portfolio site requires the domain-specific vocabulary or speaking behavior."],
+    "zh": ["本次发布仅调整 SmartLingo 学习流程；其他站点不需要同步其专属词汇或口语逻辑。"]
   }
 }

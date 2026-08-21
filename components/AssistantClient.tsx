@@ -53,7 +53,7 @@ function recognitionConstructor(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 }
 
-export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
+export function AssistantClient({ lang, targetLanguage, speechLocale, mode }: { lang: "en" | "zh"; targetLanguage?: string; speechLocale?: string; mode?: string }) {
   const zh = lang === "zh";
   const { isLoaded: identityLoaded, isSignedIn } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -237,6 +237,8 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
       const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
         feature: "public_guru",
         language: lang,
+        targetLanguage,
+        practiceMode: mode,
         messages: next.map(({ role, content: messageContent }) => ({ role, content: messageContent })),
         image: attachment ? { dataUrl: attachment.dataUrl, mimeType: attachment.file.type, size: attachment.file.size, name: attachment.file.name } : undefined,
       }) });
@@ -298,7 +300,7 @@ export function AssistantClient({ lang }: { lang: "en" | "zh" }) {
     }
     const instance = new Constructor();
     recognitionBase.current = draft.trim() ? `${draft.trim()} ` : "";
-    instance.lang = zh ? "zh-CN" : "en-US";
+    instance.lang = speechLocale || (zh ? "zh-CN" : "en-US");
     instance.continuous = true;
     instance.interimResults = true;
     instance.onresult = event => {
