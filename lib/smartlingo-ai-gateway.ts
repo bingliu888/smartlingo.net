@@ -996,7 +996,7 @@ export async function transcribeSmartAiSpeech(input: {
       form.set("model", model);
       form.set("language", language);
       form.set("response_format", "json");
-      form.set("prompt", `A learner is saying one short vocabulary item in ${language}. Transcribe only what is spoken.`);
+      form.set("prompt", `A learner is saying one short word or phrase in ${language}. Transcribe only what is spoken.`);
       return dependencies(input.deps).fetch("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",
         headers: {
