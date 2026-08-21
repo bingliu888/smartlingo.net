@@ -1,68 +1,64 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-qa-day1-evidence-detail-v2",
+  "releaseId": "smartlingo-daily-sprint-rank-redeem-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Complete day-one QA evidence detail", "zh": "补全首日验收证据明细" },
+  "title": { "en": "Daily Sprint, rankings, and reward store", "zh": "每日速成、排行榜与积分兑换" },
   "purpose": {
-    "en": "Correct the August 21 Project record so its final runtime report contains each language's measured evidence and both blockers without claiming a full pass.",
-    "zh": "修正 8 月 21 日 Project 记录，让最终运行时报告逐语显示实测证据与两项受阻内容，且不声称全量通过。"
+    "en": "Give subscribed learners a short, configurable five-skill learning loop and turn earned course reward points into visible progress and owned digital rewards.",
+    "zh": "为已订阅学员提供可选时长的五技能速成学习闭环，并让课程奖励积分同时体现为排行榜成绩和可拥有的数字奖励。"
   },
   "features": {
     "en": [
-      "Publish the four per-language evidence rows directly through the deployment-generated Project report.",
-      "Preserve the sentence-bank, route-preflight, signed-in Chrome, score-log, and clean-console evidence.",
-      "Keep real microphone scoring and administrator-level ledger verification explicitly blocked."
+      "Add Daily Sprint as the first course learning choice with 5, 10, 15, or 20 minutes and a 10-minute default.",
+      "Run one mixed five-skill round per five minutes: ten vocabulary items with follow-me practice, reading, listening word order, translated writing word order, and speaking.",
+      "Add server-graded daily and weekly Sprint rankings to Play.",
+      "Add a Play reward store where signed-in learners can redeem course reward points for account-owned digital items."
     ],
     "zh": [
-      "通过部署生成的 Project 报告直接发布四种语言的逐语证据。",
-      "保留句子题库、路由预检、真实登录 Chrome、分数日志与无错误控制台证据。",
-      "继续将真实麦克风评分与管理员级账本复核明确标记为受阻。"
+      "把每日速成设为课程学习第一项，可选 5、10、15 或 20 分钟，默认 10 分钟。",
+      "每 5 分钟完成一轮五技能混合学习：10 个词汇与跟读、阅读、听力组句、母语提示写作组句和口语。",
+      "在边玩边学中增加由服务器评分的每日与每周速成排行榜。",
+      "在边玩边学中增加积分兑换页，登录学员可使用课程奖励积分拥有数字物品。"
     ]
   },
   "affected": {
-    "en": ["Administrator Project report", "August 21 production QA evidence", "Release metadata"],
-    "zh": ["管理员 Project 报告", "8 月 21 日正式站验收证据", "发布元数据"]
+    "en": ["Subscribed course dashboard", "Daily Sprint", "Play rankings", "Reward redemption", "Administrator Project report"],
+    "zh": ["已订阅课程面板", "每日速成", "边玩边学排行榜", "积分兑换", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Move the per-language measurements into the deployment manifest consumed by the authoritative runtime Project record.",
-      "Use only the anonymized learner key and non-secret production evidence.",
-      "Keep the report explicitly blocked where real speech input or administrator-only read access was unavailable."
+      "Build each Sprint from the course's reviewed vocabulary and 120-sentence bank without exposing answer keys to the client.",
+      "Persist Sprint plans and completed server-derived scores for authenticated active course members.",
+      "Create a versioned digital reward catalog, redemption ownership records, and an atomic reward-point ledger debit.",
+      "Keep anonymous Play browsing public while requiring sign-in for personal balances, ownership, Sprint entry, and redemption."
     ],
     "zh": [
-      "把逐语实测数据写入权威运行时 Project 记录直接读取的部署清单。",
-      "只使用匿名学习者键与非敏感正式站证据。",
-      "真实语音输入或管理员只读权限不可用时，报告明确保持受阻。"
+      "每日速成使用课程已审核词汇和 120 句题库生成，客户端不暴露答案。",
+      "仅为已登录且课程有效的学员保存速成计划和服务器计算的完成分数。",
+      "建立带版本的数字奖励目录、兑换拥有记录和原子化奖励积分扣账。",
+      "匿名用户仍可浏览边玩边学；个人余额、物品拥有、速成学习和兑换均要求登录。"
     ]
   },
   "validation": {
     "en": [
-      "Sentence and QA contracts pass for 36 course banks, 120 sentences per bank, and ten unique daily Listening and Writing items.",
-      "The August 21 route preflight passed all 16 anonymous production route checks.",
-      "English: 1 minute planned and 7 learning-log minutes measured; speaking deep focus; five Course skills, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
-      "Japanese: 5 minutes planned and 20 learning-log minutes measured; writing deep focus with two extra checked questions; Course, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
-      "Spanish: 2 minutes planned and 20 learning-log minutes measured; vocabulary deep focus; Course, extra vocabulary feedback, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
-      "Italian: 5 minutes planned and 21 learning-log minutes measured; vocabulary deep focus; Course, extra vocabulary feedback, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
-      "Writing and Listening displayed checked correct-or-incorrect feedback and advanced their visible counters in every language; no browser console errors or warnings were observed.",
-      "No payment, referral, certificate, challenge, leaderboard, or completed SmartCard claim flow was entered. Database-level ledger verification remains blocked because the run used exactly the designated learner and no administrator identity."
+      "TypeScript compilation and the production build pass.",
+      "All 324 repository tests pass, including duration, unique vocabulary, server scoring, route authorization, UI, and migration contracts.",
+      "The D1 migration applies successfully to a local Wrangler database, including the reward ledger rebuild and redemption triggers.",
+      "Shared site policy, architecture, base-feature consistency, and all 11 SmartLingo shared contracts pass."
     ],
     "zh": [
-      "句子与测试合同通过：36 个课程题库、每库 120 句，Listening 与 Writing 每日各 10 道唯一题。",
-      "8 月 21 日匿名正式站 route preflight 的 16 项检查全部通过。",
-      "英语：计划 1 分钟、学习日志计量 7 分钟；深度技能为口语；课程五技能、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
-      "日语：计划 5 分钟、学习日志计量 20 分钟；深度技能为写作并额外检查两题；课程、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
-      "西班牙语：计划 2 分钟、学习日志计量 20 分钟；深度技能为词汇；课程、额外词汇反馈、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
-      "意大利语：计划 5 分钟、学习日志计量 21 分钟；深度技能为词汇；课程、额外词汇反馈、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
-      "四语写作与听力均显示已检查的正确或错误反馈，并推进可见题号；浏览器控制台未发现错误或警告。",
-      "未进入支付、推荐、证书、挑战、排行榜或完成整轮 SmartCard 领取流程。因本轮只使用指定学习者且未使用管理员身份，数据库级账本复核保持受阻。"
+      "TypeScript 编译与正式构建通过。",
+      "仓库 324 项测试全部通过，包括时长、唯一词汇、服务器评分、路由授权、界面和迁移合同。",
+      "D1 迁移已在本地 Wrangler 数据库成功执行，包括奖励账本重建与兑换触发器。",
+      "共享站点政策、架构、基础功能一致性及 SmartLingo 全部 11 项共享合同通过。"
     ]
   },
   "deferred": {
-    "en": ["Real microphone scoring and administrator-only ledger verification remain blocked and require a later authorized retry."],
-    "zh": ["真实麦克风评分与管理员专属账本复核仍受阻，需要后续授权重试。"]
+    "en": ["Automated browser QA cannot supply a real human microphone sample; speech permission and non-audio fallback remain covered by contracts and production UI checks."],
+    "zh": ["自动浏览器验收无法提供真人麦克风语音样本；语音权限与无音频回退仍由合同测试及正式站界面检查覆盖。"]
   },
   "siteAdaptations": {
-    "en": ["This release publishes SmartLingo-specific QA evidence only and changes no learner data, scoring logic, course content, identity, commerce, or classroom boundary."],
-    "zh": ["本次只发布 SmartLingo 专属验收证据，不改变学习数据、评分逻辑、课程内容、身份、商业或课程教室边界。"]
+    "en": ["This is a SmartLingo learning feature. It reuses the existing course vocabulary, sentence, speech, membership, and reward boundaries without changing other sites."],
+    "zh": ["这是 SmartLingo 专属学习功能，复用现有课程词汇、句子、语音、会员与奖励边界，不改变其他站点。"]
   }
 }
