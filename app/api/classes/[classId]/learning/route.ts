@@ -1345,14 +1345,14 @@ async function authorize(request: Request, classIdValue: unknown) {
   const user = await getSessionUser(request);
   if (!user) return { response: Response.json({ error: "Authentication required" }, { status: 401 }) } as const;
   const classId = safeIdentifier(classIdValue, 100);
-  if (!classId) return { response: Response.json({ error: "A valid class ID is required" }, { status: 400 }) } as const;
+  if (!classId) return { response: Response.json({ error: "A valid course ID is required" }, { status: 400 }) } as const;
   const database = getDatabase();
   const access = await requireOfficialClassMembership(database, user, classId);
   if (!access) {
-    return { response: Response.json({ error: "Active membership in this official language class is required" }, { status: 403 }) } as const;
+    return { response: Response.json({ error: "Active membership in this official language course is required" }, { status: 403 }) } as const;
   }
   if (!isLearningLanguage(access.targetLanguage)) {
-    return { response: Response.json({ error: "This class language is not supported for learning" }, { status: 409 }) } as const;
+    return { response: Response.json({ error: "This course language is not supported for learning" }, { status: 409 }) } as const;
   }
   const placement = access.classKind === "official_course"
     ? fixedCoursePlacement(access)

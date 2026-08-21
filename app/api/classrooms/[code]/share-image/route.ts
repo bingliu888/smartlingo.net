@@ -5,13 +5,13 @@ export const dynamic = "force-dynamic";
 const styles: Record<string, string> = {
   global: "premium global learning community, refined architectural light, diverse abstract human connection, deep teal and emerald palette",
   creative: "editorial creative learning gathering, expressive shapes, optimistic color, sophisticated contemporary illustration",
-  technology: "future technology class, luminous networks, spatial depth, elegant dark teal cinematic atmosphere",
+  technology: "future technology course, luminous networks, spatial depth, elegant dark teal cinematic atmosphere",
   warm: "warm international learning gathering, golden natural light, welcoming modern space, calm human connection",
 };
 
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  if (!/^\d{6}$/.test(code) || !await classByCode(code)) return Response.json({ error: "Class not found" }, { status: 404 });
+  if (!/^\d{6}$/.test(code) || !await classByCode(code)) return Response.json({ error: "Course not found" }, { status: 404 });
   const input = await request.json().catch(() => ({})) as { style?: string; direction?: string; locale?: string };
   const style = styles[String(input.style)] || styles.global;
   const direction = String(input.direction || "").trim().slice(0, 240);

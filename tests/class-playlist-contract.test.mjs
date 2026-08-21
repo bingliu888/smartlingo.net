@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => fs.readFileSync(new URL("../" + path, import.meta.url), "utf8");
 
-test("class waiting playlists stay local to each visitor", () => {
+test("course waiting playlists stay local to each visitor", () => {
   const route = read("app/api/classrooms/[code]/playlist/route.ts");
   const room = read("components/live-class-room-client.tsx");
   const player = read("components/ClassPlaylistPlayer.tsx");

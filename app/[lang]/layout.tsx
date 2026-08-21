@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const zh = lang === "zh";
   return {
     title: {
-      default: zh ? "SmartLingo — 从第一天开口，与班级一起进步" : "SmartLingo — Speak from day one. Learn together.",
+      default: zh ? "SmartLingo — 从第一天开口，与课程一起进步" : "SmartLingo — Speak from day one. Learn together.",
       template: "%s | SmartLingo",
     },
     description: zh

@@ -4,9 +4,9 @@ import { canManageClass } from "@/lib/class-managers";
 
 export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const room = await classByCode((await params).code);
-  if (!room) return Response.json({ error: "Class not found" }, { status: 404 });
+  if (!room) return Response.json({ error: "Course not found" }, { status: 404 });
   const access = await classAccess(room, await getSessionUser(request));
-  if (!access.allowed) return Response.json({ error: "Private class invitation required" }, { status: 403 });
+  if (!access.allowed) return Response.json({ error: "Private course invitation required" }, { status: 403 });
   return Response.json({ room, access });
 }
 
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ co
   const duration = Math.max(15, Math.min(480, Number(body.durationMinutes) || room.durationMinutes));
   const trial = classType === "trial" ? 7 * 24 * 60 : 0;
   const tuition = classType === "trial" ? Math.max(0, Math.min(10_000_000, Math.round(Number(body.tuition ?? room.tuitionCents / 100) * 100))) : 0;
-  if (title.length < 3 || !Number.isFinite(startsAt)) return Response.json({ error: "Invalid class" }, { status: 400 });
+  if (title.length < 3 || !Number.isFinite(startsAt)) return Response.json({ error: "Invalid course" }, { status: 400 });
   if (room.streamActive && (streamingMode !== room.streamingMode || realtimeMode !== room.realtimeMode)) {
     return Response.json({ error: "Media and interaction modes are locked while streaming is active" }, { status: 409 });
   }

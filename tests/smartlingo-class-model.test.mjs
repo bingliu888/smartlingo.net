@@ -9,7 +9,7 @@ test("ordinary members cannot create courses or set fees", async () => {
   assert.match(route, /MEMBER_COURSE_CREATION_DISABLED/);
   assert.match(route, /status: 403/);
   assert.match(route, /canCreatePrivateClass: false/);
-  assert.doesNotMatch(studio, /createClass|创建私有班级|priceCents: Math\.round/);
+  assert.doesNotMatch(studio, /createClass|创建私有课程|priceCents: Math\.round/);
 });
 
 test("the MVP seeds three fixed monthly courses for all twelve languages", async () => {
@@ -66,17 +66,17 @@ test("admins and course co-hosts can edit while fixed price remains immutable", 
   assert.doesNotMatch(detail.match(/if \(input\.action === "update_official_course"[\s\S]*?return Response\.json\(\{ ok: true/)?.[0] || "", /price_cents/);
 });
 
-test("Class Studio lists only subscribed courses and routes discovery to Choose courses", async () => {
+test("Course Studio lists only subscribed courses and routes discovery to Choose courses", async () => {
   const studio = await read("../components/ClassStudio.tsx");
   assert.match(studio, /context\.joinedClasses/);
   assert.doesNotMatch(studio, /context\.availableClasses/);
   assert.match(studio, /选择课程/);
   assert.match(studio, /\$\{lang\}\/programs/);
   assert.match(studio, /CourseClassroomTile/);
-  assert.doesNotMatch(studio, /70 \/ 30|Stripe Connect|我创建的班级/);
+  assert.doesNotMatch(studio, /70 \/ 30|Stripe Connect|我创建的课程/);
 });
 
-test("each subscribed course exposes five direct training entries tied to its class id", async () => {
+test("each subscribed course exposes five direct training entries tied to its course id", async () => {
   const [studio, session, learning] = await Promise.all([
     read("../components/ClassStudio.tsx"),
     read("../app/[lang]/classes/[classId]/learn/session/page.tsx"),

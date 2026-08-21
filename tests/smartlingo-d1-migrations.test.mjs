@@ -122,7 +122,7 @@ test("0021 adds Arabic and Hindi communities plus placement, daily activity, and
     "owner_class_official_ar",
     "owner_class_official_hi",
   ]) assert.match(migration, new RegExp(`'${value}'`));
-  assert.match(migration, /smartlingo placement requires an active official language class membership/);
+  assert.match(migration, /smartlingo placement requires an active official language course membership/);
   assert.match(migration, /'vocabulary', 'reading', 'writing', 'listening', 'dialogue'/);
   assert.match(migration, /json_valid\(`modes_seen`\).*json_type\(`modes_seen`\) = 'array'/s);
   assert.match(migration, /FOREIGN KEY \(`attempt_id`\) REFERENCES `smartlingo_placement_attempts`/);
@@ -315,7 +315,7 @@ test("0026 adds durable admin roles and promotes only the bootstrap administrato
   assert.match(journal, /"tag": "0026_smartlingo_admin_roles"/);
 });
 
-test("0018 binds original bilingual learning data, exact class money, private media, and direct rewards", async () => {
+test("0018 binds original bilingual learning data, exact course money, private media, and direct rewards", async () => {
   const [schema, migration, journal] = await Promise.all([
     read("../db/schema.ts"),
     read("../drizzle/0018_smartlingo_core_integrity.sql"),
@@ -370,7 +370,7 @@ test("0016 is additive and stores only private media metadata and content-free A
   assert.doesNotMatch(aiTables, /prompt|responseBody|rawContent|transcript/i);
 });
 
-test("0017 adds the SmartLingo language marketplace and keeps class money separate from introducer rewards", async () => {
+test("0017 adds the SmartLingo language marketplace and keeps course money separate from introducer rewards", async () => {
   const [schema, migration] = await Promise.all([
     read("../db/schema.ts"),
     read("../drizzle/0017_smartlingo_language_marketplace.sql"),

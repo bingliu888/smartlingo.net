@@ -13,7 +13,7 @@ test("waiting playlist keeps local controls and bounded continuation cycles", ()
   assert.match(player, /defaultMuted = false/);
 });
 
-test("class media joins only for an actual publisher or active share", () => {
+test("course media joins only for an actual publisher or active share", () => {
   const room = read("components/live-class-room-client.tsx");
   const join = read("app/api/classrooms/[code]/join/route.ts");
   assert.match(room, /shouldAutoJoinClassRoom/);

@@ -26,7 +26,7 @@ test("the old Admin page resolves through Next notFound without a second managem
   await assert.rejects(read("../lib/smartlingo-admin.ts"), error => error?.code === "ENOENT");
 });
 
-test("legacy class commerce stays retired while fixed-course free-month enrollment is isolated", async () => {
+test("legacy course commerce stays retired while fixed-course free-month enrollment is isolated", async () => {
   const retiredRoutes = await Promise.all([
     read("../app/api/classes/licenses/route.ts"),
     read("../app/api/classes/referrals/claim/route.ts"),

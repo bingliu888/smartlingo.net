@@ -32,7 +32,7 @@ async function context(request: Request, code: string) {
 }
 async function managerContext(request: Request, code: string): Promise<{ room: ClassRoom; user: SessionUser } | Response> {
   const value = await context(request, code);
-  if (!value) return NextResponse.json({ error: "Class not found" }, { status: 404 });
+  if (!value) return NextResponse.json({ error: "Course not found" }, { status: 404 });
   if (!value.user) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   if (!value.manager) return NextResponse.json({ error: "Teacher permission required" }, { status: 403 });
   return { room: value.room, user: value.user };
@@ -44,8 +44,8 @@ async function classFiles() {
 
 export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params, value = await context(request, code);
-  if (!value) return NextResponse.json({ error: "Class not found" }, { status: 404 });
-  if (!value.access.allowed) return NextResponse.json({ error: "Class access required" }, { status: value.user ? 403 : 401 });
+  if (!value) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+  if (!value.access.allowed) return NextResponse.json({ error: "Course access required" }, { status: value.user ? 403 : 401 });
   const db = getDatabase();
   const [items, state] = await Promise.all([
     db.prepare(itemSelection).bind(value.room.id).run<PlaylistItem>(),

@@ -22,7 +22,7 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
       <header className="admin-hero">
         <p className="section-kicker">{zh ? "SMARTLINGO 管理中心" : "SMARTLINGO ADMIN"}</p>
         <h1>{zh ? `欢迎，${user.displayName}` : `Welcome, ${user.displayName}`}</h1>
-        <p>{zh ? "管理会员、订阅与语言班级。所有管理操作都会在服务器端验证管理员权限。" : "Manage members, subscriptions, and language classes. Every management action is authorized again on the server."}</p>
+        <p>{zh ? "管理会员、订阅与语言课程。所有管理操作都会在服务器端验证管理员权限。" : "Manage members, subscriptions, and language classes. Every management action is authorized again on the server."}</p>
       </header>
       <section className="admin-overview-grid" aria-label={zh ? "管理概览" : "Admin overview"}>
         <article className="admin-overview-card">
@@ -30,8 +30,8 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
           <nav><a href={`/${lang}/admin/members?tab=members`}>{zh ? "全部会员" : "All members"} →</a><a href={`/${lang}/admin/members?tab=admins`}>{zh ? "管理员" : "Administrators"} →</a><a href={`/${lang}/admin/members?tab=subscribers`}>{zh ? "订阅者" : "Subscribers"} →</a></nav>
         </article>
         <article className="admin-overview-card">
-          <div><p>{zh ? "语言班级" : "Language classes"}</p><strong>{classes.toLocaleString()}</strong><span>{zh ? `${openClasses.toLocaleString()} 个开放班级` : `${openClasses.toLocaleString()} open classes`}</span></div>
-          <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "管理班级" : "Manage classes"} →</a></nav>
+          <div><p>{zh ? "语言课程" : "Language courses"}</p><strong>{classes.toLocaleString()}</strong><span>{zh ? `${openClasses.toLocaleString()} 个开放课程` : `${openClasses.toLocaleString()} open classes`}</span></div>
+          <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "管理课程" : "Manage courses"} →</a></nav>
         </article>
         <article className="admin-overview-card">
           <div><p>{zh ? "结业证书" : "Certificates"}</p><strong>{certificates.toLocaleString()}</strong><span>{zh ? "由真实课程成绩生成" : "Issued from recorded course scores"}</span></div>

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   return Response.json({
     claimed: false,
     points: 0,
-    error: "Class referral rewards are retired.",
+    error: "Course referral rewards are retired.",
     code: "SMARTLINGO_CLASS_REWARD_FORBIDDEN",
   }, { status: 410 });
 }

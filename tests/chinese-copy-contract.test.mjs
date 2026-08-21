@@ -39,7 +39,7 @@ test("Chinese public, dashboard, Project, and legal copy uses language-learning 
 
   assert.match(editorial, /七种语言/);
   assert.match(editorial, /会员共建/);
-  assert.match(editorial, /班级分账与介绍人积分严格分开/);
+  assert.match(editorial, /课程分账与介绍人积分严格分开/);
   assert.match(members, /消息与实时聊天/);
   assert.match(membership, /免费方案/);
   assert.match(membership, /平台订阅推荐/);
@@ -76,7 +76,7 @@ test("Chinese My Courses, catalog, pricing, and retired Admin UI are truthful", 
     source("app/[lang]/auth/[mode]/page.tsx"),
   ]);
 
-  for (const label of ["这里只显示您已订阅的课程", "选择课程", "第一个月免费", "Webinar 教课室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
+  for (const label of ["这里只显示您已订阅的课程", "选择课程", "第一个月免费", "Webinar 课程教室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
   assert.match(packages, /初期课程/);
   assert.match(packages, /中级课程/);
   assert.match(packages, /高级课程/);
@@ -99,7 +99,7 @@ test("every Chinese route inherits localized language-learning metadata", async 
   ]);
 
   assert.match(layout, /generateMetadata/);
-  assert.match(layout, /SmartLingo — 从第一天开口，与班级一起进步/);
+  assert.match(layout, /SmartLingo — 从第一天开口，与课程一起进步/);
   assert.match(layout, /template: "%s \| SmartLingo"/);
   assert.match(home, /metaTitle: "SmartLingo — 从第一天开口"/);
   assert.match(programs, /lang === "zh" \? "语言学习路径" : "Language learning paths"/);

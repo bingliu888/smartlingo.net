@@ -80,7 +80,7 @@ test("first-day evidence preserves the legacy site and fixes product boundaries"
   assert.match(taskById.get("sl-d01-roadmap-contract").summary.zh, /二十个连续日期.*每天恰好五项/);
 });
 
-test("learning, AI, member-created classes, and class communities are scheduled", () => {
+test("learning, AI, member-created courses, and course communities are scheduled", () => {
   for (const id of [
     "sl-d03-language-catalog",
     "sl-d04-session-composer",

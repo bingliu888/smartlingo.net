@@ -13,14 +13,14 @@ test("homepage exposes the complete SmartLingo learning and fixed-course flow", 
   }
   assert.match(source, /每日短任务、间隔复习/);
   assert.match(source, /每种语言都有由 SmartLingo 管理员维护的初期、中级和高级课程/);
-  assert.match(source, /班级社区/);
+  assert.match(source, /课程社区/);
   assert.match(source, /消息与实时聊天/);
   assert.match(source, /人工智能导师与实时语音/);
   assert.match(source, /今天开通课程不会收费/);
   assert.match(source, /30 天后按固定月费续订/);
   assert.match(source, /三类积分独立记账、可追溯/);
   assert.match(source, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
-  assert.match(source, /班级购买、收款、打赏和退款都不会产生介绍人积分/);
+  assert.match(source, /课程购买、收款、打赏和退款都不会产生介绍人积分/);
   assert.match(source, /无需登录，免费挑战/);
   assert.doesNotMatch(source, /人工智能实操营|21 天|BACC|黄金会员|铂金会员|授权码|PayPal/);
 });
@@ -32,7 +32,7 @@ test("SmartLingo brand and original social preview assets are locally hosted", a
   ]);
   const layout = await read("../app/layout.tsx");
   assert.match(layout, /images: \[\{ url: "\/smartlingo-language-community-1600\.png"/);
-  assert.match(layout, /SmartLingo — 从第一天开口，与班级一起进步/);
+  assert.match(layout, /SmartLingo — 从第一天开口，与课程一起进步/);
   assert.match(layout, /十二种语言、三级固定月费课程、首月免费/);
 });
 

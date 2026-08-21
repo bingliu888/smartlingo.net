@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   return Response.json({
     created: false,
     rewardPoints: 0,
-    error: "Legacy class referral URLs are retired. Class invitations will not create introducer rewards.",
+    error: "Legacy course referral URLs are retired. Course invitations will not create introducer rewards.",
     code: "SMARTLINGO_CLASS_REFERRAL_RETIRED",
   }, { status: 410 });
 }

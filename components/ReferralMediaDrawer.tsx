@@ -35,8 +35,8 @@ export function ReferralMediaDrawer({ open, onClose, lang, referralUrl, referral
       const file = new File([await response.blob()], selected.name, { type: selected.mimeType });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         const text = zh
-          ? `和我一起使用 SmartLingo 学语言。介绍人积分只在平台成功收取订阅费后产生，班级付款永不计入。介绍人代码：${referralCode}。\n${referralUrl}`
-          : `Learn a language with me on SmartLingo. Introducer points apply only after a successful platform subscription charge; class payments never qualify. Referral code: ${referralCode}.\n${referralUrl}`;
+          ? `和我一起使用 SmartLingo 学语言。介绍人积分只在平台成功收取订阅费后产生，课程付款永不计入。介绍人代码：${referralCode}。\n${referralUrl}`
+          : `Learn a language with me on SmartLingo. Introducer points apply only after a successful platform subscription charge; course payments never qualify. Referral code: ${referralCode}.\n${referralUrl}`;
         await navigator.share({ title: "SmartLingo.net", text, url: referralUrl, files: [file] });
         setMessage(zh ? "已把作品文件和推荐链接送到系统分享菜单。" : "The media file and referral link were sent to the system share sheet.");
       } else {

@@ -29,7 +29,7 @@ export default async function AuthCompletePage({
   return <main className="auth-page">
     <aside className="auth-art gc-auth-art smartlingo-auth-art">
       <Link className="brand inverse smartlingo-brand" href={`/${lang}`}><span className="lingo-brand-mark" aria-hidden="true">S</span><span>Smart<em>Lingo</em></span></Link>
-      <blockquote>{lang === "zh" ? "安全登录后，继续您的语言学习、班级与社区。" : "Continue your language learning, classes, and Community after secure sign-in."}</blockquote>
+      <blockquote>{lang === "zh" ? "安全登录后，继续您的语言学习、课程与社区。" : "Continue your language learning, courses, and Community after secure sign-in."}</blockquote>
     </aside>
     <section className="auth-panel">
       <div className="auth-top">

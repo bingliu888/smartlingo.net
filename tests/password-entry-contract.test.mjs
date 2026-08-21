@@ -14,7 +14,7 @@ function findCss(dir) {
   }
 }
 
-test("password-protected class entry is visible, toggleable, and verified server-side", () => {
+test("password-protected course entry is visible, toggleable, and verified server-side", () => {
   const detail = read("components/class-detail-experience.tsx");
   const clientPath = existsSync("components/live-class-room-client.tsx")
     ? "components/live-class-room-client.tsx"

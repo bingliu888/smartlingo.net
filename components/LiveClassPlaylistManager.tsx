@@ -259,7 +259,7 @@ export function LiveClassPlaylistManager({
           <p className="eyebrow">
             <span /> {zh ? "课前内容" : "PRE-CLASS CONTENT"}
           </p>
-          <h2>{zh ? "课堂播放列表" : "Class playlist"}</h2>
+          <h2>{zh ? "课程播放列表" : "Course playlist"}</h2>
           <p>
             {zh
               ? "仅支持从文件或相册上传的视频。启用后，每位访客会在教师开播前于本机独立循环播放。"
@@ -402,7 +402,7 @@ export function LiveClassPlaylistManager({
           <strong>{zh ? "还没有视频" : "No videos yet"}</strong>
           <p>
             {zh
-              ? "上传第一个视频，为网络研讨会或直播课堂准备自动内容。"
+              ? "上传第一个视频，为网络研讨会或直播课程准备自动内容。"
               : "Upload the first video for an automated Webinar or Live stream."}
           </p>
         </div>

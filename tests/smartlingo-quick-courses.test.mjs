@@ -82,7 +82,7 @@ test("vocabulary practice pairs a neutral visual cue with bilingual source-langu
   }
 });
 
-test("every language class has a seven-day, scene-based beginner flashcard library", () => {
+test("every language course has a seven-day, scene-based beginner flashcard library", () => {
   assert.deepEqual(SMARTLINGO_BEGINNER_VOCABULARY_METADATA, {
     version: "2026-08-02.1",
     cardsPerDay: 4,

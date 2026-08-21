@@ -29,11 +29,11 @@ export async function GET(request: Request, context: { params: Promise<{ classId
   if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
   const { classId } = await context.params;
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,99}$/.test(classId)) {
-    return Response.json({ error: "Invalid class" }, { status: 400 });
+    return Response.json({ error: "Invalid course" }, { status: 400 });
   }
   const access = await requireOfficialClassMembership(getDatabase(), user, classId);
   if (!access || !SMARTLINGO_LEARNING_LANGUAGE_CODES.includes(access.targetLanguage as SmartLingoLearningLanguage)) {
-    return Response.json({ error: "Active official class membership required" }, { status: 403 });
+    return Response.json({ error: "Active official course membership required" }, { status: 403 });
   }
 
   const url = new URL(request.url);

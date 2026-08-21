@@ -46,7 +46,7 @@ const COPY = {
     chooseCourses: "选择课程", joined: "已订阅",
     open: "进入课程", learners: "位学员", firstMonth: "第一个月免费", perMonth: "每月",
     back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "每月价格",
-    package: "课程内容", classroom: "两个课程房间", classroomCopy: "管理员和协办主持在 Webinar 教课室授课；学员可在免费的 Group Audio 练习室讨论和练习口语。",
+    package: "课程内容", classroom: "两个课程教室", classroomCopy: "管理员和协办主持在 Webinar 课程教室授课；学员可在免费的 Group Audio 练习室讨论和练习口语。",
     fiveSkillsTitle: "学习五项技能", fiveSkillsBody: "直接进入本课程的词汇、口语、听力、写作或测验，无需再次选择语言或参加分级测试。",
     dailyLearning: "继续综合学习", calendar: "学习日历",
     edit: "编辑课程", save: "保存", cancel: "取消", summary: "课程说明", joinFailed: "暂时无法开通订阅，请稍后重试。",

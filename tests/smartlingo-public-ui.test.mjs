@@ -39,11 +39,11 @@ test("homepage exposes twelve target-language communities and one complete five-
   assert.match(home, /从第一天开始，开口说一门新语言/);
   assert.match(home, /每日短任务、间隔复习、透明技能分和可见进度/);
   assert.match(home, /人工智能导师与实时语音/);
-  assert.match(home, /班级学习社区/);
+  assert.match(home, /课程学习社区/);
   assert.doesNotMatch(home, /21 天|人工智能实操营|BingAcademy 可验证证书|39 美元|Gold|Platinum|BACC/);
 });
 
-test("member-led classes and commerce follow the approved boundaries", async () => {
+test("member-led courses and commerce follow the approved boundaries", async () => {
   const [home, pricing, programs, about, terms, readme, product] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/pricing/page.tsx"),
@@ -57,13 +57,13 @@ test("member-led classes and commerce follow the approved boundaries", async () 
 
   assert.match(joined, /任何已登录会员都可|每位登录会员都可/);
   assert.match(joined, /老师或协调员/);
-  assert.match(joined, /私有班级/);
+  assert.match(joined, /私有课程/);
   assert.match(joined, /15%|八五折/);
   assert.match(joined, /70%|七成/);
   assert.match(joined, /30%|三成/);
   assert.match(joined, /折后税前/);
   assert.match(joined, /Stripe Connect/);
-  assert.match(joined, /班级购买、收款、打赏和退款都不会产生介绍人积分/);
+  assert.match(joined, /课程购买、收款、打赏和退款都不会产生介绍人积分/);
   assert.match(joined, /平台订阅/);
   assert.match(joined, /SmartCard course credit is a third, independent accounting domain/);
   assert.doesNotMatch(joined, /开班权限从黄金会员开始|铂金会员|管理员签发的授权码|license key|PayPal|BACC/);
@@ -100,8 +100,8 @@ test("privacy, terms, and refund policy remain visibly labeled legal drafts", as
   }
   assert.match(terms, /不是官方语言考试/);
   assert.match(privacy, /语音与人工智能训练/);
-  assert.match(privacy, /会员创建班级的购买与班主收款不产生介绍人奖励/);
-  assert.match(refund, /退款必须同步冲正使用权和班级分账/);
+  assert.match(privacy, /会员创建课程的购买与班主收款不产生介绍人奖励/);
+  assert.match(refund, /退款必须同步冲正使用权和课程分账/);
 });
 
 test("public assets are local and the responsive system contains text at desktop, tablet, and phone widths", async () => {

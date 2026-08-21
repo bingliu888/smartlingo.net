@@ -126,7 +126,7 @@ test("My Courses is login-gated and shows only subscribed courses with a catalog
   assert.match(studio, /我的课程/);
   assert.match(studio, /href=\{`\/\$\{lang\}\/programs`\}/);
   assert.match(studio, /选择课程/);
-  assert.doesNotMatch(studio, /我创建的班级|创建私有班级/);
+  assert.doesNotMatch(studio, /我创建的课程|创建私有课程/);
   assert.match(studio, /t\.joined/);
   assert.match(studio, /CoursePaymentActions/);
   assert.doesNotMatch(studio, /subscribe\(item\)/);

@@ -20,7 +20,7 @@ test("SmartLingo starts a server-recorded free month without charging", async ()
   assert.doesNotMatch(`${classes}\n${enrollment}`, /stripe\.checkout|PaymentIntent|destination_charge/i);
 });
 
-test("member-created class orders cannot produce introducer points", async () => {
+test("member-created course orders cannot produce introducer points", async () => {
   const [commerce, claim, referral] = await Promise.all([
     source("lib/smartlingo-commerce.ts"),
     source("app/api/classes/referrals/claim/route.ts"),

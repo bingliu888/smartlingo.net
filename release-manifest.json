@@ -1,22 +1,81 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartclass-header-menu-v2-interface-locale",
+  "releaseId": "shared-course-terminology-v1",
   "site": "smartlingo.net",
-  "title": {"en": "Unify the responsive header menu", "zh": "统一响应式页眉菜单"},
-  "purpose": {"en": "Bring SmartLingo's public and signed-in navigation to the proven SmartClass hamburger interaction while keeping all twelve text-only language choices available on desktop and mobile.", "zh": "将 SmartLingo 登录前后导航统一为已验证的 SmartClass 汉堡菜单交互，并在桌面和移动端保留全部 12 种纯文字语言选项。"},
-  "features": {
-    "en": ["Use one dark hamburger control that animates into a close icon on small screens.", "Place primary navigation, twelve text-only languages, and account actions in one full-width mobile drawer.", "Show Sign in or register before login and the complete account navigation after login.", "Keep the same twelve-language text style in the desktop language menu."],
-    "zh": ["小屏使用一个深色汉堡按钮，打开后动画变为关闭图标。", "在全宽移动抽屉中统一放置主导航、12 种纯文字语言和账户操作。", "登录前显示“登录或注册”，登录后显示完整账户导航。", "桌面语言菜单也使用同一套 12 种纯文字样式。"]
+  "title": {
+    "en": "Unify Course and Course room terminology",
+    "zh": "统一课程与课程教室术语"
   },
-  "affected": {"en": ["Public header", "Signed-in header", "Desktop language menu", "Mobile navigation drawer", "Project release history"], "zh": ["公开页眉", "登录后页眉", "桌面语言菜单", "移动导航抽屉", "项目发布历史"]},
+  "purpose": {
+    "en": "Replace user-facing Class and Classroom wording on smartlingo.net with Course and Course room while retaining compatible internal routes and data identifiers.",
+    "zh": "将 smartlingo.net 面向用户的班级与课堂术语统一为课程与课程教室，同时保留兼容的内部路由和数据标识。"
+  },
+  "features": {
+    "en": [
+      "Public, Referred course, and Private replace the previous course-type wording.",
+      "Course room replaces Classroom in visible navigation, cards, forms, sharing, and management."
+    ],
+    "zh": [
+      "课程类型统一为公开、推荐课程和私有。",
+      "导航、卡片、表单、分享和管理界面统一使用课程教室。"
+    ]
+  },
+  "affected": {
+    "en": [
+      "Course directories and detail pages",
+      "Creation and editing forms",
+      "Course room entry and sharing",
+      "Administrator and member surfaces",
+      "Project release history"
+    ],
+    "zh": [
+      "课程目录与详情页",
+      "创建与编辑表单",
+      "课程教室进入与分享",
+      "管理员与会员界面",
+      "项目发布历史"
+    ]
+  },
   "changes": {
-    "en": ["Replace the legacy details popover with an accessible state-driven responsive drawer.", "Add mobile-aware account rendering without duplicating account destinations.", "Use one shared twelve-language option source for desktop and mobile.", "Add regression contracts for menu state, language count, account states, and responsive styling."],
-    "zh": ["以具备无障碍状态的响应式抽屉替换旧 details 小弹窗。", "新增移动端账户呈现，同时不复制账户目的地逻辑。", "桌面与移动端共用同一个 12 语言选项来源。", "新增菜单状态、语言数量、账户状态和响应式样式回归门禁。"]
+    "en": [
+      "Change only user-visible terminology; preserve legacy class routes, schema columns, CSS hooks, and storage keys.",
+      "Rename the former trial/join type label to Referred course.",
+      "Add an additive migration that updates reserved public demo titles to Course.",
+      "Update regression contracts for the shared vocabulary."
+    ],
+    "zh": [
+      "仅修改面向用户的术语，保留旧 class 路由、数据库字段、CSS hook 和存储键。",
+      "将原试学加入类型标签改为推荐课程。",
+      "新增可追加迁移，将保留的公共演示标题更新为课程。",
+      "更新共享词汇回归门禁。"
+    ]
   },
   "validation": {
-    "en": ["Production build, artifact validation, sensitive-data scan, and all 298 automated tests passed.", "Chrome 430 px test verified a 12-language drawer, no horizontal overflow, close animation state, and Escape dismissal.", "Safari desktop test verified the same twelve text-only language choices; created test tabs were closed afterward."],
-    "zh": ["生产构建、部署产物校验、敏感信息扫描和全部 298 项自动测试通过。", "Chrome 430 像素测试确认 12 语言抽屉、无横向溢出、关闭图标状态和 Escape 关闭。", "Safari 桌面测试确认同一套 12 种纯文字语言；测试结束后已关闭新建标签页。"]
+    "en": [
+      "Shared site policy and architecture audits passed.",
+      "Cross-site terminology scan found no remaining visible Class or Classroom wording.",
+      "Site build and regression contracts passed before publication."
+    ],
+    "zh": [
+      "共享网站规则和架构审计通过。",
+      "跨站术语扫描未发现残留的可见 Class 或 Classroom 文案。",
+      "发布前通过本站构建与回归门禁。"
+    ]
   },
-  "deferred": {"en": ["No product feature, learner data, or account permission changes are included in this navigation-only release."], "zh": ["本次仅更新导航，不包含产品功能、学习数据或账户权限变更。"]},
-  "siteAdaptations": {"en": ["Preserve SmartLingo's independent brand, course routes, account routes, twelve-language learning catalog, and site-local deployment resources."], "zh": ["保留 SmartLingo 独立品牌、课程路由、账户路由、12 语言学习目录及本站独立部署资源。"]}
+  "deferred": {
+    "en": [
+      "No terminology-related behavior is deferred."
+    ],
+    "zh": [
+      "本次术语一致性范围内没有延期项目。"
+    ]
+  },
+  "siteAdaptations": {
+    "en": [
+      "Keep smartlingo.net identity, data, configuration, routes, and deployment resources independent."
+    ],
+    "zh": [
+      "保持 smartlingo.net 的身份、数据、配置、路由和部署资源完全独立。"
+    ]
+  }
 }

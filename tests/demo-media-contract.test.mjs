@@ -27,7 +27,7 @@ test("demo playlists use real credited open music and video", async () => {
   assert.equal(video.subarray(4, 8).toString(), "ftyp");
 });
 
-test("permanent demo classes remain enterable", async () => {
+test("permanent demo courses remain enterable", async () => {
   const schedule = await read("drizzle/0112_permanent_demo_schedule.sql");
   const normalize = await read("drizzle/0115_normalize_official_demo_classes.sql");
   assert.match(schedule, /starts_at = 4070908800/);

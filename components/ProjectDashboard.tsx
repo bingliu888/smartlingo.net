@@ -86,7 +86,7 @@ export async function ProjectDashboard({ lang, month }: { lang: "en" | "zh"; mon
         <div style={{ minWidth: 0, overflowWrap: "anywhere" }} data-layout-track="project-hero-copy">
           <p className="section-kicker">{zh ? "SmartLingo 公开项目管理" : "SMARTLINGO PUBLIC PROJECT OPERATIONS"}</p>
           <h1 data-layout-text-fit="project-title">{zh ? "二十天，每天五项。" : "Twenty days. Five tasks every day."}</h1>
-          <p data-readable-copy="project-hero-copy">{zh ? "公开展示旧站迁移、十二种语言与五项技能学习、会员自助开班、班级社区、智能导师、实时语音、平台会员与安全商务的一百项交付计划。" : "Follow 100 public deliverables across legacy migration, twelve-language five-skill learning, member-created classes, class communities, Ask Guru, Live Audio, platform memberships, and safe commerce."}</p>
+          <p data-readable-copy="project-hero-copy">{zh ? "公开展示旧站迁移、十二种语言与五项技能学习、会员自助开班、课程社区、智能导师、实时语音、平台会员与安全商务的一百项交付计划。" : "Follow 100 public deliverables across legacy migration, twelve-language five-skill learning, member-created courses, course communities, Ask Guru, Live Audio, platform memberships, and safe commerce."}</p>
         </div>
         <div className="gg-project-picker" style={{ minWidth: 0, overflowWrap: "anywhere" }} data-layout-track="project-checkpoint">
           <span>{zh ? "最新真实检查点" : "LATEST RECORDED CHECKPOINT"}</span>

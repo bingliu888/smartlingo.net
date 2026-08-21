@@ -101,7 +101,7 @@ export async function POST(request: Request) {
   let scopeId: string;
   if (kind === "course_cover") {
     if (!classId || !await classAccess(classId, user.id, true)) {
-      return Response.json({ error: "Class owner access required" }, { status: 403 });
+      return Response.json({ error: "Course owner access required" }, { status: 403 });
     }
     scopeType = "language_class";
     scopeId = classId;

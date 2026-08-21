@@ -11,7 +11,7 @@ export function CardCheckoutComplete({ lang, classId, sessionId }: { lang: "en" 
     let active = true;
     fetch("/api/billing/card/complete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ classId, sessionId }) })
       .then(async response => ({ ok: response.ok, data: await response.json().catch(() => ({})) as { error?: string } }))
-      .then(({ ok, data }) => { if (!active) return; setState(ok ? "done" : "error"); setMessage(ok ? (zh ? "订阅已确认，课程五项技能和教室已开放。" : "Subscription confirmed. Five-skill learning and the classroom are ready.") : (data.error || (zh ? "无法确认付款。" : "Unable to confirm payment."))); })
+      .then(({ ok, data }) => { if (!active) return; setState(ok ? "done" : "error"); setMessage(ok ? (zh ? "订阅已确认，课程五项技能和教室已开放。" : "Subscription confirmed. Five-skill learning and the course room are ready.") : (data.error || (zh ? "无法确认付款。" : "Unable to confirm payment."))); })
       .catch(() => { if (active) { setState("error"); setMessage(zh ? "无法确认付款。" : "Unable to confirm payment."); } });
     return () => { active = false; };
   }, [classId, sessionId, zh]);

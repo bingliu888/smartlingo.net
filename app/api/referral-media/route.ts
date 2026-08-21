@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   const custom = cleanPrompt(body.stylePrompt);
   const excludesPeople = style === "classic" || style === "minimal";
   const prompt = [
-    "Create a square, high-quality social invitation BACKGROUND for SmartLingo.net, a trusted bilingual AI-learning and member-led class community.",
+    "Create a square, high-quality social invitation BACKGROUND for SmartLingo.net, a trusted bilingual AI-learning and member-led course community.",
     STYLE_PROMPTS[style],
     custom ? `User art direction: ${custom}. Follow it only when it does not conflict with the mandatory rules below.` : "",
     zh ? "Use contemporary Chinese cultural warmth with global connection, practical learning and constructive career progress." : "Use a contemporary international mood centered on global connection, practical learning and constructive career progress.",

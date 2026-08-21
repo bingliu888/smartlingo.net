@@ -80,7 +80,7 @@ const copy = {
     save: "保存并继续",
     saving: "正在保存…",
     saved: "学习目标已安全保存，正在打开下一步。",
-    saveOnly: "目标已经保存；如下一步暂不可用，稍后可从班级页继续。",
+    saveOnly: "目标已经保存；如下一步暂不可用，稍后可从课程页继续。",
     auth: "请先登录；验证邮箱后会返回此处继续。",
     error: "暂时无法保存学习目标，请稍后重试。",
     nonCredential: "定位结果和人工智能反馈仅用于安排练习，不是真人教师判断、官方考试成绩或语言证书。",
@@ -130,7 +130,7 @@ const copy = {
     save: "Save and continue",
     saving: "Saving…",
     saved: "Your learning goal is saved safely. Opening the next step.",
-    saveOnly: "Your goal is saved; if the next step is unavailable, continue later from Classes.",
+    saveOnly: "Your goal is saved; if the next step is unavailable, continue later from Courses.",
     auth: "Sign in first; after email verification you will return here.",
     error: "The learning goal cannot be saved right now. Please try again.",
     nonCredential: "Placement results and AI feedback guide practice only. They are not human-teacher judgments, official exam scores, or language credentials.",
@@ -143,7 +143,7 @@ const copy = {
     first: "Path start",
     scenario: "Real situation",
     current: "Current unit",
-    openClasses: "Browse classes",
+    openClasses: "Browse courses",
   },
 } as const;
 
@@ -199,8 +199,8 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
 
   function openCatalogLanguage(language: SmartLingoCommunityLanguage) {
     rememberTargetLanguage(language);
-    const joined = joinedCourses.find(item => item.targetLanguage === language && item.classKind === "official_course")
-      ?? joinedCourses.find(item => item.targetLanguage === language);
+    const joined = joinedClasses.find(item => item.targetLanguage === language && item.classKind === "official_course")
+      ?? joinedClasses.find(item => item.targetLanguage === language);
     window.location.assign(joined
       ? `/${lang}/classes/${encodeURIComponent(joined.id)}`
       : `/${lang}/programs/${encodeURIComponent(language)}`);

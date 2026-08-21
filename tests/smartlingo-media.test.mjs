@@ -59,7 +59,7 @@ test("seven media purposes expose exact least-privilege MIME policies", async ()
   assert.equal(media.SMARTLINGO_BROWSER_MEDIA_MAX_BYTES, 900 * 1024);
 });
 
-test("media scopes bind private voice to its owner and covers to language classes", async () => {
+test("media scopes bind private voice to its owner and covers to language courses", async () => {
   const media = await loadMediaModule();
   const ownerUserId = "123e4567-e89b-42d3-a456-426614174000";
   assert.doesNotThrow(() => media.validateSmartLingoMediaScope({
@@ -215,7 +215,7 @@ test("R2 writes are metadata-audited and deletion is retryable", async () => {
   assert.deepEqual(deleted, [stored.objectKey]);
 });
 
-test("avatar, class cover, voice, chat and referral routes use validated private media contracts", async () => {
+test("avatar, course cover, voice, chat and referral routes use validated private media contracts", async () => {
   const [helper, profile, chat, learning, messages, referral, liveChat] = await Promise.all([
     read("../lib/smartlingo-media.ts"),
     read("../app/api/profile/route.ts"),

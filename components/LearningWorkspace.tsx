@@ -434,8 +434,8 @@ const COPY = {
     loading: "正在读取学习计划…",
     calendarLoading: "正在读取学习日历…",
     noActivity: "本月暂无学习或社区活动记录。",
-    allClasses: "全部班级",
-    classCalendar: "当前班级",
+    allClasses: "全部课程",
+    classCalendar: "当前课程",
   },
   en: {
     kicker: "SMARTLINGO DAILY LEARNING",
@@ -597,8 +597,8 @@ const COPY = {
     loading: "Loading your learning plan…",
     calendarLoading: "Loading your learning calendar…",
     noActivity: "No learning or community activity has been recorded this month.",
-    allClasses: "All classes",
-    classCalendar: "Current class",
+    allClasses: "All courses",
+    classCalendar: "Current course",
   },
 } as const;
 

@@ -57,8 +57,8 @@ export function MembershipPanel({ lang }: { lang: "en" | "zh" }) {
     const item = {
       title: "SmartLingo.net",
       text: zh
-        ? "和我一起使用 SmartLingo 学语言。介绍人积分只在平台成功收取订阅费后产生，班级付款不计积分。"
-        : "Learn a language with me on SmartLingo. Introducer points apply only after a successful platform subscription charge; class payments never qualify.",
+        ? "和我一起使用 SmartLingo 学语言。介绍人积分只在平台成功收取订阅费后产生，课程付款不计积分。"
+        : "Learn a language with me on SmartLingo. Introducer points apply only after a successful platform subscription charge; course payments never qualify.",
       url: data!.referral.url,
     };
     if (navigator.share) await navigator.share(item).catch(() => undefined);
@@ -84,14 +84,14 @@ export function MembershipPanel({ lang }: { lang: "en" | "zh" }) {
 
     <section className="member-panel">
       <div className="member-heading">
-        <div><p className="section-kicker">{zh ? "学习、开班与平台订阅" : "LEARNING, CLASSES & PLATFORM PLANS"}</p><h2>{zh ? "免费学习，也可以带领自己的语言班。" : "Learn free—and lead your own language class."}</h2></div>
-        <Link className="primary-button" href={`/${lang}/classes?mine=1`}>{zh ? "打开我的班级" : "Open my classes"}</Link>
+        <div><p className="section-kicker">{zh ? "学习、开班与平台订阅" : "LEARNING, COURSES & PLATFORM PLANS"}</p><h2>{zh ? "免费学习，也可以带领自己的语言班。" : "Learn free—and lead your own language class."}</h2></div>
+        <Link className="primary-button" href={`/${lang}/classes?mine=1`}>{zh ? "打开我的课程" : "Open my courses"}</Link>
       </div>
 
       <div className="member-grid membership-tier-grid">
         <article className={plan === (zh ? "免费方案" : "Free") ? "active" : ""}><small>{zh ? "课程预览" : "COURSE PREVIEW"}</small><strong>{zh ? "选择课程" : "Choose course"}</strong><p>{zh ? "浏览十二种语言与三级固定月费课程；每门课程首月免费。" : "Browse twelve languages and three fixed monthly levels; every course starts with a free month."}</p></article>
         <article className={plan === (zh ? "进阶方案" : "Plus") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "进阶方案" : "Plus"}</strong><p>{zh ? "更多复习、实时语音额度和个人进度分析。" : "Expanded review, live-audio allowance, and personal progress insights."}</p></article>
-        <article className={plan === (zh ? "协调员方案" : "Coordinator") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "协调员方案" : "Coordinator"}</strong><p>{zh ? "更高班级人数、作业、答疑时间和运营分析；不开启开班资格门槛。" : "Higher roster limits, assignments, office hours, and operations analytics—without gating the right to create a class."}</p></article>
+        <article className={plan === (zh ? "协调员方案" : "Coordinator") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "协调员方案" : "Coordinator"}</strong><p>{zh ? "更高课程人数、作业、答疑时间和运营分析；不开启开班资格门槛。" : "Higher roster limits, assignments, office hours, and operations analytics—without gating the right to create a class."}</p></article>
       </div>
 
       <div className="member-grid">
@@ -105,8 +105,8 @@ export function MembershipPanel({ lang }: { lang: "en" | "zh" }) {
 
         <article>
           <small>{zh ? "严格奖励边界" : "STRICT REWARD BOUNDARY"}</small>
-          <strong>{zh ? "班级付款不计积分" : "Class payments never qualify"}</strong>
-          <p>{zh ? "班级购买、班主收款、Stripe Connect 转账、退款、争议和打赏一律不产生介绍人积分。积分只能由验证后的平台订阅付款回调写入。" : "Class purchases, owner payouts, Stripe Connect transfers, refunds, disputes, and tips never create introducer points. Only a verified platform-subscription payment webhook may write a reward."}</p>
+          <strong>{zh ? "课程付款不计积分" : "Course payments never qualify"}</strong>
+          <p>{zh ? "课程购买、班主收款、Stripe Connect 转账、退款、争议和打赏一律不产生介绍人积分。积分只能由验证后的平台订阅付款回调写入。" : "Course purchases, owner payouts, Stripe Connect transfers, refunds, disputes, and tips never create introducer points. Only a verified platform-subscription payment webhook may write a reward."}</p>
           <Link className="history-button" href={`/${lang}/programs`}>{zh ? "查看课程与规则" : "View courses and rules"} →</Link>
         </article>
 
@@ -121,7 +121,7 @@ export function MembershipPanel({ lang }: { lang: "en" | "zh" }) {
         <article className="email-card">
           <small>{zh ? "邮件偏好" : "EMAIL PREFERENCES"}</small>
           <label><input type="checkbox" checked={data.notifications.productEmail} onChange={event => setData({ ...data, notifications: { ...data.notifications, productEmail: event.target.checked } })}/>{zh ? "产品与账户通知" : "Product and account"}</label>
-          <label><input type="checkbox" checked={data.notifications.reminderEmail} onChange={event => setData({ ...data, notifications: { ...data.notifications, reminderEmail: event.target.checked } })}/>{zh ? "课程与活动提醒" : "Class and event reminders"}</label>
+          <label><input type="checkbox" checked={data.notifications.reminderEmail} onChange={event => setData({ ...data, notifications: { ...data.notifications, reminderEmail: event.target.checked } })}/>{zh ? "课程与活动提醒" : "Course and event reminders"}</label>
           <label><input type="checkbox" checked={data.notifications.marketingEmail} onChange={event => setData({ ...data, notifications: { ...data.notifications, marketingEmail: event.target.checked } })}/>{zh ? "新闻与会员资讯" : "News and member updates"}</label>
           <button type="button" onClick={savePreferences}>{zh ? "保存偏好" : "Save preferences"}</button>
         </article>

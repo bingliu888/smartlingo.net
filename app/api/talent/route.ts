@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 const retiredResponse = () => Response.json(
   {
-    error: "This legacy endpoint has moved to the SmartLingo class experience.",
+    error: "This legacy endpoint has moved to the SmartLingo course experience.",
     redirect: "/classes",
   },
   {

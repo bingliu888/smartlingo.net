@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
 const copy = {
   en: {
     welcome: "Welcome to your member dashboard",
-    subtitle: "Manage your language path, classes, platform-subscription referrals, Community, and conversations from one place.",
-    progress: "Class journey",
+    subtitle: "Manage your language path, courses, platform-subscription referrals, Community, and conversations from one place.",
+    progress: "Course journey",
     level: "SmartLingo · Member dashboard",
-    next: "Enter your first class",
-    nextBody: "Browse approved courses, join a class, or return to a class already in progress.",
-    action: "Open my classes",
+    next: "Enter your first course",
+    nextBody: "Browse approved courses, join a course, or return to a course already in progress.",
+    action: "Open my courses",
     account: "Account",
     language: "Interface language",
     signOut: "Sign out",
@@ -26,7 +26,7 @@ const copy = {
     voiceTitle: "Practice a useful conversation hands-free",
     voiceBody: "Open Ask Guru, tap the microphone and speak. Your words appear in the message box for you to review before sending.",
     voiceAction: "Live Audio AI Chat",
-    coming: "Three platform plans, with class creation open to every member",
+    coming: "Three platform plans, with course creation open to every member",
     comingBody: "Choose a Beginner, Intermediate, or Advanced language course. Every course starts with a free month and includes an A/V webinar classroom.",
     certs: "Certificates",
     certsBody: "Passed SmartLingo courses appear here with your final score and issue date.",
@@ -34,12 +34,12 @@ const copy = {
   },
   zh: {
     welcome: "欢迎进入您的用户面板",
-    subtitle: "从这里统一管理语言路径、班级、平台订阅推荐、社区与会话。",
-    progress: "班级进度",
+    subtitle: "从这里统一管理语言路径、课程、平台订阅推荐、社区与会话。",
+    progress: "课程进度",
     level: "SmartLingo · 用户面板",
-    next: "进入您的第一个班级",
-    nextBody: "浏览已批准课程、加入班级，或继续已经开始的班级。",
-    action: "打开我的班级",
+    next: "进入您的第一个课程",
+    nextBody: "浏览已批准课程、加入课程，或继续已经开始的课程。",
+    action: "打开我的课程",
     account: "账户",
     language: "界面语言",
     signOut: "退出登录",
@@ -76,7 +76,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
           <a className="dashboard-voice-cta" href={`/${lang}/assistant`}>{t.voiceAction} <span aria-hidden="true">→</span></a>
         </section>
         <MembershipPanel lang={lang} />
-        <section className="dashboard-voice-panel"><span className="dashboard-voice-icon" aria-hidden="true"/><div><p className="section-kicker">MY COURSES</p><h2>{lang === "zh" ? "我的课程" : "My Courses"}</h2><p>{lang === "zh" ? "查看已创建或加入的课程及其教室。" : "View courses you create or join and enter each course classroom."}</p></div><a className="dashboard-voice-cta" href={`/${lang}/classes?mine=1`}>{lang === "zh" ? "打开我的课程" : "Open My Courses"} →</a></section>
+        <section className="dashboard-voice-panel"><span className="dashboard-voice-icon" aria-hidden="true"/><div><p className="section-kicker">MY COURSES</p><h2>{lang === "zh" ? "我的课程" : "My Courses"}</h2><p>{lang === "zh" ? "查看已创建或加入的课程及其教室。" : "View courses you create or join and enter each course course room."}</p></div><a className="dashboard-voice-cta" href={`/${lang}/classes?mine=1`}>{lang === "zh" ? "打开我的课程" : "Open My Courses"} →</a></section>
         <div className="dashboard-grid">
           <section className="progress-card"><div className="card-top"><span>{t.progress}</span><strong>{lang === "zh" ? "开始" : "START"}</strong></div><div className="progress-track"><i style={{ width: "0%" }} /></div><div className="lesson-preview"><span>语</span><div><h2>{t.next}</h2><p>{t.nextBody}</p><a className="primary-button" href={`/${lang}/classes?mine=1`}>{t.action} <span>→</span></a></div></div></section>
           <section className="dashboard-cert-card"><div className="dashboard-cert-count"><span aria-hidden="true">SL</span><strong>{certificateCount.toLocaleString()}</strong></div><div><p className="section-kicker">SMARTLINGO CERTS</p><h2>{t.certs}</h2><p>{t.certsBody}</p><a className="primary-button" href={`/${lang}/certificates`}>{t.certsAction} <span>→</span></a></div></section>

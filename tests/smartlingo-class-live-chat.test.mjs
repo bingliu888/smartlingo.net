@@ -31,7 +31,7 @@ test("each course exposes a Webinar teaching room and pre-created group-audio pr
   assert.equal(existsSync(new URL("../app/api/classes/[classId]/live-chat/route.ts", import.meta.url)), false);
 });
 
-test("class audio remains beside text chat and standard calls auto-end after one solo or silent minute", () => {
+test("course audio remains beside text chat and standard calls auto-end after one solo or silent minute", () => {
   const calls = read("app/api/messages/calls/route.ts");
   const room = read("components/LiveChatRoom.tsx");
   const dock = read("components/ClassAudioCallDock.tsx");

@@ -35,7 +35,7 @@ test("first successful learner-and-class payment receives 15% off before the exa
   assert.equal(first.ownerShareCents + first.platformFeeCents, first.discountedPreTaxCents);
 });
 
-test("later payments for the same learner and class have no first-payment discount", async () => {
+test("later payments for the same learner and course have no first-payment discount", async () => {
   const commerce = await commerceModule();
   const later = commerce.quoteClassOrder({
     subtotalCents: 10_001,

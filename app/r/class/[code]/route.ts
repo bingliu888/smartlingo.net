@@ -6,7 +6,7 @@ export async function GET() {
   return Response.json({
     active: false,
     rewardPoints: 0,
-    error: "This legacy class referral link has been retired.",
+    error: "This legacy course referral link has been retired.",
     code: "SMARTLINGO_LEGACY_CLASS_LINK_RETIRED",
   }, { status: 410 });
 }

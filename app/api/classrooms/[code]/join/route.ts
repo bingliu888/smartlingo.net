@@ -18,7 +18,7 @@ export async function POST(
     const { code } = await params,
       room = await classByCode(code);
     if (!room)
-      return Response.json({ error: "Class not found" }, { status: 404 });
+      return Response.json({ error: "Course not found" }, { status: 404 });
     const body = (await request.json().catch(() => ({}))) as {
         displayName?: string;
         password?: string;
@@ -31,11 +31,11 @@ export async function POST(
       access = await classAccess(room, user, true);
     if (!access.allowed)
       return Response.json(
-        { error: "Private class invitation required" },
+        { error: "Private course invitation required" },
         { status: 403 },
       );
     if (room.hasPassword && !access.manager && !await verifyClassEntryPassword(code, String(body.password || "")))
-      return Response.json({ error: "Incorrect class password", errorCode: "INCORRECT_CLASS_PASSWORD" }, { status: 403 });
+      return Response.json({ error: "Incorrect course password", errorCode: "INCORRECT_CLASS_PASSWORD" }, { status: 403 });
     const db = getDatabase(),
       now = Math.floor(Date.now() / 1000),
       identity = String(body.identity || crypto.randomUUID()).slice(0, 100),
@@ -195,7 +195,7 @@ export async function POST(
   } catch (issue) {
     const message =
       issue instanceof Error ? issue.message : "REALTIMEKIT_REQUEST_FAILED";
-    console.error("Classroom RealtimeKit join failed", message);
+    console.error("Course room RealtimeKit join failed", message);
     return Response.json({ error: message }, { status: 502 });
   }
 }

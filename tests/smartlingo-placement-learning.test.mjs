@@ -44,7 +44,7 @@ test("every beginner timed session assigns ten unique vocabulary cards", () => {
   }
 });
 
-test("class dashboard starts a focused tabbed session with a compact bottom-right timer", async () => {
+test("course dashboard starts a focused tabbed session with a compact bottom-right timer", async () => {
   const workspace = await read("../components/LearningWorkspace.tsx");
   const sessionPage = await read("../app/[lang]/classes/[classId]/learn/session/page.tsx");
   assert.match(workspace, /className="sl-session-start"/);

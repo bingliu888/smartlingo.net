@@ -330,7 +330,7 @@ function PlaylistViewer({
   const source = `/api/classrooms/${code}/playlist/${current.id}?cycle=${cycle}`;
   return (
     <section className="class-livestream-player" data-state="PLAYLIST">
-      <strong>{lang === "zh" ? "课堂播放列表" : "Class playlist"}</strong>
+      <strong>{lang === "zh" ? "课程播放列表" : "Course playlist"}</strong>
       {streamingMode === "video" ? (
         <video
           key={source}
@@ -775,7 +775,7 @@ function ConnectedRoom({
           }),
         });
         const result = (await response.json().catch(() => ({}))) as { error?: string };
-        if (!response.ok) throw new Error(result.error || (lang === "zh" ? "举手请求未发送，请重新进入课堂后再试。" : "The hand-raise request was not sent. Rejoin the class and try again."));
+        if (!response.ok) throw new Error(result.error || (lang === "zh" ? "举手请求未发送，请重新进入课程后再试。" : "The hand-raise request was not sent. Rejoin the course and try again."));
         setError("Hand raised. Waiting for the host to approve.");
         await load();
         return;
@@ -841,7 +841,7 @@ function ConnectedRoom({
       <header className="class-room-controls">
         <div>
           <i className="live" />
-          <b>{lang === "zh" ? "直播课堂" : "Live classroom"}</b>
+          <b>{lang === "zh" ? "直播课程" : "Live course room"}</b>
           <small>
             {room.realtimeMode === "group_call"
               ? "Group call · 100"
@@ -928,7 +928,7 @@ function ConnectedRoom({
       {confirmLeave && (
         <div className="media-idle-backdrop" role="presentation">
           <section className="media-idle-dialog" role="dialog" aria-modal="true">
-            <h2>{lang === "zh" ? "离开课堂？" : "Leave the classroom?"}</h2>
+            <h2>{lang === "zh" ? "离开课程？" : "Leave the course room?"}</h2>
             <div className="media-idle-actions">
               <button type="button" onClick={() => setConfirmLeave(false)}>{lang === "zh" ? "继续" : "Continue"}</button>
               <button type="button" className="danger" onClick={onLeave}>{lang === "zh" ? "离开" : "Leave"}</button>
@@ -1027,7 +1027,7 @@ function ConnectedRoom({
       )}
       <section className="class-chat">
         <header>
-          <h2>Class chat</h2>
+          <h2>Course chat</h2>
           <span>{media?.users.length || 0} online</span>
         </header>
         <div>
@@ -1359,8 +1359,8 @@ export function LiveClassRoomClient({
     const timer = window.setTimeout(() => {
       setError(
         lang === "zh"
-          ? "主持人离线已满 5 分钟，已自动离开课堂。"
-          : "The host has been offline for 5 minutes. You have left the classroom.",
+          ? "主持人离线已满 5 分钟，已自动离开课程。"
+          : "The host has been offline for 5 minutes. You have left the course room.",
       );
       void disconnect(true);
       window.setTimeout(
@@ -1408,8 +1408,8 @@ export function LiveClassRoomClient({
             {connecting
               ? "Connecting…"
               : manager
-                ? "Start the live classroom"
-                : "Waiting for live classroom"}
+                ? "Start the live course room"
+                : "Waiting for live course room"}
           </h2>
           <p>
             {manager

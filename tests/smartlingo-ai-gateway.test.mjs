@@ -224,7 +224,7 @@ test("missing key returns an original localized Guru fallback without auditing r
   });
   assert.equal(result.fallback, true);
   assert.match(result.value, /智能导师暂时无法连接/);
-  assert.match(result.value, /语言|学习|班级/);
+  assert.match(result.value, /语言|学习|课程/);
   assert.doesNotMatch(result.value, /黄金会员|铂金会员|管理员授权码|BACC/);
   assert.equal(database.queries.some(item => item.query.includes(raw)), false);
   assert.equal(database.queries.flatMap(item => item.values).some(value => value === raw), false);

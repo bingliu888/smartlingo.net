@@ -102,14 +102,14 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
       <div className="wallet-profile-field">
         <div><label htmlFor="profile-wallet">{zh ? "EVM 钱包" : "EVM wallet"}</label><button type="button" onClick={() => setWalletEditing(value => !value)}>{walletEditing ? (zh ? "取消" : "Cancel") : (walletAddress ? (zh ? "修改" : "Edit") : (zh ? "添加" : "Add"))}</button></div>
         <input id="profile-wallet" inputMode="text" autoComplete="off" readOnly={!walletEditing} placeholder="0x…" value={walletAddress} onChange={event => setWalletAddress(event.target.value)} />
-        <small>{zh ? "可选资料，仅用于您主动启用的兼容功能；平台订阅和班级付款均不要求钱包。" : "Optional and used only for compatible features you choose to enable; neither platform subscriptions nor class payments require a wallet."}</small>
+        <small>{zh ? "可选资料，仅用于您主动启用的兼容功能；平台订阅和课程付款均不要求钱包。" : "Optional and used only for compatible features you choose to enable; neither platform subscriptions nor course payments require a wallet."}</small>
       </div>
       <button className="profile-save" disabled={busy}>{busy ? (zh ? "正在保存…" : "Saving…") : (zh ? "保存个人资料" : "Save profile")}</button>
       {message && <p className="profile-message" role="status">{message}</p>}
     </form>
     <aside className="account-facts">
       <article><span>{zh ? "登录邮箱" : "Sign-in email"}</span><b>{email}</b></article>
-      <article><span>{zh ? "平台直接介绍关系" : "Platform introducer relationship"}</span>{initialIntroducer ? <><b>{initialIntroducer.displayName}</b><small>{zh ? "已记录一层直接介绍关系；只有平台订阅成功付款可能产生介绍人积分。" : "One direct introducer is recorded; only a successful platform subscription payment may create introducer points."}</small></> : <><b>{zh ? "尚未记录介绍人" : "No introducer recorded"}</b><p>{zh ? "介绍关系通过平台订阅推荐链接在首次注册时自动记录，无需手动填写。班级付款不产生介绍人积分。" : "The relationship is recorded automatically at first registration through a platform-subscription referral link. Class payments never create introducer points."}</p><a className="history-button" href={`/${lang}/dashboard`}>{zh ? "打开用户面板" : "Open dashboard"} →</a></>}</article>
+      <article><span>{zh ? "平台直接介绍关系" : "Platform introducer relationship"}</span>{initialIntroducer ? <><b>{initialIntroducer.displayName}</b><small>{zh ? "已记录一层直接介绍关系；只有平台订阅成功付款可能产生介绍人积分。" : "One direct introducer is recorded; only a successful platform subscription payment may create introducer points."}</small></> : <><b>{zh ? "尚未记录介绍人" : "No introducer recorded"}</b><p>{zh ? "介绍关系通过平台订阅推荐链接在首次注册时自动记录，无需手动填写。课程付款不产生介绍人积分。" : "The relationship is recorded automatically at first registration through a platform-subscription referral link. Course payments never create introducer points."}</p><a className="history-button" href={`/${lang}/dashboard`}>{zh ? "打开用户面板" : "Open dashboard"} →</a></>}</article>
       <article><span>{zh ? "阅读设置" : "Reading settings"}</span><p>{zh ? "文字大小会应用到网站所有页面。" : "Text size applies across every page."}</p><TextSizeControl lang={lang}/></article>
     </aside>
   </div>;

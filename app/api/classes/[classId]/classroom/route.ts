@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
     WHERE c.id=? LIMIT 1`).bind(user.id, user.id, classId).first<CourseRow>();
   if (!course) return Response.json({ error: "Course not found" }, { status: 404 });
   const [room, practiceRoom] = await Promise.all([ensureCourseClassroom(course), ensureCoursePracticeRoom(course)]);
-  if (!room || !practiceRoom) return Response.json({ error: "Classroom unavailable" }, { status: 503 });
+  if (!room || !practiceRoom) return Response.json({ error: "Course room unavailable" }, { status: 503 });
   const isManager = await canManageClass(room, user);
   const now = Math.floor(Date.now() / 1000);
   const subscribed = course.membershipStatus === "active" && (course.subscriptionStatus === "active"
