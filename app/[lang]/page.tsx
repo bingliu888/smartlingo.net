@@ -43,6 +43,7 @@ const copy = {
     moneyKicker: "SIMPLE SUBSCRIPTION",
     moneyTitle: "Your first month is free.",
     moneyBody: "Start a course without a charge today. After 30 days, the fixed monthly price applies until cancellation. Members cannot create courses or set fees.",
+    moneyAction: "Action Now",
     moneyFacts: [
       ["30 days", "Free first month for every course subscription"],
       ["3 levels", "Beginner, Intermediate, and Advanced"],
@@ -107,6 +108,7 @@ const copy = {
     moneyKicker: "简单订阅",
     moneyTitle: "第一个月免费。",
     moneyBody: "今天开通课程不会收费；30 天后按固定月费续订，直至取消。会员不能创建课程或自行定价。",
+    moneyAction: "立即行动",
     moneyFacts: [
       ["30 天", "每门课程订阅的免费首月"],
       ["三级", "初期、中级和高级"],
@@ -148,7 +150,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const t = copy[lang];
   return (
     <main className="lingo-home" data-layout-page="home">
-      <div className="lingo-hero-shell">
+      <div className="lingo-hero-shell" data-layout-fill="home-hero-shell">
         <SiteHeader lang={lang}/>
         <section className="lingo-hero">
           <div className="lingo-hero-copy" data-readable-copy="home-hero-copy">
@@ -196,7 +198,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       <section className="lingo-money-section">
-        <div className="lingo-heading"><p className="section-kicker">{t.moneyKicker}</p><h2>{t.moneyTitle}</h2><p>{t.moneyBody}</p></div>
+        <div className="lingo-money-intro" data-layout-track="home-subscription-intro" data-layout-overlap-check="home-subscription-intro">
+          <div className="lingo-heading"><p className="section-kicker">{t.moneyKicker}</p><h2>{t.moneyTitle}</h2><p>{t.moneyBody}</p></div>
+          <Link className="primary-button lingo-money-cta" href={`/${lang}/programs`}>{t.moneyAction} →</Link>
+        </div>
         <div className="lingo-money-facts">{t.moneyFacts.map(([value, label]) => <article key={value}><strong>{value}</strong><p>{label}</p></article>)}</div>
         <aside><h3>{t.rewardTitle}</h3><p>{t.rewardBody}</p></aside>
       </section>

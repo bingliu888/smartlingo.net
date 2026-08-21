@@ -1,58 +1,58 @@
 {
   "schemaVersion": 1,
-  "releaseId": "full-vocabulary-quality-sweep-v1",
+  "releaseId": "home-subscription-action-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Audit and repair the complete multilingual vocabulary catalog", "zh": "全量审计并修复多语言课程词库" },
+  "title": { "en": "Add the home subscription action", "zh": "增加首页课程订阅行动入口" },
   "purpose": {
-    "en": "Repair detectable data defects across all 48,000 course vocabulary rows and prevent the generation pipeline from reintroducing them.",
-    "zh": "修复全部 48,000 个课程词条中的可检测数据问题，并防止生成链路再次引入同类缺陷。"
+    "en": "Give visitors a clear call to action beside the free-first-month message and take them directly to the localized course subscription catalog.",
+    "zh": "在首月免费说明旁提供清晰行动按钮，并把访客直接带到当前界面的课程订阅目录。"
   },
   "features": {
     "en": [
-      "Repair 9,898 rows across all twelve target languages without changing vocabulary identity or learner progress keys.",
-      "Remove repeated glosses, malformed characters, leaked dictionary markup, unsafe labels, and unusable inflection definitions.",
-      "Lock reviewed high-frequency grammar meanings for nine non-English language catalogs."
+      "Add an Action Now button to the Simple Subscription section on the English home page.",
+      "Add the matching 立即行动 button to the Chinese home page.",
+      "Route both buttons directly to the current locale's Choose Course and subscription catalog."
     ],
     "zh": [
-      "覆盖全部十二种目标语言，共修复 9,898 条，同时不改变词条身份与用户学习进度键。",
-      "清除重复释义、乱码、词典标记泄漏、不安全标签和不可用的词形说明。",
-      "锁定九种非英语词库的已审高频语法词教学释义。"
+      "在英文首页的简单订阅区增加 Action Now 按钮。",
+      "在中文首页增加对应的“立即行动”按钮。",
+      "两个按钮都直接进入当前界面的选择课程与订阅目录。"
     ]
   },
   "affected": {
-    "en": ["Beginner, Intermediate, and Advanced vocabulary data", "Daily vocabulary and SmartCard answer choices", "Administrator Project release report"],
-    "zh": ["初级、中级和高级课程词库", "每日词汇与智慧卡答案选项", "管理员 Project 发布报告"]
+    "en": ["English and Chinese home pages", "Responsive subscription call-to-action layout", "Runtime layout release gate"],
+    "zh": ["中英文首页", "响应式订阅行动按钮布局", "运行时布局发布门禁"]
   },
   "changes": {
     "en": [
-      "Add twelve bounded forward-only migrations so production updates one language at a time.",
-      "Add a reproducible full-catalog audit and repair tool with fail-closed Chinese-gloss validation.",
-      "Reject learner-unready source senses during future catalog generation and regression-test the reviewed common-word gold set."
+      "Place the high-contrast action beside the subscription introduction on desktop and stack it safely on phone and iPad widths.",
+      "Add rendered-HTML coverage for the Chinese label and localized /zh/programs destination.",
+      "Teach the layout verifier to distinguish intentionally scrollable carousel items from page overflow and add missing home/trial measurement hooks."
     ],
     "zh": [
-      "增加十二个有界前向迁移，生产数据库按语言依次更新。",
-      "增加可复现的全词库审计与修复工具，并对中文释义实行失败即停止校验。",
-      "未来生成词库时拒绝不适合学习的源词义，并用已审常用词金标准做回归测试。"
+      "桌面端将高对比行动按钮放在订阅介绍旁，手机与 iPad 宽度下安全换行。",
+      "增加运行时 HTML 测试，验证中文按钮及本地化 /zh/programs 目标。",
+      "让布局验证器区分横向滑块中可滚动的卡片与页面溢出，并补齐首页及匿名试学页测量钩子。"
     ]
   },
   "validation": {
     "en": [
-      "A complete migration replay reports exactly 48,000 published rows and zero vocabulary-quality findings.",
-      "All 56 D1 migrations apply once, no-op on rerun, and preserve zero foreign-key violations.",
-      "The full production build and 310 automated tests pass, including the new catalog-quality contract."
+      "The production build and all 310 automated tests pass.",
+      "The WebKit runtime matrix passes 230/230 combinations across 23 routes, two interface languages, and five phone, iPad, and desktop viewports.",
+      "Shared policy, architecture, base-feature consistency, and SmartLingo contract gates pass."
     ],
     "zh": [
-      "完整迁移重放确认恰好 48,000 个已发布词条，词库质量问题计数为零。",
-      "全部 56 个 D1 迁移首次应用成功、再次运行无操作，外键违规为零。",
-      "完整生产构建及 310 项自动测试通过，包括新增的全词库质量契约。"
+      "生产构建及全部 310 项自动测试通过。",
+      "WebKit 运行时矩阵 230/230 全部通过，覆盖 23 条路由、两种界面语言及五种手机、iPad 和桌面视口。",
+      "共享规则、架构、基础功能一致性及 SmartLingo 合同门禁全部通过。"
     ]
   },
   "deferred": {
-    "en": ["Automated and reviewed high-frequency checks cannot claim that every rare homograph has received human lexicographer review; source and review-method attribution remains visible for that reason."],
-    "zh": ["自动审计和高频词人工规则不能声称每个罕见同形词均由词典专家逐条审核，因此继续保留来源与审核方式标记。"]
+    "en": ["No subscription is started automatically; visitors still choose a language and course before confirming enrollment."],
+    "zh": ["按钮不会自动开始订阅；访客仍需选择语言和课程后确认加入。"]
   },
   "siteAdaptations": {
-    "en": ["This vocabulary-data correction is SmartLingo-only and does not change other portfolio sites."],
-    "zh": ["本词汇数据修正仅适用于 SmartLingo，不改变其他站点。"]
+    "en": ["This call to action is SmartLingo-specific and does not change any other portfolio site."],
+    "zh": ["本行动入口仅适用于 SmartLingo，不改变其他站点。"]
   }
 }

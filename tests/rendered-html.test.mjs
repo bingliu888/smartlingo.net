@@ -59,6 +59,7 @@ test("renders the SmartLingo language-learning foundation", async () => {
   assert.match(html, /三类积分独立记账、可追溯/);
   assert.match(html, /SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
   assert.match(html, /第一个月免费/);
+  assert.match(html, /href="\/zh\/programs"[^>]*>立即行动(?:<!-- -->)? →<\/a>/);
   assert.match(html, /社区/);
   assert.doesNotMatch(html, /href="\/zh\/community"/);
   assert.match(html, />选择课程<\/a>/);

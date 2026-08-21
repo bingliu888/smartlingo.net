@@ -161,6 +161,14 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
   const allowsOverlap = element => Boolean(
     element.closest('[data-layout-allow-overlap="intentional"]'),
   );
+  const isInsideHorizontalScroller = element => {
+    for (let ancestor = element.parentElement; ancestor && ancestor !== body; ancestor = ancestor.parentElement) {
+      const style = getComputedStyle(ancestor);
+      if (["auto", "scroll"].includes(style.overflowX)
+        && ancestor.scrollWidth > ancestor.clientWidth + tolerance) return true;
+    }
+    return false;
+  };
   const contentBox = element => {
     const style = getComputedStyle(element);
     const rect = element.getBoundingClientRect();
@@ -368,6 +376,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
       });
     }
     if (!allowedDecoration
+      && !isInsideHorizontalScroller(element)
       && !["absolute", "fixed"].includes(style.position)
       && (rect.left < -tolerance || rect.right > root.clientWidth + tolerance)) {
       viewportExceeds.push({ selector: selectorFor(element), rect: rectValue(rect) });

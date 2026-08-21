@@ -74,6 +74,7 @@ test("serialized WebKit collector covers fill, track, readable, text, clipping, 
   }
   assert.match(runnerSource, /page-mismatch/);
   assert.match(runnerSource, /runtime-layout-failures\.json/);
+  assert.match(runnerSource, /isInsideHorizontalScroller/);
 });
 
 test("issue detector rejects overflow, non-filling rows, clipping, overlap, and ellipsis evidence", () => {
