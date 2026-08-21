@@ -42,8 +42,18 @@ Required daily procedure:
       - Complete at least one checked sentence in each mode; merely opening a tab, playing audio,
         or clicking unordered tiles is not a pass. Record which prompt direction, target language,
         feedback state, and question-counter transition were observed without recording private data.
-   b. Play: open Learn through play, complete at least one SmartCard practice question, and verify
-      the selected target language, answer feedback, pronunciation path, and progress display.
+   b. Play discovery and practice:
+      - From the production home page shared header, click Learn through play. Verify the resulting
+        URL carries the Chinese interface language (`/zh/play?language=zh`), all six activity tiles
+        are visible (Today's Sprint, SmartCard Practice, SmartCard Challenge, Free Trial, Rankings,
+        and Redeem), and the twelve-language picker is visible below them.
+      - Return to the production home page, click the Today task image, and verify it reaches the
+        same Play URL with the same six tiles and twelve-language picker. A visible card alone is not
+        sufficient: activate both independent entry points during every daily run.
+      - Select the current target language (`en`, `ja`, `es`, or `it`) from the picker. Verify all
+        language-dependent activity links carry that target language while all six tiles remain
+        visible; then complete at least one SmartCard practice question and verify answer feedback,
+        the pronunciation path, and the progress display.
    c. Everyday Speaking: open one scenario, verify Repeat after me defaults on or preserves the
       shared user choice, play a phrase, exercise the speaking path when microphone capability is
       available, and verify navigation and target-language continuity.

@@ -39,6 +39,22 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
     assert.match(recoveryPrompt, new RegExp(skill));
   }
   assert.match(recoveryPrompt, /Learn through play/);
+  assert.match(recoveryPrompt, /shared header, click Learn through play/);
+  assert.match(recoveryPrompt, /click the Today task image/);
+  assert.match(recoveryPrompt, /\/zh\/play\?language=zh/);
+  assert.match(recoveryPrompt, /all six activity tiles/);
+  for (const activity of [
+    "Today's Sprint",
+    "SmartCard Practice",
+    "SmartCard Challenge",
+    "Free Trial",
+    "Rankings",
+    "Redeem",
+  ]) {
+    assert.match(recoveryPrompt, new RegExp(activity.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(recoveryPrompt, /twelve-language picker/);
+  assert.match(recoveryPrompt, /all six tiles remain\s+visible/);
   assert.match(recoveryPrompt, /Everyday Speaking/);
   assert.match(recoveryPrompt, /4 languages x \(5 course skills \+ Play \+ Everyday Speaking\)/);
   assert.match(recoveryPrompt, /Close every QA-created Chrome tab/);

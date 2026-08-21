@@ -1,38 +1,38 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-play-all-tiles-default-language-v1",
+  "releaseId": "smartlingo-qa21-play-discovery-coverage-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Show every Play activity from the main menu", "zh": "主菜单进入边玩边学时显示全部玩法" },
+  "title": { "en": "Add the latest Play release to daily real-user QA", "zh": "每日真实用户 QA 覆盖最新边玩边学版本" },
   "purpose": {
-    "en": "Fix the Play menu entry so it uses the interface language as the default learning language and never hides five activities when no language query is present.",
-    "zh": "修复边玩边学菜单入口：用当前界面语言作为默认学习语言，不再因缺少语言参数而隐藏五种玩法。"
+    "en": "Make the 3 AM real-user acceptance cycle verify both Play entry points, every activity tile, the language picker, and target-language propagation after each release.",
+    "zh": "让每天凌晨 3 点的真实用户验收在每次发布后检查两个边玩边学入口、全部玩法卡、语言选择器及目标语言传递。"
   },
   "features": {
     "en": [
-      "Send the shared Play menu and the home Today task image to the Play page with the current interface language selected.",
-      "Render all six Play activity tiles for direct links with or without a valid language query.",
-      "Keep the twelve-language picker visible below the activities so the learner can change the target language."
+      "Activate both the shared-header Play link and the home Today-task image during every daily production run.",
+      "Verify the Chinese interface default, all six activity tiles, and the twelve-language picker.",
+      "Verify English, Japanese, Spanish, and Italian propagate into every language-dependent Play link before completing SmartCard practice."
     ],
     "zh": [
-      "共享导航中的边玩边学链接和首页今日任务图片都会携带当前界面语言。",
-      "无论直接链接是否包含有效语言参数，边玩边学都会显示全部六张玩法卡片。",
-      "十二种语言选择区持续显示在玩法下方，方便用户切换目标语言。"
+      "每日正式站测试都会实际点击共享导航和首页今日任务图片两个独立入口。",
+      "检查中文界面默认语言、全部六张玩法卡和十二种语言选择器。",
+      "完成智慧卡练习前，检查英语、日语、西班牙语和意大利语是否传递到所有相关玩法链接。"
     ]
   },
   "affected": {
-    "en": ["Shared header", "Home Today task", "Play page", "Administrator Project report"],
-    "zh": ["共享导航", "首页今日任务", "边玩边学", "管理员 Project 报告"]
+    "en": ["3 AM local real-user QA", "Play discovery", "SmartCard practice", "Administrator Project report"],
+    "zh": ["凌晨 3 点本机真实用户 QA", "边玩边学入口", "智慧卡练习", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Default /zh/play to Chinese and /en/play to English when no valid learning-language query is supplied.",
-      "Build Smart Card, Challenge, Free Trial, Rankings, and Redeem links from the selected or default language without conditional tile removal.",
-      "Keep Today’s Sprint language and duration selection, scoring, sign-in, and reward boundaries unchanged."
+      "Extend the recovery prompt with observable production acceptance criteria for both Play entry points.",
+      "Make the QA contract fail if any of the six activities, the twelve-language picker, or target-language continuity is omitted.",
+      "Keep the existing signed-in course, speech, scoring, persistence, repair, deployment, and retest cycle unchanged."
     ],
     "zh": [
-      "当未提供有效学习语言参数时，/zh/play 默认中文，/en/play 默认英语。",
-      "智慧卡、挑战、免费试学、排行榜和兑换链接统一使用选中或默认语言，不再按条件删除卡片。",
-      "今日速成的语言与时间选择、评分、登录和奖励边界保持不变。"
+      "在恢复任务提示中加入两个边玩边学入口的可观察正式站验收标准。",
+      "若六种玩法、十二种语言选择器或目标语言连续性有任何缺失，QA 合同会失败。",
+      "保留已有登录课程、语音、评分、持久化、修复、发布和复测闭环。"
     ]
   },
   "validation": {

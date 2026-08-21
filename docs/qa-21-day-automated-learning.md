@@ -4,7 +4,10 @@ This fixed production QA campaign runs from 2026-08-21 through 2026-09-10 at
 03:00 America/Los_Angeles (10:00 UTC during the entire PDT campaign).
 
 - `qa_21d_zh`: Chinese interface; learns English, Japanese, Spanish, and Italian.
-- Each learner-language pair checks the production course, anonymous trial, and Play pages.
+- Each learner-language pair checks the production course, anonymous trial, and Play pages. Play
+  acceptance activates both the shared-header and home Today-task entry points, verifies the
+  interface-language default, all six activity tiles, the twelve-language picker, and propagation
+  of the selected target language into every language-dependent activity link.
 - Each pair then completes vocabulary, speaking, listening, writing, and quiz interactions in the
   real signed-in Chrome session.
 - A stable daily hash assigns each language 1–5 minimum active-learning minutes and one rotating
