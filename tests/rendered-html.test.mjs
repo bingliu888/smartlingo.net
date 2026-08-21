@@ -109,6 +109,29 @@ test("renders localized, non-duplicated titles across public routes", async () =
   assert.match(project.headers.get("location") ?? "", /\/zh\/auth\/login/);
 });
 
+test("Play defaults to the interface language and renders every activity tile", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `play-all-tiles-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+
+  for (const [pathname, language, labels] of [
+    ["/zh/play", "zh", ["今日速成", "智慧卡练习", "智慧卡挑战", "免费试学", "排行榜", "兑换中心"]],
+    ["/en/play", "en", ["Today’s Sprint", "Smart Card Practice", "Smart Card Challenge", "Free Trial", "Rankings", "Redeem"]],
+  ]) {
+    const response = await worker.fetch(
+      new Request(`http://localhost${pathname}`, { headers: { accept: "*/*" } }),
+      testEnv,
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+    for (const label of labels) assert.match(html, new RegExp(label), `${pathname}: ${label}`);
+    assert.match(html, new RegExp(`href="\\/${language}\\/play\\?language=${language}"`));
+    assert.match(html, new RegExp(`href="\\/${language}\\/smartcards\\/starter-${language}"`));
+    assert.match(html, new RegExp(`href="\\/${language}\\/programs\\/${language}\\/trial"`));
+  }
+});
+
 test("renders the bilingual Clerk login shell with inert bindings", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `clerk-login-shell-${process.pid}-${Date.now()}`);

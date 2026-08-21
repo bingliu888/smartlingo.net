@@ -53,6 +53,10 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(menu, /今日速成/);
   assert.match(menu, /\[5,10,15,20\]/);
   assert.match(play, /PlayDailySprintPicker/);
+  assert.match(play, /isSmartLingoCommunityLanguage\(query\.language\) \? query\.language : lang/);
+  assert.doesNotMatch(play, /\{language \? <>/);
+  for (const tile of ["智慧卡练习", "智慧卡挑战", "免费试学", "排行榜", "兑换中心"]) assert.match(play, new RegExp(tile));
+  assert.match(play, /GameLanguagePicker lang=\{lang\} basePath=\{`\/\$\{lang\}\/play`\} selected=\{language\}/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
   assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
@@ -73,7 +77,7 @@ test("course navigation precedes college navigation and the home task is one lin
   assert.ok(header.indexOf("选择课程") < header.indexOf("选择学院"));
   assert.ok(home.indexOf('href="#home-courses"') < home.indexOf('href="#home-colleges"'));
   assert.ok(home.indexOf('id="home-courses"') < home.indexOf('id="home-colleges"'));
-  assert.match(home, /className="lingo-hero-visual" href=\{`\/\$\{lang\}\/play`\}/);
+  assert.match(home, /className="lingo-hero-visual" href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
   assert.match(home, /lingo-community-art/);
   assert.match(home, /lingo-task-action/);
 });

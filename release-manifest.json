@@ -1,42 +1,38 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-todays-sprint-discovery-v1",
+  "releaseId": "smartlingo-play-all-tiles-default-language-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Make Today’s Sprint the primary learning entry", "zh": "将今日速成提升为主要学习入口" },
+  "title": { "en": "Show every Play activity from the main menu", "zh": "主菜单进入边玩边学时显示全部玩法" },
   "purpose": {
-    "en": "Make the short five-skill session easy to discover from the home page, Play, a subscribed course, and the signed-in learner dashboard while clarifying the Course and College order.",
-    "zh": "让五技能短时学习可从首页、边玩边学、已订阅课程和登录用户面板轻松进入，并统一课程与学院的先后顺序。"
+    "en": "Fix the Play menu entry so it uses the interface language as the default learning language and never hides five activities when no language query is present.",
+    "zh": "修复边玩边学菜单入口：用当前界面语言作为默认学习语言，不再因缺少语言参数而隐藏五种玩法。"
   },
   "features": {
     "en": [
-      "Place Choose course before Choose College in the shared header, home actions, and home content flow.",
-      "Redesign the home Today task as one image, gradient overlay, learning summary, and full-card link to Play.",
-      "Make Today’s Sprint the first Play tile with twelve-language selection and 5, 10, 15, or 20 minutes; ten minutes remains selected by default.",
-      "Add a top Today’s Sprint dashboard panel with joined-language tiles, an independent time choice per language, and an Add language tile."
+      "Send the shared Play menu and the home Today task image to the Play page with the current interface language selected.",
+      "Render all six Play activity tiles for direct links with or without a valid language query.",
+      "Keep the twelve-language picker visible below the activities so the learner can change the target language."
     ],
     "zh": [
-      "在共享导航、首页操作区和首页内容流中，把选择课程放在选择学院之前。",
-      "把首页今日任务重做为图片、渐变信息层、学习摘要和整卡可点击入口。",
-      "将今日速成设为边玩边学第一项，支持十二种语言及 5、10、15、20 分钟选择，默认 10 分钟。",
-      "在登录用户面板顶部新增今日速成区，按已加入语言显示卡片，每张独立选时，并提供添加语言入口。"
+      "共享导航中的边玩边学链接和首页今日任务图片都会携带当前界面语言。",
+      "无论直接链接是否包含有效语言参数，边玩边学都会显示全部六张玩法卡片。",
+      "十二种语言选择区持续显示在玩法下方，方便用户切换目标语言。"
     ]
   },
   "affected": {
-    "en": ["Shared header", "Home page", "Play page", "Course learning menu", "Member dashboard", "Sprint rankings", "Administrator Project report"],
-    "zh": ["共享导航", "首页", "边玩边学", "课程学习菜单", "用户面板", "速成排行榜", "管理员 Project 报告"]
+    "en": ["Shared header", "Home Today task", "Play page", "Administrator Project report"],
+    "zh": ["共享导航", "首页今日任务", "边玩边学", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Rename learner-facing Daily Sprint copy to Today’s Sprint while retaining the existing server-authoritative plan and scoring model.",
-      "Route Play selections to the chosen language’s Beginner-course Sprint with the selected duration.",
-      "Use active joined-course data for dashboard language tiles and prefer the language’s Beginner course when available.",
-      "Keep sign-in, active course membership, server grading, rankings, and reward boundaries unchanged."
+      "Default /zh/play to Chinese and /en/play to English when no valid learning-language query is supplied.",
+      "Build Smart Card, Challenge, Free Trial, Rankings, and Redeem links from the selected or default language without conditional tile removal.",
+      "Keep Today’s Sprint language and duration selection, scoring, sign-in, and reward boundaries unchanged."
     ],
     "zh": [
-      "将面向学员的每日速成名称统一为今日速成，同时保留现有服务器权威计划与评分模型。",
-      "边玩边学选择完成后进入所选语言的初级课程今日速成，并携带所选时长。",
-      "用户面板语言卡来自有效已加入课程数据，有初级课程时优先使用该课程。",
-      "登录、有效课程会员、服务器评分、排行榜和奖励边界保持不变。"
+      "当未提供有效学习语言参数时，/zh/play 默认中文，/en/play 默认英语。",
+      "智慧卡、挑战、免费试学、排行榜和兑换链接统一使用选中或默认语言，不再按条件删除卡片。",
+      "今日速成的语言与时间选择、评分、登录和奖励边界保持不变。"
     ]
   },
   "validation": {

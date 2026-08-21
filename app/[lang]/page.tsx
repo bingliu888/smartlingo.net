@@ -167,7 +167,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </div>
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>
           </div>
-          <Link className="lingo-hero-visual" href={`/${lang}/play`} aria-label={lang === "zh" ? "打开边玩边学，开始今日任务" : "Open Learn through play for today's task"}>
+          <Link className="lingo-hero-visual" href={`/${lang}/play?language=${lang}`} aria-label={lang === "zh" ? "打开边玩边学，开始今日任务" : "Open Learn through play for today's task"}>
             <img
               className="lingo-community-art"
               src="/smartlingo-language-community-1600.png"

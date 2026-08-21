@@ -9,7 +9,7 @@ test("the primary navigation exposes the four learning choices", async () => {
 
   assert.match(header, /zh \? "生活口语" : "Everyday speaking"/);
   assert.match(header, /zh \? "选择课程" : "Choose course"/);
-  assert.match(header, /href=\{`\/\$\{lang\}\/play`\}>\{zh \? "边玩边学" : "Learn through play"\}/);
+  assert.match(header, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}>\{zh \? "边玩边学" : "Learn through play"\}/);
   assert.match(header, /zh \? "咨询AI" : "Ask AI"/);
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.doesNotMatch(menu, /href=\{`\/\$\{lang\}\/community`\}/);
