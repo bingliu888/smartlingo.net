@@ -1,81 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "shared-course-terminology-v1-fix2",
+  "releaseId": "everyday-speaking-scenes-v1",
   "site": "smartlingo.net",
-  "title": {
-    "en": "Unify Course and Course room terminology",
-    "zh": "统一课程与课程教室术语"
-  },
+  "title": { "en": "Launch twelve Everyday Speaking scenes", "zh": "上线十二个生活口语场景" },
   "purpose": {
-    "en": "Replace user-facing Class and Classroom wording on smartlingo.net with Course and Course room while retaining compatible internal routes and data identifiers.",
-    "zh": "将 smartlingo.net 面向用户的班级与课堂术语统一为课程与课程教室，同时保留兼容的内部路由和数据标识。"
+    "en": "Give anonymous beginners a free, visual, listen-and-repeat route into practical spoken language while correcting the responsive header so the hamburger is the only separate mobile action.",
+    "zh": "为匿名初学者提供免费、图像化、听读跟练的实用口语入口，同时修正响应式页头，使汉堡按钮成为移动模式唯一的独立操作。"
   },
   "features": {
     "en": [
-      "Public, Referred course, and Private replace the previous course-type wording.",
-      "Course room replaces Classroom in visible navigation, cards, forms, sharing, and management."
+      "Add Airport, Hotel, Restaurant, Hospital, Coffee shop, School, Library, Grocery store, Train and metro, Pharmacy, Bank, and Police help desk scenes.",
+      "Provide twelve automatic slides in every scene for each of SmartLingo's twelve target languages, using the existing reviewed survival-language forms and pronunciation guides.",
+      "Add local AI-generated scene art, target-language speech synthesis, repeat-after-me prompts, transient browser speech scoring, replay, pause, quit, and complete slide navigation.",
+      "Replace the Course detail back button with a language-preserving Everyday Speaking entry."
     ],
     "zh": [
-      "课程类型统一为公开、推荐课程和私有。",
-      "导航、卡片、表单、分享和管理界面统一使用课程教室。"
+      "新增机场、酒店、餐厅、医院、咖啡店、学校、图书馆、食品店、车站、药店、银行和警察服务台场景。",
+      "每个场景为 SmartLingo 十二种目标语言分别提供十二张自动幻灯片，复用现有已审核的生存口语与音标数据。",
+      "加入本地原创 AI 场景图、目标语言语音示范、跟我读提示、浏览器内临时口语评分、重玩、暂停、退出和完整翻页控制。",
+      "将课程详情页的返回按钮替换为保留目标语言参数的生活口语入口。"
     ]
   },
   "affected": {
-    "en": [
-      "Course directories and detail pages",
-      "Creation and editing forms",
-      "Course room entry and sharing",
-      "Administrator and member surfaces",
-      "Project release history"
-    ],
-    "zh": [
-      "课程目录与详情页",
-      "创建与编辑表单",
-      "课程教室进入与分享",
-      "管理员与会员界面",
-      "项目发布历史"
-    ]
+    "en": ["Course detail actions", "New /:lang/play/everyday scene library and player", "Shared responsive header", "Project release history"],
+    "zh": ["课程详情操作区", "新增 /:lang/play/everyday 场景库与播放器", "共享响应式页头", "项目发布历史"]
   },
   "changes": {
     "en": [
-      "Change only user-visible terminology; preserve legacy class routes, schema columns, CSS hooks, and storage keys.",
-      "Rename the former trial/join type label to Referred course.",
-      "Add an additive migration that updates reserved public demo titles to Course.",
-      "Update regression contracts for the shared vocabulary."
+      "At the 1100-pixel hamburger breakpoint, hide the separate desktop account area and language control while retaining the full account area inside the drawer.",
+      "Organize each lesson as polite opening, scene essentials, and task completion, aligned to beginner immediate-need communication.",
+      "Keep anonymous lesson progress and pronunciation scores page-local with no database writes."
     ],
     "zh": [
-      "仅修改面向用户的术语，保留旧 class 路由、数据库字段、CSS hook 和存储键。",
-      "将原试学加入类型标签改为推荐课程。",
-      "新增可追加迁移，将保留的公共演示标题更新为课程。",
-      "更新共享词汇回归门禁。"
+      "在 1100 像素汉堡断点同步隐藏独立桌面账户区与语言控件，完整账户入口仍保留在抽屉内。",
+      "每课按礼貌开场、场景关键词和完成基本任务组织，符合初学者即时需求沟通目标。",
+      "匿名课程进度和发音分数仅保留在当前页面，不写入数据库。"
     ]
   },
   "validation": {
     "en": [
-      "Shared site policy and architecture audits passed.",
-      "Cross-site terminology scan found no remaining visible Class or Classroom wording.",
-      "Site build and regression contracts passed before publication."
+      "All twelve languages, twelve scenes, twelve slides per scene, images, pronunciation fields, player controls, and course links are covered by regression tests.",
+      "Production build, sensitive-data scan, and artifact validation pass.",
+      "Chrome responsive checks cover 390x844, 430x932, 820x1180, 1180x820, and 1440x900 without horizontal overflow."
     ],
     "zh": [
-      "共享网站规则和架构审计通过。",
-      "跨站术语扫描未发现残留的可见 Class 或 Classroom 文案。",
-      "发布前通过本站构建与回归门禁。"
+      "回归测试覆盖十二种语言、十二个场景、每场十二张幻灯片、图片、音标、播放器控件和课程入口。",
+      "生产构建、敏感数据扫描和发布产物验证通过。",
+      "Chrome 响应式检查覆盖 390x844、430x932、820x1180、1180x820 和 1440x900，均无横向溢出。"
     ]
   },
   "deferred": {
-    "en": [
-      "No terminology-related behavior is deferred."
-    ],
-    "zh": [
-      "本次术语一致性范围内没有延期项目。"
-    ]
+    "en": ["Automatic pronunciation scoring depends on browser SpeechRecognition support; listening and manual repeat practice remain available when it is unsupported or microphone permission is denied."],
+    "zh": ["自动发音评分取决于浏览器 SpeechRecognition 支持；不支持或麦克风未授权时，听读与人工跟练仍可正常使用。"]
   },
   "siteAdaptations": {
-    "en": [
-      "Keep smartlingo.net identity, data, configuration, routes, and deployment resources independent."
-    ],
-    "zh": [
-      "保持 smartlingo.net 的身份、数据、配置、路由和部署资源完全独立。"
-    ]
+    "en": ["The Everyday Speaking feature is SmartLingo-specific; only the generic responsive-header contract was audited across the portfolio."],
+    "zh": ["生活口语属于 SmartLingo 专属功能；跨站审计仅覆盖通用响应式页头契约。"]
   }
 }

@@ -57,7 +57,7 @@ export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
 
 const expectedPageNames = Object.freeze({
   "/": "home",
-  "/classes": "classes",
+  "/classes": "courses",
   "/programs": "programs",
   "/programs/en/trial": "anonymous-trial",
   "/classes/course_en_basic/learn": "learning",

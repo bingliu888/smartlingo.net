@@ -23,7 +23,7 @@ export default async function CourseLanguagePage({ params }: { params: Promise<{
         <p className="section-kicker">{language.toUpperCase()} · {lang === "zh" ? "课程详情" : "COURSE DETAILS"}</p>
         <h1>{item.nativeName} · {lang === "zh" ? item.nameZh : item.nameEn}</h1>
         <p>{lang === "zh" ? "选择固定月费课程。每个方案首月免费，并包含专属音视频网络研讨会教室。" : "Choose a fixed monthly course. Every plan includes a free first month and a dedicated A/V webinar classroom."}</p>
-        <div className="ai-cert-actions" data-layout-track="program-detail-actions"><Link className="primary-button" href={`/${lang}/play?language=${language}`}>▶ {lang === "zh" ? "免费游戏" : "Free to Play"}</Link><Link className="secondary-button" href={`/${lang}/programs/${language}/trial`}>{lang === "zh" ? "免费试学" : "Free Trial"}</Link><Link className="secondary-button" href={`/${lang}/programs`}>← {lang === "zh" ? "返回选择课程" : "Back to courses"}</Link></div>
+        <div className="ai-cert-actions" data-layout-track="program-detail-actions"><Link className="primary-button" href={`/${lang}/play?language=${language}`}>▶ {lang === "zh" ? "免费游戏" : "Free to Play"}</Link><Link className="secondary-button" href={`/${lang}/programs/${language}/trial`}>{lang === "zh" ? "免费试学" : "Free Trial"}</Link><Link className="secondary-button" href={`/${lang}/play/everyday?language=${language}`}>☀ {lang === "zh" ? "生活口语" : "Everyday Speaking"}</Link></div>
       </section>
     </div>
     <section className="sl-package-catalog" data-layout-fill="course-packages">

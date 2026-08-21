@@ -237,7 +237,7 @@ test("avatar, course cover, voice, chat and referral routes use validated privat
   assert.match(chat, /scopeType: "message_thread"/);
   assert.match(chat, /visibility = 'private' AND status = 'ready'/);
   assert.match(learning, /kind IN \('course_cover', 'voice_practice'\)/);
-  assert.match(learning, /Class owner access required/);
+  assert.match(learning, /Course owner access required/);
   assert.match(learning, /member\.status IN \('active', 'invited', 'paused'\)/);
   assert.match(learning, /Deletion is pending; retry safely/);
   assert.match(messages, /Attachment deletion is pending; retry safely/);

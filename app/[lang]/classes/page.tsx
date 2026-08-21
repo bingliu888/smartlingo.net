@@ -38,7 +38,7 @@ export default async function ClassesPage({
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
-    <main className="classes-page" data-layout-page="classes" data-layout-overlap-check="classes-page">
+    <main className="classes-page" data-layout-page="courses" data-layout-overlap-check="courses-page">
       <SiteHeader lang={lang} />
       <span data-layout-overlap-check="classes-start" style={{ display: "block", height: 1 }} />
       <ClassStudio lang={lang} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
