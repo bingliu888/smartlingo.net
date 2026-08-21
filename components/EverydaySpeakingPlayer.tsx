@@ -62,11 +62,12 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     if (!started || paused || complete || !slide) return;
     clearTimer();
     setMessage(zh ? "AI 正在示范，请听完后跟读。" : "Listen to the AI, then repeat.");
-    if (!("speechSynthesis" in window)) {
+    const speech = (window as unknown as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
+    if (!speech) {
       timerRef.current = window.setTimeout(() => move(index + 1), 8000);
       return clearTimer;
     }
-    window.speechSynthesis.cancel();
+    speech.cancel();
     const utterance = new SpeechSynthesisUtterance(slide.form);
     utterance.lang = speechLocale;
     utterance.rate = .76;
@@ -76,8 +77,8 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     };
     utterance.onend = schedule;
     utterance.onerror = schedule;
-    window.speechSynthesis.speak(utterance);
-    return () => { clearTimer(); window.speechSynthesis.cancel(); };
+    speech.speak(utterance);
+    return () => { clearTimer(); speech.cancel(); };
   }, [clearTimer, complete, index, move, paused, slide, speechLocale, started, zh]);
 
   function begin() {
