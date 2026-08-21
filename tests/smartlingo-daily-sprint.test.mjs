@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
+import { isPublicBeginnerSprintClassId } from "../lib/smartlingo-learning-access.ts";
 
 const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   id: `word-${index + 1}`,
@@ -60,6 +61,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
   assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
+  assert.match(playPicker, /source=play/);
   assert.match(play, /play\/rankings/);
   assert.match(play, /play\/redeem/);
   assert.match(dashboard, /DashboardDailySprint/);
@@ -71,15 +73,39 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(rewardsRoute, /digital_redeem/);
 });
 
-test("course navigation precedes college navigation and the home task is one linked image card", () => {
+test("course navigation precedes college navigation and the home task opens the shared Sprint picker", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
   assert.ok(header.indexOf("选择课程") < header.indexOf("选择学院"));
   assert.ok(home.indexOf('href="#home-courses"') < home.indexOf('href="#home-colleges"'));
   assert.ok(home.indexOf('id="home-courses"') < home.indexOf('id="home-colleges"'));
-  assert.match(home, /className="lingo-hero-visual" href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
+  assert.match(home, /PlayDailySprintPicker lang=\{lang\} initialLanguage=\{lang\}/);
+  assert.match(home, /triggerClassName="lingo-hero-visual"/);
+  assert.match(home, /打开今日速成，选择语言和时长/);
+  assert.doesNotMatch(home, /className="lingo-hero-visual" href=/);
   assert.match(home, /lingo-community-art/);
   assert.match(home, /lingo-task-action/);
+});
+
+test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", () => {
+  for (const language of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
+    assert.equal(isPublicBeginnerSprintClassId(`course_${language}_basic`), true);
+  }
+  assert.equal(isPublicBeginnerSprintClassId("course_en_intermediate"), false);
+  assert.equal(isPublicBeginnerSprintClassId("course_en_basic_extra"), false);
+
+  const sprintPage = readFileSync(new URL("../app/[lang]/classes/[classId]/sprint/page.tsx", import.meta.url), "utf8");
+  const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
+  const sprintClient = readFileSync(new URL("../components/DailySprint.tsx", import.meta.url), "utf8");
+  assert.match(sprintPage, /query\.source==="play"/);
+  assert.match(sprintPage, /publicPlay=\{publicPlay\}/);
+  assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
+  assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);
+  assert.match(sprintRoute, /anonymous: value\.anonymous/);
+  assert.match(sprintClient, /if\(anonymous\)\{setResult\(gradeSprintPlan\(plan,responses\)\)/);
+  assert.match(sprintClient, /本次匿名学习不会写入账户或数据库/);
+  assert.match(sprintClient, /免费注册/);
+  assert.match(sprintClient, /登录/);
 });
 
 test("migration adds idempotent rank and redemption ownership boundaries", () => {

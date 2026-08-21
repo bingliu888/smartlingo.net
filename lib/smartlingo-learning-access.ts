@@ -19,6 +19,25 @@ export type OfficialClassAccess = {
   membershipRole: string;
 };
 
+const PUBLIC_BEGINNER_SPRINT_ID = /^course_(zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)_basic$/;
+
+export function isPublicBeginnerSprintClassId(classId: string) {
+  return PUBLIC_BEGINNER_SPRINT_ID.test(classId);
+}
+
+export async function requirePublicBeginnerSprintCourse(database: LearningDatabase, classId: string) {
+  if (!isPublicBeginnerSprintClassId(classId)) return null;
+  return database.prepare(`SELECT c.id AS classId,c.class_kind AS classKind,c.path_id AS pathId,
+    c.target_language AS targetLanguage,c.level,c.package_tier AS packageTier,c.title,
+    'learner' AS membershipRole
+    FROM smartlingo_language_classes c
+    JOIN smartlingo_language_paths path
+      ON path.id=c.path_id AND path.target_language=c.target_language
+    WHERE c.id=? AND c.class_kind='official_course' AND c.level='beginner'
+      AND c.status='open' AND c.visibility='public' AND path.status='published'
+    LIMIT 1`).bind(classId).first<OfficialClassAccess>();
+}
+
 export async function requireOfficialClassMembership(
   database: LearningDatabase,
   user: SessionUser,

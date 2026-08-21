@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HomeLearningChoices } from "../../components/HomeLearningChoices";
+import { PlayDailySprintPicker } from "../../components/PlayDailySprintPicker";
 import { JoinCollegeByCode } from "../../components/JoinCollegeByCode";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
@@ -167,7 +168,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </div>
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>
           </div>
-          <Link className="lingo-hero-visual" href={`/${lang}/play?language=${lang}`} aria-label={lang === "zh" ? "打开边玩边学，开始今日任务" : "Open Learn through play for today's task"}>
+          <PlayDailySprintPicker lang={lang} initialLanguage={lang} triggerClassName="lingo-hero-visual" triggerLabel={lang === "zh" ? "打开今日速成，选择语言和时长" : "Open Today’s Sprint and choose a language and time"}>
             <img
               className="lingo-community-art"
               src="/smartlingo-language-community-1600.png"
@@ -181,9 +182,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <p>{t.coachPrompt}</p>
             <div className="lingo-listening"><span aria-hidden="true">●</span>{t.coachStatus}</div>
             <dl>{t.skills.map(([label, score]) => <div key={label}><dt>{label}</dt><dd>{score}</dd></div>)}</dl>
-            <strong className="lingo-task-action">{lang === "zh" ? "进入边玩边学" : "Open Learn through play"} →</strong>
+            <strong className="lingo-task-action">{lang === "zh" ? "开始今日速成" : "Start Today’s Sprint"} →</strong>
           </div>
-          </Link>
+          </PlayDailySprintPicker>
         </section>
       </div>
       <HomeLearningChoices lang={lang}/>

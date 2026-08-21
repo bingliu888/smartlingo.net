@@ -34,6 +34,8 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   assert.match(recoveryPrompt, /dedicated test learner 1 address/);
   assert.doesNotMatch(recoveryPrompt, /@[a-z0-9.-]+\.[a-z]{2,}/i);
   assert.match(recoveryPrompt, /connected Gmail account/);
+  assert.match(recoveryPrompt, /standing authorization/);
+  assert.match(recoveryPrompt, /Do not pause to request that authorization again/);
   assert.match(recoveryPrompt, /real Chrome session/);
   for (const skill of ["vocabulary", "reading", "writing", "listening", "speaking"]) {
     assert.match(recoveryPrompt, new RegExp(skill));
@@ -41,6 +43,7 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   assert.match(recoveryPrompt, /Learn through play/);
   assert.match(recoveryPrompt, /shared header, click Learn through play/);
   assert.match(recoveryPrompt, /click the Today task image/);
+  assert.match(recoveryPrompt, /dialog opens over the home page without first navigating to Play/);
   assert.match(recoveryPrompt, /\/zh\/play\?language=zh/);
   assert.match(recoveryPrompt, /all six activity tiles/);
   for (const activity of [

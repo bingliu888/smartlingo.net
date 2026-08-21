@@ -11,9 +11,11 @@ America/Los_Angeles date, use exactly one test learner:
   prior SmartLingo verification messages without copying the address into repository files or logs
 - target languages: English, Japanese, Spanish, Italian (`en`, `ja`, `es`, `it`)
 - browser: the user's real Chrome session through the Chrome plugin, never the embedded browser
-- authentication: reuse the signed-in QA session when valid; if a new login is required, stop at the
-  sensitive-data transmission boundary unless an action-time user confirmation is available; after
-  confirmation, retrieve the newest matching SmartLingo code from Gmail and complete Clerk sign-in
+- authentication: reuse the signed-in QA session when valid. The user gave standing authorization
+  on 2026-08-21 for both manual and scheduled SmartLingo QA to retrieve the dedicated test learner's
+  newest matching verification code from Gmail and submit the test address and code only to the
+  production SmartLingo Clerk sign-in flow. Do not pause to request that authorization again. Never
+  display or store the address, code, message body, or authentication artifacts.
 
 Required daily procedure:
 
@@ -47,9 +49,10 @@ Required daily procedure:
         URL carries the Chinese interface language (`/zh/play?language=zh`), all six activity tiles
         are visible (Today's Sprint, SmartCard Practice, SmartCard Challenge, Free Trial, Rankings,
         and Redeem), and the twelve-language picker is visible below them.
-      - Return to the production home page, click the Today task image, and verify it reaches the
-        same Play URL with the same six tiles and twelve-language picker. A visible card alone is not
-        sufficient: activate both independent entry points during every daily run.
+      - Return to the production home page and click the Today task image. Verify the same Daily
+        Sprint language-and-time dialog opens over the home page without first navigating to Play,
+        with all twelve languages, all four durations, and 10 minutes selected by default. A visible
+        card alone is not sufficient: activate both independent Sprint entry points every day.
       - Select the current target language (`en`, `ja`, `es`, or `it`) from the picker. Verify all
         language-dependent activity links carry that target language while all six tiles remain
         visible.

@@ -1,62 +1,64 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-qa21-daily-sprint-coverage-v1",
+  "releaseId": "smartlingo-home-anonymous-daily-sprint-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Complete Today's Sprint in daily real-user QA", "zh": "每日真实用户 QA 完整测试今日速成" },
+  "title": { "en": "Start an anonymous Daily Sprint from Home", "zh": "首页直接开始匿名今日速成" },
   "purpose": {
-    "en": "Require the 3 AM real-user acceptance cycle to finish a scored five-skill Today's Sprint in every test language, in addition to Play discovery and SmartCard practice.",
-    "zh": "要求每天凌晨 3 点的真实用户验收除检查玩法入口与智慧卡外，还要在每种测试语言中完成一次有评分的五项技能今日速成。"
+    "en": "Open the same language-and-time Sprint picker directly from the Home task image, let signed-out learners finish the five-skill Beginner experience without database writes, and invite them to create an account or sign in only after completion.",
+    "zh": "首页今日任务图片直接打开同一套语言与时长弹窗，让未登录学习者完成 Beginner 五项速成且不写数据库，结束后再邀请注册或登录。"
   },
   "features": {
     "en": [
-      "Activate both the shared-header Play link and the home Today-task image during every daily production run.",
-      "Verify the Chinese interface default, all six activity tiles, and the twelve-language picker.",
-      "Verify English, Japanese, Spanish, and Italian propagate into every language-dependent Play link.",
-      "For every target language, check all four duration choices and the default 10 minutes, then select 5 minutes and finish the entire scored five-skill Sprint before SmartCard practice."
+      "Reuse one accessible Daily Sprint picker for the Home task image and the Play activity tile.",
+      "Keep all twelve learning languages, 5/10/15/20-minute choices, and the default 10-minute selection identical in both entry points.",
+      "Allow only official Open Beginner Sprint plans to load without sign-in; anonymous start reads published vocabulary but creates no Sprint run row.",
+      "Grade the anonymous result locally, omit rankings and persistence claims, then show localized Create account and Sign in actions.",
+      "Record the user's standing authorization for scheduled QA to use the dedicated test identity and newest Gmail verification code without repeating the permission question."
     ],
     "zh": [
-      "每日正式站测试都会实际点击共享导航和首页今日任务图片两个独立入口。",
-      "检查中文界面默认语言、全部六张玩法卡和十二种语言选择器。",
-      "检查英语、日语、西班牙语和意大利语是否传递到所有相关玩法链接。",
-      "每种目标语言均检查四档时间和默认 10 分钟，再选择 5 分钟完整完成一次有评分的五项技能今日速成，然后测试智慧卡。"
+      "首页今日任务图片与 Play 玩法卡复用同一个可访问的今日速成弹窗。",
+      "两个入口均提供相同的十二种学习语言、5/10/15/20 分钟选择，并默认 10 分钟。",
+      "仅官方公开 Beginner 速成可免登录读取；匿名开始只读取已发布词库，不创建速成运行记录。",
+      "匿名成绩仅在本页计算，不显示排行榜或保存承诺；结束后显示本地化注册和登录按钮。",
+      "记录用户对定时 QA 使用专用测试身份及 Gmail 最新验证码的长期授权，不再重复询问。"
     ]
   },
   "affected": {
-    "en": ["3 AM local real-user QA", "Today's Sprint", "Play discovery", "SmartCard practice", "Administrator Project report"],
-    "zh": ["凌晨 3 点本机真实用户 QA", "今日速成", "边玩边学入口", "智慧卡练习", "管理员 Project 报告"]
+    "en": ["Home Today task", "Play Daily Sprint", "Anonymous Beginner Sprint", "Daily QA authentication", "Administrator Project report"],
+    "zh": ["首页今日任务", "Play 今日速成", "匿名 Beginner 速成", "每日 QA 登录", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Extend the recovery prompt with observable production acceptance criteria for both Play entry points.",
-      "Make the QA contract fail if any of the six activities, the twelve-language picker, target-language continuity, or a completed Sprint round is omitted.",
-      "Keep the existing signed-in course, speech, scoring, persistence, repair, deployment, and retest cycle unchanged."
+      "Replace the Home task navigation link with the shared picker trigger while preserving the image-card visual and keyboard semantics.",
+      "Add a narrowly scoped public Beginner Sprint access path; signed-in Play attempts still persist server-graded scores, while signed-out attempts never call the completion write endpoint.",
+      "Update the 3 AM recovery contract for the Home overlay behavior and the user's explicit standing test-login authorization."
     ],
     "zh": [
-      "在恢复任务提示中加入两个边玩边学入口的可观察正式站验收标准。",
-      "若六种玩法、十二种语言选择器、目标语言连续性或完整速成回合有任何缺失，QA 合同会失败。",
-      "保留已有登录课程、语音、评分、持久化、修复、发布和复测闭环。"
+      "把首页今日任务链接替换为共享弹窗触发器，同时保留图片卡视觉与键盘操作语义。",
+      "增加严格限定的公开 Beginner 速成入口：登录用户仍保存服务器评分，未登录用户绝不调用完成写入接口。",
+      "更新凌晨 3 点恢复合同，覆盖首页浮层行为及用户明确授予的测试登录长期授权。"
     ]
   },
   "validation": {
     "en": [
       "TypeScript, changed-file ESLint, sensitive-data scan, and the production build pass.",
-      "The full repository suite passes after updating the intentional Course-before-College contract.",
+      "The full repository suite passes 327/327 tests, including anonymous access boundaries, shared picker behavior, and local-only completion.",
       "WebKit runtime layout passes 260/260 checks across 26 routes, Chinese and English, and five phone, iPad, and desktop viewports.",
       "Shared policy, architecture, base-feature consistency, and all 11 SmartLingo shared contracts pass."
     ],
     "zh": [
       "TypeScript、本次文件 ESLint、敏感数据扫描和正式构建通过。",
-      "更新明确的课程先于学院合同后，全仓测试通过。",
+      "全仓 327/327 项测试通过，包括匿名访问边界、共享弹窗和仅本地完成成绩。",
       "WebKit 运行布局通过 260/260 项：26 个路由、中英文和 5 种手机、iPad、桌面尺寸。",
       "共享政策、架构、基础功能一致性及 SmartLingo 全部 11 项共享合同通过。"
     ]
   },
   "deferred": {
-    "en": ["Automated production browser QA cannot provide a real human speech sample; it verifies navigation and the microphone-ready state without inventing a pronunciation score."],
-    "zh": ["自动正式站浏览器验收无法提供真人语音样本；它会验证导航与麦克风就绪状态，但不会伪造发音成绩。"]
+    "en": ["Automated production browser QA cannot provide a real human speech sample; it verifies the anonymous flow through the microphone-ready state without inventing a pronunciation score."],
+    "zh": ["自动正式站浏览器验收无法提供真人语音样本；它会把匿名流程验证到麦克风就绪状态，但不会伪造发音成绩。"]
   },
   "siteAdaptations": {
-    "en": ["This release changes SmartLingo learning discovery only and does not alter other portfolio sites or their navigation."],
-    "zh": ["本次只调整 SmartLingo 学习入口，不改变其他站点及其导航。"]
+    "en": ["This is a SmartLingo-specific learning conversion flow. It does not change other portfolio sites or their authentication and persistence boundaries."],
+    "zh": ["这是 SmartLingo 专属学习转化流程，不改变其他站点及其登录与数据持久化边界。"]
   }
 }
