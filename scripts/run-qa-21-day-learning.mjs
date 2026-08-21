@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createDailySessionPlan } from "./qa-21-day-session-plan.mjs";
 
 const START_DATE = "2026-08-21";
 const END_DATE = "2026-09-10";
@@ -10,6 +11,7 @@ assert.ok(localDate >= START_DATE && localDate <= END_DATE, `QA_LOCAL_DATE must 
 
 const dayNumber = Math.floor((Date.parse(`${localDate}T12:00:00Z`) - Date.parse(`${START_DATE}T12:00:00Z`)) / 86_400_000) + 1;
 const targets = ["en", "ja", "es", "it"];
+const sessionPlan = createDailySessionPlan(localDate);
 
 async function checkRoute(target, surface, path, markers) {
   try {
@@ -49,6 +51,7 @@ const report = {
   baseUrl: BASE_URL,
   interfaceLanguage: "zh",
   targetLanguages: targets,
+  requiredRealSessionPlan: sessionPlan,
   checks,
   passed: checks.every(check => check.passed),
   disclaimer: "This is an anonymous route preflight only. It is not login, subscription, learning, speech, score, progress, or Project-report evidence.",
@@ -58,6 +61,8 @@ const report = {
     authentication: "SmartLingo email verification code retrieved from Gmail",
     surfaces: ["course_five_skills", "play", "everyday_speaking"],
     targetLanguages: targets,
+    timing: "For each language, complete at least its planned 1-5 minutes of active learning. Navigation, loading, idle waiting, login, repair, and deployment time do not count.",
+    scoreEvidence: "At least one legitimate server-graded score and its persisted learning log are required for every language; synthetic rows are forbidden.",
   },
 };
 

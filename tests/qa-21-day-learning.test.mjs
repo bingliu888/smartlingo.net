@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { createDailySessionPlan, QA_TARGET_LANGUAGES } from "../scripts/qa-21-day-session-plan.mjs";
 
 const runner = readFileSync(new URL("../scripts/run-qa-21-day-learning.mjs", import.meta.url), "utf8");
+const sessionPlanner = readFileSync(new URL("../scripts/qa-21-day-session-plan.mjs", import.meta.url), "utf8");
 const workflow = readFileSync(new URL("../.github/workflows/qa-21-day-learning.yml", import.meta.url), "utf8");
 const recoveryPrompt = readFileSync(new URL("../docs/qa-21-day-codex-recovery-prompt.md", import.meta.url), "utf8");
 const launchAgent = readFileSync(new URL("../ops/com.smartlingo.qa21.recovery.plist", import.meta.url), "utf8");
@@ -42,4 +44,39 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   assert.match(recoveryPrompt, /Close every QA-created Chrome tab/);
   assert.match(recoveryPrompt, /Never weaken an assertion/);
   assert.match(recoveryPrompt, /Repeat diagnosis, fix, deploy, and retest/);
+  assert.match(recoveryPrompt, /planned minimum active-learning duration/);
+  assert.match(recoveryPrompt, /Never use `sleep`, passive waiting, or repeated no-op clicks/);
+  assert.match(recoveryPrompt, /legitimate server-graded score/);
+  assert.match(recoveryPrompt, /planned and measured active minutes/);
+});
+
+test("daily active-learning plans are bounded, reproducible, and rotate across the campaign", () => {
+  const first = createDailySessionPlan("2026-08-21");
+  assert.deepEqual(first, createDailySessionPlan("2026-08-21"));
+  assert.deepEqual(first.map(item => item.language), QA_TARGET_LANGUAGES);
+
+  for (const item of first) {
+    assert.ok(item.minimumActiveMinutes >= 1 && item.minimumActiveMinutes <= 5);
+    assert.ok(["vocabulary", "reading", "writing", "listening", "speaking"].includes(item.deepFocus));
+    assert.equal(new Set(item.rotationOrder).size, 5);
+  }
+
+  const campaignDurations = new Set();
+  for (let day = 21; day <= 31; day += 1) {
+    for (const item of createDailySessionPlan(`2026-08-${String(day).padStart(2, "0")}`)) {
+      campaignDurations.add(item.minimumActiveMinutes);
+    }
+  }
+  for (let day = 1; day <= 10; day += 1) {
+    for (const item of createDailySessionPlan(`2026-09-${String(day).padStart(2, "0")}`)) {
+      campaignDurations.add(item.minimumActiveMinutes);
+    }
+  }
+  assert.deepEqual([...campaignDurations].sort(), [1, 2, 3, 4, 5]);
+});
+
+test("route preflight exports the real-session plan without claiming score evidence", () => {
+  assert.match(runner, /requiredRealSessionPlan/);
+  assert.match(sessionPlanner, /minimumActiveMinutes/);
+  assert.match(runner, /synthetic rows are forbidden/i);
 });

@@ -5,21 +5,28 @@ This fixed production QA campaign runs from 2026-08-21 through 2026-09-10 at
 
 - `qa_21d_zh`: Chinese interface; learns English, Japanese, Spanish, and Italian.
 - Each learner-language pair checks the production course, anonymous trial, and Play pages.
-- Each pair then records vocabulary, speaking, listening, writing, and quiz evidence.
+- Each pair then completes vocabulary, speaking, listening, writing, and quiz interactions in the
+  real signed-in Chrome session.
+- A stable daily hash assigns each language 1–5 minimum active-learning minutes and one rotating
+  deep-focus skill. The value changes across dates and languages but remains identical on a same-day
+  recovery retry. Login, navigation, page loading, device waits, repairs, deployments, and idle time
+  never count toward it.
+- Each language must produce at least one legitimate server-graded score and persisted learning log.
 - A successful day contains 4 language runs and 20 skill log items.
 - Every run appends a bilingual pass/fail report to the administrator Project calendar.
 - Stable IDs make same-day retries idempotent.
-- The account uses a `.invalid` email address, disabled password, and no Clerk identity.
-- QA activity enters the standard learning activity calendar with `source_type=qa_21_day`, but
-  never enters XP, reward, referral, credit, payment, leaderboard, or certificate ledgers.
-- Scores are deterministic synthetic health-check data. They do not claim microphone capture,
-  human speech, human grading, or a full signed-in browser session.
+- The dedicated QA learner signs in through Clerk using the verification code from its real mailbox;
+  its address and verification code are never stored in source, logs, screenshots, or reports.
+- QA activity enters the normal signed-in learner history through production UI actions, but never
+  enters reward, referral, credit, payment, leaderboard, or certificate ledgers.
+- Direct or synthetic learning/score database writes are forbidden. Unavailable microphone input is
+  reported as blocked rather than passed.
 
 The GitHub Actions workflow supports an optional manual Pacific date for a failed-day rerun.
 Outside the fixed 21-day window it exits successfully without changing production data.
 
-The cloud workflow is the deterministic 03:00 scheduler and evidence recorder. The intended
-paired Codex automation owns the judgment-heavy recovery loop: inspect failed evidence,
+The cloud workflow is a route-only 03:00 preflight and publishes no learning evidence. The paired
+local Codex automation owns real Chrome/Gmail acceptance and the judgment-heavy recovery loop: inspect failed evidence,
 implement the smallest correct fix, run the full release gate, commit and deploy, then rerun
 the failed production acceptance until it passes. It must never weaken assertions or fabricate
 evidence to obtain a green result. This recovery automation is considered enabled only after the

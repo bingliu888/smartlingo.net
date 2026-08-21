@@ -1,60 +1,58 @@
 {
   "schemaVersion": 1,
-  "releaseId": "real-user-multilingual-qa-report-v1",
+  "releaseId": "randomized-active-learning-qa-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Publish the signed-in multilingual learning QA result", "zh": "发布真实登录多语言学习验收结果" },
+  "title": { "en": "Add timed deep-learning sessions to multilingual QA", "zh": "为多语言真实 QA 增加随机深度学习时段" },
   "purpose": {
-    "en": "Record the completed signed-in Chrome acceptance for Course learning, Learn through play, Everyday Speaking, and the vocabulary speech recovery across four target languages.",
-    "zh": "记录真实账号在 Chrome 完成的四语言课程学习、边玩边学、生活口语与词汇跟读恢复验收。"
+    "en": "Make every 03:00 real-user QA run actively learn each target language for a reproducible random 1–5 minute minimum and generate legitimate score evidence.",
+    "zh": "让每天凌晨 3 点的真实用户 QA 为每种目标语言执行可复现随机 1–5 分钟的最低有效学习，并生成真实分数证据。"
   },
   "features": {
     "en": [
-      "Verify English, Japanese, Spanish, and Italian through one signed-in Chinese-interface learner.",
-      "Complete and persist the five course skills plus the daily quiz for the newly joined Japanese, Spanish, and Italian courses.",
-      "Verify Course, Learn through play, Everyday Speaking, and AI entry tabs for all four joined languages."
+      "Assign English, Japanese, Spanish, and Italian independent 1–5 minute minimum active-learning sessions each day.",
+      "Rotate a deep-focus skill while preserving full Course, Learn through play, and Everyday Speaking coverage.",
+      "Require a displayed server-graded score and persisted learning log for every target language."
     ],
     "zh": [
-      "使用一个中文界面真实学习账号验收英语、日语、西班牙语和意大利语。",
-      "新加入的日语、西班牙语和意大利语课程均完成并保存五项技能及每日测验。",
-      "验证四种已加入语言均显示课程、边玩边学、生活口语和咨询 AI 入口标签。"
+      "每天分别为英语、日语、西班牙语和意大利语分配 1–5 分钟最低有效学习时段。",
+      "轮换一项深度学习重点，同时保留课程、边玩边学和生活口语的完整覆盖。",
+      "要求每种目标语言都有界面显示的服务器判分及持久学习日志。"
     ]
   },
   "affected": {
-    "en": ["Real-user QA report", "Four-language Dashboard", "Course learning logs", "Vocabulary pronunciation recovery", "Play and Everyday Speaking"],
-    "zh": ["真实用户 QA 报告", "四语言用户面板", "课程学习日志", "词汇跟读恢复", "边玩边学与生活口语"]
+    "en": ["03:00 real-user QA plan", "Four-language active-learning evidence", "Administrator Project QA report"],
+    "zh": ["凌晨 3 点真实用户 QA 计划", "四语言有效学习证据", "管理员 Project QA 报告"]
   },
   "changes": {
     "en": [
-      "Create no-charge 30-day app-local access for the Japanese, Spanish, and Italian test courses and verify all five course entries.",
-      "Persist real vocabulary reviews, reading, writing, listening, dialogue, and server-graded quiz evidence from the test learner.",
-      "Confirm the speech watchdog restores Continue and Skip in Japanese, Spanish, and Italian when the Chrome test session has no audio input."
+      "Generate a deterministic daily session plan whose random minute assignments remain stable during same-day retries.",
+      "Count only active feedback-producing learning actions; exclude login, navigation, loading, idle waits, repairs, and deployment time.",
+      "Record planned versus measured minutes, deep-focus activity, displayed score, and persisted score-log evidence in Project."
     ],
     "zh": [
-      "为日语、西班牙语和意大利语测试课程建立不收费的 30 天应用内试学资格，并验证全部五项课程入口。",
-      "由真实测试账号保存词汇复习、阅读、写作、听力、对话及服务器判分测验记录。",
-      "确认 Chrome 测试会话没有音频输入时，日语、西班牙语和意大利语的超时保护都会恢复继续与跳过按钮。"
+      "生成确定性的每日学习计划，使随机分钟数在同日重试时保持一致。",
+      "只计算会产生反馈的真实学习操作；登录、导航、加载、空等、修复与部署时间均不计入。",
+      "在 Project 记录计划/实测分钟、深度重点、界面分数及持久分数日志证据。"
     ]
   },
   "validation": {
     "en": [
-      "Japanese, Spanish, and Italian each show 1,000 Beginner words, twenty words per page, phonetics, persisted progress, and a recoverable pronunciation flow.",
-      "Japanese, Spanish, and Italian daily quizzes each scored 100/100; their learning calendars contain all five skill categories. Existing English five-skill evidence, Play, and Everyday Speaking were also verified.",
-      "The Dashboard shows all four joined languages in every learning area, the introducer balance remains zero, and the browser error log is empty.",
-      "TypeScript, sensitive-data scan, all 307 repository tests, and production deployment run 32498418381 pass."
+      "Behavior tests prove every daily duration is between one and five minutes, same-day plans are reproducible, and all five duration values occur across the campaign.",
+      "The route preflight exposes the required real-session plan but remains explicitly barred from claiming login, score, or learning evidence.",
+      "The real-user prompt forbids passive waiting and synthetic score rows while retaining all four languages and all required learning surfaces."
     ],
     "zh": [
-      "日语、西班牙语和意大利语均显示 1000 个初级词、每页 20 词、音标、持久进度和可恢复跟读流程。",
-      "日语、西班牙语和意大利语每日测验均为 100/100，学习日历均包含五项技能；现有英语五项记录、边玩边学和生活口语也已验证。",
-      "用户面板在每个学习区域显示四种已加入语言，介绍人积分仍为 0，浏览器错误日志为空。",
-      "TypeScript、敏感数据扫描、仓库全部 307 项测试和生产部署 32498418381 均已通过。"
+      "行为测试证明每日时长均为 1–5 分钟，同日计划可复现，且整个周期覆盖全部五种分钟值。",
+      "路线预检会输出真实会话计划，但明确不能声称已经登录、判分或完成学习。",
+      "真实用户提示禁止被动等待和伪造分数记录，同时保留四种语言及全部学习区域。"
     ]
   },
   "deferred": {
-    "en": ["Acoustic pronunciation scoring was not passed: the controlled Chrome session supplied no real audio input. Recovery and manual continuation passed, while acoustic scoring remains capability-limited."],
-    "zh": ["声学发音评分未标记通过：受控 Chrome 会话没有提供真实音频输入。恢复与手动继续已通过，声学评分仍标记为能力受限。"]
+    "en": ["The next scheduled real-user execution supplies the first measured timed-session score evidence; this release validates and deploys the automation contract itself."],
+    "zh": ["下一次定时真实用户执行将产生首份计时学习分数证据；本次发布验证并部署自动化契约本身。"]
   },
   "siteAdaptations": {
-    "en": ["This report records SmartLingo test-account learning evidence only and does not alter other portfolio sites."],
-    "zh": ["本报告仅记录 SmartLingo 测试账号学习证据，不改变其他站点。"]
+    "en": ["This automation update is SmartLingo-only and does not alter learning data or schedules on other portfolio sites."],
+    "zh": ["本自动化更新仅适用于 SmartLingo，不改变其他站点的学习数据或计划。"]
   }
 }
