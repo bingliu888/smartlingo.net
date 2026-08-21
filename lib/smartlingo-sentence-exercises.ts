@@ -140,11 +140,12 @@ export function gradeSentenceRound(expected: readonly SmartLingoSentenceExercise
   try { responses = JSON.parse(answer || "[]"); } catch { responses = []; }
   const answers = Array.isArray(responses) ? responses.map(value => String(value)) : [];
   const scores = expected.map((exercise, index) => {
-    const expectedAnswer = skill === "listening" ? exercise.targetSentence : exercise.targetSentence;
+    const expectedAnswer = exercise.targetSentence;
     return normalizeSentenceAnswer(answers[index] || "") === normalizeSentenceAnswer(expectedAnswer) ? 100 : 0;
   });
   return {
-    score: Math.round(scores.reduce((sum, score) => sum + score, 0) / Math.max(1, expected.length)),
+    skill,
+    score: Math.round(scores.reduce<number>((sum, score) => sum + score, 0) / Math.max(1, expected.length)),
     correctCount: scores.filter(score => score === 100).length,
     questionCount: expected.length,
     uiLang,
