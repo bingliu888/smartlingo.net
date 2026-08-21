@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-sentence-builder-learning-v1",
+  "releaseId": "smartlingo-sentence-builder-learning-v2",
   "site": "smartlingo.net",
   "title": { "en": "Add free trial entry and sentence-builder listening and writing", "zh": "增加免费试学入口及点词组句听力与写作" },
   "purpose": {
@@ -46,13 +46,13 @@
   "validation": {
     "en": [
       "Shared policy, architecture, base-feature consistency, and portfolio contract gates pass.",
-      "The production build, sensitive-data scan, artifact validation, lint, and all 319 repository tests pass.",
+      "The production build, strict TypeScript check, sensitive-data scan, artifact validation, lint, and all 319 repository tests pass.",
       "Automated contracts verify 36 course banks at exactly 120 unique sentence exercises each and ten unique daily items.",
       "The WebKit runtime layout matrix passes 260/260 combinations across 26 routes, two interface languages, and five phone, iPad, and desktop viewports."
     ],
     "zh": [
       "共享规则、架构、基础功能一致性及全站合约门禁通过。",
-      "生产构建、敏感数据扫描、产物验证、代码检查及全部 319 项仓库测试通过。",
+      "生产构建、严格 TypeScript 检查、敏感数据扫描、产物验证、代码检查及全部 319 项仓库测试通过。",
       "自动合约确认 36 门课程均恰有 120 道不重复句子练习，每日题组含十道不重复题。",
       "WebKit 运行时布局矩阵 260/260 通过，覆盖 26 条路由、两种界面语言及五种手机、iPad 与桌面视口。"
     ]
