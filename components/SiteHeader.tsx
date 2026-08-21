@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { HeaderAccount } from "./HeaderAccount";
 import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
 
@@ -15,14 +15,13 @@ function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
 }
 
 export function SiteHeader({ lang }: { lang: "en" | "zh" }) {
-  const mobileMenu = useRef<HTMLDetailsElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => {
-    function dismiss(event: PointerEvent) { if (mobileMenu.current?.open && !mobileMenu.current.contains(event.target as Node)) mobileMenu.current.open = false; }
-    function escape(event: KeyboardEvent) { if (event.key === "Escape" && mobileMenu.current) mobileMenu.current.open = false; }
-    document.addEventListener("pointerdown", dismiss);
+    if (!mobileOpen) return;
+    function escape(event: KeyboardEvent) { if (event.key === "Escape") setMobileOpen(false); }
     document.addEventListener("keydown", escape);
-    return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", escape); };
-  }, []);
+    return () => document.removeEventListener("keydown", escape);
+  }, [mobileOpen]);
   return (
     <header className="site-header ai-cert-header">
       <Link className="brand ai-cert-brand" href={`/${lang}`} aria-label={lang === "zh" ? "SmartLingo 首页" : "SmartLingo home"}>
@@ -35,14 +34,22 @@ export function SiteHeader({ lang }: { lang: "en" | "zh" }) {
       <div className="header-actions">
         <HeaderAccount lang={lang}/>
       </div>
-      <details ref={mobileMenu} className="mobile-menu">
-        <summary aria-label={lang === "zh" ? "打开菜单" : "Open menu"}><span /><span /><span /></summary>
-        <div onClick={event => { if ((event.target as HTMLElement).closest("a")) mobileMenu.current!.open = false; }}>
+      <InterfaceLanguageMenu lang={lang}/>
+      <button
+        className={`hamburger-button${mobileOpen ? " open" : ""}`}
+        type="button"
+        aria-label={mobileOpen ? (lang === "zh" ? "关闭菜单" : "Close menu") : (lang === "zh" ? "打开菜单" : "Open menu")}
+        aria-expanded={mobileOpen}
+        aria-controls="mobile-header-menu"
+        onClick={() => setMobileOpen(value => !value)}
+      ><span/><span/><span/></button>
+      {mobileOpen ? <div className="mobile-header-menu" id="mobile-header-menu">
+        <nav aria-label={lang === "zh" ? "主导航" : "Primary navigation"} onClick={() => setMobileOpen(false)}>
           <GlobalLinks lang={lang}/>
-          <HeaderAccount lang={lang}/>
-        </div>
-      </details>
-      <InterfaceLanguageMenu lang={lang} />
+        </nav>
+        <InterfaceLanguageMenu lang={lang} mobile onNavigate={() => setMobileOpen(false)}/>
+        <div className="mobile-account"><HeaderAccount lang={lang} mobile onNavigate={() => setMobileOpen(false)}/></div>
+      </div> : null}
     </header>
   );
 }

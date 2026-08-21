@@ -36,7 +36,7 @@ function localizedPath(pathname: string, language: Lang) {
   return segments.join("/") || `/${language}`;
 }
 
-export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
+export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { lang: Lang; mobile?: boolean; onNavigate?: () => void }) {
   const zh = lang === "zh";
   const menu = useRef<HTMLDetailsElement>(null);
   const selected = useSyncExternalStore(
@@ -72,6 +72,7 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
   function choose(code: SmartLingoCommunityLanguage) {
     rememberTargetLanguage(code);
     if (menu.current) menu.current.open = false;
+    onNavigate?.();
 
     if (code === "zh" || code === "en") {
       window.localStorage.setItem("smartlingo-language", code);
@@ -88,6 +89,27 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
     window.location.assign(`/${lang}#${anchor}`);
   }
 
+  const options = SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
+    return (
+      <button
+        key={language.code}
+        type="button"
+        role="menuitemradio"
+        aria-checked={selected === language.code}
+        onClick={() => choose(language.code)}
+      >
+        <span className="interface-language-option">
+          <b dir={language.direction}>{language.nativeName}</b>
+        </span>
+      </button>
+    );
+  });
+
+  if (mobile) return <section className="mobile-language-options" aria-label={zh ? "语言选择" : "Language selection"}>
+    <strong><GlobeIcon/>{zh ? "语言" : "Language"}</strong>
+    <div role="menu">{options}</div>
+  </section>;
+
   return (
     <details ref={menu} className="interface-language-menu">
       <summary aria-label={zh ? `当前界面语言：${currentInterface.nativeName}。打开语言选择` : `Current interface language: ${currentInterface.nativeName}. Open language selection`}>
@@ -97,31 +119,15 @@ export function InterfaceLanguageMenu({ lang }: { lang: Lang }) {
       <div className="interface-language-popover" role="menu" aria-label={zh ? "语言选择" : "Language selection"}>
         <header>
           <strong>{zh ? "选择语言" : "Choose a language"}</strong>
-          <small>{zh ? "中文与英文切换界面；其他选项设置目标学习语言。" : "Chinese and English switch the interface; other choices set your target language."}</small>
         </header>
         <div>
-          {SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
-            const changesInterface = language.code === "zh" || language.code === "en";
-            return (
-              <button
-                key={language.code}
-                type="button"
-                role="menuitemradio"
-                aria-checked={selected === language.code}
-                onClick={() => choose(language.code)}
-              >
-                <span className="interface-language-option">
-                  <b dir={language.direction}>{language.nativeName}</b>
-                  <small>{changesInterface
-                    ? (zh ? "界面与目标语言" : "Interface and target")
-                    : (zh ? `${language.nameZh}目标社区` : `${language.nameEn} target community`)}</small>
-                </span>
-                <i aria-hidden="true">{selected === language.code ? "✓" : "→"}</i>
-              </button>
-            );
-          })}
+          {options}
         </div>
       </div>
     </details>
   );
+}
+
+function GlobeIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.25"/><path d="M3.9 12h16.2M12 3.75c2.05 2.27 3.1 5.02 3.1 8.25S14.05 17.98 12 20.25C9.95 17.98 8.9 15.23 8.9 12S9.95 6.02 12 3.75Z"/></svg>;
 }

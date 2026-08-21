@@ -34,7 +34,12 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   for (const code of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.match(catalog, new RegExp(`code: "${code}"`));
   }
-  assert.match(menu, /中文与英文切换界面；其他选项设置目标学习语言/);
+  assert.match(menu, /if \(mobile\) return <section className="mobile-language-options"/);
+  assert.match(header, /aria-controls="mobile-header-menu"/);
+  assert.match(header, /hamburger-button/);
+  assert.match(header, /<InterfaceLanguageMenu lang=\{lang\} mobile onNavigate=/);
+  assert.match(css, /\.hamburger-button\.open span:nth-child\(1\)/);
+  assert.match(css, /\.mobile-language-options>div\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
   assert.match(menu, /currentInterface.*language\.code === lang/s);
   assert.match(menu, /interface-language-current">\{currentInterface\.nativeName\}/);
   assert.doesNotMatch(menu, /interface-language-current">\{current\.nativeName\}/);
@@ -42,6 +47,7 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.doesNotMatch(`${header}\n${menu}`, /I speak|我会说|母语选择/iu);
   assert.doesNotMatch(`${menu}\n${chooser}\n${home}`, /[\u{1F1E6}-\u{1F1FF}]{2}/u);
   assert.doesNotMatch(`${menu}\n${chooser}\n${css}`, /interface-language-flag|lingo-community-flag/);
+  assert.doesNotMatch(menu, /Interface and target|目标社区/);
   assert.doesNotMatch(css, /\.interface-language-current\{display:none\}/);
 });
 

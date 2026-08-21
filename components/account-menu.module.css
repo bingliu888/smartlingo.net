@@ -8,6 +8,9 @@
   border-radius: 12px !important;
 }
 
+.mobileSignIn { width: 100%; }
+.mobileSignIn > a { min-height: 50px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(18,32,42,.12); border-radius: 12px; background: white; color: #12202a; font-size: 15px; font-weight: 800; }
+
 .menu > nav > a,
 .menu > nav > button {
   width: 100% !important;

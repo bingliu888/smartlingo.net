@@ -6,10 +6,10 @@ import { AdminMenuLink } from "./AdminMenuLink";
 import { useEffect, useRef, useState } from "react";
 import styles from "./account-menu.module.css";
 
-export function HeaderAccount({ lang, initialSignedIn = false }: { lang: "en" | "zh"; initialSignedIn?: boolean }) {
+export function HeaderAccount({ lang, initialSignedIn = false, mobile = false, onNavigate }: { lang: "en" | "zh"; initialSignedIn?: boolean; mobile?: boolean; onNavigate?: () => void }) {
   const clerk = useClerk();
   const [session, setSession] = useState<{ loaded: boolean; signedIn: boolean; imageUrl?: string }>({ loaded: initialSignedIn, signedIn: initialSignedIn });
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(mobile);
   const [unread, setUnread] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -27,6 +27,7 @@ export function HeaderAccount({ lang, initialSignedIn = false }: { lang: "en" | 
       .catch(() => setSession({ loaded: true, signedIn: initialSignedIn }));
   }, [initialSignedIn]);
   const signedIn = session.signedIn;
+  const close = () => { setOpen(false); onNavigate?.(); };
   useEffect(() => {
     if (!signedIn) return;
     const load = () => fetch("/api/messages?summary=1", { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(value => value && setUnread(Number(value.unread || 0))).catch(() => undefined);
@@ -36,8 +37,8 @@ export function HeaderAccount({ lang, initialSignedIn = false }: { lang: "en" | 
   if (signedIn) {
     const label = lang === "zh" ? "我的账户" : "My account";
     const accountLabel = `${label}${unread ? (lang === "zh" ? ` · ${unread} 条未读消息` : ` · ${unread} unread`) : ""}`;
-    return <div ref={menuRef} className={`${styles.menu} gg-account-menu`}><button className="user-icon" onClick={() => setOpen(value => !value)} aria-label={accountLabel} title={label} aria-expanded={open}>{session.imageUrl ? <img src={session.imageUrl} alt=""/> : <span className="avatar-glyph" aria-hidden="true"/>}{unread > 0 && <i className={`unread-avatar-badge${unread > 99 ? " dot" : ""}`}>{unread > 99 ? "" : unread}</i>}</button>{open && <nav aria-label={lang === "zh" ? "账户菜单" : "Account menu"}><Link onClick={() => setOpen(false)} href={`/${lang}/dashboard`}><b>{lang === "zh" ? "用户面板" : "Dashboard"}</b><small>→</small></Link><Link onClick={() => setOpen(false)} href={`/${lang}/classes?mine=1`}><b>{lang === "zh" ? "我的课程" : "My Courses"}</b><small>→</small></Link><Link onClick={() => setOpen(false)} href={`/${lang}/account`}>{lang === "zh" ? "个人资料" : "Profile"}<small>→</small></Link><AdminMenuLink lang={lang} onNavigate={() => setOpen(false)}/><Link onClick={() => setOpen(false)} href={`/${lang}/messages`}><b>{lang === "zh" ? "消息" : "Messages"}</b>{unread > 0 ? <i className="menu-unread">{unread > 99 ? "99+" : unread}</i> : <small>→</small>}</Link><Link onClick={() => setOpen(false)} href={`/${lang}/programs`}>{lang === "zh" ? "选择课程" : "Choose course"}<small>→</small></Link><button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); await clerk.signOut(); window.location.assign(`/${lang}`); }}>{lang === "zh" ? "退出登录" : "Sign out"}<small>↗</small></button></nav>}</div>;
+    return <div ref={menuRef} className={`${styles.menu} gg-account-menu`}>{!mobile ? <button className="user-icon" onClick={() => setOpen(value => !value)} aria-label={accountLabel} title={label} aria-expanded={open}>{session.imageUrl ? <img src={session.imageUrl} alt=""/> : <span className="avatar-glyph" aria-hidden="true"/>}{unread > 0 && <i className={`unread-avatar-badge${unread > 99 ? " dot" : ""}`}>{unread > 99 ? "" : unread}</i>}</button> : null}{(open || mobile) && <nav aria-label={lang === "zh" ? "账户菜单" : "Account menu"}><Link onClick={close} href={`/${lang}/dashboard`}><b>{lang === "zh" ? "用户面板" : "Dashboard"}</b><small>→</small></Link><Link onClick={close} href={`/${lang}/classes?mine=1`}><b>{lang === "zh" ? "我的课程" : "My Courses"}</b><small>→</small></Link><Link onClick={close} href={`/${lang}/account`}>{lang === "zh" ? "个人资料" : "Profile"}<small>→</small></Link><AdminMenuLink lang={lang} onNavigate={close}/><Link onClick={close} href={`/${lang}/messages`}><b>{lang === "zh" ? "消息" : "Messages"}</b>{unread > 0 ? <i className="menu-unread">{unread > 99 ? "99+" : unread}</i> : <small>→</small>}</Link><Link onClick={close} href={`/${lang}/programs`}>{lang === "zh" ? "选择课程" : "Choose course"}<small>→</small></Link><button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); await clerk.signOut(); window.location.assign(`/${lang}`); }}>{lang === "zh" ? "退出登录" : "Sign out"}<small>↗</small></button></nav>}</div>;
   }
   const label = lang === "zh" ? "登录" : "Sign in";
-  return <Link className="user-icon" href={`/${lang}/auth/login`} aria-label={label} title={label}><span className="avatar-glyph" aria-hidden="true"/></Link>;
+  return mobile ? <nav className={styles.mobileSignIn} aria-label={lang === "zh" ? "账户菜单" : "Account menu"}><Link href={`/${lang}/auth/login`} onClick={onNavigate}>{lang === "zh" ? "登录或注册" : "Sign in or register"}<small>→</small></Link></nav> : <Link className="user-icon" href={`/${lang}/auth/login`} aria-label={label} title={label}><span className="avatar-glyph" aria-hidden="true"/></Link>;
 }
