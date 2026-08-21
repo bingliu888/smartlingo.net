@@ -1,37 +1,39 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-qa21-play-discovery-coverage-v1",
+  "releaseId": "smartlingo-qa21-daily-sprint-coverage-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Add the latest Play release to daily real-user QA", "zh": "每日真实用户 QA 覆盖最新边玩边学版本" },
+  "title": { "en": "Complete Today's Sprint in daily real-user QA", "zh": "每日真实用户 QA 完整测试今日速成" },
   "purpose": {
-    "en": "Make the 3 AM real-user acceptance cycle verify both Play entry points, every activity tile, the language picker, and target-language propagation after each release.",
-    "zh": "让每天凌晨 3 点的真实用户验收在每次发布后检查两个边玩边学入口、全部玩法卡、语言选择器及目标语言传递。"
+    "en": "Require the 3 AM real-user acceptance cycle to finish a scored five-skill Today's Sprint in every test language, in addition to Play discovery and SmartCard practice.",
+    "zh": "要求每天凌晨 3 点的真实用户验收除检查玩法入口与智慧卡外，还要在每种测试语言中完成一次有评分的五项技能今日速成。"
   },
   "features": {
     "en": [
       "Activate both the shared-header Play link and the home Today-task image during every daily production run.",
       "Verify the Chinese interface default, all six activity tiles, and the twelve-language picker.",
-      "Verify English, Japanese, Spanish, and Italian propagate into every language-dependent Play link before completing SmartCard practice."
+      "Verify English, Japanese, Spanish, and Italian propagate into every language-dependent Play link.",
+      "For every target language, check all four duration choices and the default 10 minutes, then select 5 minutes and finish the entire scored five-skill Sprint before SmartCard practice."
     ],
     "zh": [
       "每日正式站测试都会实际点击共享导航和首页今日任务图片两个独立入口。",
       "检查中文界面默认语言、全部六张玩法卡和十二种语言选择器。",
-      "完成智慧卡练习前，检查英语、日语、西班牙语和意大利语是否传递到所有相关玩法链接。"
+      "检查英语、日语、西班牙语和意大利语是否传递到所有相关玩法链接。",
+      "每种目标语言均检查四档时间和默认 10 分钟，再选择 5 分钟完整完成一次有评分的五项技能今日速成，然后测试智慧卡。"
     ]
   },
   "affected": {
-    "en": ["3 AM local real-user QA", "Play discovery", "SmartCard practice", "Administrator Project report"],
-    "zh": ["凌晨 3 点本机真实用户 QA", "边玩边学入口", "智慧卡练习", "管理员 Project 报告"]
+    "en": ["3 AM local real-user QA", "Today's Sprint", "Play discovery", "SmartCard practice", "Administrator Project report"],
+    "zh": ["凌晨 3 点本机真实用户 QA", "今日速成", "边玩边学入口", "智慧卡练习", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
       "Extend the recovery prompt with observable production acceptance criteria for both Play entry points.",
-      "Make the QA contract fail if any of the six activities, the twelve-language picker, or target-language continuity is omitted.",
+      "Make the QA contract fail if any of the six activities, the twelve-language picker, target-language continuity, or a completed Sprint round is omitted.",
       "Keep the existing signed-in course, speech, scoring, persistence, repair, deployment, and retest cycle unchanged."
     ],
     "zh": [
       "在恢复任务提示中加入两个边玩边学入口的可观察正式站验收标准。",
-      "若六种玩法、十二种语言选择器或目标语言连续性有任何缺失，QA 合同会失败。",
+      "若六种玩法、十二种语言选择器、目标语言连续性或完整速成回合有任何缺失，QA 合同会失败。",
       "保留已有登录课程、语音、评分、持久化、修复、发布和复测闭环。"
     ]
   },

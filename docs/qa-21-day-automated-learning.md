@@ -8,6 +8,9 @@ This fixed production QA campaign runs from 2026-08-21 through 2026-09-10 at
   acceptance activates both the shared-header and home Today-task entry points, verifies the
   interface-language default, all six activity tiles, the twelve-language picker, and propagation
   of the selected target language into every language-dependent activity link.
+- In every target language, Play acceptance verifies all four Today's Sprint duration choices and
+  the default 10-minute selection, then selects 5 minutes and completes one entire five-skill round
+  with a server-graded score and persisted signed-in Sprint result before SmartCard practice.
 - Each pair then completes vocabulary, speaking, listening, writing, and quiz interactions in the
   real signed-in Chrome session.
 - A stable daily hash assigns each language 1–5 minimum active-learning minutes and one rotating
@@ -15,7 +18,8 @@ This fixed production QA campaign runs from 2026-08-21 through 2026-09-10 at
   recovery retry. Login, navigation, page loading, device waits, repairs, deployments, and idle time
   never count toward it.
 - Each language must produce at least one legitimate server-graded score and persisted learning log.
-- A successful day contains 4 language runs and 20 skill log items.
+- A successful day contains 4 language runs, 20 direct course-skill log items, and 4 completed
+  five-skill Today's Sprint rounds in addition to SmartCard and Everyday Speaking evidence.
 - Every run appends a bilingual pass/fail report to the administrator Project calendar.
 - Stable IDs make same-day retries idempotent.
 - The dedicated QA learner signs in through Clerk using the verification code from its real mailbox;

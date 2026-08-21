@@ -52,7 +52,14 @@ Required daily procedure:
         sufficient: activate both independent entry points during every daily run.
       - Select the current target language (`en`, `ja`, `es`, or `it`) from the picker. Verify all
         language-dependent activity links carry that target language while all six tiles remain
-        visible; then complete at least one SmartCard practice question and verify answer feedback,
+        visible.
+      - Open Today's Sprint for the current target language. Verify the 5, 10, 15, and 20 minute
+        choices are visible and 10 minutes is selected by default. Select 5 minutes for this bounded
+        daily QA run, start the Sprint, and complete one entire five-skill round through vocabulary,
+        reading, writing, listening, and speaking. Verify visible skill/question progress, checked
+        feedback, the final server-graded score, and the persisted signed-in Sprint result. Merely
+        opening the timer chooser or starting without finishing the round is not a pass.
+      - Return to Play, complete at least one SmartCard practice question, and verify answer feedback,
         the pronunciation path, and the progress display.
    c. Everyday Speaking: open one scenario, verify Repeat after me defaults on or preserves the
       shared user choice, play a phrase, exercise the speaking path when microphone capability is
@@ -74,7 +81,8 @@ Required daily procedure:
    deep-focus skill, completed activities, displayed score, and persisted learning-log evidence.
    Confirm that the QA account creates no payment, referral, certificate, course-credit,
    challenge-reward, or leaderboard ledger entries. Never claim or round up unmeasured duration.
-6. A pass requires all 4 languages x (5 course skills + Play + Everyday Speaking), the planned
+6. A pass requires all 4 languages x (5 course skills + completed Today's Sprint + SmartCard
+   Practice + Everyday Speaking), the planned
    1–5 minute minimum active-learning duration, and a legitimate persisted score per language to pass. Missing
    functionality, wrong language propagation, route errors, failed persistence, broken speech UI,
    incorrect localization, or console/runtime errors are product defects. Never weaken an assertion,

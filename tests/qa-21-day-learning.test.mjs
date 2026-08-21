@@ -55,8 +55,16 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   }
   assert.match(recoveryPrompt, /twelve-language picker/);
   assert.match(recoveryPrompt, /all six tiles remain\s+visible/);
+  assert.match(recoveryPrompt, /Open Today's Sprint for the current target language/);
+  assert.match(recoveryPrompt, /5, 10, 15, and 20 minute/);
+  assert.match(recoveryPrompt, /10 minutes is selected by default/);
+  assert.match(recoveryPrompt, /Select 5 minutes for this bounded\s+daily QA run/);
+  assert.match(recoveryPrompt, /complete one entire five-skill round/);
+  assert.match(recoveryPrompt, /final server-graded score/);
+  assert.match(recoveryPrompt, /persisted signed-in Sprint result/);
+  assert.match(recoveryPrompt, /starting without finishing the round is not a pass/);
   assert.match(recoveryPrompt, /Everyday Speaking/);
-  assert.match(recoveryPrompt, /4 languages x \(5 course skills \+ Play \+ Everyday Speaking\)/);
+  assert.match(recoveryPrompt, /4 languages x \(5 course skills \+ completed Today's Sprint \+ SmartCard\s+Practice \+ Everyday Speaking\)/);
   assert.match(recoveryPrompt, /Close every QA-created Chrome tab/);
   assert.match(recoveryPrompt, /Never weaken an assertion/);
   assert.match(recoveryPrompt, /Repeat diagnosis, fix, deploy, and retest/);
