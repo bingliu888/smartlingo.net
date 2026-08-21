@@ -33,8 +33,9 @@ evidence to obtain a green result. This recovery automation is considered enable
 Codex automation service accepts and lists it; repository files alone do not make that claim.
 
 Because the desktop automation service was unavailable during setup, the installed fallback is a
-user LaunchAgent. Cloud QA starts at 03:00 Pacific and the sandboxed, auto-reviewed Codex recovery
-agent starts at 03:05. The signed Codex executable is the direct LaunchAgent program so macOS does
+user LaunchAgent. Cloud QA and the sandboxed, auto-reviewed Codex recovery agent both start at
+03:00 Pacific; the recovery agent inspects or idempotently dispatches that day's cloud preflight
+before real browser learning. The signed Codex executable is the direct LaunchAgent program so macOS does
 not block an intermediary shell from the Documents workspace. Its paths, prompt, logs, date guard,
 and self-unload behavior are versioned in this repository. It uses the existing
 ChatGPT-authenticated Codex CLI and never

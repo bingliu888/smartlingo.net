@@ -1,64 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-college-catalog-v2",
+  "releaseId": "smartlingo-real-listening-writing-qa-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Organize the college catalog by number and specialty", "zh": "按学院编号与专业方向整理学院目录" },
+  "title": { "en": "Strengthen real-user Listening and Writing QA", "zh": "强化真实用户听力与写作组句验收" },
   "purpose": {
-    "en": "Make the administrator-built college catalog predictable and align its four colleges with language, business, career, and test-preparation learning.",
-    "zh": "让管理员预置学院目录按稳定编号清晰展示，并将四个学院调整为语言、商务、职业与备考方向。"
+    "en": "Make the 03:00 Pacific real-user task verify the complete sentence-builder interaction instead of treating a tab visit or audio click as learning evidence.",
+    "zh": "让太平洋时间凌晨 3 点的真实用户任务验证完整组句交互，不再把打开标签或播放音频当作学习证据。"
   },
   "features": {
     "en": [
-      "Display college cards in ascending college-number order from 820101 through 820104.",
-      "Rename the four seeded colleges to SmartLingo Language College, Business College, Career College, and Test Prep College.",
-      "Expose exactly three active catalog tags: General, Professional, and Test Prep.",
-      "Add the administrator-built English Beginner, Intermediate, and Advanced courses to Language College while retaining its introduction course."
+      "Require a prerequisite check of all 36 official course banks at exactly 120 prebuilt sentences per course.",
+      "Require Listening to play a hidden target-language prompt, arrange target-language word tiles, check the answer, show feedback, and advance progress.",
+      "Require Writing to show a learner-language prompt, arrange target-language word tiles to match its meaning, check the answer, show feedback, and advance progress.",
+      "Keep the installed local real-user LaunchAgent at 03:00 Pacific and correct the automation documentation to match it."
     ],
     "zh": [
-      "学院卡片按 820101 至 820104 的学院编号升序显示。",
-      "将四个预置学院改为 SmartLingo 语言学院、商务学院、职业学院和备考学院。",
-      "学院目录只显示三个有效标签：通用、专业、备考。",
-      "语言学院在保留导论课程的同时，加入管理员预置的英语初级、中级、高级课程。"
+      "真实测试开始前确认 36 门正式课程每门恰有 120 句预置题库。",
+      "听力必须播放不直接显示的目标语言句子、点选目标语言词块组句、检查答案、显示反馈并推进进度。",
+      "写作必须显示学生语言提示、点选目标语言词块完成同义句、检查答案、显示反馈并推进进度。",
+      "保留已安装的凌晨 3 点真实用户 LaunchAgent，并修正文档中的时间说明。"
     ]
   },
   "affected": {
-    "en": ["College directory", "College detail course tables", "College tag filters", "Seeded college and course data", "Project release report"],
-    "zh": ["学院目录", "学院详情课程表", "学院标签筛选", "预置学院与课程数据", "Project 发布日报"]
+    "en": ["03:00 real-user QA instructions", "21-day QA documentation", "QA contract tests", "Project release report"],
+    "zh": ["凌晨 3 点真实用户测试说明", "21 天测试文档", "测试合约", "Project 发布日报"]
   },
   "changes": {
     "en": [
-      "Add one idempotent forward D1 migration that preserves college IDs, numbers, ownership, joins, and existing member records.",
-      "Map Language College to General; map Business and Career colleges to Professional; and map Test Prep College to Test Prep.",
-      "Deactivate the obsolete Lifestyle tag after moving its college to Professional.",
-      "Reuse the existing official course records instead of duplicating curriculum, pricing, or enrollment state."
+      "Define visible pass criteria for prompt direction, tile language, feedback state, and question-counter transition in both modes.",
+      "Explicitly reject opening the tab, playing audio alone, or clicking unordered tiles as a pass.",
+      "Preserve the existing four-language, five-skill, Play, Everyday Speaking, active-minute, legitimate-score, and browser-cleanup requirements."
     ],
     "zh": [
-      "新增一个可重复安全执行的向前 D1 迁移，保留学院 ID、编号、所有权、加入关系及现有会员记录。",
-      "语言学院归入通用标签，商务学院与职业学院归入专业标签，备考学院归入备考标签。",
-      "职业学院迁移至专业标签后停用旧生活方式标签。",
-      "直接复用现有正式课程记录，不重复创建课程内容、价格或报名状态。"
+      "为两种模式明确提示方向、词块语言、反馈状态与题号变化等可见通过标准。",
+      "明确规定仅打开标签、仅播放音频或乱序点词均不能算通过。",
+      "保留四种语言、五项技能、边玩边学、生活口语、有效学习时长、真实评分及浏览器清理要求。"
     ]
   },
   "validation": {
     "en": [
       "Shared policy, architecture, base-feature consistency, and SmartLingo shared-contract gates pass.",
-      "The production build, strict TypeScript check, sensitive-data scan, artifact validation, migration checks, and all 320 repository tests pass.",
-      "The college behavior test verifies ascending number order, four new college identities, three active tag categories, and all three administrator courses.",
-      "The WebKit runtime layout matrix passes 260/260 combinations across 26 routes, two interface languages, and five phone, iPad, and desktop viewports."
+      "The sentence exercise and QA contracts pass and confirm 36 banks, 120 sentences per bank, and ten distinct daily items per skill.",
+      "The production route preflight passes all 16 Course, Trial, Play, and Everyday Speaking checks for English, Japanese, Spanish, and Italian."
     ],
     "zh": [
       "共享规则、架构、基础功能一致性及 SmartLingo 共享合约门禁通过。",
-      "生产构建、严格 TypeScript 检查、敏感数据扫描、产物验证、迁移检查及全部 320 项仓库测试通过。",
-      "学院行为测试确认编号升序、四个新学院名称、三个有效标签类别及三门管理员课程。",
-      "WebKit 运行时布局矩阵 260/260 通过，覆盖 26 条路由、两种界面语言及五种手机、iPad 与桌面视口。"
+      "句子题库与测试合约通过，确认 36 个题库、每库 120 句，以及每项技能每日 10 道不同题。",
+      "英语、日语、西班牙语和意大利语的课程、试学、边玩边学及生活口语共 16 项生产路由预检全部通过。"
     ]
   },
   "deferred": {
-    "en": ["The three added level courses currently use the established English official-course records; additional target languages remain available through Choose Course."],
-    "zh": ["本次加入的三门分级课程复用现有英语正式课程；其他目标语言仍可从“选择课程”进入。"]
+    "en": ["The real signed-in Chrome learning round runs as the local 03:00 task and reports any external Gmail, Clerk, microphone, or browser blocker without fabricating a pass."],
+    "zh": ["真实登录 Chrome 学习轮次由本机凌晨 3 点任务执行；若 Gmail、Clerk、麦克风或浏览器受阻，会如实报告而不会伪造通过。"]
   },
   "siteAdaptations": {
-    "en": ["This is a SmartLingo-specific catalog and data migration; it changes no shared identity, commerce, classroom, or external-service boundary."],
-    "zh": ["这是 SmartLingo 专属的学院目录与数据迁移，不改变共享身份、商业、课程教室或外部服务边界。"]
+    "en": ["This release tightens SmartLingo QA evidence only and changes no learner data, scoring logic, course content, identity, commerce, or classroom boundary."],
+    "zh": ["本次只收紧 SmartLingo 测试证据，不改变学习数据、评分逻辑、课程内容、身份、商业或课程教室边界。"]
   }
 }

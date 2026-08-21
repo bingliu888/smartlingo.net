@@ -48,6 +48,13 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   assert.match(recoveryPrompt, /Never use `sleep`, passive waiting, or repeated no-op clicks/);
   assert.match(recoveryPrompt, /legitimate server-graded score/);
   assert.match(recoveryPrompt, /planned and measured active minutes/);
+  assert.match(recoveryPrompt, /all 36 official courses/);
+  assert.match(recoveryPrompt, /exactly 120 prebuilt sentences per course/);
+  assert.match(recoveryPrompt, /Listening must play the target-language sentence without displaying it as the prompt/);
+  assert.match(recoveryPrompt, /selectable target-language word tiles/);
+  assert.match(recoveryPrompt, /Writing must visibly show a sentence in the learner's interface language/);
+  assert.match(recoveryPrompt, /show selectable words in the target language/);
+  assert.match(recoveryPrompt, /merely opening a tab, playing audio,\s+or clicking unordered tiles is not a pass/);
 });
 
 test("daily active-learning plans are bounded, reproducible, and rotate across the campaign", () => {
