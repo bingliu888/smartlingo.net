@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-qa-day1-blocked-report-v1",
+  "releaseId": "smartlingo-qa-day1-evidence-detail-v2",
   "site": "smartlingo.net",
-  "title": { "en": "Publish day-one real-learning QA evidence", "zh": "发布首日真实学习验收证据" },
+  "title": { "en": "Complete day-one QA evidence detail", "zh": "补全首日验收证据明细" },
   "purpose": {
-    "en": "Publish the August 21 production QA evidence and its microphone and administrator-ledger blockers without claiming a full pass.",
-    "zh": "发布 8 月 21 日正式站验收证据及麦克风与管理员账本复核受阻项，不声称全量通过。"
+    "en": "Correct the August 21 Project record so its final runtime report contains each language's measured evidence and both blockers without claiming a full pass.",
+    "zh": "修正 8 月 21 日 Project 记录，让最终运行时报告逐语显示实测证据与两项受阻内容，且不声称全量通过。"
   },
   "features": {
     "en": [
-      "Add a bilingual administrator Project report for day one of the 21-day real-learning campaign.",
-      "Record per-language planned and measured minutes, deep-focus skill, Course, SmartCard, Everyday Speaking, quiz, and learning-log evidence.",
-      "Label unavailable microphone scoring and administrator-level ledger verification as blocked."
+      "Publish the four per-language evidence rows directly through the deployment-generated Project report.",
+      "Preserve the sentence-bank, route-preflight, signed-in Chrome, score-log, and clean-console evidence.",
+      "Keep real microphone scoring and administrator-level ledger verification explicitly blocked."
     ],
     "zh": [
-      "在管理员 Project 中加入 21 天真实学习计划首日双语报告。",
-      "逐语记录计划与实测分钟、深度技能、课程、SmartCard、生活口语、测验与学习日志证据。",
-      "将不可用的麦克风评分与管理员级账本复核明确标记为受阻。"
+      "通过部署生成的 Project 报告直接发布四种语言的逐语证据。",
+      "保留句子题库、路由预检、真实登录 Chrome、分数日志与无错误控制台证据。",
+      "继续将真实麦克风评分与管理员级账本复核明确标记为受阻。"
     ]
   },
   "affected": {
@@ -25,12 +25,12 @@
   },
   "changes": {
     "en": [
-      "Append a dated report to the versioned Project fallback so the runtime document reconciler exposes it without overwriting historical reports.",
+      "Move the per-language measurements into the deployment manifest consumed by the authoritative runtime Project record.",
       "Use only the anonymized learner key and non-secret production evidence.",
       "Keep the report explicitly blocked where real speech input or administrator-only read access was unavailable."
     ],
     "zh": [
-      "向版本化 Project 回退文档追加当日报告，由运行时文档对账器合并展示且不覆盖历史报告。",
+      "把逐语实测数据写入权威运行时 Project 记录直接读取的部署清单。",
       "只使用匿名学习者键与非敏感正式站证据。",
       "真实语音输入或管理员只读权限不可用时，报告明确保持受阻。"
     ]
@@ -39,12 +39,22 @@
     "en": [
       "Sentence and QA contracts pass for 36 course banks, 120 sentences per bank, and ten unique daily Listening and Writing items.",
       "The August 21 route preflight passed all 16 anonymous production route checks.",
-      "Real signed-in Chrome evidence covers four target languages, five Course skills, SmartCard, Everyday Speaking navigation, server quiz scores, persisted learning logs, and a clean console."
+      "English: 1 minute planned and 7 learning-log minutes measured; speaking deep focus; five Course skills, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
+      "Japanese: 5 minutes planned and 20 learning-log minutes measured; writing deep focus with two extra checked questions; Course, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
+      "Spanish: 2 minutes planned and 20 learning-log minutes measured; vocabulary deep focus; Course, extra vocabulary feedback, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
+      "Italian: 5 minutes planned and 21 learning-log minutes measured; vocabulary deep focus; Course, extra vocabulary feedback, SmartCard, and Everyday Speaking playback/navigation completed; persisted server quiz 100/100; real microphone scoring blocked.",
+      "Writing and Listening displayed checked correct-or-incorrect feedback and advanced their visible counters in every language; no browser console errors or warnings were observed.",
+      "No payment, referral, certificate, challenge, leaderboard, or completed SmartCard claim flow was entered. Database-level ledger verification remains blocked because the run used exactly the designated learner and no administrator identity."
     ],
     "zh": [
       "句子与测试合同通过：36 个课程题库、每库 120 句，Listening 与 Writing 每日各 10 道唯一题。",
       "8 月 21 日匿名正式站 route preflight 的 16 项检查全部通过。",
-      "真实登录 Chrome 证据覆盖四种目标语言、课程五技能、SmartCard、生活口语导航、服务器测验分数、持久化学习日志及无错误控制台。"
+      "英语：计划 1 分钟、学习日志计量 7 分钟；深度技能为口语；课程五技能、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
+      "日语：计划 5 分钟、学习日志计量 20 分钟；深度技能为写作并额外检查两题；课程、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
+      "西班牙语：计划 2 分钟、学习日志计量 20 分钟；深度技能为词汇；课程、额外词汇反馈、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
+      "意大利语：计划 5 分钟、学习日志计量 21 分钟；深度技能为词汇；课程、额外词汇反馈、SmartCard 与生活口语播放/导航完成；持久化服务器测验 100/100；真实麦克风评分受阻。",
+      "四语写作与听力均显示已检查的正确或错误反馈，并推进可见题号；浏览器控制台未发现错误或警告。",
+      "未进入支付、推荐、证书、挑战、排行榜或完成整轮 SmartCard 领取流程。因本轮只使用指定学习者且未使用管理员身份，数据库级账本复核保持受阻。"
     ]
   },
   "deferred": {
