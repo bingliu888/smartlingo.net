@@ -108,6 +108,8 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
   const sprintClient = readFileSync(new URL("../components/DailySprint.tsx", import.meta.url), "utf8");
   assert.match(sprintPage, /query\.source==="play"/);
+  assert.match(sprintPage, /isPublicBeginnerSprintClassId\(classId\)/);
+  assert.match(sprintPage, /query\.source==="play"\|\|isPublicBeginnerSprintClassId\(classId\)/);
   assert.match(sprintPage, /publicPlay=\{publicPlay\}/);
   assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
   assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);

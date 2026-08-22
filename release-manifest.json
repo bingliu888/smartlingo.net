@@ -1,54 +1,50 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-home-daily-sprint-unified-picker-v2",
+  "releaseId": "smartlingo-anonymous-daily-sprint-access-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Unify every Home and Play Today’s Sprint picker", "zh": "统一主页与 Play 今日速成选择弹窗" },
+  "title": { "en": "Keep Beginner Today’s Sprint open to anonymous learners", "zh": "确保匿名学习者可直接使用初级今日速成" },
   "purpose": {
-    "en": "Make the Home Learn through Play card open the same complete Today’s Sprint picker as the Home hero and Play page.",
-    "zh": "让主页边玩边学卡片与主页顶部及 Play 页使用同一个完整的今日速成选择弹窗。"
+    "en": "Prevent private-mode and signed-out learners from being redirected to sign-in when starting an official Beginner Today’s Sprint.",
+    "zh": "防止私密模式及未登录学习者开始官方初级今日速成时被错误跳转到登录页。"
   },
   "features": {
     "en": [
-      "Open the twelve-language and four-duration picker directly from the Home Today’s Sprint card.",
-      "Keep ten minutes selected by default and allow anonymous Beginner Sprint learning.",
-      "Preserve the remaining Home game cards and their existing two-step language flow.",
-      "Start public Beginner Sprints against the actual Basic course tier used by all twelve seeded courses."
+      "Treat each of the twelve controlled official Basic Sprint routes as a public learning experience.",
+      "Allow anonymous learners to start even if a client transition does not preserve the source query parameter.",
+      "Keep non-Basic and non-official Sprint routes protected by sign-in and course access."
     ],
     "zh": [
-      "从主页今日速成卡片直接打开十二种语言与四种时长选择弹窗。",
-      "默认选择十分钟，并继续支持匿名初级今日速成学习。",
-      "保留主页其他游戏卡片现有的两步语言选择流程。",
-      "按十二种预置课程实际使用的 Basic 套餐层级启动公开初级今日速成。"
+      "将十二种受控官方 Basic 今日速成路径作为公开学习体验。",
+      "即使客户端跳转未保留来源参数，匿名学习者仍可直接开始。",
+      "非 Basic 及非官方今日速成路径继续要求登录与课程权限。"
     ]
   },
   "affected": {
-    "en": ["Home Learn through Play section", "Home hero Today’s task", "Play page Today’s Sprint", "Administrator Project report"],
-    "zh": ["主页边玩边学区域", "主页顶部今日任务", "Play 页今日速成", "管理员 Project 报告"]
+    "en": ["Anonymous Today’s Sprint entry", "Twelve official Beginner courses", "Private-mode browser flow", "Administrator Project report"],
+    "zh": ["匿名今日速成入口", "十二种官方初级课程", "浏览器私密模式流程", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Reuse PlayDailySprintPicker for the Home carousel Today’s Sprint tile.",
-      "Remove the obsolete Sprint branch from the Home inline language-link builder.",
-      "Match public Sprint access by package_tier=basic instead of the human-facing A1 level label.",
-      "Add regression coverage for both the shared picker and the public course-access query."
+      "Derive public page access from the strict official Beginner course-ID allowlist as well as the source parameter.",
+      "Pass the resulting public access state to the Sprint API so anonymous runs remain non-persistent.",
+      "Add regression coverage for query-independent official Beginner access."
     ],
     "zh": [
-      "主页轮播今日速成卡片复用 PlayDailySprintPicker。",
-      "移除主页内嵌语言链接生成器中已废弃的今日速成分支。",
-      "公开今日速成按 package_tier=basic 匹配，不再错误匹配课程显示等级 A1。",
-      "为共享弹窗与公开课程访问查询同时增加回归测试。"
+      "除来源参数外，页面还使用严格的官方初级课程 ID 白名单判定公开访问。",
+      "将公开访问状态传给今日速成 API，使匿名学习结果保持不写入数据库。",
+      "增加不依赖来源参数的官方初级访问回归测试。"
     ]
   },
   "validation": {
     "en": [
       "Run the Daily Sprint contract tests and full repository release gate.",
-      "Verify production from both the Home carousel card and Play page card in Chrome.",
-      "Confirm all twelve languages, 5/10/15/20 minutes, default ten minutes, and the Start action are visible."
+      "Verify the production flow in a signed-out Chrome session from picker through the first learning round.",
+      "Verify direct Basic Sprint access without a source query and confirm protected non-Basic access still redirects."
     ],
     "zh": [
       "执行今日速成契约测试与全仓发布门禁。",
-      "使用 Chrome 从主页轮播卡片和 Play 页卡片分别复测生产环境。",
-      "确认十二种语言、5/10/15/20 分钟、默认十分钟及开始按钮全部可见。"
+      "在未登录 Chrome 会话中从选择弹窗测试到首个学习回合。",
+      "测试不带来源参数的 Basic 今日速成可进入，并确认非 Basic 路径仍会跳转登录。"
     ]
   },
   "deferred": {
