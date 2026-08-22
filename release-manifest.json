@@ -8,16 +8,16 @@
     "zh": "在学习者本地午夜后恢复全新的服务器判分五技能练习和每日测验，同时保留未完成的计时课程检查点。"
   },
   "features": {
-    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Discard quiz answers restored from an earlier local date before hydration or submission.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
-    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "在恢复或提交前丢弃来自较早本地日期的测验答案。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
+    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Discard quiz answers restored from an earlier local date before hydration or submission.", "Validate quiz practice dates independently from retained checkpoint dates.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
+    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "在恢复或提交前丢弃来自较早本地日期的测验答案。", "分别校验测验练习日期与保留的检查点日期。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
   },
   "affected": {
     "en": ["Signed-in Beginner course learning workspace", "Daily five-skill practice", "Daily vocabulary quiz and score log", "Cross-device course-day draft synchronization", "Project release report"],
     "zh": ["已登录初级课程学习工作区", "每日五技能练习", "每日词汇测验与成绩日志", "跨设备课程日草稿同步", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Separate the current practice date from the authoritative checkpoint date in the learning API.", "Use the practice date for task status, sentence rounds, quiz questions, quiz attempts, and quiz images.", "Filter checkpoint-restored quiz answers against the current server-assigned question identifiers.", "Use the checkpoint date only for checkpoint scope validation and persistence."],
-    "zh": ["在学习 API 中拆分当前练习日期与权威检查点日期。", "任务状态、组句轮次、测验题目、测验记录和测验图片统一使用练习日期。", "根据服务器当前分配的题目标识过滤从检查点恢复的测验答案。", "仅在检查点范围校验和持久化中使用检查点日期。"]
+    "en": ["Separate the current practice date from the authoritative checkpoint date in the learning API.", "Use the practice date for task status, sentence rounds, quiz questions, quiz attempts, and quiz images.", "Filter checkpoint-restored quiz answers against the current server-assigned question identifiers.", "Persist both practice and checkpoint dates in quiz receipts so cross-midnight retries remain verifiable.", "Use the checkpoint date only for checkpoint scope validation and persistence."],
+    "zh": ["在学习 API 中拆分当前练习日期与权威检查点日期。", "任务状态、组句轮次、测验题目、测验记录和测验图片统一使用练习日期。", "根据服务器当前分配的题目标识过滤从检查点恢复的测验答案。", "在测验回执中同时保存练习日期与检查点日期，使跨午夜重试仍可验证。", "仅在检查点范围校验和持久化中使用检查点日期。"]
   },
   "validation": {
     "en": ["Run regressions proving a new local date produces fresh practice, retains the prior checkpoint, and excludes prior-date quiz answers.", "Run the sentence catalog, placement-learning, and 21-day QA contract suites.", "Run the full repository test, build, artifact, migration, sensitive-data, and shared-site policy gates.", "After deployment, repeat the failed signed-in Chrome course and quiz steps and verify fresh tasks, feedback, score, and the 2026-08-22 learning log."],

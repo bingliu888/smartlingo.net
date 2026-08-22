@@ -218,6 +218,7 @@ type DailyQuizReceiptEvidence = {
   activityId: string;
   checkpointId: string;
   sessionDate: string;
+  checkpointDate: string | null;
   contentVersion: string;
   uiLanguage: SmartLingoInterfaceLanguage;
   vocabularyDay: number;
@@ -425,6 +426,7 @@ function quizReceiptEvidence(value: string): DailyQuizReceiptEvidence | null {
   const checkpointId = safeIdentifier(parsed.checkpointId, 100);
   const contentVersion = safeIdentifier(parsed.contentVersion, 48);
   const sessionDate = validDate(parsed.sessionDate) ? parsed.sessionDate : null;
+  const checkpointDate = validDate(parsed.checkpointDate) ? parsed.checkpointDate : null;
   const uiLanguage = parsed.uiLanguage === "zh" || parsed.uiLanguage === "en" ? parsed.uiLanguage : null;
   const vocabularyDay = Number(parsed.vocabularyDay);
   const targetLanguage = typeof parsed.targetLanguage === "string" && isLearningLanguage(parsed.targetLanguage)
@@ -441,6 +443,7 @@ function quizReceiptEvidence(value: string): DailyQuizReceiptEvidence | null {
         activityId,
         checkpointId,
         sessionDate,
+        checkpointDate,
         contentVersion,
         uiLanguage,
         vocabularyDay,
@@ -1743,7 +1746,8 @@ export async function POST(
       if (receipt.skill !== "quiz" || receipt.userId !== auth.user.id || receipt.classId !== auth.classId
         || !evidence || receipt.checkpointId !== evidence.checkpointId
         || checkpoint?.userId !== auth.user.id || checkpoint.classId !== auth.classId
-        || checkpoint.localDate !== evidence.sessionDate || checkpoint.contentVersion !== evidence.contentVersion
+        || (evidence.checkpointDate !== null && checkpoint.localDate !== evidence.checkpointDate)
+        || checkpoint.contentVersion !== evidence.contentVersion
         || receipt.taskId !== `daily-quiz:${evidence.sessionDate}`
         || receipt.contentVersion !== evidence.contentVersion
         || evidence.uiLanguage !== uiLanguage || evidence.targetLanguage !== auth.access.targetLanguage
@@ -1910,6 +1914,7 @@ export async function POST(
       activityId,
       checkpointId: checkpoint.id,
       sessionDate,
+      checkpointDate: state.dailySessionPlan.date,
       contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
       uiLanguage,
       vocabularyDay: day,
