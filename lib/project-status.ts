@@ -317,6 +317,52 @@ export const projectReports: ProjectReport[] = [
       en: "Retry four-language Everyday Speaking scoring when Chrome can provide real microphone input, then have an authorized administrator read-only verify the learner's payment, referral, certificate, course-credit, challenge-reward, and leaderboard ledgers.",
     },
   },
+  {
+    date: "2026-08-22",
+    title: {
+      zh: "21 天真实学习验收第 2 天 · 语音与积分账本受阻",
+      en: "21-day real-learning acceptance, day 2 · speech and credit-ledger blockers",
+    },
+    beta: {
+      zh: "查看四语课程、游戏与生活口语证据",
+      en: "Review four-language Course, Play, and Everyday evidence",
+    },
+    completed: 32,
+    summary: {
+      zh: "匿名测试学习者 qa-525acd3a 在正式站中文界面完成英语、日语、西班牙语和意大利语的课程五技能、五技能今日速成、十二张智慧卡练习与生活口语验收。四语均超过当天计划的实测有效学习分钟，服务器测验均为 100/100，8 月 22 日五技能日志均已持久化。真实语音输入不可用，且完整智慧卡练习产生了课程积分，违反本次验收的零课程积分账本条件，因此本日不判定为全量通过。",
+      en: "The anonymized learner qa-525acd3a completed all five Course skills, a five-skill Today's Sprint, all twelve SmartCard Practice items, and Everyday Speaking for English, Japanese, Spanish, and Italian on the production Chinese interface. Every language exceeded its measured active-learning target, each server quiz scored 100/100, and all five skill logs persisted on August 22. Real speech input was unavailable, and completing SmartCard Practice created course credit, violating this acceptance run's zero-course-credit-ledger condition, so the day is not reported as a full pass.",
+    },
+    validation: {
+      zh: [
+        "正式地址为 https://smartlingo.net；太平洋日期 2026-08-22；匿名测试键 qa-525acd3a；当天 GitHub 路由预检 16/16 成功，且仅作为匿名路由证据",
+        "英语：计划 4 分钟，实测有效学习 7.496 分钟，深度技能为词汇；课程五技能完成，今日练习分 97/100，服务器测验 100/100；8 月 22 日日志为词汇 2 次/6 分钟、阅读 1/2、写作 1/3、听力 1/2、对话 1/2；今日速成 80/100，智慧卡 12/12 完成，生活口语播放与麦克风入口可见",
+        "日语：计划 4 分钟，实测有效学习 5.297 分钟，深度技能为听力；课程五技能完成，今日练习分 92/100，服务器测验 100/100；8 月 22 日日志为词汇 2 次/4 分钟、阅读 1/2、写作 1/3、听力 1/2、对话 1/2；今日速成 80/100，智慧卡 12/12 完成，生活口语保持日语并推进幻灯片",
+        "西班牙语：计划 3 分钟，实测有效学习 3.689 分钟，深度技能为阅读；课程五技能完成，今日练习分 90/100，服务器测验 100/100；8 月 22 日日志为词汇 2 次/4 分钟、阅读 1/2、写作 1/3、听力 1/2、对话 1/2；今日速成 80/100，智慧卡 12/12 完成，生活口语保持西班牙语",
+        "意大利语：计划 3 分钟，实测有效学习 3.365 分钟，深度技能为阅读；课程五技能完成，今日练习分 88/100，服务器测验 100/100；8 月 22 日日志为词汇 2 次/4 分钟、阅读 1/2、写作 1/3、听力 1/2、对话 1/2；今日速成 80/100，智慧卡 12/12 完成，生活口语保持意大利语",
+        "四语今日速成都完成词汇、阅读、听力、写作和口语步骤；无真实麦克风语音输入时口语为 0，最终均显示 80/100。语音入口和设备聆听状态可见，但不能产生真实语音评分，因此语音验收标记为受阻而不是通过",
+        "完整测试发现并修复三个跨午夜缺陷：当天练习错误沿用旧检查点日期、旧日期测验答案污染当天请求、测验回执混用练习与检查点的日期及内容版本。最终修复提交 740971b4310e4f0f21f4909ff4935baea86fce07，Cloudflare 部署 32568803861 成功；全量构建与 335 项测试通过",
+        "未进入支付、推荐、证书、挑战或排行榜流程；但四语完整智慧卡练习显示课程积分已保存或达到当日领取上限，无法确认零课程积分账本。任务禁止直接编辑学习或积分记录，因此该条件保持失败；管理员数据库级只读复核也保持受阻",
+      ],
+      en: [
+        "Production URL: https://smartlingo.net; Pacific date: 2026-08-22; anonymized learner key: qa-525acd3a; the day's GitHub route preflight passed 16/16 and was treated only as anonymous route evidence",
+        "English: 4 minutes planned, 7.496 measured active minutes, vocabulary deep focus; all five Course skills completed, today's practice score 97/100, server quiz 100/100; the August 22 log shows vocabulary 2/6 minutes, reading 1/2, writing 1/3, listening 1/2, and dialogue 1/2; Today's Sprint 80/100, SmartCard 12/12, and Everyday playback plus microphone entry visible",
+        "Japanese: 4 minutes planned, 5.297 measured active minutes, listening deep focus; all five Course skills completed, today's practice score 92/100, server quiz 100/100; the August 22 log shows vocabulary 2/4 minutes, reading 1/2, writing 1/3, listening 1/2, and dialogue 1/2; Today's Sprint 80/100, SmartCard 12/12, and Everyday retained Japanese while advancing slides",
+        "Spanish: 3 minutes planned, 3.689 measured active minutes, reading deep focus; all five Course skills completed, today's practice score 90/100, server quiz 100/100; the August 22 log shows vocabulary 2/4 minutes, reading 1/2, writing 1/3, listening 1/2, and dialogue 1/2; Today's Sprint 80/100, SmartCard 12/12, and Everyday retained Spanish",
+        "Italian: 3 minutes planned, 3.365 measured active minutes, reading deep focus; all five Course skills completed, today's practice score 88/100, server quiz 100/100; the August 22 log shows vocabulary 2/4 minutes, reading 1/2, writing 1/3, listening 1/2, and dialogue 1/2; Today's Sprint 80/100, SmartCard 12/12, and Everyday retained Italian",
+        "Every Today's Sprint completed vocabulary, reading, listening, writing, and speaking; without real microphone speech, speaking scored 0 and every final score was 80/100. The speech entry and device-listening state were visible, but no real speech score could be produced, so speech acceptance is blocked rather than passed",
+        "The run found and fixed three cross-midnight defects: current practice inherited the old checkpoint date, prior-date quiz answers polluted current requests, and quiz receipts conflated practice and checkpoint dates and content versions. Final fix commit 740971b4310e4f0f21f4909ff4935baea86fce07 deployed successfully in Cloudflare run 32568803861; the full build and all 335 tests passed",
+        "No payment, referral, certificate, challenge, or leaderboard flow was entered; however, completing all four SmartCard practices displayed saved course credit or the daily claim cap, so a zero course-credit ledger cannot be confirmed. The task forbids direct learning or credit record edits, leaving that condition failed; administrator-level read-only ledger verification is also blocked",
+      ],
+    },
+    rollback: {
+      zh: "本报告只增加真实验收证据。学习与测验修复可回滚至上一成功边缘运行版本，但已持久化的合法学习活动与积分记录不得由本任务直接改写。",
+      en: "This report adds only real acceptance evidence. The learning and quiz fixes can roll back to the previous successful Worker, but this task must not directly rewrite persisted legitimate learning activity or credit records.",
+    },
+    next: {
+      zh: "在可提供真实语音输入的 Chrome 环境重试四语口语评分；由授权管理员只读复核测试学习者的支付、推荐、证书、课程积分、挑战奖励与排行榜账本，并决定是否为自动化验收账户禁用可抵扣积分领取。",
+      en: "Retry four-language speech scoring in Chrome with real audio input; have an authorized administrator read-only verify payment, referral, certificate, course-credit, challenge-reward, and leaderboard ledgers, then decide whether redeemable credit claims should be disabled for automated acceptance accounts.",
+    },
+  },
 ];
 
 export const taskById = (id: string) => projectTasks.find(task => task.id === id);

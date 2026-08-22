@@ -1,27 +1,27 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-quiz-receipt-scope-separation-2026-08-22",
+  "releaseId": "smartlingo-qa-day-2-report-2026-08-22",
   "site": "smartlingo.net",
-  "title": { "en": "Daily practice resets without losing course-day progress", "zh": "每日练习跨日刷新且保留课程日进度" },
+  "title": { "en": "Day-2 four-language production QA report", "zh": "第 2 天四语正式站验收报告" },
   "purpose": {
-    "en": "Restore a fresh server-graded five-skill practice set and daily quiz after learner-local midnight while preserving an unfinished timed course checkpoint.",
-    "zh": "在学习者本地午夜后恢复全新的服务器判分五技能练习和每日测验，同时保留未完成的计时课程检查点。"
+    "en": "Publish a bilingual, evidence-based report for the August 22 four-language production acceptance run without claiming blocked speech or credit-ledger checks as passed.",
+    "zh": "发布 8 月 22 日四语正式站验收的双语证据报告，并且不把受阻的语音及积分账本检查误报为通过。"
   },
   "features": {
-    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Discard quiz answers restored from an earlier local date before hydration or submission.", "Validate quiz practice dates and content versions independently from retained checkpoint scope.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
-    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "在恢复或提交前丢弃来自较早本地日期的测验答案。", "分别校验测验练习日期及内容版本与保留的检查点范围。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
+    "en": ["Record measured active minutes, deep-focus skills, daily logs, practice scores, and server quiz scores for English, Japanese, Spanish, and Italian.", "Record Course, Today's Sprint, SmartCard Practice, and Everyday Speaking coverage.", "Document the three deployed cross-midnight fixes exercised during production acceptance.", "Mark real microphone scoring, zero-course-credit confirmation, and administrator ledger verification as blocked or failed where evidence is unavailable."],
+    "zh": ["记录英语、日语、西班牙语和意大利语的实测有效分钟、深度技能、当日日志、练习分数与服务器测验成绩。", "记录课程、今日速成、智慧卡练习与生活口语的覆盖证据。", "记录正式站验收过程中实际触发并已发布的三个跨午夜修复。", "在缺少证据时，把真实麦克风评分、零课程积分确认及管理员账本复核明确标记为受阻或失败。"]
   },
   "affected": {
     "en": ["Signed-in Beginner course learning workspace", "Daily five-skill practice", "Daily vocabulary quiz and score log", "Cross-device course-day draft synchronization", "Project release report"],
     "zh": ["已登录初级课程学习工作区", "每日五技能练习", "每日词汇测验与成绩日志", "跨设备课程日草稿同步", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Separate the current practice date from the authoritative checkpoint date in the learning API.", "Use the practice date for task status, sentence rounds, quiz questions, quiz attempts, and quiz images.", "Filter checkpoint-restored quiz answers against the current server-assigned question identifiers.", "Persist both practice and checkpoint dates in quiz receipts so cross-midnight retries remain verifiable.", "Use the checkpoint date only for checkpoint scope validation and persistence."],
-    "zh": ["在学习 API 中拆分当前练习日期与权威检查点日期。", "任务状态、组句轮次、测验题目、测验记录和测验图片统一使用练习日期。", "根据服务器当前分配的题目标识过滤从检查点恢复的测验答案。", "在测验回执中同时保存练习日期与检查点日期，使跨午夜重试仍可验证。", "仅在检查点范围校验和持久化中使用检查点日期。"]
+    "en": ["Add the August 22 bilingual Project report with anonymized learner evidence.", "Preserve the production learning and credit records exactly as observed.", "Publish no new learning, billing, referral, certificate, challenge, or leaderboard behavior in this release."],
+    "zh": ["新增 8 月 22 日双语 Project 报告并使用匿名学习者证据。", "原样保留正式站已观察到的学习与积分记录。", "本次发布不新增学习、支付、推荐、证书、挑战或排行榜行为。"]
   },
   "validation": {
-    "en": ["Run regressions proving a new local date produces fresh practice, retains the prior checkpoint, and excludes prior-date quiz answers.", "Run the sentence catalog, placement-learning, and 21-day QA contract suites.", "Run the full repository test, build, artifact, migration, sensitive-data, and shared-site policy gates.", "After deployment, repeat the failed signed-in Chrome course and quiz steps and verify fresh tasks, feedback, score, and the 2026-08-22 learning log."],
-    "zh": ["运行回归测试，证明新本地日期会产生新练习、保留旧检查点并排除旧日期测验答案。", "运行句子目录、分级学习及 21 天 QA 合同测试。", "运行完整仓库测试、构建、产物、迁移、敏感信息及共享站点政策门禁。", "发布后在已登录 Chrome 中重测失败的课程与测验步骤，并验证新题、反馈、成绩及 2026-08-22 学习日志。"]
+    "en": ["Run the complete build and all 335 repository tests.", "Run Chinese-copy, roadmap, 21-day QA, release-manifest, and shared-site policy gates.", "After deployment, verify both Chinese and English August 22 Project report routes in the signed-in production Chrome session."],
+    "zh": ["运行完整构建与全部 335 项仓库测试。", "运行中文文案、路线图、21 天验收、发布清单及共享站点政策门禁。", "发布后在已登录的正式站 Chrome 会话中核验 8 月 22 日 Project 报告的中英文路由。"]
   },
   "deferred": {
     "en": ["Microphone-dependent speech scoring remains subject to Chrome device permission and will be reported as blocked if unavailable during production acceptance."],
