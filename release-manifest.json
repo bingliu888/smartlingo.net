@@ -1,34 +1,34 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-qa-day-2-report-2026-08-22",
+  "releaseId": "smartlingo-shared-wordmark-footer-2026-08-22",
   "site": "smartlingo.net",
-  "title": { "en": "Day-2 four-language production QA report", "zh": "第 2 天四语正式站验收报告" },
+  "title": { "en": "Shared responsive wordmark and clean footer", "zh": "页眉页脚共用响应式品牌字标并清理页脚" },
   "purpose": {
-    "en": "Publish a bilingual, evidence-based report for the August 22 four-language production acceptance run without claiming blocked speech or credit-ledger checks as passed.",
-    "zh": "发布 8 月 22 日四语正式站验收的双语证据报告，并且不把受阻的语音及积分账本检查误报为通过。"
+    "en": "Keep the SmartLingo brand readable when desktop navigation uses two rows, reuse the same segmented wordmark in the footer, and remove the redundant footer language switcher.",
+    "zh": "当桌面导航使用两行时保持 SmartLingo 品牌清晰可读，让页脚复用同一分段字标，并移除重复的页脚语言切换。"
   },
   "features": {
-    "en": ["Record measured active minutes, deep-focus skills, daily logs, practice scores, and server quiz scores for English, Japanese, Spanish, and Italian.", "Record Course, Today's Sprint, SmartCard Practice, and Everyday Speaking coverage.", "Document the three deployed cross-midnight fixes exercised during production acceptance.", "Mark real microphone scoring, zero-course-credit confirmation, and administrator ledger verification as blocked or failed where evidence is unavailable."],
-    "zh": ["记录英语、日语、西班牙语和意大利语的实测有效分钟、深度技能、当日日志、练习分数与服务器测验成绩。", "记录课程、今日速成、智慧卡练习与生活口语的覆盖证据。", "记录正式站验收过程中实际触发并已发布的三个跨午夜修复。", "在缺少证据时，把真实麦克风评分、零课程积分确认及管理员账本复核明确标记为受阻或失败。"]
+    "en": ["Wrap the brand only between Smart and Lingo in the two-row desktop range.", "Reuse one semantic brand component in the header and footer.", "Keep language switching in the header and hamburger menu only."],
+    "zh": ["在桌面两行范围内只允许在 Smart 与 Lingo 之间换行。", "页眉与页脚复用同一个语义品牌组件。", "语言切换仅保留在页眉和汉堡菜单中。"]
   },
   "affected": {
-    "en": ["Signed-in Beginner course learning workspace", "Daily five-skill practice", "Daily vocabulary quiz and score log", "Cross-device course-day draft synchronization", "Project release report"],
-    "zh": ["已登录初级课程学习工作区", "每日五技能练习", "每日词汇测验与成绩日志", "跨设备课程日草稿同步", "Project 发布报告"]
+    "en": ["Global header", "Global footer", "Authentication brand surface", "Project release report"],
+    "zh": ["全局页眉", "全局页脚", "登录品牌界面", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Add the August 22 bilingual Project report with anonymized learner evidence.", "Preserve the production learning and credit records exactly as observed.", "Publish no new learning, billing, referral, certificate, challenge, or leaderboard behavior in this release."],
-    "zh": ["新增 8 月 22 日双语 Project 报告并使用匿名学习者证据。", "原样保留正式站已观察到的学习与积分记录。", "本次发布不新增学习、支付、推荐、证书、挑战或排行榜行为。"]
+    "en": ["Add a reusable segmented SmartLingo wordmark.", "Use the same mark, colors, and structure in the footer.", "Remove the footer language selector and repeated product links; keep About, Privacy, Terms, and Project in that order."],
+    "zh": ["新增可复用的分段 SmartLingo 字标。", "页脚使用相同图标、颜色和结构。", "移除页脚语言选择器与重复产品链接，并按顺序只保留 About、Privacy、Terms、Project。"]
   },
   "validation": {
-    "en": ["Run the complete build and all 335 repository tests.", "Run Chinese-copy, roadmap, 21-day QA, release-manifest, and shared-site policy gates.", "After deployment, verify both Chinese and English August 22 Project report routes in the signed-in production Chrome session."],
-    "zh": ["运行完整构建与全部 335 项仓库测试。", "运行中文文案、路线图、21 天验收、发布清单及共享站点政策门禁。", "发布后在已登录的正式站 Chrome 会话中核验 8 月 22 日 Project 报告的中英文路由。"]
+    "en": ["Run the complete repository test suite, type check, production build, and shared-site policy gates.", "Verify the segmented two-line header wordmark at the affected desktop width in production Chrome.", "Verify the footer reuses the header wordmark and contains no language switcher."],
+    "zh": ["运行完整仓库测试、类型检查、正式构建及共享站点政策门禁。", "在正式站 Chrome 的受影响桌面宽度核验分段双行页眉字标。", "核验页脚复用页眉字标且不再包含语言切换。"]
   },
   "deferred": {
-    "en": ["Microphone-dependent speech scoring remains subject to Chrome device permission and will be reported as blocked if unavailable during production acceptance."],
-    "zh": ["依赖麦克风的口语评分仍取决于 Chrome 设备权限；若生产验收时不可用，将如实记录为阻断。"]
+    "en": ["No learning, billing, referral, certificate, challenge, or leaderboard behavior changes in this release."],
+    "zh": ["本次发布不改变学习、支付、推荐、证书、挑战或排行榜行为。"]
   },
   "siteAdaptations": {
-    "en": ["SmartLingo retains its 60-minute resumable course-day timer while independently rotating daily acceptance exercises at learner-local midnight."],
-    "zh": ["SmartLingo 保留可恢复的 60 分钟课程日计时器，同时在学习者本地午夜独立轮换每日验收练习。"]
+    "en": ["SmartLingo keeps its green Lingo segment and S icon while adopting the global wordmark and footer-language rules."],
+    "zh": ["SmartLingo 在采用全局字标与页脚语言规则时保留绿色 Lingo 分段和 S 图标。"]
   }
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { HeaderAccount } from "./HeaderAccount";
 import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
+import { SmartLingoWordmark } from "./SmartLingoWordmark";
 import { interfaceCopyFor, type InterfaceLanguage } from "../lib/interface-locale";
 
 function GlobalLinks({ lang }: { lang: InterfaceLanguage }) {
@@ -29,8 +30,7 @@ export function SiteHeader({ lang }: { lang: InterfaceLanguage }) {
   return (
     <header className="site-header ai-cert-header">
       <Link className="brand ai-cert-brand" href={`/${lang}`} aria-label={t.home}>
-        <span className="lingo-brand-mark" aria-hidden="true">S</span>
-        <span>Smart<em>Lingo</em></span>
+        <SmartLingoWordmark/>
       </Link>
       <nav className="desktop-nav" aria-label={t.primaryNav}>
         <GlobalLinks lang={lang}/>

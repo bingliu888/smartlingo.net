@@ -5,22 +5,30 @@ import test from "node:test";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("SmartLingo branding exposes the four primary learning choices", async () => {
-  const [header, footer, layout, languageLayout, locale] = await Promise.all([
+  const [header, footer, wordmark, layout, languageLayout, locale, css] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../components/SiteFooter.tsx"),
+    read("../components/SmartLingoWordmark.tsx"),
     read("../app/layout.tsx"),
     read("../app/[lang]/layout.tsx"),
     read("../lib/interface-locale.ts"),
+    read("../app/globals.css"),
   ]);
 
-  assert.match(header, /Smart<em>Lingo<\/em>/);
+  assert.match(header, /<SmartLingoWordmark\/>/);
+  assert.match(footer, /<SmartLingoWordmark\/>/);
+  assert.match(wordmark, /<span>Smart<\/span><em>Lingo<\/em>/);
+  assert.match(css, /@media\(min-width:1101px\) and \(max-width:1320px\)\{\.smartlingo-wordmark\{display:grid/);
   for (const path of ["play/everyday", "programs", "play", "assistant"]) assert.match(header, new RegExp(`/${path}`));
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(locale, new RegExp(label));
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
-  for (const path of ["programs", "assistant", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));
+  for (const path of ["about", "privacy", "terms", "project"]) assert.match(footer, new RegExp(`/${path}`));
+  assert.ok(footer.indexOf("/about") < footer.indexOf("/privacy") && footer.indexOf("/privacy") < footer.indexOf("/terms") && footer.indexOf("/terms") < footer.indexOf("/project"));
+  assert.doesNotMatch(footer, /\/programs|\/assistant/);
   assert.doesNotMatch(footer, /\/pricing/);
   assert.doesNotMatch(footer, /\/community/);
+  assert.doesNotMatch(footer, /LanguageLink|interface-language|language-menu/);
   assert.match(layout, /"smartlingo\.net"/);
   assert.match(layout, /smartlingo-language-community-1600\.png/);
   assert.match(layout, /<html lang="zh-CN"/);
