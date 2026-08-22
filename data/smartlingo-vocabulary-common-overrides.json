@@ -1,4 +1,22 @@
 [
+  {"language":"en","form":"away","meaningEn":"at a distance from a place; not here","meaningZh":"离开；在远处；不在这里"},
+  {"language":"en","form":"jordan","meaningEn":"the Jordan River in the Middle East","meaningZh":"约旦河"},
+  {"language":"en","form":"castle","meaningEn":"a large fortified building","meaningZh":"城堡"},
+  {"language":"en","form":"palace","meaningEn":"a large official home of a ruler","meaningZh":"宫殿；王宫"},
+
+  {"language":"zh","form":"蛋白","meaningEn":"protein; egg white","meaningZh":"蛋白质；蛋清"},
+
+  {"language":"ar","form":"هما","meaningEn":"they both; the two of them (dual subject pronoun)","meaningZh":"他们两人；她们两人（双数主语代词）"},
+  {"language":"ar","form":"ملكي","meaningEn":"royal","meaningZh":"王室的；皇家的"},
+
+  {"language":"de","form":"Ihrer","meaningEn":"yours (polite or formal)","meaningZh":"您的；你们的（敬语）"},
+  {"language":"de","form":"gestaltet","meaningEn":"designed; shaped","meaningZh":"设计的；塑造的"},
+  {"language":"de","form":"royal","meaningEn":"royal","meaningZh":"王室的；皇家的"},
+
+  {"language":"fr","form":"royal","meaningEn":"royal","meaningZh":"王室的；皇家的"},
+
+  {"language":"ru","form":"белок","meaningEn":"protein; egg white","meaningZh":"蛋白质；蛋清"},
+
   {"language":"es","form":"de","meaningEn":"of; from","meaningZh":"……的；从；来自"},
   {"language":"es","form":"la","meaningEn":"the (feminine singular); her; it","meaningZh":"定冠词（阴性单数）；她；它"},
   {"language":"es","form":"que","meaningEn":"that; which; who","meaningZh":"那；引导从句；哪个；谁"},

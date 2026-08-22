@@ -12,6 +12,8 @@ const correctionFiles = readdirSync(new URL("../drizzle/", import.meta.url))
   .filter(name => /^014[4-7]_english_vocabulary_common_senses\.sql$/.test(name))
   .sort();
 const japaneseCorrectionFile = "0148_japanese_beginner_common_senses.sql";
+const englishAwayCorrectionFile = "0153_english_beginner_away_gloss.sql";
+const learnerQualitySweepFile = "0154_vocabulary_learner_quality_sweep.sql";
 
 test("the release contains one deterministic 4,000-item catalog migration per language", () => {
   assert.equal(catalogFiles.length, 12);
@@ -44,9 +46,11 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     "0127_clean_vocabulary_meanings.sql",
     "0131_multilingual_pronunciation_guides.sql",
     ...catalogFiles,
+    "0043_beginner_gloss_quality.sql",
     ...correctionFiles,
     japaneseCorrectionFile,
-    "0043_beginner_gloss_quality.sql",
+    englishAwayCorrectionFile,
+    learnerQualitySweepFile,
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
@@ -82,7 +86,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
   assert.equal(incomplete.count, 0);
 
   const generated = database.prepare(`SELECT COUNT(*) AS total,
-    SUM(review_method LIKE '%automated-linguistic-validation' OR review_method LIKE 'jmdict-applicable-common-sense%') AS truthfullyLabeled,
+    SUM(review_method LIKE '%automated-linguistic-validation' OR review_method LIKE 'jmdict-applicable-common-sense%' OR review_method LIKE 'wordnet-common-a1-sense%' OR review_method='curated-learner-quality-sweep') AS truthfullyLabeled,
     SUM(lexical_source_license NOT IN ('CC BY 4.0','CC BY-SA 4.0','WordNet 3.0 license; OMW 1.4 data license')) AS invalidLicense
     FROM smartlingo_vocabulary_items WHERE sequence>=29`).get();
   assert.deepEqual({ ...generated }, { total: 47664, truthfullyLabeled: 47664, invalidLicense: 0 });
@@ -93,6 +97,11 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     ["be", "是；存在；成为"], ["can", "能；可以"], ["come", "来；来到"],
     ["day", "一天；白天"], ["in", "在……里面；在……期间"], ["see", "看见；看到；明白"],
   ]);
+  assert.deepEqual({ ...database.prepare(`SELECT meaning_en AS meaningEn,meaning_zh AS meaningZh
+    FROM smartlingo_vocabulary_items WHERE target_language='en' AND lower(form)='away'`).get() }, {
+    meaningEn: "at a distance from a place; not here",
+    meaningZh: "离开；在远处；不在这里",
+  });
   assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
     WHERE target_language='en' AND review_status='published' AND (length(meaning_zh)>100 OR meaning_zh GLOB '*\\\\*')`).get().count, 0);
 

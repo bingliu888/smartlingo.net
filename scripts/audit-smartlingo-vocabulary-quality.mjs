@@ -57,7 +57,7 @@ function issueCodes(row) {
   if (en.length > 180) issues.push("en-too-long");
   if (hasRepeatedClause(en)) issues.push("en-repeated-clause");
   if (row.language !== "en" && /\b(?:(?:elative degree|comparative|superlative|plural|singular|inflection|conjugation|participle|alternative form|alternative spelling|romanization|transliteration|synonym|diminutive|noun of place) of|(?:attributive|non-reduplicated) form[^;,.]* of)\b/i.test(en)) issues.push("en-form-definition");
-  if (/[(（]\s*(?:obsolete|archaic|historical|vulgar|offensive|derogatory)\s*[)）]/i.test(en)) issues.push("en-disallowed-sense");
+  if (/(?:^|[;(]\s*)(?:ethnic\s+slur|obsolete|archaic|vulgar)\b|\b(?:is|now|formerly|considered)\s+(?:obsolete|archaic|vulgar|offensive|derogatory)\b|\b(?:offensive|derogatory)\s+(?:and\s+(?:offensive|derogatory)\s+)?(?:name|term|usage|word)\b/i.test(en)) issues.push("en-disallowed-sense");
   if (/[\\<>]|�|QQ|XXX/.test(en)) issues.push("en-corrupt-token");
   if (/\b(?:Classifier|English|Chinese|letter)\b/i.test(phonetic) || /[<>\\]|�/.test(phonetic)) issues.push("phonetic-corrupt-token");
   return [...new Set(issues)];
@@ -72,8 +72,10 @@ for (const name of [
   "0127_clean_vocabulary_meanings.sql",
   "0131_multilingual_pronunciation_guides.sql",
   ...catalogFiles,
-  ...afterCatalog,
   ...(process.argv.includes("--before-quality") ? [] : qualityCorrections),
+  ...afterCatalog,
+  "0153_english_beginner_away_gloss.sql",
+  "0154_vocabulary_learner_quality_sweep.sql",
 ]) database.exec(migration(name));
 
 const rows = database.prepare(`SELECT id,target_language AS language,level,sequence,form,

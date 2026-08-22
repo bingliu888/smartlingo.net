@@ -1,62 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-everyday-speaking-multilingual-mic-v2",
+  "releaseId": "smartlingo-vocabulary-learner-quality-sweep-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Reliable multilingual Everyday Speaking", "zh": "生活口语多语言跟读可靠性修复" },
+  "title": { "en": "Complete learner-first vocabulary quality sweep", "zh": "全量词库学习者优先质量复审" },
   "purpose": {
-    "en": "Prevent Safari and older iPad sessions from remaining stuck in Listening, align Everyday Speaking with the automatic SmartCard interaction, and provide a bounded multilingual pronunciation fallback.",
-    "zh": "防止 Safari 与旧 iPad 永久停在“正在听”，让生活口语与智慧卡一样自动完成示范、跟读和评分，并提供有时限的多语言发音兜底。"
+    "en": "Repair vocabulary defects discovered by a real learner walkthrough and prevent later catalog migrations from restoring unsuitable definitions.",
+    "zh": "修复真实学习者测试发现的词义问题，并防止后续词库迁移重新覆盖为不适合学习者的释义。"
   },
   "features": {
     "en": [
-      "Remove the persistent Score/Listening button; AI playback now opens the microphone and scores automatically when Repeat is on.",
-      "Use native browser speech recognition first while recording a short transient clip as a multilingual transcription fallback.",
-      "Force every listening attempt to finish after five seconds instead of waiting indefinitely for a missing Safari callback.",
-      "Retry an unclear phrase automatically up to three attempts and then advance; show a recovery action only when permission or analysis fails.",
-      "Validate language, scenario, slide, MIME type, and audio size server-side; never store audio or transcript."
+      "Replay and audit all 48,000 published vocabulary rows across twelve languages and three course levels.",
+      "Apply 112 forward-only learner-first corrections while preserving stable IDs, pronunciation data, and learner progress.",
+      "Replace obsolete, derogatory, overly technical, repeated, malformed, and mistranslated meanings with concise course-ready glosses.",
+      "Strengthen release gates for migration ordering, multilingual gold meanings, and unbounded obsolete or derogatory labels."
     ],
     "zh": [
-      "删除常驻的“跟读评分/正在听”按钮；打开“跟我读”时，AI 示范结束后自动开麦并评分。",
-      "优先使用浏览器原生语音识别，同时短暂录音作为多语言转写兜底。",
-      "每次聆听最多五秒，Safari 不返回结束事件时也不会无限等待。",
-      "未听准时最多自动重练三次后前进；仅在权限或分析失败时显示恢复按钮。",
-      "服务器严格校验语言、场景、幻灯片、音频类型和大小，录音与识别文字均不保存。"
+      "重放并审计十二种语言、三级课程的全部 48,000 个已发布词条。",
+      "以前向迁移修正 112 个词条，同时保留稳定 ID、发音数据和学习进度。",
+      "将过时、歧视性、过度技术化、重复、残缺或误译释义替换为简洁可学的释义。",
+      "强化迁移顺序、多语言标准词义以及过时或歧视性标签的发布门禁。"
     ]
   },
   "affected": {
-    "en": ["Everyday Speaking player", "Japanese and all twelve target languages", "Safari, Chrome, Edge, iPhone, and iPad microphone flow", "Administrator Project report"],
-    "zh": ["生活口语播放器", "日语及全部十二种目标语言", "Safari、Chrome、Edge、iPhone 与 iPad 麦克风流程", "管理员 Project 报告"]
+    "en": ["All twelve vocabulary catalogs", "Beginner, Intermediate, and Advanced courses", "Daily vocabulary practice and reports", "Administrator Project report"],
+    "zh": ["全部十二种语言词库", "初级、中级和高级课程", "每日词汇练习与报告", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Add the same getUserMedia, MediaRecorder, native recognition, and watchdog pattern proven by SmartCard practice.",
-      "Add a public bounded Everyday Speaking speech endpoint through the unified SmartLingo AI gateway.",
-      "Keep the global Repeat preference, slide controls, pause, and quit behavior unchanged."
+      "Add forward migrations 0153 and 0154 for the verified corrections.",
+      "Make the quality audit replay semantic corrections after bulk catalog repairs, matching production order.",
+      "Extend the reviewed multilingual meaning set and regression assertions."
     ],
     "zh": [
-      "采用智慧卡已验证的 getUserMedia、MediaRecorder、原生识别和超时看门狗组合。",
-      "通过 SmartLingo 统一 AI 网关增加受限的生活口语发音接口。",
-      "全局“跟我读”偏好、幻灯片前后控制、暂停和退出行为保持不变。"
+      "增加前向迁移 0153 与 0154，部署已复核的修正。",
+      "让质量审计按生产顺序在批量修复后重放语义修正。",
+      "扩充人工复核的多语言标准词义及回归断言。"
     ]
   },
   "validation": {
     "en": [
-      "Production build, TypeScript, sensitive-data scan, changed-file ESLint, and artifact validation pass.",
-      "The full repository suite passes 328/328 tests, including twelve languages by twelve scenarios and the new server fallback contract.",
-      "The only changed-file lint warning is the existing local scene image performance advisory; there are no lint errors."
+      "The deterministic replay contains exactly 48,000 published rows and reports zero quality findings.",
+      "Vocabulary catalog and quality regression tests pass before the full repository gate.",
+      "Production will be rechecked with the same real test learner after deployment."
     ],
     "zh": [
-      "正式构建、TypeScript、敏感数据扫描、本次文件 ESLint 与发布产物验证均通过。",
-      "全仓 328/328 项测试通过，包括十二种语言乘十二个场景及新增服务端兜底合同。",
-      "本次文件仅保留既有本地场景图片性能提示，无 ESLint 错误。"
+      "确定性重放包含恰好 48,000 个已发布词条，质量问题为零。",
+      "词库目录与质量回归测试已通过，随后执行全仓发布门禁。",
+      "部署后使用同一真实测试学习账号复测生产环境。"
     ]
   },
   "deferred": {
-    "en": ["Automated browser control can verify permission, timeout, fallback, and UI state, but it cannot supply a real learner voice; a human pronunciation score will not be fabricated."],
-    "zh": ["浏览器自动控制可验证权限、超时、兜底和界面状态，但不能提供真人学习者语音；不会伪造发音成绩。"]
+    "en": ["Browser automation cannot provide a genuine learner voice, so pronunciation scores are never fabricated."],
+    "zh": ["浏览器自动化不能提供真人语音，因此不会伪造发音成绩。"]
   },
   "siteAdaptations": {
-    "en": ["This is a SmartLingo-specific language-learning fix and does not alter other portfolio sites."],
-    "zh": ["这是 SmartLingo 专属语言学习修复，不改变其他站点。"]
+    "en": ["This is a SmartLingo learning-data release and does not alter other portfolio sites."],
+    "zh": ["这是 SmartLingo 学习数据发布，不改变其他站点。"]
   }
 }

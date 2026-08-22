@@ -66,4 +66,15 @@ The audit and repair tools are
 and [`scripts/repair-smartlingo-vocabulary.py`](../scripts/repair-smartlingo-vocabulary.py).
 The automated release contract requires exactly 48,000 rows and zero findings.
 
+A production learner walkthrough then exposed a migration-order regression in
+the English word `away`: a later catalog pass restored an obsolete WordNet
+sub-sense after the first quality sweep. A second complete replay audit fixed
+the ordering model and identified 111 additional learner-facing defects,
+including clean glosses overwritten by later passes and mistranslations that
+needed explicit review. Forward-only migrations `0153` and `0154`
+repair all 112 rows while preserving stable IDs, course levels, IPA,
+pronunciation aids, and learner progress. The strengthened audit also rejects
+unbounded obsolete or derogatory labels and compares a reviewed multilingual
+gold set so the same regressions cannot silently return.
+
 The reproducible offline builder is [`scripts/build-smartlingo-vocabulary.py`](../scripts/build-smartlingo-vocabulary.py). It is not imported by the production application.
