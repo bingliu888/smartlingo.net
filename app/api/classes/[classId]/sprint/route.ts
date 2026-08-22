@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: Params) {
       WHERE target_language=? AND level=? AND review_status='published' ORDER BY sequence LIMIT 1000`)
       .bind(uiLang(body.lang), language, courseLevel).run<SprintVocabulary>();
     const vocabulary = vocabularyResult.results || [];
-    if (vocabulary.length < 10) return Response.json({ error: "Course vocabulary is not ready" }, { status: 409 });
+    if (vocabulary.length < 5) return Response.json({ error: "Course vocabulary is not ready" }, { status: 409 });
     const plan = buildSprintPlan({ runId, language, level: courseLevel, uiLang: uiLang(body.lang), durationMinutes: selectedDuration, vocabulary });
     if (!value.anonymous && value.user) await value.database.prepare(`INSERT INTO smartlingo_daily_sprint_runs
       (id,user_id,class_id,target_language,level,duration_minutes,round_count,local_date,time_zone,plan_json,status,started_at)

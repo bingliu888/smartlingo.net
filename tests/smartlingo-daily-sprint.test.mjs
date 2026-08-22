@@ -16,9 +16,9 @@ test("Daily Sprint offers the four requested durations and one complete five-ski
   for (const durationMinutes of SPRINT_DURATIONS) {
     const plan = buildSprintPlan({ runId: `run-${durationMinutes}`, language: "en", level: "beginner", uiLang: "zh", durationMinutes, vocabulary });
     assert.equal(plan.rounds.length, durationMinutes / 5);
-    assert.equal(new Set(plan.rounds.flatMap(round => round.vocabulary.map(item => item.id))).size, durationMinutes * 2);
+    assert.equal(new Set(plan.rounds.flatMap(round => round.vocabulary.map(item => item.id))).size, durationMinutes);
     for (const round of plan.rounds) {
-      assert.equal(round.vocabulary.length, 10);
+      assert.equal(round.vocabulary.length, 5);
       assert.equal(round.reading.options.length, 3);
       assert.ok(round.listening.audioText);
       assert.ok(round.listening.answerTokens.length > 1);
@@ -117,19 +117,28 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
   assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);
   assert.match(sprintRoute, /anonymous: value\.anonymous/);
-  assert.match(sprintClient, /if\(anonymous\)\{setResult\(gradeSprintPlan\(plan,responses\)\)/);
+  assert.match(sprintClient, /if\(anonymous\)\{setResult\(gradeSprintPlan\(plan,responsesRef\.current\)\)/);
   assert.match(sprintClient, /本次匿名学习不会写入账户或数据库/);
   assert.match(sprintClient, /免费注册/);
   assert.match(sprintClient, /登录/);
   assert.match(sprintClient, /recognition\.stop\(\)/);
-  assert.match(sprintClient, /以口语 0 分继续/);
-  assert.match(sprintClient, /没有识别到清楚语音/);
+  assert.match(sprintClient, /scoreSmartCardPronunciation/);
+  assert.match(sprintClient, /三次跟读完成，平均/);
+  assert.match(sprintClient, /\[1,2,3\]/);
+  assert.doesNotMatch(sprintClient, /再跟读一次/);
+  assert.doesNotMatch(sprintClient, /beginSpeech\(/);
   assert.match(sprintClient, /sprint-flip-card/);
   assert.match(sprintClient, /选择正确的意思，或点击卡片翻面/);
   assert.match(sprintClient, /vocabularyAnswers/);
   assert.match(sprintClient, /正确答案：/);
-  assert.match(sprintClient, /先听并跟读，再选择正确意思/);
+  assert.match(sprintClient, /自动跟读句子三遍，再选择正确意思/);
   assert.match(sprintClient, /SentenceBuilderRound/);
+  assert.match(sprintClient, /autoAdvance/);
+  assert.match(sprintClient, /word\.pronunciation \? <b>/);
+  assert.match(sprintClient, /剩余时间/);
+  assert.match(sprintClient, /是否延长 5 分钟完成/);
+  assert.match(sprintClient, /setRemainingSeconds\(300\)/);
+  assert.match(sprintClient, /否，退出/);
 });
 
 test("migration adds idempotent rank and redemption ownership boundaries", () => {

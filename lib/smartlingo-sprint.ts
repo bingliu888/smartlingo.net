@@ -21,7 +21,7 @@ export type SprintRound = {
 };
 
 export type SprintPlan = {
-  contentVersion: "smartlingo-sprint-2026-08-21.1";
+  contentVersion: "smartlingo-sprint-2026-08-21.2";
   language: SmartLingoLearningLanguage;
   level: SmartLingoLevel;
   uiLang: SmartLingoInterfaceLanguage;
@@ -56,7 +56,7 @@ export function buildSprintPlan(input: {
 }): SprintPlan {
   const bank = buildCourseSentenceBank(input.language, input.level);
   const roundCount = input.durationMinutes / 5;
-  const sprintVocabulary = rotate(input.vocabulary, `${input.runId}:vocabulary`, roundCount * 10);
+  const sprintVocabulary = rotate(input.vocabulary, `${input.runId}:vocabulary`, roundCount * 5);
   const rounds = Array.from({ length: roundCount }, (_, roundIndex) => {
     const seed = `${input.runId}:${roundIndex + 1}`;
     const sentences = rotate(bank, seed, 6);
@@ -70,7 +70,7 @@ export function buildSprintPlan(input: {
       .sort((left, right) => hash(`${seed}:${left.id}`) - hash(`${seed}:${right.id}`));
     return {
       number: roundIndex + 1,
-      vocabulary: sprintVocabulary.slice(roundIndex * 10, roundIndex * 10 + 10),
+      vocabulary: sprintVocabulary.slice(roundIndex * 5, roundIndex * 5 + 5),
       reading: { id: reading.id, prompt: reading.targetSentence, options, answerId: reading.id },
       listening: {
         id: listening.id,
@@ -90,7 +90,7 @@ export function buildSprintPlan(input: {
       dialogue: { id: dialogue.id, prompt: promptFor(dialogue, input.uiLang), audioText: dialogue.targetSentence, expected: dialogue.targetSentence },
     } satisfies SprintRound;
   });
-  return { contentVersion: "smartlingo-sprint-2026-08-21.1", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
+  return { contentVersion: "smartlingo-sprint-2026-08-21.2", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
 }
 
 function transcriptScore(expected: string, actual: string) {
