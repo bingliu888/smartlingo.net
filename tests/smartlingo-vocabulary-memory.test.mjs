@@ -57,11 +57,13 @@ test("production deployment rejects an incomplete multilingual pronunciation cor
   assert.match(workflow, /VOCAB_PRONUNCIATION_COMPLETE/);
 });
 
-test("daily deck prioritizes due reviews, limits new words, and reports real published totals", async () => {
+test("daily deck prioritizes due reviews, uses twenty-word rounds, and reports real published totals", async () => {
   const route = await read("../app/api/classes/[classId]/vocabulary/route.ts");
   assert.match(route, /const due = started\.filter/);
-  assert.match(route, /fresh\.slice\(0, 4\)/);
-  assert.match(route, /\.slice\(0, 10\)/);
+  assert.match(route, /fresh\.slice\(0, 20\)/);
+  assert.match(route, /\.slice\(0, 20\)/);
+  assert.match(route, /frequency_degree AS frequencyDegree/);
+  assert.match(route, /ORDER BY difficulty ASC,frequency_degree DESC/);
   assert.match(route, /const total = catalog\.length/);
   assert.match(route, /percent <= 0 \? 0 : Math\.min\(5, Math\.ceil\(percent \/ 20\)\)/);
 });

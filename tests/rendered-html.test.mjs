@@ -128,7 +128,8 @@ test("Play defaults to the interface language and renders every activity tile", 
     for (const label of labels) assert.match(html, new RegExp(label), `${pathname}: ${label}`);
     assert.match(html, new RegExp(`href="\\/${language}\\/play\\?language=${language}"`));
     assert.match(html, new RegExp(`href="\\/${language}\\/smartcards\\/starter-${language}"`));
-    assert.match(html, new RegExp(`href="\\/${language}\\/programs\\/${language}\\/trial"`));
+    assert.match(html, /class="game-tile free-trial-tile"/);
+    assert.doesNotMatch(html, new RegExp(`href="\\/${language}\\/programs\\/${language}\\/trial"`));
   }
 });
 

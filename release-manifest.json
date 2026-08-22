@@ -1,66 +1,66 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-daily-sprint-auto-coach-v1",
+  "releaseId": "smartlingo-independent-trial-vocabulary-order-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Turn Today’s Sprint into an automatic five-skill coach", "zh": "把今日速成升级为自动五技能教练" },
+  "title": { "en": "Independent free trials and expert-ordered vocabulary", "zh": "独立免费试学与专业词汇学习顺序" },
   "purpose": {
-    "en": "Make each five-minute Sprint a focused sequence of five SmartCard vocabulary questions, three automatic pronunciation analyses, sentence reading, listening and writing, with a visible countdown and a five-minute extension choice.",
-    "zh": "让每个五分钟速成回合依次完成五个 SmartCard 词汇题、自动三遍发音分析、句子跟读、听力与写作，并提供清晰倒计时和五分钟续时选择。"
+    "en": "Give anonymous learners a language-first free trial with five independent skill pages, and make every course vocabulary journey progress in 20-word rounds ordered from easier and more frequently used words.",
+    "zh": "为匿名学习者提供先选语言、再进入五个独立技能页面的免费试学，并让所有课程词汇按由易到难、由常用到较少用的顺序，以每轮 20 词完成学习。"
   },
   "features": {
     "en": [
-      "Show target-language phonetics on every Sprint vocabulary card before it is flipped.",
-      "Use exactly five vocabulary cards in each five-minute round.",
-      "After an answer, automatically model, listen, score, and analyze pronunciation three times with no repeat or Continue buttons.",
-      "Automatically continue into sentence reading, meaning choice, listening word assembly, writing word assembly, and final speaking.",
-      "Show a live countdown and ask whether to add five minutes when time reaches zero; No exits the Sprint."
+      "Open Free Trial from Play as a 12-language picker with all five skills initially unselected.",
+      "Open vocabulary, reading, writing, listening, and speaking on separate anonymous pages whose URLs contain the beginner course ID.",
+      "Show 20 vocabulary words per library page and let learners start a 20-word round from any listed word.",
+      "Run each vocabulary word through SmartCard answer, three automatic pronunciation analyses, and sentence assembly.",
+      "Show a 20-word summary dialog with Continue and Not now choices."
     ],
     "zh": [
-      "每张速成词汇卡翻面前直接显示目标语言音标。",
-      "每个五分钟回合固定学习五个词。",
-      "答题后自动完成三遍 AI 示范、收音、评分与分析，不再显示重读或继续按钮。",
-      "随后自动进入句子跟读与选义、听力组句、写作组句和最终口语。",
-      "显示实时倒计时；归零时询问是否增加五分钟，选择否则退出速成。"
+      "从边玩边学打开免费试学，先选择十二种语言之一，五项技能默认全部未选。",
+      "词汇、阅读、写作、听力和口语分别进入独立匿名页面，网址包含初级课程编号。",
+      "词汇列表每页显示 20 个词，点击任意词即可从该词开始一轮 20 词学习。",
+      "每个词依次完成智慧卡答题、三遍自动发音分析和句子组句。",
+      "每轮 20 词结束后弹出总结，并可选择继续或暂不继续。"
     ]
   },
   "affected": {
-    "en": ["Anonymous and signed-in Today’s Sprint", "Vocabulary and sentence practice", "Pronunciation analysis", "Sprint countdown", "Administrator Project report"],
-    "zh": ["匿名及登录用户今日速成", "词汇与句子练习", "发音分析", "速成倒计时", "管理员 Project 报告"]
+    "en": ["Anonymous Free Trial", "Course vocabulary library", "SmartCard practice", "Pronunciation and sentence practice", "Administrator Project report"],
+    "zh": ["匿名免费试学", "课程词汇列表", "智慧卡练习", "发音与组句练习", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Reduce each Sprint round from ten vocabulary cards to five while retaining server-derived scoring.",
-      "Reuse SmartCard pronunciation scoring for three automatic speech-analysis turns.",
-      "Lock sentence meaning choices until all three reading turns are complete.",
-      "Auto-advance listening and writing after feedback without a Continue action.",
-      "Add countdown, five-minute extension, and explicit quit behavior."
+      "Add a reusable Free Trial language and skill picker plus course-specific trial routes.",
+      "Add frequency degree 1–10 to all 48,000 published vocabulary records while preserving expert difficulty 1–5.",
+      "Order each course by difficulty ascending and frequency descending.",
+      "Return 20-word server rounds, including a learner-selected starting word.",
+      "Display difficulty and frequency on card backs and vocabulary-list entries."
     ],
     "zh": [
-      "将每个速成回合从十张词汇卡调整为五张，同时继续由服务器计算成绩。",
-      "复用 SmartCard 发音评分完成三次自动语音分析。",
-      "三遍句子跟读全部完成后才解锁词义选择。",
-      "听力和写作答题反馈后自动前进，不再要求点击继续。",
-      "加入倒计时、延长五分钟和明确退出逻辑。"
+      "新增可复用的免费试学语言与技能选择器，以及课程专属试学路由。",
+      "为全部 48,000 条已发布词汇增加 1–10 常用度，同时保留专业难度 1–5。",
+      "每门课程先按难度升序、再按常用度降序排列。",
+      "服务器每次返回 20 词，并支持学习者指定起始词。",
+      "在词卡背面和词汇列表中显示难度与常用度。"
     ]
   },
   "validation": {
     "en": [
-      "Run the verified production build, sensitive-data scan, artifact validation, TypeScript, and all repository tests.",
-      "Use real Chrome and Safari to verify phonetics, five-card progress, automatic three-turn analysis, and the absence of repeat and Continue buttons.",
-      "Exercise the production sequence through vocabulary, reading, listening, writing, speaking, countdown, and exit or extension behavior."
+      "Run TypeScript, all 328 repository tests, the verified production build, sensitive-data scan, and artifact validation.",
+      "Verify the 48,000-row migration has valid 1–5 difficulty and 1–10 frequency values.",
+      "Use real Chrome and Safari to complete the language picker, independent skill route, vocabulary start point, card back, and 20-word flow."
     ],
     "zh": [
-      "执行正式构建、敏感数据扫描、产物验证、TypeScript 与全部仓库测试。",
-      "使用真实 Chrome 与 Safari 验证音标、五词进度、自动三遍分析以及没有重读和继续按钮。",
-      "在生产环境走查词汇、阅读、听力、写作、口语、倒计时以及退出或续时流程。"
+      "执行 TypeScript、全部 328 项仓库测试、正式构建、敏感数据扫描和产物验证。",
+      "验证 48,000 条词汇迁移后的难度均为 1–5、常用度均为 1–10。",
+      "使用真实 Chrome 与 Safari 完整验证语言选择、独立技能路由、词汇起点、词卡背面和 20 词流程。"
     ]
   },
   "deferred": {
-    "en": ["A genuine pronunciation score still requires real learner microphone speech; silence remains an explicit zero-score path rather than fabricated evidence."],
-    "zh": ["真实发音评分仍需要学习者通过麦克风发声；静音时明确计为零分，不会伪造语音证据。"]
+    "en": ["Real pronunciation scores require microphone speech; browsers without speech recognition report that limitation rather than fabricate a score."],
+    "zh": ["真实发音评分需要麦克风语音；不支持语音识别的浏览器会明确提示限制，不会伪造分数。"]
   },
   "siteAdaptations": {
-    "en": ["This is a SmartLingo-specific learning-game release and does not change other portfolio sites."],
-    "zh": ["这是 SmartLingo 专属学习游戏发布，不改变其他站点。"]
+    "en": ["This release is specific to SmartLingo learning data and does not change other portfolio sites."],
+    "zh": ["本次发布仅涉及 SmartLingo 学习数据与体验，不改变其他站点。"]
   }
 }

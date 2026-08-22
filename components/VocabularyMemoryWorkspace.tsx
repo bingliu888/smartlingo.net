@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRepeatAfterMePreference } from "./useRepeatAfterMePreference";
 import { vocabularyLibraryPage } from "../lib/smartlingo-learning-hub";
+import { SentenceBuilderRound } from "./SentenceBuilderRound";
 
 type Status = "mastered" | "learning" | "unlearned";
 type Mode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
@@ -11,9 +12,11 @@ type Card = {
   id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string;
   pronunciationZh: string; pronunciationGuides: Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl";
   status: Status; memoryStage: number; nextMemoryDay: number | null; mode: Mode; dueAt: number | null;
+  difficulty: number; frequencyDegree: number;
+  sentence: { id: string; scenario: string; promptZh: string; promptEn: string; audioText: string; answerTokens: string[] };
   options: { id: string; form: string; meaningEn: string; meaningZh: string }[];
 };
-type LibraryItem = Pick<Card, "id" | "form" | "targetPhonetic" | "meaningEn" | "meaningZh" | "sceneKey" | "direction" | "status" | "memoryStage">;
+type LibraryItem = Pick<Card, "id" | "form" | "targetPhonetic" | "meaningEn" | "meaningZh" | "sceneKey" | "direction" | "status" | "memoryStage" | "difficulty" | "frequencyDegree">;
 type Summary = { total: number; mastered: number; learning: number; unlearned: number; percent: number; stars: number };
 type Report = Summary & { localDate: string };
 type Payload = {
@@ -41,7 +44,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [typed, setTyped] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [phase, setPhase] = useState<"answer" | "speak" | "done">("answer");
+  const [phase, setPhase] = useState<"answer" | "speak" | "sentence" | "done">("answer");
   const [speechMessage, setSpeechMessage] = useState("");
   const [pronunciationRound, setPronunciationRound] = useState(0);
   const [pronunciationScores, setPronunciationScores] = useState<number[]>([]);
@@ -129,7 +132,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
       window.setTimeout(() => { void runPronunciationTurn(1); }, 250);
     } else {
       setPronunciationRound(0);
-      playWord(() => window.setTimeout(nextCard, 900));
+      playWord(() => window.setTimeout(() => setPhase("sentence"), 900));
     }
   }
 
@@ -168,6 +171,14 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     } finally { setBusy(false); }
   }
 
+  function continueTwentyWordRound() {
+    const lastId = cards.at(-1)?.id;
+    const ordered = data?.items || [];
+    const lastIndex = lastId ? ordered.findIndex(item => item.id === lastId) : -1;
+    const next = ordered[lastIndex + 1] || ordered[0];
+    if (next) void startFromWord(next.id);
+  }
+
   async function runPronunciationTurn(round: number) {
     const browser = window as typeof window & { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
     const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
@@ -198,9 +209,9 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
           const score = payload.pronunciationFeedback.score;
           setPronunciationScores(current => [...current, score]);
           setSpeechMessage(`${zh ? `第 ${round} 次听到“${heard}”` : `Round ${round}: “${heard}”`} · ${score} ${zh ? "分" : "points"}。${payload.pronunciationFeedback.feedback[lang]}`);
-          if (round >= 5) {
+          if (round >= 3) {
             setCoachStatus("complete");
-            window.setTimeout(nextCard, 1500);
+            window.setTimeout(() => setPhase("sentence"), 1500);
           } else {
             setPronunciationRound(round + 1);
             window.setTimeout(() => { void runPronunciationTurn(round + 1); }, 900);
@@ -210,7 +221,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     recognition.onerror = recoverListening;
     recognition.onend = recoverListening;
     setCoachStatus("model");
-    setSpeechMessage(zh ? `第 ${round}/5 次：先听示范，然后跟读。` : `Round ${round}/5: listen, then repeat.`);
+    setSpeechMessage(zh ? `第 ${round}/3 次：先听示范，然后跟读。` : `Round ${round}/3: listen, then repeat.`);
     playWord(() => {
       setCoachStatus("listening");
       try {
@@ -244,20 +255,21 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
       {card && phase !== "done" ? <div className={`vm-card tries-${tries}`} dir={card.direction} style={{ backgroundImage: `linear-gradient(${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"},${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
         <div className="vm-progress" role="progressbar" aria-label={zh ? "今日词卡进度" : "Today's card progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={practicePercent}><span style={{ width: `${practicePercent}%` }}/></div>
         <div className="vm-card-scene"><span>{SCENES[card.sceneKey] || "✨"}</span><small>{modeLabel[card.mode]} · {zh ? `记忆阶段 ${card.memoryStage}/5` : `Memory stage ${card.memoryStage}/5`}</small></div>
-        {phase === "answer" && !revealed ? <button className="vm-study-card" type="button" onClick={() => setRevealed(true)}><strong>{card.form}</strong>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<small>{zh ? "点一下翻卡查看释义" : "Tap to flip and see the meaning"}</small></button> : card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {zh ? "播放发音" : "Play word"}</button> : <h3>{phase === "answer" && revealed ? meaning(card) : card.mode === "recall" || textMode ? meaning(card) : card.form}</h3>}
+        {phase === "answer" && !revealed ? <button className="vm-study-card" type="button" onClick={() => setRevealed(true)}><strong>{card.form}</strong>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<small>{zh ? "点一下翻卡查看释义" : "Tap to flip and see the meaning"}</small></button> : phase === "answer" && revealed ? <div className="vm-card-back"><h3>{meaning(card)}</h3><p><b>{zh ? "难度" : "Difficulty"} {card.difficulty}/5</b><b>{zh ? "常用度" : "Frequency"} {card.frequencyDegree}/10</b></p></div> : card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {zh ? "播放发音" : "Play word"}</button> : phase !== "sentence" ? <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3> : null}
         {tries ? <p className="vm-hint" role="status">{tries === 1 ? (zh ? `提示：这是“${card.sceneKey}”场景词。` : `Hint: this belongs to “${card.sceneKey}”.`) : (zh ? `再提示：开头是“${Array.from(card.form)[0]}”，共 ${Array.from(card.form).length} 个字符。` : `More help: it starts with “${Array.from(card.form)[0]}” and has ${Array.from(card.form).length} characters.`)}</p> : null}
-        {phase === "answer" ? !revealed ? null : textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={zh ? "输入目标语言词语" : "Type the target-language word"}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{zh ? "检查" : "Check"}</button></div> : <div className="vm-options">{card.options.map(option => <button type="button" disabled={busy || wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div> : <div className="vm-speak">
+        {phase === "answer" ? !revealed ? null : textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={zh ? "输入目标语言词语" : "Type the target-language word"}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{zh ? "检查" : "Check"}</button></div> : <div className="vm-options">{card.options.map(option => <button type="button" disabled={busy || wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div> : phase === "speak" ? <div className="vm-speak">
           <p>{speechMessage}</p><h3>{card.form}</h3>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<span>{zh ? "当前语言助读（近似）" : "Approximate reading aid"} · {card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span>
-          <div className="vm-rounds" aria-label={zh ? "五次跟读分数" : "Five pronunciation scores"}>{[1,2,3,4,5].map(round => <b className={round <= pronunciationScores.length ? "scored" : round === pronunciationRound ? "active" : ""} key={round}>{pronunciationScores[round - 1] ?? round}</b>)}</div>
+          <div className="vm-rounds" aria-label={zh ? "三次跟读分数" : "Three pronunciation scores"}>{[1,2,3].map(round => <b className={round <= pronunciationScores.length ? "scored" : round === pronunciationRound ? "active" : ""} key={round}>{pronunciationScores[round - 1] ?? round}</b>)}</div>
           {pronunciationScores.length ? <strong className="vm-average">{zh ? "平均" : "Average"} {Math.round(pronunciationScores.reduce((sum, score) => sum + score, 0) / pronunciationScores.length)}</strong> : null}
-          <div>{coachStatus === "idle" ? <button type="button" onClick={() => void runPronunciationTurn(Math.max(1, pronunciationRound))}>🎙 {zh ? "继续跟读" : "Continue"}</button> : <button type="button" disabled>{coachStatus === "listening" ? (zh ? "请开始说…" : "Speak now…") : coachStatus === "scoring" ? (zh ? "评分中…" : "Scoring…") : coachStatus === "complete" ? (zh ? "完成，即将下一卡" : "Complete—next card") : (zh ? "正在播放示范…" : "Playing model…")}</button>}<button type="button" disabled={coachStatus !== "idle"} onClick={nextCard}>{zh ? "跳过跟读" : "Skip speaking"} →</button></div>
-        </div>}
-      </div> : <div className="vm-complete"><span>✦</span><h3>{zh ? "今天的词汇记忆完成了！" : "Today's vocabulary memory is complete!"}</h3><p>{zh ? "明天回来，系统会按到期顺序自动挑选下一组词。" : "Come back tomorrow; due reviews and new words will be selected automatically."}</p></div>}
+          <div>{coachStatus === "idle" ? <button type="button" onClick={() => void runPronunciationTurn(Math.max(1, pronunciationRound))}>🎙 {zh ? "未听清，请重试本轮" : "Retry this round"}</button> : <span role="status">{coachStatus === "listening" ? (zh ? "请开始说…" : "Speak now…") : coachStatus === "scoring" ? (zh ? "评分中…" : "Scoring…") : coachStatus === "complete" ? (zh ? "完成，即将组句" : "Complete—sentence next") : (zh ? "正在播放示范…" : "Playing model…")}</span>}</div>
+        </div> : null}
+        {phase === "sentence" ? <SentenceBuilderRound autoAdvance lang={lang} mode="writing" speechLocale={SPEECH_LOCALES[data?.targetLanguage || ""] || "en-US"} exercises={[{ ...card.sentence, prompt: zh ? card.sentence.promptZh : card.sentence.promptEn }]} onComplete={nextCard}/> : null}
+      </div> : <div className="vm-round-summary" role="dialog" aria-modal="true" aria-labelledby="vm-round-summary-title"><section><span>✦</span><h3 id="vm-round-summary-title">{zh ? "本轮 20 个词已完成" : "This 20-word round is complete"}</h3><p>{zh ? "已完成智慧卡答题、三次自动跟读和句子组句。要继续下一组 20 个词吗？" : "You completed SmartCard answers, three automatic repeats, and sentence building. Continue with the next 20 words?"}</p><nav><button type="button" onClick={continueTwentyWordRound}>{zh ? "继续下一组" : "Continue"} →</button><Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{zh ? "暂不继续" : "Not now"}</Link></nav></section></div>}
     </section>
 
     <section className="vm-library"><header><div><p>VOCABULARY LIBRARY</p><h2>{zh ? "我的课程词汇" : "My course vocabulary"}</h2></div><div role="tablist">{(["mastered","learning","unlearned"] as Status[]).map(status => <button role="tab" aria-selected={tab === status} className={tab === status ? "active" : ""} onClick={() => { setTab(status); setLibraryPage(1); }} key={status}>{status === "mastered" ? (zh ? "学会了" : "Mastered") : status === "learning" ? (zh ? "正在学" : "Learning") : (zh ? "还未学" : "Not started")} <b>{data.summary[status]}</b></button>)}</div></header>
       <p className="vm-library-note">{zh ? `每页 20 个词；点击任意词即可从该词开始一组智慧卡。当前显示 ${pageResult.start}–${pageResult.end} / ${filtered.length}。` : `Twenty words per page. Select any word to start a SmartCard set there. Showing ${pageResult.start}–${pageResult.end} of ${filtered.length}.`}</p>
-      <div className="vm-word-grid">{pageItems.map(item => <button className="vm-word-start" type="button" onClick={() => void startFromWord(item.id)} disabled={busy} key={item.id}><span>{SCENES[item.sceneKey] || "Aa"}</span><div><strong dir={item.direction}>{item.form}</strong>{item.targetPhonetic ? <small>{item.targetPhonetic}</small> : null}<p>{meaning(item)}</p><em>{item.status === "mastered" ? (zh ? "永久掌握" : "Mastered") : item.status === "learning" ? `${zh ? "记忆阶段" : "Stage"} ${item.memoryStage}/5` : (zh ? "点击开始学习" : "Select to start")}</em></div></button>)}</div>
+      <div className="vm-word-grid">{pageItems.map(item => <button className="vm-word-start" type="button" onClick={() => void startFromWord(item.id)} disabled={busy} key={item.id}><span>{SCENES[item.sceneKey] || "Aa"}</span><div><strong dir={item.direction}>{item.form}</strong>{item.targetPhonetic ? <small>{item.targetPhonetic}</small> : null}<p>{meaning(item)}</p><em>{zh ? `难度 ${item.difficulty}/5 · 常用度 ${item.frequencyDegree}/10` : `Difficulty ${item.difficulty}/5 · Frequency ${item.frequencyDegree}/10`}</em></div></button>)}</div>
       <nav className="vm-pagination" aria-label={zh ? "词汇分页" : "Vocabulary pages"}><button type="button" disabled={visiblePage <= 1} onClick={() => setLibraryPage(page => Math.max(1, page - 1))}>← {zh ? "上一页" : "Previous"}</button><span>{visiblePage} / {pageCount}</span><button type="button" disabled={visiblePage >= pageCount} onClick={() => setLibraryPage(page => Math.min(pageCount, page + 1))}>{zh ? "下一页" : "Next"} →</button></nav>
     </section>
 
@@ -265,8 +277,9 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: "zh" | "en"
     </> : null}
     {!data && !error ? <p className="vm-loading">{zh ? "正在整理今天的词卡…" : "Preparing today's cards…"}</p> : null}{error ? <p className="vm-error" role="alert">{error}</p> : null}
     <style>{`.vm-speak>.vm-rounds{margin-top:18px}.vm-rounds b{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:rgba(255,255,255,.12)}.vm-rounds b.active{outline:3px solid #ffe69a;background:#b57514}.vm-rounds b.scored{background:#fff;color:#0a5e4c}.vm-average{display:block;margin-top:12px;font-size:24px}`}</style>
-    <style>{`.vm-study-card{width:100%;min-height:260px;margin:24px 0;padding:28px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}.vm-study-card strong{font-size:clamp(38px,7vw,76px);overflow-wrap:anywhere}.vm-study-card b,.vm-study-card small{color:#d0e7df}`}</style>
+    <style>{`.vm-study-card{width:100%;min-height:260px;margin:24px 0;padding:28px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}.vm-study-card strong{font-size:clamp(38px,7vw,76px);overflow-wrap:anywhere}.vm-study-card b,.vm-study-card small{color:#d0e7df}.vm-card-back{text-align:center}.vm-card-back h3{font-size:clamp(35px,6vw,64px)}.vm-card-back p{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.vm-card-back b{padding:9px 13px;border-radius:999px;background:rgba(255,255,255,.15)}`}</style>
     <style>{`.vm-practice-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.vm-practice-tools>button{min-height:42px;padding:0 15px;border:1px solid #b5c6bf;border-radius:999px;background:#eef2f0;color:#40564e;font-weight:850}.vm-practice-tools>button.on{border-color:#087d62;background:#ddf7ed;color:#076650}.vm-practice-tools>strong{font-size:34px;color:#087d62}.vm-practice-tools>strong span{color:#8a9691;font-size:17px}.vm-library-note{margin:20px 0 0;color:#60716b;line-height:1.6}.vm-word-grid .vm-word-start{min-width:0;padding:17px;display:flex;gap:13px;border:1px solid #d8e1dd;border-radius:16px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}.vm-word-grid .vm-word-start:hover,.vm-word-grid .vm-word-start:focus-visible{border-color:#087d62;background:#effaf5;transform:translateY(-2px)}.vm-word-grid .vm-word-start:disabled{opacity:.55}.vm-word-grid .vm-word-start>span{font-size:28px}.vm-word-grid .vm-word-start>div{min-width:0}.vm-pagination{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:14px}.vm-pagination button{min-height:44px;padding:0 17px;border:1px solid #b9cec5;border-radius:999px;background:#fff;color:#08745e;font-weight:850}.vm-pagination button:disabled{opacity:.4}.vm-pagination span{font-weight:900}@media(max-width:600px){.vm-practice>header{align-items:flex-start;flex-direction:column}.vm-practice-tools{width:100%;justify-content:space-between}}`}</style>
+    <style>{`.vm-round-summary{position:fixed;z-index:1000;inset:0;padding:18px;display:grid;place-items:center;background:rgba(5,29,24,.75)}.vm-round-summary>section{width:min(560px,100%);padding:clamp(28px,5vw,48px);border-radius:26px;background:#f7f3ea;color:#17342c;text-align:center}.vm-round-summary>section>span{font-size:64px;color:#e5a326}.vm-round-summary h3{font-size:clamp(30px,5vw,48px)}.vm-round-summary p{line-height:1.7}.vm-round-summary nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}.vm-round-summary button,.vm-round-summary a{min-height:52px;padding:12px;display:grid;place-items:center;border:1px solid #a9c2b8;border-radius:14px;background:#fff;color:#17342c;font-weight:900;text-decoration:none}.vm-round-summary button{border:0;background:#087d62;color:#fff}@media(max-width:560px){.vm-round-summary nav{grid-template-columns:1fr}}`}</style>
     <style>{styles}</style>
   </section>;
 }

@@ -7,6 +7,8 @@ type Row = {
   id: string;
   targetLanguage: string;
   sequence: number;
+  difficulty: number;
+  frequencyDegree: number;
   form: string;
   pronunciation: string;
   targetPhonetic: string;
@@ -29,14 +31,11 @@ function guides(value: string) {
   }
 }
 
-function dailyDeck(catalog: Row[], date: string) {
-  const seed = Number(date.replaceAll("-", "")) || 1;
-  const ordered = [...catalog].sort((left, right) => {
-    const leftRank = (left.sequence * 37 + seed * 17) % Math.max(1, catalog.length);
-    const rightRank = (right.sequence * 37 + seed * 17) % Math.max(1, catalog.length);
-    return leftRank - rightRank || left.sequence - right.sequence;
-  });
-  return ordered.slice(0, 10).map((item, index) => {
+function dailyDeck(catalog: Row[], startWordId = "") {
+  const ordered = [...catalog].sort((left, right) => left.difficulty - right.difficulty || right.frequencyDegree - left.frequencyDegree || left.sequence - right.sequence);
+  const requestedIndex = startWordId ? ordered.findIndex(item => item.id === startWordId) : 0;
+  const startIndex = requestedIndex >= 0 ? requestedIndex : 0;
+  return ordered.slice(startIndex, startIndex + 20).map((item, index) => {
     const alternatives = catalog
       .filter(candidate => candidate.id !== item.id)
       .sort((left, right) => ((left.sequence * 19 + item.sequence * 11) % 101) - ((right.sequence * 19 + item.sequence * 11) % 101))
@@ -49,17 +48,19 @@ function dailyDeck(catalog: Row[], date: string) {
 }
 
 export async function GET(request: Request) {
-  const language = new URL(request.url).searchParams.get("language") || "";
+  const search = new URL(request.url).searchParams;
+  const language = search.get("language") || "";
+  const startWordId = search.get("startWordId") || "";
   if (!isSmartLingoCommunityLanguage(language)) {
     return Response.json({ error: "A supported language is required" }, { status: 400 });
   }
   const database = getDatabase();
   const result = await database.prepare(`SELECT id,target_language AS targetLanguage,sequence,form,pronunciation,
-    target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,
+    target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,difficulty,frequency_degree AS frequencyDegree,
     pronunciation_guides AS pronunciationGuides,meaning_en AS meaningEn,meaning_zh AS meaningZh,scene_key AS sceneKey
     FROM smartlingo_vocabulary_items
     WHERE target_language=? AND level='beginner' AND review_status='published'
-    ORDER BY sequence,id`).bind(language).run<Row>();
+    ORDER BY difficulty ASC,frequency_degree DESC,sequence,id`).bind(language).run<Row>();
   const catalog = result.results || [];
   const items = catalog.map(item => ({
     id: item.id,
@@ -68,6 +69,8 @@ export async function GET(request: Request) {
     meaningEn: item.meaningEn,
     meaningZh: item.meaningZh,
     sceneKey: item.sceneKey,
+    difficulty: item.difficulty,
+    frequencyDegree: item.frequencyDegree,
     direction: item.targetLanguage === "ar" ? "rtl" : "ltr",
   }));
   const localDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -75,7 +78,7 @@ export async function GET(request: Request) {
     localDate,
     targetLanguage: language,
     summary: { total: catalog.length, mastered: 0, learning: 0, unlearned: catalog.length, percent: 0, stars: 0 },
-    dailyDeck: dailyDeck(catalog, localDate),
+    dailyDeck: dailyDeck(catalog, startWordId),
     items,
   }, { headers: { "cache-control": "no-store" } });
 }

@@ -9,12 +9,14 @@ import {
   type VocabularyReviewState,
 } from "@/lib/smartlingo-learning";
 import { localDateKey, requireOfficialClassMembership, safeTimeZone } from "@/lib/smartlingo-learning-access";
+import { buildCourseSentenceBank, tokenizeSentence } from "@/lib/smartlingo-sentence-exercises";
+import type { SmartLingoLearningLanguage, SmartLingoLevel } from "@/lib/smartlingo-learning";
 
 export const dynamic = "force-dynamic";
 
 type CatalogRow = {
   id: string; stableKey: string; version: string; targetLanguage: string; level: string;
-  difficulty: number; sceneKey: string; sequence: number; form: string; pronunciation: string;
+  difficulty: number; frequencyDegree: number; sceneKey: string; sequence: number; form: string; pronunciation: string;
   targetPhonetic: string; pronunciationEn: string; pronunciationZh: string;
   pronunciationGuides: string;
   meaningEn: string; meaningZh: string;
@@ -91,12 +93,12 @@ async function authorize(request: Request, classId: string) {
 
 async function catalogFor(database: ReturnType<typeof getDatabase>, targetLanguage: string, level: string) {
   const result = await database.prepare(`SELECT id,stable_key AS stableKey,version,target_language AS targetLanguage,
-    level,difficulty,scene_key AS sceneKey,sequence,form,pronunciation,target_phonetic AS targetPhonetic,
+    level,difficulty,frequency_degree AS frequencyDegree,scene_key AS sceneKey,sequence,form,pronunciation,target_phonetic AS targetPhonetic,
     pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,
     pronunciation_guides AS pronunciationGuides,
     meaning_en AS meaningEn,meaning_zh AS meaningZh
     FROM smartlingo_vocabulary_items WHERE target_language=? AND review_status='published'
-    ORDER BY CASE level WHEN 'beginner' THEN 1 WHEN 'intermediate' THEN 2 ELSE 3 END,sequence,id`)
+    ORDER BY difficulty ASC,frequency_degree DESC,sequence,id`)
     .bind(targetLanguage).run<CatalogRow>();
   const rank = LEVEL_RANK[level] || 1;
   return (result.results || []).filter(item => (LEVEL_RANK[item.level] || 99) <= rank);
@@ -127,6 +129,7 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     const parsed = JSON.parse(item.pronunciationGuides) as unknown;
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) pronunciationGuides = parsed as Record<string, string>;
   } catch { /* Migration constraints keep published rows valid. */ }
+  const sentence = buildCourseSentenceBank(item.targetLanguage as SmartLingoLearningLanguage, item.level as SmartLingoLevel)[(item.sequence - 1) % 120];
   return {
     id: item.id,
     progressKey: progressKey(item),
@@ -140,6 +143,9 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     meaningEn: item.meaningEn,
     meaningZh: item.meaningZh,
     sceneKey: item.sceneKey,
+    difficulty: item.difficulty,
+    frequencyDegree: item.frequencyDegree,
+    sentence: { id: sentence.id, scenario: sentence.scenario, promptZh: sentence.translation.zh, promptEn: sentence.translation.en, audioText: sentence.targetSentence, answerTokens: tokenizeSentence(sentence.targetSentence, item.targetLanguage as SmartLingoLearningLanguage) },
     direction: item.targetLanguage === "ar" ? "rtl" : "ltr",
     status: learnerStatus(row),
     memoryStage: state.consecutiveCorrect,
@@ -160,6 +166,8 @@ function libraryPayload(item: CatalogRow, progress: Map<string, ProgressRow>, no
     meaningEn: item.meaningEn,
     meaningZh: item.meaningZh,
     sceneKey: item.sceneKey,
+    difficulty: item.difficulty,
+    frequencyDegree: item.frequencyDegree,
     direction: item.targetLanguage === "ar" ? "rtl" as const : "ltr" as const,
     status: learnerStatus(row),
     memoryStage: state.consecutiveCorrect,
@@ -187,16 +195,15 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
   if (persistReport) await writeReport(database, userId, access.pathId, access.classId, localDate, summary);
   const started = catalog.filter(item => learnerStatus(progress.get(progressKey(item))) === "learning")
     .sort((a, b) => (progress.get(progressKey(a))?.dueAt ?? 0) - (progress.get(progressKey(b))?.dueAt ?? 0));
-  const daySeed = Number(localDate.replaceAll("-", "")) || 1;
   const fresh = catalog.filter(item => learnerStatus(progress.get(progressKey(item))) === "unlearned")
-    .sort((a, b) => ((a.sequence + daySeed) % Math.max(1, catalog.length)) - ((b.sequence + daySeed) % Math.max(1, catalog.length)));
+    .sort((a, b) => a.difficulty - b.difficulty || b.frequencyDegree - a.frequencyDegree || a.sequence - b.sequence);
   const due = started.filter(item => (progress.get(progressKey(item))?.dueAt ?? 0) <= now);
   const startIndex = startWordId ? catalog.findIndex(item => item.id === startWordId) : -1;
   const selected = startIndex >= 0
-    ? [...catalog.slice(startIndex), ...catalog.slice(0, startIndex)].slice(0, 10)
-    : [...due, ...fresh.slice(0, 4), ...started]
+    ? [...catalog.slice(startIndex), ...catalog.slice(0, startIndex)].slice(0, 20)
+    : [...due, ...fresh.slice(0, 20), ...started]
       .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
-      .slice(0, 10);
+      .slice(0, 20);
   const items = catalog.map(item => libraryPayload(item, progress, now));
   const reportResult = await database.prepare(`SELECT local_date AS localDate,total_count AS total,mastered_count AS mastered,
     learning_count AS learning,unlearned_count AS unlearned,mastery_percent AS percent,stars

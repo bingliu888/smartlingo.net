@@ -12,9 +12,9 @@ type Card = {
   stableId?: string; id?: string; form: string; pronunciation: string; targetPhonetic?: string;
   pronunciationEn?: string; pronunciationZh?: string; pronunciationGuides?: Record<string, string>;
   meaning?: { zh: string; en: string }; meaningEn?: string; meaningZh?: string;
-  sceneKey?: string; options?: Option[]; direction?: "ltr" | "rtl";
+  sceneKey?: string; options?: Option[]; direction?: "ltr" | "rtl"; difficulty?: number; frequencyDegree?: number;
 };
-type LibraryItem = { id: string; form: string; targetPhonetic: string; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl" };
+type LibraryItem = { id: string; form: string; targetPhonetic: string; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl"; difficulty?: number; frequencyDegree?: number };
 type TrialPayload = { localDate: string; summary: { total: number }; dailyDeck: Card[]; items: LibraryItem[]; error?: string };
 type Task = { taskId: string; skill: Skill; prompt: string; context?: string; audioText?: string; options?: readonly { id: string; label: string }[]; sentenceExercises?: readonly { id: string; scenario: string; prompt: string; audioText?: string; answerTokens: readonly string[] }[]; direction?: "ltr" | "rtl" };
 type RecognitionLike = { lang: string; interimResults: boolean; continuous: boolean; start(): void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onerror: (() => void) | null };
@@ -49,11 +49,12 @@ function seedDeck(cards: readonly Card[]) {
   });
 }
 
-export function AnonymousBeginnerTrial({ lang, language, languageName, speechLocale, direction, cards: seedCards, tasks }: {
+export function AnonymousBeginnerTrial({ lang, language, languageName, speechLocale, direction, cards: seedCards, tasks, initialSkill = "vocabulary", lockedSkill = false, classId }: {
   lang: Lang; language: string; languageName: string; speechLocale: string; direction: "ltr" | "rtl"; cards: readonly Card[]; tasks: readonly Task[];
+  initialSkill?: Skill; lockedSkill?: boolean; classId?: string;
 }) {
   const zh = lang === "zh";
-  const [active, setActive] = useState<Skill>("vocabulary");
+  const [active, setActive] = useState<Skill>(initialSkill);
   const [completed, setCompleted] = useState<Skill[]>([]);
   const [cards, setCards] = useState<Card[]>(() => seedDeck(seedCards));
   const [catalog, setCatalog] = useState<LibraryItem[]>([]);
@@ -61,13 +62,13 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   const [localDate, setLocalDate] = useState("");
   const [loadingWords, setLoadingWords] = useState(true);
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<"study" | "answer" | "speak" | "done">("study");
+  const [phase, setPhase] = useState<"study" | "answer" | "speak" | "sentence" | "done">("study");
   const [revealed, setRevealed] = useState(false);
   const [tries, setTries] = useState(0);
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
   const [reportTab, setReportTab] = useState<Status>("unlearned");
-  const [visibleWords, setVisibleWords] = useState(100);
+  const [libraryPage, setLibraryPage] = useState(1);
   const [speechRound, setSpeechRound] = useState(0);
   const [speechMessage, setSpeechMessage] = useState("");
   const [listening, setListening] = useState(false);
@@ -75,12 +76,17 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   const [cardScores, setCardScores] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const task = useMemo(() => tasks.find(item => item.skill === active), [active, tasks]);
+  const vocabularySentences = useMemo(() => tasks.find(item => item.skill === "writing")?.sentenceExercises || [], [tasks]);
+  const vocabularySentence = vocabularySentences[index % Math.max(1, vocabularySentences.length)];
   const card = cards[index];
   const cardId = card?.id || card?.stableId || "";
   const meaning = card ? (zh ? card.meaningZh || card.meaning?.zh : card.meaningEn || card.meaning?.en) || "" : "";
   const counts = useMemo(() => catalog.reduce((all, item) => { all[statuses[item.id] || "unlearned"] += 1; return all; }, { mastered: 0, learning: 0, unlearned: 0 }), [catalog, statuses]);
   const score = cardScores.length ? Math.round(cardScores.reduce((sum, value) => sum + value, 0) / cardScores.length) : 0;
   const filteredWords = catalog.filter(item => (statuses[item.id] || "unlearned") === reportTab);
+  const pageCount = Math.max(1, Math.ceil(filteredWords.length / 20));
+  const visiblePage = Math.min(libraryPage, pageCount);
+  const pageWords = filteredWords.slice((visiblePage - 1) * 20, visiblePage * 20);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -107,7 +113,8 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   function finishAnswer(correct: boolean) {
     const points = correct ? Math.max(40, 70 - tries * 15) : 20;
     setAnswerPoints(points); setPhase("speak"); setSpeechRound(1);
-    setSpeechMessage(correct ? (zh ? `答对了！答题 ${points} 分。现在跟 AI 读 5 次。` : `Correct! ${points} answer points. Repeat after AI five times.`) : (zh ? `正确答案是：${meaning}。现在跟 AI 读 5 次。` : `The answer is: ${meaning}. Repeat after AI five times.`));
+    setSpeechMessage(correct ? (zh ? `答对了！答题 ${points} 分。现在自动跟 AI 读 3 次。` : `Correct! ${points} answer points. Now repeat after AI three times.`) : (zh ? `正确答案是：${meaning}。现在自动跟 AI 读 3 次。` : `The answer is: ${meaning}. Now repeat after AI three times.`));
+    window.setTimeout(() => startSpeech(1), 250);
   }
   function choose(optionId: string) {
     if (!card || phase !== "answer" || wrongIds.includes(optionId)) return;
@@ -122,7 +129,7 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     if (index + 1 >= cards.length) { setPhase("done"); markComplete("vocabulary"); return; }
     setIndex(current => current + 1); setPhase("study"); setRevealed(false); setTries(0); setWrongIds([]); setSpeechRound(0); setSpeechMessage(""); setAnswerPoints(0);
   }
-  function startSpeech() {
+  function startSpeech(round = speechRound) {
     if (!card || listening) return;
     const browser = window as typeof window & { SpeechRecognition?: new () => RecognitionLike; webkitSpeechRecognition?: new () => RecognitionLike };
     const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
@@ -131,29 +138,50 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     recognition.onresult = event => {
       setListening(false); const heard = String(event.results?.[0]?.[0]?.transcript || ""); const result = speechScore(card.form, heard);
       setSpeechMessage(`${zh ? `听到“${heard}”` : `Heard “${heard}”`} · ${result}${zh ? " 分" : " points"}`);
-      if (speechRound >= 5) window.setTimeout(() => nextCard(result), 900); else setSpeechRound(current => current + 1);
+      if (round >= 3) window.setTimeout(() => vocabularySentence ? setPhase("sentence") : nextCard(result), 900); else {
+        const nextRound = round + 1;
+        setSpeechRound(nextRound);
+        window.setTimeout(() => startSpeech(nextRound), 900);
+      }
     };
     recognition.onerror = () => { setListening(false); setSpeechMessage(zh ? "没有听清或麦克风未获允许。请在网站设置中允许麦克风后重试，也可点“我已跟读”。" : "I could not hear you or microphone access was denied. Allow it in site settings and retry, or select “I repeated”."); };
-    setSpeechMessage(zh ? `第 ${speechRound}/5 次：先听 AI，再开口。` : `Round ${speechRound}/5: listen to AI, then speak.`);
+    setSpeechMessage(zh ? `第 ${round}/3 次：先听 AI，再开口。` : `Round ${round}/3: listen to AI, then speak.`);
     play(card.form, () => { setListening(true); try { recognition.start(); } catch { setListening(false); } });
   }
-  function manualSpeech() { if (speechRound >= 5) nextCard(60); else { setSpeechRound(current => current + 1); setSpeechMessage(zh ? "已记录本轮跟读，请继续。" : "This round is recorded. Please continue."); } }
+  async function loadTrialWords(startWordId = "") {
+    const query = new URLSearchParams({ language });
+    if (startWordId) query.set("startWordId", startWordId);
+    const response = await fetch(`/api/vocabulary/trial?${query}`, { method: "GET", cache: "no-store" });
+    const payload = await response.json().catch(() => ({})) as TrialPayload;
+    if (!response.ok || !payload.dailyDeck?.length) return;
+    setCards(payload.dailyDeck); setCatalog(payload.items); setTotal(payload.summary.total); setLocalDate(payload.localDate);
+    setIndex(0); setPhase("study"); setRevealed(false); setTries(0); setWrongIds([]); setSpeechRound(0); setSpeechMessage(""); setAnswerPoints(0);
+    document.querySelector(".trial-activity")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function continueTrialWords() {
+    const lastId = cards.at(-1)?.id;
+    const position = lastId ? catalog.findIndex(item => item.id === lastId) : -1;
+    const next = catalog[position + 1] || catalog[0];
+    if (next) void loadTrialWords(next.id);
+  }
 
   const answer = task ? answers[task.taskId] || "" : "";
   return <section className="trial-shell" data-layout-fill="anonymous-trial" data-layout-ready="true" data-layout-overlap-check="anonymous-trial">
     <header className="trial-hero" data-layout-fill="anonymous-trial-hero"><div data-readable-copy="anonymous-trial-intro"><p>FREE TRIAL · BEGINNER</p><h1 data-layout-text-fit="anonymous-trial-title">{languageName} · {zh ? "初级课程试学" : "Beginner course trial"}</h1><span>{zh ? "无需登录即可体验。正式 Beginner 词库只读加载；本次状态仅保存在当前页面，刷新后重置，不会写入账户或数据库。" : "Try without signing in. The published Beginner catalog is read-only; progress stays in this page, resets on refresh, and is never written to an account or database."}</span></div><aside><strong>{score}</strong><span>{zh ? "今日进度分 · 最高 100" : "Daily progress score · 100 max"}</span></aside></header>
-    <nav className="trial-tabs" data-layout-fill="anonymous-trial-tabs" aria-label={zh ? "试学训练项目" : "Trial activities"}>{SKILLS.map(skill => <button className={active === skill ? "active" : ""} onClick={() => setActive(skill)} key={skill}><i>{completed.includes(skill) ? "✓" : String(SKILLS.indexOf(skill) + 1).padStart(2, "0")}</i><span><strong>{zh ? labels[skill][0] : labels[skill][1]}</strong><small>{labels[skill][2]}</small></span></button>)}</nav>
+    {!lockedSkill ? <nav className="trial-tabs" data-layout-fill="anonymous-trial-tabs" aria-label={zh ? "试学训练项目" : "Trial activities"}>{SKILLS.map(skill => <button className={active === skill ? "active" : ""} onClick={() => setActive(skill)} key={skill}><i>{completed.includes(skill) ? "✓" : String(SKILLS.indexOf(skill) + 1).padStart(2, "0")}</i><span><strong>{zh ? labels[skill][0] : labels[skill][1]}</strong><small>{labels[skill][2]}</small></span></button>)}</nav> : null}
     <article className="trial-activity" style={{ "--trial-accent": ACCENTS[active] } as CSSProperties}><header><div><span>{String(SKILLS.indexOf(active) + 1).padStart(2, "0")}</span><h2>{zh ? labels[active][0] : labels[active][1]}</h2></div>{active === "vocabulary" ? <a href="#trial-vocabulary-report">{zh ? "查看词汇报告" : "View vocabulary report"} ↓</a> : null}</header>
       {active === "vocabulary" && card ? <div className={`trial-card tries-${tries}`} dir={card.direction || direction}><div className="trial-progress"><span style={{ width: `${Math.round((index + 1) * 100 / Math.max(1, cards.length))}%` }}/></div><p>{index + 1} / {cards.length} · {zh ? `Beginner 共 ${total.toLocaleString()} 词` : `${total.toLocaleString()} Beginner words`}</p>
-        <button className="trial-flip" type="button" onClick={phase === "study" ? () => { setRevealed(true); setPhase("answer"); } : undefined}><span>{SCENES[card.sceneKey || ""] || "✨"}</span><strong>{revealed ? meaning : card.form}</strong>{!revealed ? <em>{card.targetPhonetic || card.pronunciation}</em> : null}<small>{revealed ? (zh ? "已查看释义，请回答下面的问题" : "Meaning revealed. Answer below.") : (zh ? "点一下查看意思" : "Tap to see the meaning")}</small></button>
+        <button className="trial-flip" type="button" onClick={phase === "study" ? () => { setRevealed(true); setPhase("answer"); } : undefined}><span>{SCENES[card.sceneKey || ""] || "✨"}</span><strong>{revealed ? meaning : card.form}</strong>{!revealed ? <em>{card.targetPhonetic || card.pronunciation}</em> : <em>{zh ? `难度 ${card.difficulty || 1}/5 · 常用度 ${card.frequencyDegree || 10}/10` : `Difficulty ${card.difficulty || 1}/5 · Frequency ${card.frequencyDegree || 10}/10`}</em>}<small>{revealed ? (zh ? "已查看释义，请回答下面的问题" : "Meaning revealed. Answer below.") : (zh ? "点一下查看意思" : "Tap to see the meaning")}</small></button>
         {phase === "answer" ? <section className="trial-quiz"><h3>{zh ? "这个词是什么意思？" : "What does this word mean?"}</h3><div>{(card.options || []).map(option => <button disabled={wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{zh ? option.meaningZh : option.meaningEn}</button>)}</div>{speechMessage ? <p>{speechMessage}</p> : null}</section> : null}
-        {phase === "speak" ? <section className="trial-speech"><div className="trial-avatar">AI</div><div><h3>{zh ? `请跟我说：${card.form}` : `Repeat after me: ${card.form}`}</h3><b>{card.targetPhonetic || card.pronunciation}</b><span>{card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span><p>{speechMessage}</p><strong>{speechRound} / 5</strong><nav><button disabled={listening} onClick={startSpeech}>🎙 {listening ? (zh ? "正在听…" : "Listening…") : (zh ? "听 AI 并跟读" : "Listen and repeat")}</button><button onClick={manualSpeech}>{zh ? "我已跟读" : "I repeated"}</button></nav></div></section> : null}
-        {phase === "done" ? <section className="trial-complete-card"><strong>★ {score}</strong><h3>{zh ? "今日 10 张智慧卡已完成！" : "Today's ten SmartCards are complete!"}</h3><p>{zh ? "免费注册即可保存分数，并按第 1、3、7、14、21 天计划复习。" : "Create a free account to save this score and continue the day 1, 3, 7, 14 and 21 plan."}</p></section> : null}
+        {phase === "speak" ? <section className="trial-speech"><div className="trial-avatar">AI</div><div><h3>{zh ? `请跟我说：${card.form}` : `Repeat after me: ${card.form}`}</h3><b>{card.targetPhonetic || card.pronunciation}</b><span>{card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span><p>{speechMessage}</p><strong>{speechRound} / 3</strong><small>{listening ? (zh ? "请开始说…" : "Speak now…") : (zh ? "AI 将自动播放、聆听并评分" : "AI plays, listens, and scores automatically")}</small></div></section> : null}
+        {phase === "sentence" && vocabularySentence ? <SentenceBuilderRound autoAdvance lang={lang} mode="writing" speechLocale={speechLocale} exercises={[vocabularySentence]} onComplete={() => nextCard(60)}/> : null}
+        {phase === "done" ? <section className="trial-complete-card" role="dialog" aria-modal="true"><strong>★ {score}</strong><h3>{zh ? "本轮 20 个词已完成！" : "This 20-word round is complete!"}</h3><p>{zh ? "已完成答题、三次自动跟读和句子组句。要继续下一组 20 个词吗？" : "You completed answers, three automatic repeats, and sentence building. Continue with the next 20 words?"}</p><nav><button type="button" onClick={continueTrialWords}>{zh ? "继续下一组" : "Continue"} →</button><Link href={`/${lang}/play?language=${language}`}>{zh ? "暂不继续" : "Not now"}</Link></nav></section> : null}
       </div> : null}
       {active !== "vocabulary" && task ? <div className="trial-task" dir={task.direction || direction}><p>{zh ? "今日练习" : "TODAY'S PRACTICE"}</p><h3>{task.prompt}</h3>{task.context ? <blockquote>{task.context}</blockquote> : null}{task.audioText && !task.sentenceExercises?.length ? <button className="trial-audio" onClick={() => play(task.audioText || "")}>▶ {zh ? "播放练习音频" : "Play practice audio"}</button> : null}{(active === "listening" || active === "writing") && task.sentenceExercises?.length ? <SentenceBuilderRound lang={lang} mode={active} speechLocale={speechLocale} exercises={task.sentenceExercises} onComplete={serialized => setAnswers(current => ({ ...current, [task.taskId]: serialized }))}/> : task.options?.length ? <div className="trial-options">{task.options.map(option => <button className={answer === option.id ? "selected" : ""} onClick={() => setAnswers(current => ({ ...current, [task.taskId]: option.id }))} key={option.id}>{option.label}</button>)}</div> : <label><span>{zh ? "您的回答" : "Your response"}</span><textarea value={answer} onChange={event => setAnswers(current => ({ ...current, [task.taskId]: event.target.value }))}/></label>}<button className="trial-complete" disabled={!answer.trim()} onClick={() => markComplete(active)}>{completed.includes(active) ? (zh ? "✓ 已完成" : "✓ Completed") : (zh ? "完成本项练习" : "Complete activity")}</button></div> : null}
     </article>
-    <section className="trial-report" id="trial-vocabulary-report"><header><div><p>{localDate || (zh ? "本次试学" : "This trial")}</p><h2>{zh ? "词汇学习报告" : "Vocabulary learning report"}</h2></div><aside><span>{zh ? "今日进度分" : "Daily score"}</span><strong>{score}</strong></aside></header><div className="trial-stats"><article><span>{zh ? "学会了" : "Mastered"}</span><strong>{counts.mastered}</strong></article><article><span>{zh ? "正在学" : "Learning"}</span><strong>{counts.learning}</strong></article><article><span>{zh ? "还未学" : "Pending"}</span><strong>{catalog.length ? counts.unlearned : total}</strong></article><article><span>{zh ? "学会比例" : "Mastery"}</span><strong>0%</strong><small>☆☆☆☆☆</small></article></div><nav role="tablist">{(["mastered", "learning", "unlearned"] as Status[]).map(status => <button role="tab" aria-selected={reportTab === status} className={reportTab === status ? "active" : ""} onClick={() => { setReportTab(status); setVisibleWords(100); }} key={status}>{status === "mastered" ? (zh ? "学会了" : "Mastered") : status === "learning" ? (zh ? "正在学" : "Learning") : (zh ? "还未学" : "Pending")} <b>{status === "unlearned" && !catalog.length ? total : counts[status]}</b></button>)}</nav>{loadingWords ? <p>{zh ? "正在读取 1,000 词正式词库…" : "Loading the 1,000-word catalog…"}</p> : <div className="trial-word-grid">{filteredWords.slice(0, visibleWords).map(item => <article dir={item.direction} key={item.id}><span>{SCENES[item.sceneKey] || "◇"}</span><div><strong>{item.form}</strong><small>{item.targetPhonetic}</small><p>{zh ? item.meaningZh : item.meaningEn}</p></div></article>)}</div>}{visibleWords < filteredWords.length ? <button className="trial-more" onClick={() => setVisibleWords(current => current + 100)}>{zh ? `再显示 100 词（共 ${filteredWords.length}）` : `Show 100 more (${filteredWords.length} total)`}</button> : null}</section>
-    <section className="trial-cta"><div><p>{zh ? "喜欢这个学习方式？" : "Like this way of learning?"}</p><h2>{zh ? "免费注册，开启完整首月课程。" : "Create an account and start your full free month."}</h2><span>{zh ? "登录后才会保存进度、分数、21 天词汇记忆和证书记录。" : "Progress, scores, 21-day memory, and certificates are saved only after sign-in."}</span></div><nav><Link href={`/${lang}/auth/sign-up?returnTo=${encodeURIComponent(`/${lang}/classes/course_${language}_basic`)}`}>{zh ? "免费注册" : "Create free account"} →</Link><Link href={`/${lang}/programs/${language}`}>{zh ? "返回课程详情" : "Back to course"}</Link></nav></section>
+    {active === "vocabulary" ? <section className="trial-report" id="trial-vocabulary-report"><header><div><p>{localDate || (zh ? "本次试学" : "This trial")}</p><h2>{zh ? "词汇学习报告" : "Vocabulary learning report"}</h2></div><aside><span>{zh ? "今日进度分" : "Daily score"}</span><strong>{score}</strong></aside></header><div className="trial-stats"><article><span>{zh ? "学会了" : "Mastered"}</span><strong>{counts.mastered}</strong></article><article><span>{zh ? "正在学" : "Learning"}</span><strong>{counts.learning}</strong></article><article><span>{zh ? "还未学" : "Pending"}</span><strong>{catalog.length ? counts.unlearned : total}</strong></article><article><span>{zh ? "学会比例" : "Mastery"}</span><strong>0%</strong><small>☆☆☆☆☆</small></article></div><nav role="tablist">{(["mastered", "learning", "unlearned"] as Status[]).map(status => <button role="tab" aria-selected={reportTab === status} className={reportTab === status ? "active" : ""} onClick={() => { setReportTab(status); setLibraryPage(1); }} key={status}>{status === "mastered" ? (zh ? "学会了" : "Mastered") : status === "learning" ? (zh ? "正在学" : "Learning") : (zh ? "还未学" : "Pending")} <b>{status === "unlearned" && !catalog.length ? total : counts[status]}</b></button>)}</nav>{loadingWords ? <p>{zh ? "正在读取 1,000 词正式词库…" : "Loading the 1,000-word catalog…"}</p> : <><p>{zh ? `每页 20 个词 · 第 ${visiblePage}/${pageCount} 页` : `20 words per page · Page ${visiblePage}/${pageCount}`}</p><div className="trial-word-grid">{pageWords.map(item => <button type="button" onClick={() => void loadTrialWords(item.id)} dir={item.direction} key={item.id}><span>{SCENES[item.sceneKey] || "◇"}</span><div><strong>{item.form}</strong><small>{item.targetPhonetic}</small><p>{zh ? item.meaningZh : item.meaningEn}</p><em>{zh ? `难度 ${item.difficulty || 1}/5 · 常用度 ${item.frequencyDegree || 10}/10` : `Difficulty ${item.difficulty || 1}/5 · Frequency ${item.frequencyDegree || 10}/10`}</em></div></button>)}</div><nav className="trial-library-pages"><button type="button" disabled={visiblePage <= 1} onClick={() => setLibraryPage(page => Math.max(1, page - 1))}>← {zh ? "上一页" : "Previous"}</button><button type="button" disabled={visiblePage >= pageCount} onClick={() => setLibraryPage(page => Math.min(pageCount, page + 1))}>{zh ? "下一页" : "Next"} →</button></nav></>}</section> : null}
+    <section className="trial-cta"><div><p>{zh ? "喜欢这个学习方式？" : "Like this way of learning?"}</p><h2>{zh ? "免费注册，开启完整首月课程。" : "Create an account and start your full free month."}</h2><span>{zh ? "登录后才会保存进度、分数、21 天词汇记忆和证书记录。" : "Progress, scores, 21-day memory, and certificates are saved only after sign-in."}</span></div><nav><Link href={`/${lang}/auth/sign-up?returnTo=${encodeURIComponent(`/${lang}/classes/${classId || `course_${language}_basic`}`)}`}>{zh ? "免费注册" : "Create free account"} →</Link><Link href={`/${lang}/play?language=${language}`}>{zh ? "返回边玩边学" : "Back to Play"}</Link></nav></section>
+    <style>{`.trial-word-grid>button{min-width:0;padding:15px;display:flex;gap:12px;border:1px solid #d8e1dd;border-radius:15px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}.trial-word-grid>button:hover,.trial-word-grid>button:focus-visible{border-color:#087d62;background:#effaf5}.trial-word-grid>button>span{font-size:28px}.trial-word-grid>button>div{min-width:0}.trial-word-grid em{color:#087d62;font-size:12px;font-style:normal;font-weight:850}.trial-complete-card{position:fixed;z-index:1000;inset:0;margin:0!important;padding:clamp(28px,7vw,70px)!important;display:grid;place-content:center;background:#f7f3ea!important}.trial-complete-card nav{margin-top:22px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.trial-complete-card nav button,.trial-complete-card nav a{min-height:48px;padding:11px 18px;display:grid;place-items:center;border:1px solid #8db8a9;border-radius:999px;background:#087d62;color:#fff;font-weight:900;text-decoration:none}.trial-complete-card nav a{background:#fff;color:#087d62}`}</style>
     <style>{STYLE}</style>
   </section>;
 }

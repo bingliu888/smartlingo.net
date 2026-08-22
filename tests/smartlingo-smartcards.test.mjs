@@ -86,11 +86,11 @@ test("0131 requires a pronunciation aid for every supported interface language",
   database.close();
 });
 
-test("21-day vocabulary practice uses the five-turn pronunciation scoring contract", () => {
+test("21-day vocabulary practice uses the three-turn Sprint pronunciation scoring contract", () => {
   const component = readFileSync(new URL("../components/VocabularyMemoryWorkspace.tsx", import.meta.url), "utf8");
   const route = readFileSync(new URL("../app/api/classes/[classId]/vocabulary/route.ts", import.meta.url), "utf8");
   assert.match(component, /runPronunciationTurn/);
-  assert.match(component, /round >= 5/);
+  assert.match(component, /round >= 3/);
   assert.match(component, /pronunciationScores/);
   assert.match(component, /pronunciationGuides\?\.\[lang\]/);
   assert.match(component, /SPEECH_LOCALES\[data\?\.targetLanguage/);
@@ -192,6 +192,7 @@ test("multilingual speech fallback is bounded, server-scored, and does not persi
 test("game navigation keeps target language, progress, local-time art, and score feedback", () => {
   const course = readFileSync(new URL("../app/[lang]/programs/[language]/page.tsx", import.meta.url), "utf8");
   const play = readFileSync(new URL("../app/[lang]/play/page.tsx", import.meta.url), "utf8");
+  const freeTrialPicker = readFileSync(new URL("../components/PlayFreeTrialPicker.tsx", import.meta.url), "utf8");
   const challenge = readFileSync(new URL("../app/[lang]/play/challenge/page.tsx", import.meta.url), "utf8");
   const calendar = readFileSync(new URL("../components/SmartCardChallengeCalendar.tsx", import.meta.url), "utf8");
   const game = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
@@ -200,8 +201,9 @@ test("game navigation keeps target language, progress, local-time art, and score
   assert.match(course, /免费游戏/);
   assert.match(play, /smartcards\/starter-\$\{language\}/);
   assert.match(play, /play\/challenge\?language=\$\{language\}/);
-  assert.match(play, /programs\/\$\{language\}\/trial/);
-  assert.match(play, /免费试学/);
+  assert.match(play, /PlayFreeTrialPicker/);
+  assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
+  assert.match(freeTrialPicker, /免费试学/);
   assert.match(challenge, /isSmartLingoCommunityLanguage/);
   assert.match(calendar, /leaderboard\?month=\$\{month\}&language=/);
   assert.match(calendar, /mode=challenge&language=\$\{targetLanguage\}/);

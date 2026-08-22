@@ -50,6 +50,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   const menu = readFileSync(new URL("../components/CourseTrainingMenu.tsx", import.meta.url), "utf8");
   const play = readFileSync(new URL("../app/[lang]/play/page.tsx", import.meta.url), "utf8");
   const playPicker = readFileSync(new URL("../components/PlayDailySprintPicker.tsx", import.meta.url), "utf8");
+  const freeTrialPicker = readFileSync(new URL("../components/PlayFreeTrialPicker.tsx", import.meta.url), "utf8");
   const dashboard = readFileSync(new URL("../app/[lang]/dashboard/page.tsx", import.meta.url), "utf8");
   const dashboardSprint = readFileSync(new URL("../components/DashboardDailySprint.tsx", import.meta.url), "utf8");
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
@@ -59,7 +60,10 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(play, /PlayDailySprintPicker/);
   assert.match(play, /isSmartLingoCommunityLanguage\(query\.language\) \? query\.language : lang/);
   assert.doesNotMatch(play, /\{language \? <>/);
-  for (const tile of ["智慧卡练习", "智慧卡挑战", "免费试学", "排行榜", "兑换中心"]) assert.match(play, new RegExp(tile));
+  for (const tile of ["智慧卡练习", "智慧卡挑战", "排行榜", "兑换中心"]) assert.match(play, new RegExp(tile));
+  assert.match(play, /PlayFreeTrialPicker/);
+  assert.match(freeTrialPicker, /免费试学/);
+  assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
   assert.match(play, /GameLanguagePicker lang=\{lang\} basePath=\{`\/\$\{lang\}\/play`\} selected=\{language\}/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
@@ -67,7 +71,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(playPicker, /source=play/);
   assert.match(play, /play\/rankings/);
   assert.match(play, /play\/redeem/);
-  assert.ok(play.indexOf("play/redeem") < play.indexOf("06 · FREE BEGINNER COURSE"));
+  assert.ok(play.indexOf("play/redeem") < play.lastIndexOf("PlayFreeTrialPicker"));
   assert.match(dashboard, /DashboardDailySprint/);
   assert.match(dashboardSprint, /添加新语言/);
   assert.match(dashboardSprint, /minutes\[language\.code\] \|\| 10/);

@@ -90,7 +90,8 @@ test("anonymous Beginner trial is public, reads the published catalog, and never
   assert.doesNotMatch(trial, /localStorage|sessionStorage|indexedDB|method: "POST"/);
   assert.match(catalogRoute, /level='beginner'/);
   assert.match(catalogRoute, /review_status='published'/);
-  assert.match(catalogRoute, /dailyDeck\(catalog, localDate\)/);
+  assert.match(catalogRoute, /dailyDeck\(catalog, startWordId\)/);
+  assert.match(catalogRoute, /ordered\.slice\(startIndex, startIndex \+ 20\)/);
   assert.doesNotMatch(catalogRoute, /INSERT INTO|UPDATE smartlingo|DELETE FROM|export async function POST/);
 });
 

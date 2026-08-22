@@ -14,6 +14,7 @@ const correctionFiles = readdirSync(new URL("../drizzle/", import.meta.url))
 const japaneseCorrectionFile = "0148_japanese_beginner_common_senses.sql";
 const englishAwayCorrectionFile = "0153_english_beginner_away_gloss.sql";
 const learnerQualitySweepFile = "0154_vocabulary_learner_quality_sweep.sql";
+const frequencyDegreeFile = "0155_vocabulary_frequency_degree.sql";
 
 test("the release contains one deterministic 4,000-item catalog migration per language", () => {
   assert.equal(catalogFiles.length, 12);
@@ -51,6 +52,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     japaneseCorrectionFile,
     englishAwayCorrectionFile,
     learnerQualitySweepFile,
+    frequencyDegreeFile,
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
@@ -64,6 +66,17 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     COUNT(*) AS total FROM smartlingo_vocabulary_items WHERE review_status='published'
     GROUP BY target_language ORDER BY target_language`).all();
   assert.ok(perLanguage.every(row => row.beginner === 1000 && row.intermediate === 1500 && row.advanced === 1500 && row.total === 4000));
+
+  const learningOrder = database.prepare(`SELECT COUNT(*) AS total,
+    SUM(difficulty BETWEEN 1 AND 5) AS validDifficulty,
+    SUM(frequency_degree BETWEEN 1 AND 10) AS validFrequency,
+    COUNT(DISTINCT frequency_degree) AS frequencyBands
+    FROM smartlingo_vocabulary_items WHERE review_status='published'`).get();
+  assert.deepEqual({ ...learningOrder }, { total: 48000, validDifficulty: 48000, validFrequency: 48000, frequencyBands: 10 });
+  const frequencyDistribution = database.prepare(`SELECT frequency_degree AS degree,COUNT(*) AS count
+    FROM smartlingo_vocabulary_items WHERE review_status='published' GROUP BY frequency_degree ORDER BY frequency_degree`).all();
+  assert.equal(frequencyDistribution.length, 10);
+  assert.ok(frequencyDistribution.every(row => row.count === 4800));
 
   const incomplete = database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
     WHERE review_status='published' AND (
