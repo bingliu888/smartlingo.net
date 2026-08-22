@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-home-daily-sprint-unified-picker-v1",
+  "releaseId": "smartlingo-home-daily-sprint-unified-picker-v2",
   "site": "smartlingo.net",
   "title": { "en": "Unify every Home and Play Today’s Sprint picker", "zh": "统一主页与 Play 今日速成选择弹窗" },
   "purpose": {
@@ -11,12 +11,14 @@
     "en": [
       "Open the twelve-language and four-duration picker directly from the Home Today’s Sprint card.",
       "Keep ten minutes selected by default and allow anonymous Beginner Sprint learning.",
-      "Preserve the remaining Home game cards and their existing two-step language flow."
+      "Preserve the remaining Home game cards and their existing two-step language flow.",
+      "Start public Beginner Sprints against the actual Basic course tier used by all twelve seeded courses."
     ],
     "zh": [
       "从主页今日速成卡片直接打开十二种语言与四种时长选择弹窗。",
       "默认选择十分钟，并继续支持匿名初级今日速成学习。",
-      "保留主页其他游戏卡片现有的两步语言选择流程。"
+      "保留主页其他游戏卡片现有的两步语言选择流程。",
+      "按十二种预置课程实际使用的 Basic 套餐层级启动公开初级今日速成。"
     ]
   },
   "affected": {
@@ -27,12 +29,14 @@
     "en": [
       "Reuse PlayDailySprintPicker for the Home carousel Today’s Sprint tile.",
       "Remove the obsolete Sprint branch from the Home inline language-link builder.",
-      "Add regression coverage requiring the shared picker and forbidding the old Sprint redirect."
+      "Match public Sprint access by package_tier=basic instead of the human-facing A1 level label.",
+      "Add regression coverage for both the shared picker and the public course-access query."
     ],
     "zh": [
       "主页轮播今日速成卡片复用 PlayDailySprintPicker。",
       "移除主页内嵌语言链接生成器中已废弃的今日速成分支。",
-      "增加回归测试，强制使用共享弹窗并禁止旧跳转。"
+      "公开今日速成按 package_tier=basic 匹配，不再错误匹配课程显示等级 A1。",
+      "为共享弹窗与公开课程访问查询同时增加回归测试。"
     ]
   },
   "validation": {

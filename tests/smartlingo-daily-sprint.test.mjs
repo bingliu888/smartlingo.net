@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
-import { isPublicBeginnerSprintClassId } from "../lib/smartlingo-learning-access.ts";
+import { isPublicBeginnerSprintClassId, requirePublicBeginnerSprintCourse } from "../lib/smartlingo-learning-access.ts";
 
 const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   id: `word-${index + 1}`,
@@ -91,12 +91,18 @@ test("course navigation precedes college navigation and the home task opens the 
   assert.doesNotMatch(homeChoices, /choice === "sprint" \? `\/\$\{lang\}\/play\?language=/);
 });
 
-test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", () => {
+test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", async () => {
   for (const language of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.equal(isPublicBeginnerSprintClassId(`course_${language}_basic`), true);
   }
   assert.equal(isPublicBeginnerSprintClassId("course_en_intermediate"), false);
   assert.equal(isPublicBeginnerSprintClassId("course_en_basic_extra"), false);
+
+  let accessQuery = "";
+  const database = { prepare(query) { accessQuery = query; return { bind() { return this; }, async first() { return null; } }; } };
+  await requirePublicBeginnerSprintCourse(database, "course_it_basic");
+  assert.match(accessQuery, /c\.package_tier='basic'/);
+  assert.doesNotMatch(accessQuery, /c\.level='beginner'/);
 
   const sprintPage = readFileSync(new URL("../app/[lang]/classes/[classId]/sprint/page.tsx", import.meta.url), "utf8");
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");

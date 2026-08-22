@@ -33,7 +33,7 @@ export async function requirePublicBeginnerSprintCourse(database: LearningDataba
     FROM smartlingo_language_classes c
     JOIN smartlingo_language_paths path
       ON path.id=c.path_id AND path.target_language=c.target_language
-    WHERE c.id=? AND c.class_kind='official_course' AND c.level='beginner'
+    WHERE c.id=? AND c.class_kind='official_course' AND c.package_tier='basic'
       AND c.status='open' AND c.visibility='public' AND path.status='published'
     LIMIT 1`).bind(classId).first<OfficialClassAccess>();
 }
