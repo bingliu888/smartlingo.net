@@ -102,14 +102,23 @@ function transcriptScore(expected: string, actual: string) {
   return Math.round(100 * matches / Math.max(1, expectedWords.size));
 }
 
-export type SprintAnswer = { vocabularySeen?: string[]; reading?: string; listening?: string; writing?: string; dialogueTranscript?: string };
+export type SprintAnswer = {
+  vocabularySeen?: string[];
+  vocabularyAnswers?: Record<string, string>;
+  reading?: string;
+  listening?: string;
+  writing?: string;
+  dialogueTranscript?: string;
+};
 
 export function gradeSprintPlan(plan: SprintPlan, responses: readonly SprintAnswer[]) {
   const skillTotals = { vocabulary: 0, reading: 0, listening: 0, writing: 0, dialogue: 0 };
   plan.rounds.forEach((round, index) => {
     const response = responses[index] || {};
+    const answers = response.vocabularyAnswers || {};
+    const hasAnswerEvidence = Object.keys(answers).length > 0;
     const seen = new Set((response.vocabularySeen || []).map(String));
-    skillTotals.vocabulary += Math.round(100 * round.vocabulary.filter(item => seen.has(item.id)).length / Math.max(1, round.vocabulary.length));
+    skillTotals.vocabulary += Math.round(100 * round.vocabulary.filter(item => hasAnswerEvidence ? answers[item.id] === item.id : seen.has(item.id)).length / Math.max(1, round.vocabulary.length));
     skillTotals.reading += response.reading === round.reading.answerId ? 100 : 0;
     skillTotals.listening += normalizeSentenceAnswer(response.listening || "") === normalizeSentenceAnswer(round.listening.expected) ? 100 : 0;
     skillTotals.writing += normalizeSentenceAnswer(response.writing || "") === normalizeSentenceAnswer(round.writing.expected) ? 100 : 0;

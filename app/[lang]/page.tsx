@@ -161,7 +161,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <p>{t.intro}</p>
             <div className="lingo-actions">
               <Link className="primary-button" href="#home-everyday">{lang === "zh" ? "生活口语" : "Everyday speaking"} →</Link>
-              <Link className="secondary-button" href="#home-play">{lang === "zh" ? "边玩边学" : "Learn through play"}</Link>
+              <Link className="secondary-button" href={`/${lang}/play?language=${lang}`}>{lang === "zh" ? "边玩边学" : "Learn through play"}</Link>
               <Link className="secondary-button" href="#home-courses">{lang === "zh" ? "选择课程" : "Choose course"}</Link>
               <Link className="secondary-button" href="#home-colleges">{lang === "zh" ? "选择学院" : "Choose College"}</Link>
               <Link className="text-link" href="#home-ai">{lang === "zh" ? "咨询AI" : "Ask AI"}</Link>

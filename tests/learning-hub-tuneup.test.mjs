@@ -23,7 +23,7 @@ test("vocabulary library pagination returns exactly twenty and clamps pages", ()
   assert.equal(last.items.length, 20);
 });
 
-test("home and dashboard expose four language-aware learning areas", async () => {
+test("home routes Play to its full hub while the three detailed panels and dashboard remain language-aware", async () => {
   const [home, choices, dashboard, dashboardHub, header, assistant, assistantRoute] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/HomeLearningChoices.tsx"),
@@ -35,8 +35,10 @@ test("home and dashboard expose four language-aware learning areas", async () =>
   ]);
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) {
     assert.match(header, new RegExp(label));
-    assert.match(choices, new RegExp(label));
   }
+  for (const label of ["生活口语", "选择课程", "咨询AI"]) assert.match(choices, new RegExp(label));
+  assert.match(home, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
+  assert.doesNotMatch(choices, /area: "play"/);
   assert.match(home, /HomeLearningChoices/);
   assert.match(choices, /SMARTLINGO_EVERYDAY_SCENARIOS/);
   assert.match(choices, /SMARTLINGO_LANGUAGE_COMMUNITIES/);

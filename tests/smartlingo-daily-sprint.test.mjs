@@ -33,12 +33,15 @@ test("Daily Sprint scoring is server-derived across all five skills", () => {
   const plan = buildSprintPlan({ runId: "perfect-run", language: "en", level: "beginner", uiLang: "zh", durationMinutes: 10, vocabulary });
   const responses = plan.rounds.map(round => ({
     vocabularySeen: round.vocabulary.map(item => item.id),
+    vocabularyAnswers: Object.fromEntries(round.vocabulary.map(item => [item.id, item.id])),
     reading: round.reading.answerId,
     listening: round.listening.expected,
     writing: round.writing.expected,
     dialogueTranscript: round.dialogue.expected,
   }));
   assert.deepEqual(gradeSprintPlan(plan, responses), { score: 100, skillScores: { vocabulary: 100, reading: 100, listening: 100, writing: 100, dialogue: 100 } });
+  const wrongVocabulary = responses.map(response => ({ ...response, vocabularyAnswers: Object.fromEntries(Object.keys(response.vocabularyAnswers).map(id => [id, "wrong"])) }));
+  assert.equal(gradeSprintPlan(plan, wrongVocabulary).skillScores.vocabulary, 0);
   const incomplete = gradeSprintPlan(plan, plan.rounds.map(() => ({})));
   assert.equal(incomplete.score, 0);
 });
@@ -64,6 +67,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(playPicker, /source=play/);
   assert.match(play, /play\/rankings/);
   assert.match(play, /play\/redeem/);
+  assert.ok(play.indexOf("play/redeem") < play.indexOf("06 · FREE BEGINNER COURSE"));
   assert.match(dashboard, /DashboardDailySprint/);
   assert.match(dashboardSprint, /添加新语言/);
   assert.match(dashboardSprint, /minutes\[language\.code\] \|\| 10/);
@@ -73,7 +77,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(rewardsRoute, /digital_redeem/);
 });
 
-test("course navigation precedes college navigation and the home task opens the shared Sprint picker", () => {
+test("course navigation precedes college navigation, Home Play opens the full hub, and the task image opens Sprint", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
   const homeChoices = readFileSync(new URL("../components/HomeLearningChoices.tsx", import.meta.url), "utf8");
@@ -86,9 +90,9 @@ test("course navigation precedes college navigation and the home task opens the 
   assert.doesNotMatch(home, /className="lingo-hero-visual" href=/);
   assert.match(home, /lingo-community-art/);
   assert.match(home, /lingo-task-action/);
-  assert.match(homeChoices, /choice\.id === "sprint"\) return <PlayDailySprintPicker/);
-  assert.match(homeChoices, /打开今日速成，选择语言和时长/);
-  assert.doesNotMatch(homeChoices, /choice === "sprint" \? `\/\$\{lang\}\/play\?language=/);
+  assert.match(home, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
+  assert.doesNotMatch(homeChoices, /area: "play"/);
+  assert.doesNotMatch(homeChoices, /PLAY_CHOICES/);
 });
 
 test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", async () => {
@@ -121,6 +125,12 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintClient, /recognition\.stop\(\)/);
   assert.match(sprintClient, /以口语 0 分继续/);
   assert.match(sprintClient, /没有识别到清楚语音/);
+  assert.match(sprintClient, /sprint-flip-card/);
+  assert.match(sprintClient, /选择正确的意思，或点击卡片翻面/);
+  assert.match(sprintClient, /vocabularyAnswers/);
+  assert.match(sprintClient, /正确答案：/);
+  assert.match(sprintClient, /先听并跟读，再选择正确意思/);
+  assert.match(sprintClient, /SentenceBuilderRound/);
 });
 
 test("migration adds idempotent rank and redemption ownership boundaries", () => {

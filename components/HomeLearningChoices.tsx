@@ -5,17 +5,11 @@ import { useRef, useState } from "react";
 import { SMARTLINGO_EVERYDAY_SCENARIOS } from "../lib/smartlingo-everyday-speaking";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import { rememberTargetLanguage } from "./InterfaceLanguageMenu";
-import { PlayDailySprintPicker } from "./PlayDailySprintPicker";
 import styles from "./HomeLearningChoices.module.css";
 
-type Area = "everyday" | "play" | "courses" | "ai";
+type Area = "everyday" | "courses" | "ai";
 type Choice = { id: string; titleZh: string; titleEn: string; bodyZh: string; bodyEn: string; image?: string; icon?: string };
 
-const PLAY_CHOICES: Choice[] = [
-  { id: "sprint", icon: "⚡", titleZh: "今日速成", titleEn: "Today’s Sprint", bodyZh: "选择 5–20 分钟，混合练习五项技能。", bodyEn: "Choose 5–20 minutes of mixed five-skill practice." },
-  { id: "practice", icon: "◇", titleZh: "智慧卡练习", titleEn: "Smart Card Practice", bodyZh: "看词、选义、听读、开口说。", bodyEn: "See, choose, listen, and speak." },
-  { id: "challenge", icon: "🏆", titleZh: "智慧卡挑战", titleEn: "Smart Card Challenge", bodyZh: "每日限时挑战、排名与课程积分。", bodyEn: "Daily timed rounds, rankings, and course credit." },
-];
 const COURSE_CHOICES: Choice[] = [
   { id: "basic", icon: "A1", titleZh: "初期课程", titleEn: "Beginner", bodyZh: "核心词汇、发音、听力与引导口语。", bodyEn: "Core vocabulary, pronunciation, listening, and guided speaking." },
   { id: "intermediate", icon: "A2", titleZh: "中级课程", titleEn: "Intermediate", bodyZh: "增加生活对话与实用写作。", bodyEn: "Adds everyday dialogue and practical writing." },
@@ -33,14 +27,12 @@ export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
   const rails = useRef<Partial<Record<Area, HTMLDivElement | null>>>({});
   const sections: { area: Area; kicker: string; titleZh: string; titleEn: string; introZh: string; introEn: string; choices: Choice[] }[] = [
     { area: "everyday", kicker: "REAL LIFE", titleZh: "生活口语", titleEn: "Everyday speaking", introZh: "先选生活场景，再选想练习的语言。", introEn: "Choose a situation first, then the language to practice.", choices: SMARTLINGO_EVERYDAY_SCENARIOS.map(item => ({ id: item.id, titleZh: item.nameZh, titleEn: item.nameEn, bodyZh: item.goalZh, bodyEn: item.goalEn, image: item.image, icon: item.icon })) },
-    { area: "play", kicker: "PLAY", titleZh: "边玩边学", titleEn: "Learn through play", introZh: "先选玩法，再选语言并立即开始。", introEn: "Choose a game, then a language and start immediately.", choices: PLAY_CHOICES },
     { area: "courses", kicker: "COURSES", titleZh: "选择课程", titleEn: "Choose a course", introZh: "先选课程等级，再选语言查看并加入。", introEn: "Choose a course level, then a language to view and join.", choices: COURSE_CHOICES },
     { area: "ai", kicker: "AI", titleZh: "咨询AI", titleEn: "Ask AI", introZh: "先选练习目标，再告诉 AI 您想使用的语言。", introEn: "Choose a practice goal, then the language for your AI session.", choices: AI_CHOICES },
   ];
 
   function href(area: Area, choice: string, language: string) {
     if (area === "everyday") return `/${lang}/play/everyday?language=${language}&scene=${choice}`;
-    if (area === "play") return choice === "challenge" ? `/${lang}/play/challenge?language=${language}` : `/${lang}/smartcards/starter-${language}`;
     if (area === "courses") return `/${lang}/classes/course_${language}_${choice}`;
     return `/${lang}/assistant?language=${language}&mode=${choice}`;
   }
@@ -59,7 +51,6 @@ export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
           {section.choices.map((choice, index) => {
             const content = <>{choice.image ? <img src={choice.image} alt=""/> : <span className={styles.icon}>{choice.icon || String(index + 1).padStart(2, "0")}</span>}
               <small>{String(index + 1).padStart(2, "0")}</small><strong>{zh ? choice.titleZh : choice.titleEn}</strong><em>{zh ? choice.bodyZh : choice.bodyEn}</em><b>{active === choice.id ? (zh ? "已选择" : "Selected") : (zh ? "选择" : "Choose")}</b></>;
-            if (section.area === "play" && choice.id === "sprint") return <PlayDailySprintPicker lang={lang} triggerLabel={zh ? "打开今日速成，选择语言和时长" : "Open Today’s Sprint and choose a language and time"} key={choice.id}>{content}</PlayDailySprintPicker>;
             return <button type="button" aria-pressed={active === choice.id} className={active === choice.id ? styles.active : ""} onClick={() => setSelected(current => ({ ...current, [section.area]: choice.id }))} key={choice.id}>{content}</button>;
           })}
         </div>

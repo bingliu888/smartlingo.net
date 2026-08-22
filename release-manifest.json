@@ -1,62 +1,64 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-anonymous-daily-sprint-speech-recovery-v1",
+  "releaseId": "smartlingo-game-style-daily-sprint-and-unified-play-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Complete anonymous Today’s Sprint without a speech dead end", "zh": "确保匿名今日速成可完整完成且口语不再卡死" },
+  "title": { "en": "Turn Today’s Sprint into a guided game and unify every Play entry", "zh": "将今日速成升级为引导式游戏并统一全部边玩边学入口" },
   "purpose": {
-    "en": "Keep private-mode learners in the official Beginner Sprint and let them retry or finish when speech recognition returns no transcript.",
-    "zh": "让私密模式学习者可进入官方初级今日速成，并在语音未识别时重试或继续完成。"
+    "en": "Make Today’s Sprint teach each word and sentence through answer, feedback, and speech interactions while every Home and menu Play entry opens the same complete six-activity hub.",
+    "zh": "让今日速成通过答题、反馈和跟读逐步教授每个词与句子，并让首页及菜单的边玩边学入口统一进入完整六项 Play 页面。"
   },
   "features": {
     "en": [
-      "Treat each of the twelve controlled official Basic Sprint routes as a public learning experience.",
-      "Allow anonymous learners to start even if a client transition does not preserve the source query parameter.",
-      "End an unrecognized speaking attempt after ten seconds and offer a retry or an explicit zero-score continuation.",
-      "Keep non-Basic and non-official Sprint routes protected by sign-in and course access."
+      "Present each Sprint vocabulary item as a flippable SmartCard-style card with four meaning choices.",
+      "Show immediate correct or incorrect feedback and reveal the right answer after a mistake.",
+      "Automatically model pronunciation and start repeat-after-me when the shared preference is enabled.",
+      "Follow vocabulary with sentence read-aloud, meaning selection, listening word assembly, writing word assembly, and final speaking.",
+      "Place anonymous Free Trial as the sixth and final Play tile."
     ],
     "zh": [
-      "将十二种受控官方 Basic 今日速成路径作为公开学习体验。",
-      "即使客户端跳转未保留来源参数，匿名学习者仍可直接开始。",
-      "语音十秒未识别时结束等待，并提供重试或明确的口语零分继续选项。",
-      "非 Basic 及非官方今日速成路径继续要求登录与课程权限。"
+      "将每个速成词汇显示为可翻面的 SmartCard 式卡片，并提供四个词义选项。",
+      "答题后立即显示正确或错误反馈，答错时明确展示正确答案。",
+      "全局跟读开启时自动示范发音并开始识别学习者跟读。",
+      "词汇后依次完成句子跟读、选义、听力组句、写作组句和最终口语。",
+      "将匿名免费试学固定为 Play 第六张、最后一张卡。"
     ]
   },
   "affected": {
-    "en": ["Anonymous Today’s Sprint entry", "Twelve official Beginner courses", "Private-mode browser flow", "Administrator Project report"],
-    "zh": ["匿名今日速成入口", "十二种官方初级课程", "浏览器私密模式流程", "管理员 Project 报告"]
+    "en": ["Home Play call to action", "Play activity hub", "Anonymous and signed-in Today’s Sprint", "Sprint scoring", "Administrator Project report"],
+    "zh": ["首页边玩边学按钮", "Play 活动中心", "匿名及登录用户今日速成", "速成计分", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Derive public page access from the strict official Beginner course-ID allowlist as well as the source parameter.",
-      "Pass the resulting public access state to the Sprint API so anonymous runs remain non-persistent.",
-      "Add regression coverage for query-independent official Beginner access.",
-      "Add regression coverage for the speaking timeout and recovery controls."
+      "Remove the duplicate three-card Play panel from Home and route the Home button directly to the canonical six-tile Play hub.",
+      "Record per-word answer evidence and score vocabulary correctness server-side while retaining compatibility with earlier runs.",
+      "Add speech recovery states that never trap learners when browser recognition is unavailable or silent.",
+      "Extend regression tests for the unified Home route, final Free Trial tile, flip-card interaction, answer feedback, speech, and sentence builders."
     ],
     "zh": [
-      "除来源参数外，页面还使用严格的官方初级课程 ID 白名单判定公开访问。",
-      "将公开访问状态传给今日速成 API，使匿名学习结果保持不写入数据库。",
-      "增加不依赖来源参数的官方初级访问回归测试。",
-      "增加口语超时与恢复控制的回归测试。"
+      "删除首页重复的三卡 Play 面板，并让首页按钮直接进入唯一的六卡 Play 页面。",
+      "记录逐词答案证据并由服务器计算词汇正确率，同时兼容既有速成记录。",
+      "加入语音恢复状态，在浏览器不支持识别或未听到语音时不会卡住学习者。",
+      "扩展回归测试，覆盖首页统一跳转、最后一张免费试学、翻卡、答题反馈、跟读和组句。"
     ]
   },
   "validation": {
     "en": [
-      "Run the Daily Sprint contract tests and full repository release gate.",
-      "Verify the full production flow in a Safari Private window from the Home picker through all five skills and completion.",
-      "Verify direct Basic Sprint access without a source query and confirm protected non-Basic access still redirects."
+      "Run the verified production build, sensitive-data scan, artifact validation, TypeScript, and all 328 repository tests.",
+      "Use real Chrome and Safari to verify Home Play opens all six activities and Free Trial is last.",
+      "Complete an anonymous production Sprint through vocabulary flip and answer feedback, repeat-after-me recovery, all sentence stages, speaking, and the final sign-up reminder."
     ],
     "zh": [
-      "执行今日速成契约测试与全仓发布门禁。",
-      "在 Safari 私密窗口中从首页选择弹窗完整测试五项技能与结算。",
-      "测试不带来源参数的 Basic 今日速成可进入，并确认非 Basic 路径仍会跳转登录。"
+      "执行正式构建、敏感数据扫描、产物验证、TypeScript 与全部 328 项仓库测试。",
+      "使用真实 Chrome 与 Safari 验证首页边玩边学进入全部六项，且免费试学位于最后。",
+      "在生产环境匿名完成一次速成，覆盖词汇翻卡与答题反馈、跟读恢复、全部句子阶段、口语及最终注册提醒。"
     ]
   },
   "deferred": {
-    "en": ["Speech scoring still requires genuine learner input; the verified no-speech path assigns zero instead of fabricating a transcript."],
-    "zh": ["口语评分仍需要学习者真实发音；已验证的无语音路径会计零分，不会伪造识别文本。"]
+    "en": ["A genuine pronunciation score still requires real learner microphone speech; silence remains an explicit zero-score path rather than fabricated evidence."],
+    "zh": ["真实发音评分仍需要学习者通过麦克风发声；静音时明确计为零分，不会伪造语音证据。"]
   },
   "siteAdaptations": {
-    "en": ["This is a SmartLingo-specific learning-entry repair and does not alter other portfolio sites."],
-    "zh": ["这是 SmartLingo 专属学习入口修复，不改变其他站点。"]
+    "en": ["This is a SmartLingo-specific learning-game release and does not change other portfolio sites."],
+    "zh": ["这是 SmartLingo 专属学习游戏发布，不改变其他站点。"]
   }
 }
