@@ -1,60 +1,58 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-vocabulary-learner-quality-sweep-v1",
+  "releaseId": "smartlingo-home-daily-sprint-unified-picker-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Complete learner-first vocabulary quality sweep", "zh": "全量词库学习者优先质量复审" },
+  "title": { "en": "Unify every Home and Play Today’s Sprint picker", "zh": "统一主页与 Play 今日速成选择弹窗" },
   "purpose": {
-    "en": "Repair vocabulary defects discovered by a real learner walkthrough and prevent later catalog migrations from restoring unsuitable definitions.",
-    "zh": "修复真实学习者测试发现的词义问题，并防止后续词库迁移重新覆盖为不适合学习者的释义。"
+    "en": "Make the Home Learn through Play card open the same complete Today’s Sprint picker as the Home hero and Play page.",
+    "zh": "让主页边玩边学卡片与主页顶部及 Play 页使用同一个完整的今日速成选择弹窗。"
   },
   "features": {
     "en": [
-      "Replay and audit all 48,000 published vocabulary rows across twelve languages and three course levels.",
-      "Apply 112 forward-only learner-first corrections while preserving stable IDs, pronunciation data, and learner progress.",
-      "Replace obsolete, derogatory, overly technical, repeated, malformed, and mistranslated meanings with concise course-ready glosses.",
-      "Strengthen release gates for migration ordering, multilingual gold meanings, and unbounded obsolete or derogatory labels."
+      "Open the twelve-language and four-duration picker directly from the Home Today’s Sprint card.",
+      "Keep ten minutes selected by default and allow anonymous Beginner Sprint learning.",
+      "Preserve the remaining Home game cards and their existing two-step language flow."
     ],
     "zh": [
-      "重放并审计十二种语言、三级课程的全部 48,000 个已发布词条。",
-      "以前向迁移修正 112 个词条，同时保留稳定 ID、发音数据和学习进度。",
-      "将过时、歧视性、过度技术化、重复、残缺或误译释义替换为简洁可学的释义。",
-      "强化迁移顺序、多语言标准词义以及过时或歧视性标签的发布门禁。"
+      "从主页今日速成卡片直接打开十二种语言与四种时长选择弹窗。",
+      "默认选择十分钟，并继续支持匿名初级今日速成学习。",
+      "保留主页其他游戏卡片现有的两步语言选择流程。"
     ]
   },
   "affected": {
-    "en": ["All twelve vocabulary catalogs", "Beginner, Intermediate, and Advanced courses", "Daily vocabulary practice and reports", "Administrator Project report"],
-    "zh": ["全部十二种语言词库", "初级、中级和高级课程", "每日词汇练习与报告", "管理员 Project 报告"]
+    "en": ["Home Learn through Play section", "Home hero Today’s task", "Play page Today’s Sprint", "Administrator Project report"],
+    "zh": ["主页边玩边学区域", "主页顶部今日任务", "Play 页今日速成", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Add forward migrations 0153 and 0154 for the verified corrections.",
-      "Make the quality audit replay semantic corrections after bulk catalog repairs, matching production order.",
-      "Extend the reviewed multilingual meaning set and regression assertions."
+      "Reuse PlayDailySprintPicker for the Home carousel Today’s Sprint tile.",
+      "Remove the obsolete Sprint branch from the Home inline language-link builder.",
+      "Add regression coverage requiring the shared picker and forbidding the old Sprint redirect."
     ],
     "zh": [
-      "增加前向迁移 0153 与 0154，部署已复核的修正。",
-      "让质量审计按生产顺序在批量修复后重放语义修正。",
-      "扩充人工复核的多语言标准词义及回归断言。"
+      "主页轮播今日速成卡片复用 PlayDailySprintPicker。",
+      "移除主页内嵌语言链接生成器中已废弃的今日速成分支。",
+      "增加回归测试，强制使用共享弹窗并禁止旧跳转。"
     ]
   },
   "validation": {
     "en": [
-      "The deterministic replay contains exactly 48,000 published rows and reports zero quality findings.",
-      "Vocabulary catalog and quality regression tests pass before the full repository gate.",
-      "Production will be rechecked with the same real test learner after deployment."
+      "Run the Daily Sprint contract tests and full repository release gate.",
+      "Verify production from both the Home carousel card and Play page card in Chrome.",
+      "Confirm all twelve languages, 5/10/15/20 minutes, default ten minutes, and the Start action are visible."
     ],
     "zh": [
-      "确定性重放包含恰好 48,000 个已发布词条，质量问题为零。",
-      "词库目录与质量回归测试已通过，随后执行全仓发布门禁。",
-      "部署后使用同一真实测试学习账号复测生产环境。"
+      "执行今日速成契约测试与全仓发布门禁。",
+      "使用 Chrome 从主页轮播卡片和 Play 页卡片分别复测生产环境。",
+      "确认十二种语言、5/10/15/20 分钟、默认十分钟及开始按钮全部可见。"
     ]
   },
   "deferred": {
-    "en": ["Browser automation cannot provide a genuine learner voice, so pronunciation scores are never fabricated."],
-    "zh": ["浏览器自动化不能提供真人语音，因此不会伪造发音成绩。"]
+    "en": ["Speech scoring still requires genuine learner microphone input and is not simulated by browser automation."],
+    "zh": ["语音评分仍需要真实学习者麦克风输入，浏览器自动化不会伪造语音。"]
   },
   "siteAdaptations": {
-    "en": ["This is a SmartLingo learning-data release and does not alter other portfolio sites."],
-    "zh": ["这是 SmartLingo 学习数据发布，不改变其他站点。"]
+    "en": ["This is a SmartLingo-specific learning-entry repair and does not alter other portfolio sites."],
+    "zh": ["这是 SmartLingo 专属学习入口修复，不改变其他站点。"]
   }
 }

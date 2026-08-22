@@ -76,6 +76,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
 test("course navigation precedes college navigation and the home task opens the shared Sprint picker", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
+  const homeChoices = readFileSync(new URL("../components/HomeLearningChoices.tsx", import.meta.url), "utf8");
   assert.ok(header.indexOf("选择课程") < header.indexOf("选择学院"));
   assert.ok(home.indexOf('href="#home-courses"') < home.indexOf('href="#home-colleges"'));
   assert.ok(home.indexOf('id="home-courses"') < home.indexOf('id="home-colleges"'));
@@ -85,6 +86,9 @@ test("course navigation precedes college navigation and the home task opens the 
   assert.doesNotMatch(home, /className="lingo-hero-visual" href=/);
   assert.match(home, /lingo-community-art/);
   assert.match(home, /lingo-task-action/);
+  assert.match(homeChoices, /choice\.id === "sprint"\) return <PlayDailySprintPicker/);
+  assert.match(homeChoices, /打开今日速成，选择语言和时长/);
+  assert.doesNotMatch(homeChoices, /choice === "sprint" \? `\/\$\{lang\}\/play\?language=/);
 });
 
 test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", () => {

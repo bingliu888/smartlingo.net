@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { SMARTLINGO_EVERYDAY_SCENARIOS } from "../lib/smartlingo-everyday-speaking";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import { rememberTargetLanguage } from "./InterfaceLanguageMenu";
+import { PlayDailySprintPicker } from "./PlayDailySprintPicker";
 import styles from "./HomeLearningChoices.module.css";
 
 type Area = "everyday" | "play" | "courses" | "ai";
@@ -39,7 +40,7 @@ export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
 
   function href(area: Area, choice: string, language: string) {
     if (area === "everyday") return `/${lang}/play/everyday?language=${language}&scene=${choice}`;
-    if (area === "play") return choice === "sprint" ? `/${lang}/play?language=${language}` : choice === "challenge" ? `/${lang}/play/challenge?language=${language}` : `/${lang}/smartcards/starter-${language}`;
+    if (area === "play") return choice === "challenge" ? `/${lang}/play/challenge?language=${language}` : `/${lang}/smartcards/starter-${language}`;
     if (area === "courses") return `/${lang}/classes/course_${language}_${choice}`;
     return `/${lang}/assistant?language=${language}&mode=${choice}`;
   }
@@ -55,10 +56,12 @@ export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
       return <article className={styles.section} key={section.area} id={`home-${section.area}`}>
         <header><div><p>{section.kicker}</p><h2>{zh ? section.titleZh : section.titleEn}</h2><span>{zh ? section.introZh : section.introEn}</span></div><nav aria-label={zh ? `${section.titleZh}滑动控制` : `${section.titleEn} slider controls`}><button type="button" onClick={() => scroll(section.area, -1)} aria-label={zh ? "向前滑动" : "Scroll back"}>‹</button><button type="button" onClick={() => scroll(section.area, 1)} aria-label={zh ? "向后滑动" : "Scroll forward"}>›</button></nav></header>
         <div className={styles.rail} ref={node => { rails.current[section.area] = node; }}>
-          {section.choices.map((choice, index) => <button type="button" aria-pressed={active === choice.id} className={active === choice.id ? styles.active : ""} onClick={() => setSelected(current => ({ ...current, [section.area]: choice.id }))} key={choice.id}>
-            {choice.image ? <img src={choice.image} alt=""/> : <span className={styles.icon}>{choice.icon || String(index + 1).padStart(2, "0")}</span>}
-            <small>{String(index + 1).padStart(2, "0")}</small><strong>{zh ? choice.titleZh : choice.titleEn}</strong><em>{zh ? choice.bodyZh : choice.bodyEn}</em><b>{active === choice.id ? (zh ? "已选择" : "Selected") : (zh ? "选择" : "Choose")}</b>
-          </button>)}
+          {section.choices.map((choice, index) => {
+            const content = <>{choice.image ? <img src={choice.image} alt=""/> : <span className={styles.icon}>{choice.icon || String(index + 1).padStart(2, "0")}</span>}
+              <small>{String(index + 1).padStart(2, "0")}</small><strong>{zh ? choice.titleZh : choice.titleEn}</strong><em>{zh ? choice.bodyZh : choice.bodyEn}</em><b>{active === choice.id ? (zh ? "已选择" : "Selected") : (zh ? "选择" : "Choose")}</b></>;
+            if (section.area === "play" && choice.id === "sprint") return <PlayDailySprintPicker lang={lang} triggerLabel={zh ? "打开今日速成，选择语言和时长" : "Open Today’s Sprint and choose a language and time"} key={choice.id}>{content}</PlayDailySprintPicker>;
+            return <button type="button" aria-pressed={active === choice.id} className={active === choice.id ? styles.active : ""} onClick={() => setSelected(current => ({ ...current, [section.area]: choice.id }))} key={choice.id}>{content}</button>;
+          })}
         </div>
         {active ? <div className={styles.languages}><div><strong>{zh ? "下一步：选择语言" : "Next: choose a language"}</strong><button type="button" onClick={() => setSelected(current => ({ ...current, [section.area]: undefined }))}>{zh ? "更改上一步" : "Change first choice"}</button></div><nav>{SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => <Link onClick={() => rememberTargetLanguage(language.code)} href={href(section.area, active, language.code)} key={language.code}><small>{language.code.toUpperCase()}</small><strong>{zh ? language.nameZh : language.nameEn}</strong><span>{language.nativeName}</span></Link>)}</nav></div> : <p className={styles.prompt}>{zh ? "选择上方一个项目后，这里会显示十二种语言。" : "Choose an item above to reveal all twelve languages here."}</p>}
       </article>;
