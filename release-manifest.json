@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-quiz-receipt-date-separation-2026-08-22",
+  "releaseId": "smartlingo-quiz-receipt-scope-separation-2026-08-22",
   "site": "smartlingo.net",
   "title": { "en": "Daily practice resets without losing course-day progress", "zh": "每日练习跨日刷新且保留课程日进度" },
   "purpose": {
@@ -8,8 +8,8 @@
     "zh": "在学习者本地午夜后恢复全新的服务器判分五技能练习和每日测验，同时保留未完成的计时课程检查点。"
   },
   "features": {
-    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Discard quiz answers restored from an earlier local date before hydration or submission.", "Validate quiz practice dates independently from retained checkpoint dates.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
-    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "在恢复或提交前丢弃来自较早本地日期的测验答案。", "分别校验测验练习日期与保留的检查点日期。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
+    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Discard quiz answers restored from an earlier local date before hydration or submission.", "Validate quiz practice dates and content versions independently from retained checkpoint scope.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
+    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "在恢复或提交前丢弃来自较早本地日期的测验答案。", "分别校验测验练习日期及内容版本与保留的检查点范围。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
   },
   "affected": {
     "en": ["Signed-in Beginner course learning workspace", "Daily five-skill practice", "Daily vocabulary quiz and score log", "Cross-device course-day draft synchronization", "Project release report"],

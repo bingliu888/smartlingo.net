@@ -307,7 +307,9 @@ test("checkpoint, feedback, XP, and quiz writes are revisioned and idempotent", 
   assert.match(route, /await auth\.database\.batch\(statements\)/);
   assert.match(route, /SMARTLINGO_QUIZ_INCOMPLETE_RECEIPT/);
   assert.match(route, /checkpointDate: state\.dailySessionPlan\.date/);
+  assert.match(route, /checkpointContentVersion: state\.dailySessionPlan\.contentVersion/);
   assert.match(route, /evidence\.checkpointDate !== null && checkpoint\.localDate !== evidence\.checkpointDate/);
+  assert.match(route, /evidence\.checkpointContentVersion !== null[\s\S]*checkpoint\.contentVersion !== evidence\.checkpointContentVersion/);
   assert.match(route, /WHERE user_id = \? AND revision = \? AND time_zone = \? RETURNING revision/);
   assert.doesNotMatch(route, /if \(!inserted\) return false;[\s\S]{0,300}reconcileLearningStreak/);
   const quizBlock = route.slice(

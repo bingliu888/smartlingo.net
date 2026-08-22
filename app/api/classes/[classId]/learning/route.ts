@@ -219,6 +219,7 @@ type DailyQuizReceiptEvidence = {
   checkpointId: string;
   sessionDate: string;
   checkpointDate: string | null;
+  checkpointContentVersion: string | null;
   contentVersion: string;
   uiLanguage: SmartLingoInterfaceLanguage;
   vocabularyDay: number;
@@ -427,6 +428,7 @@ function quizReceiptEvidence(value: string): DailyQuizReceiptEvidence | null {
   const contentVersion = safeIdentifier(parsed.contentVersion, 48);
   const sessionDate = validDate(parsed.sessionDate) ? parsed.sessionDate : null;
   const checkpointDate = validDate(parsed.checkpointDate) ? parsed.checkpointDate : null;
+  const checkpointContentVersion = safeIdentifier(parsed.checkpointContentVersion, 48);
   const uiLanguage = parsed.uiLanguage === "zh" || parsed.uiLanguage === "en" ? parsed.uiLanguage : null;
   const vocabularyDay = Number(parsed.vocabularyDay);
   const targetLanguage = typeof parsed.targetLanguage === "string" && isLearningLanguage(parsed.targetLanguage)
@@ -444,6 +446,7 @@ function quizReceiptEvidence(value: string): DailyQuizReceiptEvidence | null {
         checkpointId,
         sessionDate,
         checkpointDate,
+        checkpointContentVersion,
         contentVersion,
         uiLanguage,
         vocabularyDay,
@@ -1747,7 +1750,8 @@ export async function POST(
         || !evidence || receipt.checkpointId !== evidence.checkpointId
         || checkpoint?.userId !== auth.user.id || checkpoint.classId !== auth.classId
         || (evidence.checkpointDate !== null && checkpoint.localDate !== evidence.checkpointDate)
-        || checkpoint.contentVersion !== evidence.contentVersion
+        || (evidence.checkpointContentVersion !== null
+          && checkpoint.contentVersion !== evidence.checkpointContentVersion)
         || receipt.taskId !== `daily-quiz:${evidence.sessionDate}`
         || receipt.contentVersion !== evidence.contentVersion
         || evidence.uiLanguage !== uiLanguage || evidence.targetLanguage !== auth.access.targetLanguage
@@ -1915,6 +1919,7 @@ export async function POST(
       checkpointId: checkpoint.id,
       sessionDate,
       checkpointDate: state.dailySessionPlan.date,
+      checkpointContentVersion: state.dailySessionPlan.contentVersion,
       contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
       uiLanguage,
       vocabularyDay: day,
