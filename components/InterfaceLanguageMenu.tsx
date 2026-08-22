@@ -116,7 +116,7 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
     <details ref={menu} className="interface-language-menu">
       <summary aria-label={`${t.language}: ${currentInterface.nativeName}`}>
         <span className="interface-language-current">{currentInterface.nativeName}</span>
-        <span className="interface-language-chevron" aria-hidden="true">⌄</span>
+        <span className="interface-language-chevron" aria-hidden="true">▾</span>
       </summary>
       <div className="interface-language-popover" role="menu" aria-label={t.chooseLanguage}>
         <header>

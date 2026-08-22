@@ -36,9 +36,9 @@ export function SiteHeader({ lang }: { lang: InterfaceLanguage }) {
         <GlobalLinks lang={lang}/>
       </nav>
       <div className="header-actions">
+        <InterfaceLanguageMenu lang={lang}/>
         <HeaderAccount lang={lang}/>
       </div>
-      <InterfaceLanguageMenu lang={lang}/>
       <button
         className={`hamburger-button${mobileOpen ? " open" : ""}`}
         type="button"

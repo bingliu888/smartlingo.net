@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-shared-wordmark-footer-2026-08-22",
+  "releaseId": "smartlingo-standard-language-header-2026-08-22-v2",
   "site": "smartlingo.net",
   "title": { "en": "Shared responsive wordmark and clean footer", "zh": "页眉页脚共用响应式品牌字标并清理页脚" },
   "purpose": {
@@ -8,16 +8,16 @@
     "zh": "当桌面导航使用两行时保持 SmartLingo 品牌清晰可读，让页脚复用同一分段字标，并移除重复的页脚语言切换。"
   },
   "features": {
-    "en": ["Wrap the brand only between Smart and Lingo in the two-row desktop range.", "Reuse one semantic brand component in the header and footer.", "Keep language switching in the header and hamburger menu only."],
-    "zh": ["在桌面两行范围内只允许在 Smart 与 Lingo 之间换行。", "页眉与页脚复用同一个语义品牌组件。", "语言切换仅保留在页眉和汉堡菜单中。"]
+    "en": ["Wrap the brand only between Smart and Lingo in the two-row desktop range.", "Place the active-language text button before the account icon.", "Use a standard solid dropdown chevron and keep language switching in the header and hamburger menu only."],
+    "zh": ["在桌面两行范围内只允许在 Smart 与 Lingo 之间换行。", "将当前语言文字按钮固定在用户图标之前。", "使用标准实心下拉箭头，并仅在页眉和汉堡菜单中保留语言切换。"]
   },
   "affected": {
     "en": ["Global header", "Global footer", "Authentication brand surface", "Project release report"],
     "zh": ["全局页眉", "全局页脚", "登录品牌界面", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Add a reusable segmented SmartLingo wordmark.", "Use the same mark, colors, and structure in the footer.", "Remove the footer language selector and repeated product links; keep About, Privacy, Terms, and Project in that order."],
-    "zh": ["新增可复用的分段 SmartLingo 字标。", "页脚使用相同图标、颜色和结构。", "移除页脚语言选择器与重复产品链接，并按顺序只保留 About、Privacy、Terms、Project。"]
+    "en": ["Add a reusable segmented SmartLingo wordmark.", "Move the language menu before the account icon and replace the hollow chevron with a solid chevron.", "Remove the footer language selector and repeated product links; keep About, Privacy, Terms, and Project in that order."],
+    "zh": ["新增可复用的分段 SmartLingo 字标。", "将语言菜单移到用户图标之前，并把空心箭头替换为实心箭头。", "移除页脚语言选择器与重复产品链接，并按顺序只保留 About、Privacy、Terms、Project。"]
   },
   "validation": {
     "en": ["Run the complete repository test suite, type check, production build, and shared-site policy gates.", "Verify the segmented two-line header wordmark at the affected desktop width in production Chrome.", "Verify the footer reuses the header wordmark and contains no language switcher."],

@@ -26,6 +26,7 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   ]);
 
   assert.match(header, /<InterfaceLanguageMenu lang=\{lang\}/);
+  assert.match(header, /className="header-actions"[\s\S]*?<InterfaceLanguageMenu lang=\{lang\}\/?>[\s\S]*?<HeaderAccount lang=\{lang\}\/?>/);
   assert.doesNotMatch(header, /<LanguageLink/);
   assert.match(menu, /SMARTLINGO_LANGUAGE_COMMUNITIES\.map/);
   for (const name of ["中文", "English", "Español", "日本語", "한국어", "Français", "Deutsch", "Русский", "Italiano", "Português", "العربية", "हिन्दी"]) {
@@ -42,6 +43,8 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.match(css, /\.mobile-language-options>div\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
   assert.match(menu, /currentInterface.*language\.code === lang/s);
   assert.match(menu, /interface-language-current">\{currentInterface\.nativeName\}/);
+  assert.match(menu, /interface-language-chevron" aria-hidden="true">▾<\/span>/);
+  assert.doesNotMatch(menu, /⌄/);
   assert.doesNotMatch(menu, /interface-language-current">\{current\.nativeName\}/);
   assert.doesNotMatch(menu, /code === "zh" \? "zh" : "en"/);
   assert.match(menu, /window\.location\.assign\(localizedPath\(window\.location\.pathname, code\)\)/);
