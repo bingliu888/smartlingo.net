@@ -119,7 +119,7 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
     if (repeatAfterMe) beginSpeechSeries(word.form, word.pronunciation, "vocabulary", nextWord); else speak(word.form, .72, () => { transitionTimerRef.current = window.setTimeout(nextWord, 700); });
   }
   function nextWord() {
-    if (!round || !word || !vocabChecked) return;
+    if (!round || !word) return;
     if (wordIndex + 1 < round.vocabulary.length) { setWordIndex(index => index + 1); setVocabFlipped(false); setVocabChoice(""); setVocabChecked(false); resetSpeech(); return; }
     setStage("reading"); setWordIndex(0); resetSpeech("reading");
     transitionTimerRef.current = window.setTimeout(() => repeatAfterMe ? beginSpeechSeries(round.reading.prompt, "", "reading", () => setSpeechAttempted(true)) : speak(round.reading.prompt, .72, () => setSpeechAttempted(true)), 100);

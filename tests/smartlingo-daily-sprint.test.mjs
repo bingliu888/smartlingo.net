@@ -127,6 +127,7 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintClient, /\[1,2,3\]/);
   assert.doesNotMatch(sprintClient, /再跟读一次/);
   assert.doesNotMatch(sprintClient, /beginSpeech\(/);
+  assert.doesNotMatch(sprintClient, /if \(!round \|\| !word \|\| !vocabChecked\) return/);
   assert.match(sprintClient, /sprint-flip-card/);
   assert.match(sprintClient, /选择正确的意思，或点击卡片翻面/);
   assert.match(sprintClient, /vocabularyAnswers/);
