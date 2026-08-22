@@ -110,6 +110,7 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   const sprintPage = readFileSync(new URL("../app/[lang]/classes/[classId]/sprint/page.tsx", import.meta.url), "utf8");
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
   const sprintClient = readFileSync(new URL("../components/DailySprint.tsx", import.meta.url), "utf8");
+  const sentenceBuilder = readFileSync(new URL("../components/SentenceBuilderRound.tsx", import.meta.url), "utf8");
   assert.match(sprintPage, /query\.source==="play"/);
   assert.match(sprintPage, /isPublicBeginnerSprintClassId\(classId\)/);
   assert.match(sprintPage, /query\.source==="play"\|\|isPublicBeginnerSprintClassId\(classId\)/);
@@ -135,6 +136,9 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintClient, /自动跟读句子三遍，再选择正确意思/);
   assert.match(sprintClient, /SentenceBuilderRound/);
   assert.match(sprintClient, /autoAdvance/);
+  assert.match(sentenceBuilder, /const exerciseKey = exercises\.map\(item => item\.id\)\.join\("\|"\)/);
+  assert.match(sentenceBuilder, /\}, \[exerciseKey\]\)/);
+  assert.doesNotMatch(sentenceBuilder, /\}, \[exercises\]\)/);
   assert.match(sprintClient, /word\.pronunciation \? <b>/);
   assert.match(sprintClient, /剩余时间/);
   assert.match(sprintClient, /是否延长 5 分钟完成/);

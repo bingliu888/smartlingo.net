@@ -40,6 +40,7 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   const [answers, setAnswers] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<"idle" | "correct" | "incorrect">("idle");
   const advanceTimer = useRef<number | undefined>(undefined);
+  const exerciseKey = exercises.map(item => item.id).join("|");
   const exercise = exercises[index];
   const tiles = useMemo(() => exercise ? shuffledTokens(exercise) : [], [exercise]);
   const selectedTiles = selected.map(id => tiles.find(tile => tile.id === id)).filter((tile): tile is NonNullable<typeof tile> => Boolean(tile));
@@ -51,7 +52,7 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
     setIndex(0); setSelected([]); setAnswers([]); setFeedback("idle");
     window.clearTimeout(advanceTimer.current);
     return () => window.clearTimeout(advanceTimer.current);
-  }, [exercises]);
+  }, [exerciseKey]);
 
   function play(rate: number) {
     if (!exercise?.audioText || !("speechSynthesis" in window)) return;
