@@ -1,34 +1,34 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-real-interface-locales-v1",
+  "releaseId": "smartlingo-daily-practice-midnight-reset-2026-08-22",
   "site": "smartlingo.net",
-  "title": { "en": "Real twelve-language interface routing", "zh": "十二种界面语言真实路由" },
+  "title": { "en": "Daily practice resets without losing course-day progress", "zh": "每日练习跨日刷新且保留课程日进度" },
   "purpose": {
-    "en": "Fix the release-blocking defect where Japanese, Korean, and other selectable interface languages silently rendered the English site.",
-    "zh": "修复选择日语、韩语及其他界面语言后仍静默显示英文站点的上线阻断问题。"
+    "en": "Restore a fresh server-graded five-skill practice set and daily quiz after learner-local midnight while preserving an unfinished timed course checkpoint.",
+    "zh": "在学习者本地午夜后恢复全新的服务器判分五技能练习和每日测验，同时保留未完成的计时课程检查点。"
   },
   "features": {
-    "en": ["Give every selectable language its own stable URL and saved interface preference.", "Localize the homepage, desktop and mobile navigation, footer, language menu, and Today’s Sprint entry.", "Apply the correct HTML language, writing direction, and native language label."],
-    "zh": ["为每一种可选语言提供独立稳定网址并保存界面语言偏好。", "本地化首页、桌面与手机导航、页脚、语言菜单及今日速成入口。", "正确设置 HTML 语言、书写方向和语言原生名称。"]
+    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
+    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
   },
   "affected": {
-    "en": ["Public homepage", "Header and hamburger menu", "Footer", "Language switching", "Today’s Sprint picker", "Project release report"],
-    "zh": ["公开首页", "顶部与汉堡菜单", "页脚", "语言切换", "今日速成选择器", "Project 发布报告"]
+    "en": ["Signed-in Beginner course learning workspace", "Daily five-skill practice", "Daily vocabulary quiz and score log", "Cross-device course-day draft synchronization", "Project release report"],
+    "zh": ["已登录初级课程学习工作区", "每日五技能练习", "每日词汇测验与成绩日志", "跨设备课程日草稿同步", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Remove the former non-Chinese-to-English route alias from the interface language menu.", "Add one typed twelve-language interface registry and static localized homepage dictionaries.", "Add a regression contract proving each selectable language is a real route rather than an English alias."],
-    "zh": ["删除旧语言菜单把所有非中文语言映射为英文路由的逻辑。", "新增一套强类型十二语言界面注册表和静态首页本地化词典。", "新增回归合同，证明每种可选语言都是真实路由而非英文别名。"]
+    "en": ["Separate the current practice date from the authoritative checkpoint date in the learning API.", "Use the practice date for task status, sentence rounds, quiz questions, quiz attempts, and quiz images.", "Use the checkpoint date only for checkpoint scope validation and persistence."],
+    "zh": ["在学习 API 中拆分当前练习日期与权威检查点日期。", "任务状态、组句轮次、测验题目、测验记录和测验图片统一使用练习日期。", "仅在检查点范围校验和持久化中使用检查点日期。"]
   },
   "validation": {
-    "en": ["TypeScript passes with all twelve interface locale types.", "All 333 repository tests pass, including the new real-route localization contract.", "The verified vinext production build, artifact validation, and sensitive-data scan pass.", "After deployment, use real Chrome to switch to Japanese and Korean and verify visible text, URL, hamburger menu, footer, and Sprint dialog."],
-    "zh": ["十二种界面语言类型全部通过 TypeScript 检查。", "333 项仓库测试全部通过，包含新增真实语言路由合同。", "vinext 正式构建、产物验证和敏感信息扫描通过。", "发布后使用真实 Chrome 切换日语与韩语，验证正文、网址、汉堡菜单、页脚和今日速成弹窗。"]
+    "en": ["Run the daily-loop regression proving a new local date produces fresh practice while the prior checkpoint remains resumable.", "Run the sentence catalog, placement-learning, and 21-day QA contract suites.", "Run the full repository test, build, artifact, migration, sensitive-data, and shared-site policy gates.", "After deployment, repeat the failed signed-in Chrome course step and verify fresh tasks, feedback, score, and the 2026-08-22 learning log."],
+    "zh": ["运行每日循环回归测试，证明新本地日期会产生新练习且旧检查点仍可恢复。", "运行句子目录、分级学习及 21 天 QA 合同测试。", "运行完整仓库测试、构建、产物、迁移、敏感信息及共享站点政策门禁。", "发布后在已登录 Chrome 中重测失败的课程步骤，并验证新题、反馈、成绩及 2026-08-22 学习日志。"]
   },
   "deferred": {
-    "en": ["Secondary authenticated and administrative pages remain in the continuing page-by-page portfolio localization migration; this release removes the public language-switching blocker first."],
-    "zh": ["登录后及管理类次级页面继续按页面逐项迁移；本次先解除公开语言切换的阻断问题。"]
+    "en": ["Microphone-dependent speech scoring remains subject to Chrome device permission and will be reported as blocked if unavailable during production acceptance."],
+    "zh": ["依赖麦克风的口语评分仍取决于 Chrome 设备权限；若生产验收时不可用，将如实记录为阻断。"]
   },
   "siteAdaptations": {
-    "en": ["SmartLingo keeps its twelve learning-language catalog separate from the learner’s interface language while using the same supported codes."],
-    "zh": ["SmartLingo 继续把学习目标语言与学习者界面语言分开保存，但两者采用同一套十二种支持语言代码。"]
+    "en": ["SmartLingo retains its 60-minute resumable course-day timer while independently rotating daily acceptance exercises at learner-local midnight."],
+    "zh": ["SmartLingo 保留可恢复的 60 分钟课程日计时器，同时在学习者本地午夜独立轮换每日验收练习。"]
   }
 }

@@ -51,6 +51,7 @@ import {
   calculateLearningXp,
   composeDailyLearningSession,
   mergeCheckpointDrafts,
+  resolveDailyLearningDates,
   type DailyLearningSession,
   type SmartLingoDailySkill,
 } from "../../../../../lib/smartlingo-daily-loop";
@@ -1099,7 +1100,7 @@ async function learningState(
     ? await dailyCheckpoint(database, quickEnrollment.id, courseDay?.day ?? quickEnrollment.currentDay)
     : null;
   const authoritativeDailyPlan = checkpointPlan(checkpointRow, dailyLoop.plan);
-  const sessionDate = authoritativeDailyPlan.date;
+  const { practiceDate, checkpointDate: sessionDate } = resolveDailyLearningDates(date, authoritativeDailyPlan.date);
   const feedbackResult = checkpointRow ? await database.prepare(`SELECT task_id AS taskId, skill,
     answer_text AS answerText, score, correct, skipped,
     explanation_zh AS explanationZh, explanation_en AS explanationEn,
@@ -1160,7 +1161,7 @@ async function learningState(
   const state = reviewState(sample.stableId, progress, Date.now());
   const nextMode = requestedMode ?? selectNextVocabularyReviewMode(state);
   const dailyTasks = SMARTLINGO_SKILLS.map(skill => ({
-    ...buildDailyPracticeItem(targetLanguage, skill, sessionDate, uiLanguage, level),
+    ...buildDailyPracticeItem(targetLanguage, skill, practiceDate, uiLanguage, level),
     speechLocale: SPEECH_LOCALES[targetLanguage],
   }));
   const sourceIds = dailyTasks.map(task => `${access.classId}:${task.taskId}`);
@@ -1224,7 +1225,7 @@ async function learningState(
     correct_count AS correctCount, question_count AS questionCount, created_at AS createdAt
     FROM smartlingo_daily_quiz_attempts
     WHERE user_id = ? AND class_id = ? AND local_date = ?
-    ORDER BY attempt_number DESC LIMIT 1`).bind(userId, access.classId, sessionDate).first<DailyQuizRow>();
+    ORDER BY attempt_number DESC LIMIT 1`).bind(userId, access.classId, practiceDate).first<DailyQuizRow>();
   const motivation = await readLearningMotivation(database, userId);
 
   return {
@@ -1234,7 +1235,7 @@ async function learningState(
       targetLanguage: access.targetLanguage,
       classKind: "official_language" as const,
     },
-    date: sessionDate,
+    date: practiceDate,
     placement: {
       id: placement.id,
       status: placement.status,
@@ -1317,14 +1318,14 @@ async function learningState(
     motivation,
     dailyQuiz: {
       contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
-      questions: buildDailyVocabularyQuiz(targetLanguage, vocabularyDay, sessionDate, uiLanguage).map((question, index) => ({
+      questions: buildDailyVocabularyQuiz(targetLanguage, vocabularyDay, practiceDate, uiLanguage).map((question, index) => ({
         ...question,
         prompt: index === 0
           ? (uiLanguage === "zh" ? "看图后，用所学语言回答。" : "Study the image and answer in the language you are learning.")
           : question.prompt,
         pronunciation: index === 0 ? "" : question.pronunciation,
         imageUrl: index === 0
-          ? `/api/classes/${encodeURIComponent(access.classId)}/learning/quiz-image?date=${encodeURIComponent(sessionDate)}&day=${vocabularyDay}&questionId=${encodeURIComponent(question.id)}&lang=${uiLanguage}`
+          ? `/api/classes/${encodeURIComponent(access.classId)}/learning/quiz-image?date=${encodeURIComponent(practiceDate)}&day=${vocabularyDay}&questionId=${encodeURIComponent(question.id)}&lang=${uiLanguage}`
           : undefined,
       })),
     },
@@ -1499,7 +1500,6 @@ export async function POST(
       && Number(enrollmentScope.currentDay) === intendedCourseDay
       && state.sessionState.enrollmentId === intendedEnrollmentId
       && state.sessionState.courseDay === intendedCourseDay
-      && state.date === intendedSessionDate
       && state.dailySessionPlan.date === intendedSessionDate
       && state.dailySessionPlan.contentVersion === intendedContentVersion;
     if (!currentScopeMatches) {
@@ -1868,7 +1868,7 @@ export async function POST(
       classId: auth.classId,
       enrollmentId: state.sessionState.enrollmentId,
       courseDay: state.sessionState.courseDay,
-      date: sessionDate,
+      date: state.dailySessionPlan.date,
       timeZone,
       plan: state.dailySessionPlan,
     });
@@ -2175,7 +2175,7 @@ export async function POST(
       classId: auth.classId,
       enrollmentId: state.sessionState.enrollmentId,
       courseDay: state.sessionState.courseDay,
-      date: state.date,
+      date: state.dailySessionPlan.date,
       timeZone,
       plan: state.dailySessionPlan,
     });

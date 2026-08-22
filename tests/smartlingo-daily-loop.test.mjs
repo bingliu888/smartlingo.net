@@ -11,6 +11,7 @@ import {
   mergeCheckpointDrafts,
   mergeDailyCheckpointDrafts,
   reconcileCheckpointQueue,
+  resolveDailyLearningDates,
 } from "../lib/smartlingo-daily-loop.ts";
 
 const sessionInput = minutes => ({
@@ -48,6 +49,14 @@ test("daily composition is deterministic, complete, bilingual, and exactly timed
     assert.ok(first.blocks.every(block => block.rationale.zh && block.rationale.en));
     assert.ok(first.blocks.every(block => block.sourceType === "smartlingo_original"));
   }
+});
+
+test("daily practice advances at local midnight while an unfinished course checkpoint remains resumable", () => {
+  assert.deepEqual(
+    resolveDailyLearningDates("2026-08-22", "2026-08-21"),
+    { practiceDate: "2026-08-22", checkpointDate: "2026-08-21" },
+  );
+  assert.throws(() => resolveDailyLearningDates("2026-08-32", "2026-08-21"), /valid calendar date/);
 });
 
 test("recent weak skills receive extra session time", () => {
@@ -246,7 +255,8 @@ test("daily learning API keeps GET read-only and the server authoritative for ti
   assert.doesNotMatch(route, /Math\.min\(calculated, clientRemaining\)/);
   assert.match(route, /dailyComplete = daily\.complete && \(timer\?\.status === "completed" \|\| timerRemaining === 0\)/);
   assert.match(route, /const authoritativeDailyPlan = checkpointPlan\(checkpointRow, dailyLoop\.plan\)/);
-  assert.match(route, /const sessionDate = authoritativeDailyPlan\.date/);
+  assert.match(route, /resolveDailyLearningDates\(date, authoritativeDailyPlan\.date\)/);
+  assert.match(route, /buildDailyPracticeItem\(targetLanguage, skill, practiceDate/);
   assert.match(route, /taskDate !== state\.date/);
   assert.match(route, /gradeDailyVocabularyQuiz\(auth\.access\.targetLanguage, day, sessionDate/);
   assert.match(route, /const authoritativeTimeZone = await ensureLearningStreakAuthority/);

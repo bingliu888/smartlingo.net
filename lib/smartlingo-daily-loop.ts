@@ -133,6 +133,12 @@ function ordinalToLocalDate(ordinal: number): string {
   return `${year}-${month}-${day}`;
 }
 
+export function resolveDailyLearningDates(practiceDate: string, checkpointDate: string) {
+  localDateOrdinal(practiceDate, "practiceDate");
+  localDateOrdinal(checkpointDate, "checkpointDate");
+  return { practiceDate, checkpointDate } as const;
+}
+
 function allocateSkillMinutes(
   budget: number,
   scores: Readonly<Record<SmartLingoDailySkill, number>>,
