@@ -45,6 +45,8 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.match(menu, /interface-language-current">\{currentInterface\.nativeName\}/);
   assert.match(menu, /interface-language-chevron" aria-hidden="true">▾<\/span>/);
   assert.doesNotMatch(menu, /⌄/);
+  assert.match(menu, /aria-checked=\{lang === language\.code\}/);
+  assert.doesNotMatch(menu, /aria-checked=\{selected === language\.code\}/);
   assert.doesNotMatch(menu, /interface-language-current">\{current\.nativeName\}/);
   assert.doesNotMatch(menu, /code === "zh" \? "zh" : "en"/);
   assert.match(menu, /window\.location\.assign\(localizedPath\(window\.location\.pathname, code\)\)/);

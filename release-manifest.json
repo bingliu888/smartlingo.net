@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-standard-language-header-2026-08-22-v2",
+  "releaseId": "smartlingo-standard-language-header-2026-08-22-v3",
   "site": "smartlingo.net",
   "title": { "en": "Shared responsive wordmark and clean footer", "zh": "页眉页脚共用响应式品牌字标并清理页脚" },
   "purpose": {
@@ -8,8 +8,8 @@
     "zh": "当桌面导航使用两行时保持 SmartLingo 品牌清晰可读，让页脚复用同一分段字标，并移除重复的页脚语言切换。"
   },
   "features": {
-    "en": ["Wrap the brand only between Smart and Lingo in the two-row desktop range.", "Place the active-language text button before the account icon.", "Use a standard solid dropdown chevron and keep language switching in the header and hamburger menu only."],
-    "zh": ["在桌面两行范围内只允许在 Smart 与 Lingo 之间换行。", "将当前语言文字按钮固定在用户图标之前。", "使用标准实心下拉箭头，并仅在页眉和汉堡菜单中保留语言切换。"]
+    "en": ["Wrap the brand only between Smart and Lingo in the two-row desktop range.", "Place the active-language text button before the account icon.", "Use a standard solid dropdown chevron and make the URL locale authoritative for the active menu option."],
+    "zh": ["在桌面两行范围内只允许在 Smart 与 Lingo 之间换行。", "将当前语言文字按钮固定在用户图标之前。", "使用标准实心下拉箭头，并以 URL 语言作为菜单当前选项的唯一权威状态。"]
   },
   "affected": {
     "en": ["Global header", "Global footer", "Authentication brand surface", "Project release report"],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import {
   SMARTLINGO_LANGUAGE_COMMUNITIES,
   type SmartLingoCommunityLanguage,
@@ -12,7 +12,6 @@ type Lang = InterfaceLanguage;
 const TARGET_LANGUAGE_KEY = "smartlingo-target-language";
 const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
 const INTERFACE_LANGUAGE_KEY = "smartlingo-interface-language";
-const INTERFACE_LANGUAGE_EVENT = "smartlingo-interface-language-change";
 
 export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
   window.localStorage.setItem(TARGET_LANGUAGE_KEY, code);
@@ -24,15 +23,6 @@ function subscribeToTargetLanguage(update: () => void) {
   window.addEventListener("storage", update);
   return () => {
     window.removeEventListener(TARGET_LANGUAGE_EVENT, update);
-    window.removeEventListener("storage", update);
-  };
-}
-
-function subscribeToInterfaceLanguage(update: () => void) {
-  window.addEventListener(INTERFACE_LANGUAGE_EVENT, update);
-  window.addEventListener("storage", update);
-  return () => {
-    window.removeEventListener(INTERFACE_LANGUAGE_EVENT, update);
     window.removeEventListener("storage", update);
   };
 }
@@ -51,15 +41,6 @@ function localizedPath(pathname: string, language: Lang) {
 export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { lang: Lang; mobile?: boolean; onNavigate?: () => void }) {
   const t = interfaceCopyFor(lang);
   const menu = useRef<HTMLDetailsElement>(null);
-  const selected = useSyncExternalStore(
-    subscribeToInterfaceLanguage,
-    () => {
-      const saved = window.localStorage.getItem(INTERFACE_LANGUAGE_KEY);
-      return isCommunityLanguage(saved) ? saved : lang;
-    },
-    () => lang,
-  );
-
   useEffect(() => {
     function dismiss(event: PointerEvent) {
       if (menu.current?.open && !menu.current.contains(event.target as Node)) menu.current.open = false;
@@ -83,7 +64,6 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
 
   function choose(code: SmartLingoCommunityLanguage) {
     window.localStorage.setItem(INTERFACE_LANGUAGE_KEY, code);
-    window.dispatchEvent(new Event(INTERFACE_LANGUAGE_EVENT));
     if (menu.current) menu.current.open = false;
     onNavigate?.();
 
@@ -97,7 +77,7 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
         key={language.code}
         type="button"
         role="menuitemradio"
-        aria-checked={selected === language.code}
+        aria-checked={lang === language.code}
         onClick={() => choose(language.code)}
       >
         <span className="interface-language-option">
