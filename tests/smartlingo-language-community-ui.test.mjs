@@ -53,7 +53,7 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.doesNotMatch(css, /\.interface-language-current\{display:none\}/);
 });
 
-test("home and Choose course route languages through a separate detail page or an existing course", async () => {
+test("home feature buttons and Choose course use canonical destination pages", async () => {
   const [home, choices, planner, programs, detail, css] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/HomeLearningChoices.tsx"),
@@ -63,7 +63,9 @@ test("home and Choose course route languages through a separate detail page or a
     read("../app/globals.css"),
   ]);
 
-  assert.match(home, /<HomeLearningChoices lang=\{lang\}/);
+  assert.doesNotMatch(home, /<HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
+  for (const route of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(route));
+  assert.match(home, /play\?language=\$\{lang\}/);
   assert.equal((home.match(/<h1/g) || []).length, 0);
   assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);
   assert.match(choices, /先选择想做什么，再选择语言/);

@@ -20,7 +20,7 @@ export function DashboardLearningHub({ lang, courses }: { lang: "zh" | "en"; cou
     { id: "ai", labelZh: "咨询AI", labelEn: "Ask AI", bodyZh: "带着所选语言进入 AI 对话与练习。", bodyEn: "Open AI conversation and practice with the selected language." },
   ];
 
-  if (!languages.length) return <section className={styles.empty}><p>MY LEARNING</p><h2>{zh ? "还没有加入任何语言课程" : "No language course joined yet"}</h2><span>{zh ? "先从生活口语或边玩边学免费体验，再选择课程。" : "Try Everyday speaking or Learn through play for free, then choose a course."}</span><div><Link href={`/${lang}/#home-everyday`}>{zh ? "生活口语" : "Everyday speaking"}</Link><Link href={`/${lang}/#home-courses`}>{zh ? "选择课程" : "Choose course"}</Link></div></section>;
+  if (!languages.length) return <section className={styles.empty}><p>MY LEARNING</p><h2>{zh ? "还没有加入任何语言课程" : "No language course joined yet"}</h2><span>{zh ? "先从生活口语或边玩边学免费体验，再选择课程。" : "Try Everyday speaking or Learn through play for free, then choose a course."}</span><div><Link href={`/${lang}/play/everyday`}>{zh ? "生活口语" : "Everyday speaking"}</Link><Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link></div></section>;
 
   return <section className={styles.hub} aria-label={zh ? "我的语言学习" : "My language learning"}>
     <header><p>MY LEARNING · BY LANGUAGE</p><h2>{zh ? "按语言继续已经加入的学习内容" : "Continue joined learning by language"}</h2><span>{zh ? "每个区域只显示您已经加入的语言；切换标签不会改变其他区域。" : "Each area shows only languages you joined. Tabs switch independently."}</span></header>

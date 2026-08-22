@@ -23,10 +23,9 @@ test("vocabulary library pagination returns exactly twenty and clamps pages", ()
   assert.equal(last.items.length, 20);
 });
 
-test("home routes Play to its full hub while the three detailed panels and dashboard remain language-aware", async () => {
-  const [home, choices, dashboard, dashboardHub, header, assistant, assistantRoute] = await Promise.all([
+test("home and dashboard use canonical feature routes without duplicate home panels", async () => {
+  const [home, dashboard, dashboardHub, header, assistant, assistantRoute] = await Promise.all([
     read("../app/[lang]/page.tsx"),
-    read("../components/HomeLearningChoices.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
     read("../components/DashboardLearningHub.tsx"),
     read("../components/SiteHeader.tsx"),
@@ -36,16 +35,13 @@ test("home routes Play to its full hub while the three detailed panels and dashb
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) {
     assert.match(header, new RegExp(label));
   }
-  for (const label of ["生活口语", "选择课程", "咨询AI"]) assert.match(choices, new RegExp(label));
   assert.match(home, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
-  assert.doesNotMatch(choices, /area: "play"/);
-  assert.match(home, /HomeLearningChoices/);
-  assert.match(choices, /SMARTLINGO_EVERYDAY_SCENARIOS/);
-  assert.match(choices, /SMARTLINGO_LANGUAGE_COMMUNITIES/);
-  assert.match(choices, /scrollBy/);
+  for (const route of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(route));
+  assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
   assert.match(dashboard, /DashboardLearningHub/);
   assert.match(dashboard, /smartlingo_language_class_members/);
   for (const path of ["play/everyday", "play/challenge", "classes", "assistant"]) assert.match(dashboardHub, new RegExp(path));
+  assert.match(dashboardHub, /href=\{`\/\$\{lang\}\/programs`\}/);
   assert.match(assistant, /targetLanguage/);
   assert.match(assistantRoute, /targetInstruction/);
 });

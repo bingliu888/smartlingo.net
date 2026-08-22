@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-game-style-daily-sprint-and-unified-play-v1",
+  "releaseId": "smartlingo-canonical-home-feature-routes-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Turn Today’s Sprint into a guided game and unify every Play entry", "zh": "将今日速成升级为引导式游戏并统一全部边玩边学入口" },
+  "title": { "en": "Give every Home feature one canonical destination", "zh": "让每个首页功能统一进入唯一真实页面" },
   "purpose": {
-    "en": "Make Today’s Sprint teach each word and sentence through answer, feedback, and speech interactions while every Home and menu Play entry opens the same complete six-activity hub.",
-    "zh": "让今日速成通过答题、反馈和跟读逐步教授每个词与句子，并让首页及菜单的边玩边学入口统一进入完整六项 Play 页面。"
+    "en": "Remove duplicate interactive feature panels from Home so its mobile-friendly buttons and the menu always open the same maintained feature pages, with less Home content to load.",
+    "zh": "删除首页重复的交互功能面板，让便于手机使用的首页按钮和菜单始终进入同一套正式功能页面，同时减少主页加载内容。"
   },
   "features": {
     "en": [
@@ -13,29 +13,35 @@
       "Show immediate correct or incorrect feedback and reveal the right answer after a mistake.",
       "Automatically model pronunciation and start repeat-after-me when the shared preference is enabled.",
       "Follow vocabulary with sentence read-aloud, meaning selection, listening word assembly, writing word assembly, and final speaking.",
-      "Place anonymous Free Trial as the sixth and final Play tile."
+      "Place anonymous Free Trial as the sixth and final Play tile.",
+      "Route Home buttons directly to Everyday Speaking, the six-item Play hub, Choose Course, Choose College, and Ask AI.",
+      "Remove duplicate Home feature sliders plus duplicate course and college panels to reduce page weight and prevent divergent behavior."
     ],
     "zh": [
       "将每个速成词汇显示为可翻面的 SmartCard 式卡片，并提供四个词义选项。",
       "答题后立即显示正确或错误反馈，答错时明确展示正确答案。",
       "全局跟读开启时自动示范发音并开始识别学习者跟读。",
       "词汇后依次完成句子跟读、选义、听力组句、写作组句和最终口语。",
-      "将匿名免费试学固定为 Play 第六张、最后一张卡。"
+      "将匿名免费试学固定为 Play 第六张、最后一张卡。",
+      "让首页按钮直接进入生活口语、六项 Play、选择课程、选择学院和咨询 AI 的正式页面。",
+      "删除首页重复的功能滑块以及课程和学院面板，减少页面负担并避免功能分叉。"
     ]
   },
   "affected": {
-    "en": ["Home Play call to action", "Play activity hub", "Anonymous and signed-in Today’s Sprint", "Sprint scoring", "Administrator Project report"],
-    "zh": ["首页边玩边学按钮", "Play 活动中心", "匿名及登录用户今日速成", "速成计分", "管理员 Project 报告"]
+    "en": ["Home feature buttons and page weight", "Play activity hub", "Anonymous and signed-in Today’s Sprint", "Sprint scoring", "Administrator Project report"],
+    "zh": ["首页功能按钮与页面负担", "Play 活动中心", "匿名及登录用户今日速成", "速成计分", "管理员 Project 报告"]
   },
   "changes": {
     "en": [
-      "Remove the duplicate three-card Play panel from Home and route the Home button directly to the canonical six-tile Play hub.",
+      "Remove every duplicate Home feature panel and route all five Home actions to their canonical menu destinations.",
+      "Update the empty dashboard shortcuts to the same canonical Everyday Speaking and Choose Course pages.",
       "Record per-word answer evidence and score vocabulary correctness server-side while retaining compatibility with earlier runs.",
       "Add speech recovery states that never trap learners when browser recognition is unavailable or silent.",
       "Extend regression tests for the unified Home route, final Free Trial tile, flip-card interaction, answer feedback, speech, and sentence builders."
     ],
     "zh": [
-      "删除首页重复的三卡 Play 面板，并让首页按钮直接进入唯一的六卡 Play 页面。",
+      "删除全部首页重复功能面板，并让五个首页功能按钮进入与菜单一致的唯一页面。",
+      "同步更新空用户面板快捷入口，使生活口语和选择课程也使用唯一正式页面。",
       "记录逐词答案证据并由服务器计算词汇正确率，同时兼容既有速成记录。",
       "加入语音恢复状态，在浏览器不支持识别或未听到语音时不会卡住学习者。",
       "扩展回归测试，覆盖首页统一跳转、最后一张免费试学、翻卡、答题反馈、跟读和组句。"
@@ -44,12 +50,12 @@
   "validation": {
     "en": [
       "Run the verified production build, sensitive-data scan, artifact validation, TypeScript, and all 328 repository tests.",
-      "Use real Chrome and Safari to verify Home Play opens all six activities and Free Trial is last.",
+      "Use real Chrome and Safari to verify every Home feature button reaches the matching menu destination, Play exposes all six activities, and Free Trial is last.",
       "Complete an anonymous production Sprint through vocabulary flip and answer feedback, repeat-after-me recovery, all sentence stages, speaking, and the final sign-up reminder."
     ],
     "zh": [
       "执行正式构建、敏感数据扫描、产物验证、TypeScript 与全部 328 项仓库测试。",
-      "使用真实 Chrome 与 Safari 验证首页边玩边学进入全部六项，且免费试学位于最后。",
+      "使用真实 Chrome 与 Safari 验证每个首页功能按钮进入对应菜单页面、Play 展示全部六项且免费试学位于最后。",
       "在生产环境匿名完成一次速成，覆盖词汇翻卡与答题反馈、跟读恢复、全部句子阶段、口语及最终注册提醒。"
     ]
   },
