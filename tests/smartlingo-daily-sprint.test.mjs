@@ -118,6 +118,9 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintClient, /本次匿名学习不会写入账户或数据库/);
   assert.match(sprintClient, /免费注册/);
   assert.match(sprintClient, /登录/);
+  assert.match(sprintClient, /recognition\.stop\(\)/);
+  assert.match(sprintClient, /以口语 0 分继续/);
+  assert.match(sprintClient, /没有识别到清楚语音/);
 });
 
 test("migration adds idempotent rank and redemption ownership boundaries", () => {

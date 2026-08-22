@@ -1,21 +1,23 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-anonymous-daily-sprint-access-v1",
+  "releaseId": "smartlingo-anonymous-daily-sprint-speech-recovery-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Keep Beginner Today’s Sprint open to anonymous learners", "zh": "确保匿名学习者可直接使用初级今日速成" },
+  "title": { "en": "Complete anonymous Today’s Sprint without a speech dead end", "zh": "确保匿名今日速成可完整完成且口语不再卡死" },
   "purpose": {
-    "en": "Prevent private-mode and signed-out learners from being redirected to sign-in when starting an official Beginner Today’s Sprint.",
-    "zh": "防止私密模式及未登录学习者开始官方初级今日速成时被错误跳转到登录页。"
+    "en": "Keep private-mode learners in the official Beginner Sprint and let them retry or finish when speech recognition returns no transcript.",
+    "zh": "让私密模式学习者可进入官方初级今日速成，并在语音未识别时重试或继续完成。"
   },
   "features": {
     "en": [
       "Treat each of the twelve controlled official Basic Sprint routes as a public learning experience.",
       "Allow anonymous learners to start even if a client transition does not preserve the source query parameter.",
+      "End an unrecognized speaking attempt after ten seconds and offer a retry or an explicit zero-score continuation.",
       "Keep non-Basic and non-official Sprint routes protected by sign-in and course access."
     ],
     "zh": [
       "将十二种受控官方 Basic 今日速成路径作为公开学习体验。",
       "即使客户端跳转未保留来源参数，匿名学习者仍可直接开始。",
+      "语音十秒未识别时结束等待，并提供重试或明确的口语零分继续选项。",
       "非 Basic 及非官方今日速成路径继续要求登录与课程权限。"
     ]
   },
@@ -27,29 +29,31 @@
     "en": [
       "Derive public page access from the strict official Beginner course-ID allowlist as well as the source parameter.",
       "Pass the resulting public access state to the Sprint API so anonymous runs remain non-persistent.",
-      "Add regression coverage for query-independent official Beginner access."
+      "Add regression coverage for query-independent official Beginner access.",
+      "Add regression coverage for the speaking timeout and recovery controls."
     ],
     "zh": [
       "除来源参数外，页面还使用严格的官方初级课程 ID 白名单判定公开访问。",
       "将公开访问状态传给今日速成 API，使匿名学习结果保持不写入数据库。",
-      "增加不依赖来源参数的官方初级访问回归测试。"
+      "增加不依赖来源参数的官方初级访问回归测试。",
+      "增加口语超时与恢复控制的回归测试。"
     ]
   },
   "validation": {
     "en": [
       "Run the Daily Sprint contract tests and full repository release gate.",
-      "Verify the production flow in a signed-out Chrome session from picker through the first learning round.",
+      "Verify the full production flow in a Safari Private window from the Home picker through all five skills and completion.",
       "Verify direct Basic Sprint access without a source query and confirm protected non-Basic access still redirects."
     ],
     "zh": [
       "执行今日速成契约测试与全仓发布门禁。",
-      "在未登录 Chrome 会话中从选择弹窗测试到首个学习回合。",
+      "在 Safari 私密窗口中从首页选择弹窗完整测试五项技能与结算。",
       "测试不带来源参数的 Basic 今日速成可进入，并确认非 Basic 路径仍会跳转登录。"
     ]
   },
   "deferred": {
-    "en": ["Speech scoring still requires genuine learner microphone input and is not simulated by browser automation."],
-    "zh": ["语音评分仍需要真实学习者麦克风输入，浏览器自动化不会伪造语音。"]
+    "en": ["Speech scoring still requires genuine learner input; the verified no-speech path assigns zero instead of fabricating a transcript."],
+    "zh": ["口语评分仍需要学习者真实发音；已验证的无语音路径会计零分，不会伪造识别文本。"]
   },
   "siteAdaptations": {
     "en": ["This is a SmartLingo-specific learning-entry repair and does not alter other portfolio sites."],
