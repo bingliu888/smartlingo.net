@@ -28,7 +28,7 @@
     "zh": ["本次发布不改变学习、支付、推荐、证书、挑战或排行榜行为。"]
   },
   "siteAdaptations": {
-    "en": ["SmartLingo keeps its green Lingo segment and S icon while adopting the global wordmark and footer-language rules."],
-    "zh": ["SmartLingo 在采用全局字标与页脚语言规则时保留绿色 Lingo 分段和 S 图标。"]
+    "en": ["SmartLingo keeps the exact same green Lingo segment and S icon in both header and footer while adopting the global wordmark and footer-language rules."],
+    "zh": ["SmartLingo 在采用全局字标与页脚语言规则时，让页眉和页脚保留完全相同的绿色 Lingo 分段和 S 图标。"]
   }
 }

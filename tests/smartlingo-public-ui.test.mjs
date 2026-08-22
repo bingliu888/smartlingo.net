@@ -19,6 +19,7 @@ test("SmartLingo branding exposes the four primary learning choices", async () =
   assert.match(footer, /<SmartLingoWordmark\/>/);
   assert.match(wordmark, /<span>Smart<\/span><em>Lingo<\/em>/);
   assert.match(css, /@media\(min-width:1101px\) and \(max-width:1320px\)\{\.smartlingo-wordmark\{display:grid/);
+  assert.match(css, /\.ai-cert-brand \.smartlingo-wordmark em,\.smartlingo-footer-brand \.smartlingo-wordmark em\{color:#0b9475\}/);
   for (const path of ["play/everyday", "programs", "play", "assistant"]) assert.match(header, new RegExp(`/${path}`));
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(locale, new RegExp(label));
   assert.doesNotMatch(header, /\/classes|\/community/);
