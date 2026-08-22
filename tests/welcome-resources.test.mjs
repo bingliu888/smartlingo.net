@@ -5,9 +5,10 @@ import test from "node:test";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("homepage exposes the complete SmartLingo learning and fixed-course flow", async () => {
-  const [source, choices] = await Promise.all([
+  const [source, choices, locale] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/HomeLearningChoices.tsx"),
+    read("../lib/interface-locale.ts"),
   ]);
 
   assert.match(source, /十二种语言，同一套完整学习闭环/);
@@ -24,7 +25,7 @@ test("homepage exposes the complete SmartLingo learning and fixed-course flow", 
   assert.match(source, /三类积分独立记账、可追溯/);
   assert.match(source, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
   assert.match(source, /课程购买、收款、打赏和退款都不会产生介绍人积分/);
-  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(`${source}\n${choices}`, new RegExp(label));
+  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(`${source}\n${choices}\n${locale}`, new RegExp(label));
   assert.doesNotMatch(source, /人工智能实操营|21 天|BACC|黄金会员|铂金会员|授权码|PayPal/);
 });
 

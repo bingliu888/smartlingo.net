@@ -1,22 +1,23 @@
 import Link from "next/link";
 import { LanguageLink } from "./LanguageMemory";
+import { interfaceCopyFor, type InterfaceLanguage } from "../lib/interface-locale";
 
-export function SiteFooter({ lang }: { lang: "en" | "zh" }) {
-  const zh = lang === "zh";
+export function SiteFooter({ lang }: { lang: InterfaceLanguage }) {
+  const t = interfaceCopyFor(lang);
   return (
     <footer className="global-site-footer ai-cert-footer">
       <div className="footer-identity">
         <strong>Smart<span>Lingo</span></strong>
-        <span>{zh ? "从第一天开口 · 人工智能导师 · 三级课程 · 首月免费" : "Speak from day one · AI Guru · Three course levels · First month free"}</span>
+        <span>{t.footerTagline}</span>
         <small>© 2026 SmartLingo.net</small>
       </div>
-      <nav aria-label={zh ? "页脚导航" : "Footer navigation"}>
-        <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
-        <Link href={`/${lang}/assistant`}>{zh ? "咨询专家" : "Ask Guru"}</Link>
-        <Link href={`/${lang}/project`}>{zh ? "项目" : "Project"}</Link>
-        <Link href={`/${lang}/about`}>{zh ? "关于我们" : "About"}</Link>
-        <Link href={`/${lang}/privacy`}>{zh ? "隐私政策" : "Privacy"}</Link>
-        <Link href={`/${lang}/terms`}>{zh ? "使用条款" : "Terms"}</Link>
+      <nav aria-label={t.footerNav}>
+        <Link href={`/${lang}/programs`}>{t.courses}</Link>
+        <Link href={`/${lang}/assistant`}>{t.askGuru}</Link>
+        <Link href={`/${lang}/project`}>{t.project}</Link>
+        <Link href={`/${lang}/about`}>{t.about}</Link>
+        <Link href={`/${lang}/privacy`}>{t.privacy}</Link>
+        <Link href={`/${lang}/terms`}>{t.terms}</Link>
         <LanguageLink lang={lang} compact/>
       </nav>
     </footer>

@@ -6,11 +6,11 @@ test("the primary navigation exposes the four learning choices", async () => {
   const header = await readFile(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const menu = await readFile(new URL("../components/HeaderAccount.tsx", import.meta.url), "utf8");
   const retiredCommunity = await readFile(new URL("../app/[lang]/community/page.tsx", import.meta.url), "utf8");
+  const locale = await readFile(new URL("../lib/interface-locale.ts", import.meta.url), "utf8");
 
-  assert.match(header, /zh \? "生活口语" : "Everyday speaking"/);
-  assert.match(header, /zh \? "选择课程" : "Choose course"/);
-  assert.match(header, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}>\{zh \? "边玩边学" : "Learn through play"\}/);
-  assert.match(header, /zh \? "咨询AI" : "Ask AI"/);
+  for (const label of ["Everyday speaking", "生活口语", "日常会話", "생활 회화", "Choose course", "选择课程", "コースを選ぶ", "과정 선택"]) assert.match(locale, new RegExp(label));
+  assert.match(header, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}>\{t\.play\}/);
+  assert.match(header, /\{t\.askAi\}/);
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.doesNotMatch(menu, /href=\{`\/\$\{lang\}\/community`\}/);
   assert.match(retiredCommunity, /redirect\(`\/\$\{lang\}\/programs`\)/);

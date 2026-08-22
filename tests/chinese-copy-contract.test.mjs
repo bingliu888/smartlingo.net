@@ -5,20 +5,21 @@ import test from "node:test";
 const source = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("Chinese shared controls and account notices remain localized", async () => {
-  const [header, footer, language, account, assistant] = await Promise.all([
+  const [header, footer, language, account, assistant, interfaceLocale] = await Promise.all([
     source("components/SiteHeader.tsx"),
     source("components/SiteFooter.tsx"),
     source("components/LanguageMemory.tsx"),
     source("components/HeaderAccount.tsx"),
     source("components/FloatingAssistant.tsx"),
+    source("lib/interface-locale.ts"),
   ]);
 
-  assert.match(header, /SmartLingo 首页/);
-  assert.match(header, /主导航/);
-  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(header, new RegExp(label));
-  assert.match(footer, /页脚导航/);
-  assert.match(footer, /从第一天开口 · 人工智能导师 · 三级课程 · 首月免费/);
-  assert.match(language, /切换为英文/);
+  assert.match(interfaceLocale, /SmartLingo 首页/);
+  assert.match(interfaceLocale, /主导航/);
+  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(interfaceLocale, new RegExp(label));
+  assert.match(interfaceLocale, /页脚导航/);
+  assert.match(interfaceLocale, /从第一天开口 · 人工智能导师 · 三级课程 · 首月免费/);
+  assert.match(language, /interfaceLanguages/);
   assert.match(account, /条未读消息/);
   assert.match(assistant, /打开智能助手/);
 });

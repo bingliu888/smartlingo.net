@@ -5,16 +5,17 @@ import test from "node:test";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("SmartLingo branding exposes the four primary learning choices", async () => {
-  const [header, footer, layout, languageLayout] = await Promise.all([
+  const [header, footer, layout, languageLayout, locale] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../components/SiteFooter.tsx"),
     read("../app/layout.tsx"),
     read("../app/[lang]/layout.tsx"),
+    read("../lib/interface-locale.ts"),
   ]);
 
   assert.match(header, /Smart<em>Lingo<\/em>/);
   for (const path of ["play/everyday", "programs", "play", "assistant"]) assert.match(header, new RegExp(`/${path}`));
-  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(header, new RegExp(label));
+  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(locale, new RegExp(label));
   assert.doesNotMatch(header, /\/classes|\/community/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["programs", "assistant", "project", "about", "privacy", "terms"]) assert.match(footer, new RegExp(`/${path}`));

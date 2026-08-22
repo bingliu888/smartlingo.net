@@ -4,19 +4,21 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { HeaderAccount } from "./HeaderAccount";
 import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
+import { interfaceCopyFor, type InterfaceLanguage } from "../lib/interface-locale";
 
-function GlobalLinks({ lang }: { lang: "en" | "zh" }) {
-  const zh = lang === "zh";
+function GlobalLinks({ lang }: { lang: InterfaceLanguage }) {
+  const t = interfaceCopyFor(lang);
   return <>
-    <Link href={`/${lang}/play/everyday`}>{zh ? "生活口语" : "Everyday speaking"}</Link>
-    <Link href={`/${lang}/play?language=${lang}`}>{zh ? "边玩边学" : "Learn through play"}</Link>
-    <Link href={`/${lang}/programs`}>{zh ? "选择课程" : "Choose course"}</Link>
-    <Link href={`/${lang}/colleges`}>{zh ? "选择学院" : "Choose College"}</Link>
-    <Link href={`/${lang}/assistant`}>{zh ? "咨询AI" : "Ask AI"}</Link>
+    <Link href={`/${lang}/play/everyday`}>{t.everyday}</Link>
+    <Link href={`/${lang}/play?language=${lang}`}>{t.play}</Link>
+    <Link href={`/${lang}/programs`}>{t.courses}</Link>
+    <Link href={`/${lang}/colleges`}>{t.colleges}</Link>
+    <Link href={`/${lang}/assistant`}>{t.askAi}</Link>
   </>;
 }
 
-export function SiteHeader({ lang }: { lang: "en" | "zh" }) {
+export function SiteHeader({ lang }: { lang: InterfaceLanguage }) {
+  const t = interfaceCopyFor(lang);
   const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => {
     if (!mobileOpen) return;
@@ -26,11 +28,11 @@ export function SiteHeader({ lang }: { lang: "en" | "zh" }) {
   }, [mobileOpen]);
   return (
     <header className="site-header ai-cert-header">
-      <Link className="brand ai-cert-brand" href={`/${lang}`} aria-label={lang === "zh" ? "SmartLingo 首页" : "SmartLingo home"}>
+      <Link className="brand ai-cert-brand" href={`/${lang}`} aria-label={t.home}>
         <span className="lingo-brand-mark" aria-hidden="true">S</span>
         <span>Smart<em>Lingo</em></span>
       </Link>
-      <nav className="desktop-nav" aria-label={lang === "zh" ? "主导航" : "Primary navigation"}>
+      <nav className="desktop-nav" aria-label={t.primaryNav}>
         <GlobalLinks lang={lang}/>
       </nav>
       <div className="header-actions">
@@ -40,13 +42,13 @@ export function SiteHeader({ lang }: { lang: "en" | "zh" }) {
       <button
         className={`hamburger-button${mobileOpen ? " open" : ""}`}
         type="button"
-        aria-label={mobileOpen ? (lang === "zh" ? "关闭菜单" : "Close menu") : (lang === "zh" ? "打开菜单" : "Open menu")}
+        aria-label={mobileOpen ? t.closeMenu : t.openMenu}
         aria-expanded={mobileOpen}
         aria-controls="mobile-header-menu"
         onClick={() => setMobileOpen(value => !value)}
       ><span/><span/><span/></button>
       {mobileOpen ? <div className="mobile-header-menu" id="mobile-header-menu">
-        <nav aria-label={lang === "zh" ? "主导航" : "Primary navigation"} onClick={() => setMobileOpen(false)}>
+        <nav aria-label={t.primaryNav} onClick={() => setMobileOpen(false)}>
           <GlobalLinks lang={lang}/>
         </nav>
         <InterfaceLanguageMenu lang={lang} mobile onNavigate={() => setMobileOpen(false)}/>

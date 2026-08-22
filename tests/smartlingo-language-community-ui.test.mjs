@@ -43,8 +43,8 @@ test("the shared header uses one accessible twelve-language text dropdown withou
   assert.match(menu, /currentInterface.*language\.code === lang/s);
   assert.match(menu, /interface-language-current">\{currentInterface\.nativeName\}/);
   assert.doesNotMatch(menu, /interface-language-current">\{current\.nativeName\}/);
-  assert.match(menu, /const renderedLanguage: Lang = code === "zh" \? "zh" : "en"/);
-  assert.match(menu, /window\.location\.assign\(localizedPath\(window\.location\.pathname, renderedLanguage\)\)/);
+  assert.doesNotMatch(menu, /code === "zh" \? "zh" : "en"/);
+  assert.match(menu, /window\.location\.assign\(localizedPath\(window\.location\.pathname, code\)\)/);
   assert.doesNotMatch(menu, /rememberTargetLanguage\(code\)/);
   assert.doesNotMatch(`${header}\n${menu}`, /I speak|我会说|母语选择/iu);
   assert.doesNotMatch(`${menu}\n${chooser}\n${home}`, /[\u{1F1E6}-\u{1F1FF}]{2}/u);
@@ -65,7 +65,7 @@ test("home feature buttons and Choose course use canonical destination pages", a
 
   assert.doesNotMatch(home, /<HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
   for (const route of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(route));
-  assert.match(home, /play\?language=\$\{lang\}/);
+  assert.match(home, /play\?language=\$\{locale\}/);
   assert.equal((home.match(/<h1/g) || []).length, 0);
   assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);
   assert.match(choices, /先选择想做什么，再选择语言/);

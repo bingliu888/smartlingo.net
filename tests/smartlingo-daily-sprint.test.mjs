@@ -84,18 +84,18 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
 test("Home feature buttons use the same canonical pages as navigation, and the task image opens Sprint", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
-  assert.ok(header.indexOf("选择课程") < header.indexOf("选择学院"));
-  assert.ok(home.indexOf('href={`/${lang}/programs`}') < home.indexOf('href={`/${lang}/colleges`}'));
+  assert.ok(header.indexOf("t.courses") < header.indexOf("t.colleges"));
+  assert.ok(home.indexOf('href={`/${locale}/programs`}') < home.indexOf('href={`/${locale}/colleges`}'));
   for (const path of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(path));
-  assert.match(home, /play\?language=\$\{lang\}/);
+  assert.match(home, /play\?language=\$\{locale\}/);
   assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
-  assert.match(home, /PlayDailySprintPicker lang=\{lang\} initialLanguage=\{lang\}/);
+  assert.match(home, /PlayDailySprintPicker lang=\{locale\} initialLanguage=\{locale\}/);
   assert.match(home, /triggerClassName="lingo-hero-visual"/);
-  assert.match(home, /打开今日速成，选择语言和时长/);
+  assert.match(home, /triggerLabel=\{ui\.openSprint\}/);
   assert.doesNotMatch(home, /className="lingo-hero-visual" href=/);
   assert.match(home, /lingo-community-art/);
   assert.match(home, /lingo-task-action/);
-  assert.match(home, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
+  assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
 });
 
 test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", async () => {

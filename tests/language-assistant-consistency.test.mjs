@@ -22,7 +22,8 @@ test("English and Chinese routes use matching content", async () => {
   assert.match(home, /Verified SmartCard challenge points can offset only a SmartLingo course month/);
   assert.match(home, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
   for (const label of ["Everyday speaking", "生活口语", "Choose a course", "选择课程", "Ask AI", "咨询AI"]) assert.match(choices, new RegExp(label));
-  for (const label of ["Learn through play", "边玩边学"]) assert.match(home, new RegExp(label));
+  const interfaceLocale = await readFile(new URL("../lib/interface-locale.ts", import.meta.url), "utf8");
+  for (const label of ["Learn through play", "边玩边学", "遊んで学ぶ", "놀면서 배우기"]) assert.match(interfaceLocale, new RegExp(label));
   assert.doesNotMatch(choices, /area: "play"/);
   assert.match(home, /Messages & Live Chat/);
   assert.match(home, /AI Guru & live audio/);

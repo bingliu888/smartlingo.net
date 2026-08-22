@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LanguageSync, type SiteLanguage } from "../../components/LanguageMemory";
 import { PersistentCallProvider } from "../../components/PersistentCallProvider";
+import { safeInterfaceLanguage } from "../../lib/interface-locale";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -18,6 +19,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function LanguageLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
-  const safeLanguage: SiteLanguage = lang === "zh" ? "zh" : "en";
-  return <PersistentCallProvider lang={safeLanguage}><LanguageSync lang={safeLanguage}/>{children}</PersistentCallProvider>;
+  const safeLanguage: SiteLanguage = safeInterfaceLanguage(lang);
+  return <PersistentCallProvider lang={safeLanguage === "zh" ? "zh" : "en"}><LanguageSync lang={safeLanguage}/>{children}</PersistentCallProvider>;
 }

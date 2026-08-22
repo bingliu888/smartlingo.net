@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { PlayDailySprintPicker } from "../../components/PlayDailySprintPicker";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
+import { homeInterfaceTranslations } from "../../lib/home-interface-translations.generated";
+import { interfaceCopyFor, safeInterfaceLanguage, translateHomeCopy } from "../../lib/interface-locale";
 
 const copy = {
   en: {
@@ -140,39 +141,41 @@ const copy = {
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh") return {};
-  return { title: copy[lang].metaTitle };
+  const locale = safeInterfaceLanguage(lang);
+  const localized = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  return { title: localized.metaTitle };
 }
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh") redirect("/");
-  const t = copy[lang];
+  const locale = safeInterfaceLanguage(lang);
+  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  const ui = interfaceCopyFor(locale);
   return (
     <main className="lingo-home" data-layout-page="home">
       <div className="lingo-hero-shell" data-layout-fill="home-hero-shell">
-        <SiteHeader lang={lang}/>
+        <SiteHeader lang={locale}/>
         <section className="lingo-hero">
           <div className="lingo-hero-copy" data-readable-copy="home-hero-copy">
             <p className="section-kicker">{t.eyebrow}</p>
             <h2 data-layout-text-fit="home-hero-title">{t.title}</h2>
             <p>{t.intro}</p>
             <div className="lingo-actions">
-              <Link className="primary-button" href={`/${lang}/play/everyday`}>{lang === "zh" ? "生活口语" : "Everyday speaking"} →</Link>
-              <Link className="secondary-button" href={`/${lang}/play?language=${lang}`}>{lang === "zh" ? "边玩边学" : "Learn through play"}</Link>
-              <Link className="secondary-button" href={`/${lang}/programs`}>{lang === "zh" ? "选择课程" : "Choose course"}</Link>
-              <Link className="secondary-button" href={`/${lang}/colleges`}>{lang === "zh" ? "选择学院" : "Choose College"}</Link>
-              <Link className="text-link" href={`/${lang}/assistant`}>{lang === "zh" ? "咨询AI" : "Ask AI"}</Link>
+              <Link className="primary-button" href={`/${locale}/play/everyday`}>{ui.everyday} →</Link>
+              <Link className="secondary-button" href={`/${locale}/play?language=${locale}`}>{ui.play}</Link>
+              <Link className="secondary-button" href={`/${locale}/programs`}>{ui.courses}</Link>
+              <Link className="secondary-button" href={`/${locale}/colleges`}>{ui.colleges}</Link>
+              <Link className="text-link" href={`/${locale}/assistant`}>{ui.askAi}</Link>
             </div>
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>
           </div>
-          <PlayDailySprintPicker lang={lang} initialLanguage={lang} triggerClassName="lingo-hero-visual" triggerLabel={lang === "zh" ? "打开今日速成，选择语言和时长" : "Open Today’s Sprint and choose a language and time"}>
+          <PlayDailySprintPicker lang={locale} initialLanguage={locale} triggerClassName="lingo-hero-visual" triggerLabel={ui.openSprint}>
             <img
               className="lingo-community-art"
               src="/smartlingo-language-community-1600.png"
               width="1600"
               height="858"
-              alt={lang === "zh" ? "来自不同背景的学习者在人工智能语音导师帮助下共同练习语言" : "Learners from different backgrounds practicing language together with an AI voice coach"}
+              alt={ui.communityArtAlt}
             />
           <div className="lingo-coach-card">
             <header><span>{t.coachLabel}</span><b>12 XP</b></header>
@@ -180,7 +183,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <p>{t.coachPrompt}</p>
             <div className="lingo-listening"><span aria-hidden="true">●</span>{t.coachStatus}</div>
             <dl>{t.skills.map(([label, score]) => <div key={label}><dt>{label}</dt><dd>{score}</dd></div>)}</dl>
-            <strong className="lingo-task-action">{lang === "zh" ? "开始今日速成" : "Start Today’s Sprint"} →</strong>
+            <strong className="lingo-task-action">{ui.startSprint} →</strong>
           </div>
           </PlayDailySprintPicker>
         </section>
@@ -193,7 +196,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section className="lingo-money-section">
         <div className="lingo-money-intro" data-layout-track="home-subscription-intro" data-layout-overlap-check="home-subscription-intro">
           <div className="lingo-heading"><p className="section-kicker">{t.moneyKicker}</p><h2>{t.moneyTitle}</h2><p>{t.moneyBody}</p></div>
-          <Link className="primary-button lingo-money-cta" href={`/${lang}/programs`}>{t.moneyAction} →</Link>
+          <Link className="primary-button lingo-money-cta" href={`/${locale}/programs`}>{t.moneyAction} →</Link>
         </div>
         <div className="lingo-money-facts">{t.moneyFacts.map(([value, label]) => <article key={value}><strong>{value}</strong><p>{label}</p></article>)}</div>
         <aside><h3>{t.rewardTitle}</h3><p>{t.rewardBody}</p></aside>
@@ -202,16 +205,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section className="lingo-section lingo-social-section">
         <div className="lingo-heading"><p className="section-kicker">{t.socialKicker}</p><h2>{t.socialTitle}</h2></div>
         <div className="lingo-social-grid">{t.social.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
-        <Link className="primary-button" href={`/${lang}/classes`}>{lang === "zh" ? "浏览课程" : "Browse Courses"} →</Link><Link className="secondary-button" href={`/${lang}/classes?mine=1`}>{lang === "zh" ? "我的课程" : "My Courses"} →</Link>
+        <Link className="primary-button" href={`/${locale}/classes`}>{ui.browseCourses} →</Link><Link className="secondary-button" href={`/${locale}/classes?mine=1`}>{ui.myCourses} →</Link>
       </section>
 
       <section className="lingo-section lingo-plan-section">
         <div className="lingo-heading"><p className="section-kicker">{t.planKicker}</p><h2>{t.planTitle}</h2><p>{t.planBody}</p></div>
-        <div className="lingo-plan-grid">{t.plans.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p><Link href={`/${lang}/programs`}>{lang === "zh" ? "选择语言" : "Choose language"} →</Link></article>)}</div>
+        <div className="lingo-plan-grid">{t.plans.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p><Link href={`/${locale}/programs`}>{ui.chooseLanguageAction} →</Link></article>)}</div>
       </section>
 
-      <section className="lingo-ready"><h2>{t.readyTitle}</h2><p>{t.readyBody}</p><div className="lingo-actions"><Link className="primary-button" href={`/${lang}/auth/sign-up`}>{t.readyAction} →</Link><Link className="secondary-button" href={`/${lang}/programs`}>{lang === "zh" ? "查看学习路径" : "View learning paths"}</Link></div></section>
-      <SiteFooter lang={lang}/>
+      <section className="lingo-ready"><h2>{t.readyTitle}</h2><p>{t.readyBody}</p><div className="lingo-actions"><Link className="primary-button" href={`/${locale}/auth/sign-up`}>{t.readyAction} →</Link><Link className="secondary-button" href={`/${locale}/programs`}>{ui.viewPaths}</Link></div></section>
+      <SiteFooter lang={locale}/>
     </main>
   );
 }

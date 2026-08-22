@@ -39,12 +39,12 @@ test("creating a college atomically creates and places its introduction",async()
 });
 
 test("directory supports code entry, search, tags, access filters, and My colleges",async()=>{
-  const page=await read("app/[lang]/colleges/page.tsx"),entry=await read("components/JoinCollegeByCode.tsx"),header=await read("components/SiteHeader.tsx"),home=await read("app/[lang]/page.tsx");
+  const page=await read("app/[lang]/colleges/page.tsx"),entry=await read("components/JoinCollegeByCode.tsx"),header=await read("components/SiteHeader.tsx"),home=await read("app/[lang]/page.tsx"),locale=await read("lib/interface-locale.ts");
   assert.match(page,/type="search"/);assert.match(page,/view=mine/);assert.match(page,/query\.tag/);assert.match(page,/query\.access/);
   assert.ok(entry.indexOf("<input")<entry.indexOf("<button"));
   assert.match(entry,/zh\?"进入":"Enter"/);
-  assert.match(header,/Choose College/);assert.match(header,/选择学院/);
-  assert.ok(home.indexOf('href={`/${lang}/programs`}')<home.indexOf('href={`/${lang}/colleges`}'));
+  assert.match(locale,/Choose College/);assert.match(locale,/选择学院/);
+  assert.ok(home.indexOf('href={`/${locale}/programs`}')<home.indexOf('href={`/${locale}/colleges`}'));
   assert.doesNotMatch(home,/home-courses|home-colleges/);
 });
 

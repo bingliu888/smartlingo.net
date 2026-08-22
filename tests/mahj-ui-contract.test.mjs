@@ -20,14 +20,14 @@ test("primary public and signed-in surfaces use the shared SiteHeader", async ()
     read("../app/[lang]/refund-policy/page.tsx"),
     read("../components/ProjectDashboard.tsx"),
   ]);
-  for (const source of files) assert.match(source, /<SiteHeader lang=\{lang\}\s*\/>/);
+  for (const source of files) assert.match(source, /<SiteHeader lang=\{(?:lang|locale)\}\s*\/>/);
   assert.match(await read("../app/[lang]/community/page.tsx"), /redirect\(`\/\$\{lang\}\/programs`\)/);
 });
 
 test("shared footer links to the bilingual public Project progress and history", async () => {
   const footer = await read("../components/SiteFooter.tsx");
   assert.match(footer, /href=\{`\/\$\{lang\}\/project`\}/);
-  assert.match(footer, /zh \? "项目" : "Project"/);
+  assert.match(footer, /\{t\.project\}/);
 });
 
 test("compose and reply both provide the exact bilingual Guru polish action", async () => {

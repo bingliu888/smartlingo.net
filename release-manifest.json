@@ -1,60 +1,34 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-graded-scenario-sentence-catalog-v1",
+  "releaseId": "smartlingo-real-interface-locales-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Graded scenario sentence catalog", "zh": "分级场景句库" },
+  "title": { "en": "Real twelve-language interface routing", "zh": "十二种界面语言真实路由" },
   "purpose": {
-    "en": "Replace prefix-only sentence levels with a canonical 4,320-item progression for listening, writing, vocabulary, and Daily Sprint word-order practice.",
-    "zh": "以正式的 4,320 条分级句库替换仅加前缀的伪分级，为听力、写作、词汇和今日速成提供挑词组句练习。"
+    "en": "Fix the release-blocking defect where Japanese, Korean, and other selectable interface languages silently rendered the English site.",
+    "zh": "修复选择日语、韩语及其他界面语言后仍静默显示英文站点的上线阻断问题。"
   },
   "features": {
-    "en": [
-      "Provide 120 sentences for every combination of 12 learning languages and three course levels.",
-      "Cover 12 real-life scenarios and ten communicative functions in every course.",
-      "Progress from A1 survival utterances to A2-B1 reasons and constraints, then B1+-B2 comparison, contingency, and negotiation.",
-      "Keep heard-sentence and translated-prompt word matching backed by the same canonical answers."
-    ],
-    "zh": [
-      "十二种学习语言的初、中、高级课程各提供 120 句。",
-      "每门课程完整覆盖 12 个生活场景和 10 种沟通任务。",
-      "从 A1 生存表达递进到 A2-B1 原因与限制，再到 B1+-B2 比较、应变与协商。",
-      "听句组句和看母语提示组句共用同一套标准答案。"
-    ]
+    "en": ["Give every selectable language its own stable URL and saved interface preference.", "Localize the homepage, desktop and mobile navigation, footer, language menu, and Today’s Sprint entry.", "Apply the correct HTML language, writing direction, and native language label."],
+    "zh": ["为每一种可选语言提供独立稳定网址并保存界面语言偏好。", "本地化首页、桌面与手机导航、页脚、语言菜单及今日速成入口。", "正确设置 HTML 语言、书写方向和语言原生名称。"]
   },
   "affected": {
-    "en": ["Listening", "Writing", "Vocabulary sentence practice", "Daily Sprint", "Scenario sentence data", "Administrator Project report"],
-    "zh": ["听力", "写作", "词汇组句", "今日速成", "场景句数据", "管理员 Project 报告"]
+    "en": ["Public homepage", "Header and hamburger menu", "Footer", "Language switching", "Today’s Sprint picker", "Project release report"],
+    "zh": ["公开首页", "顶部与汉堡菜单", "页脚", "语言切换", "今日速成选择器", "Project 发布报告"]
   },
   "changes": {
-    "en": [
-      "Add a D1 catalog with 4,320 published, tokenized, versioned sentence rows.",
-      "Store level, CEFR alignment, difficulty, usefulness frequency, sequence, scenario, communicative function, bilingual prompts, and answer tokens.",
-      "Make database rows exactly mirror the runtime sentence builder used by all word-order interfaces."
-    ],
-    "zh": [
-      "新增包含 4,320 条已发布、已分词、可版本管理句子的 D1 句库。",
-      "保存等级、CEFR 对齐、难度、实用常用度、顺序、场景、沟通功能、双语提示和答案词块。",
-      "数据库逐条镜像所有挑词组句界面实际使用的运行时句库。"
-    ]
+    "en": ["Remove the former non-Chinese-to-English route alias from the interface language menu.", "Add one typed twelve-language interface registry and static localized homepage dictionaries.", "Add a regression contract proving each selectable language is a real route rather than an English alias."],
+    "zh": ["删除旧语言菜单把所有非中文语言映射为英文路由的逻辑。", "新增一套强类型十二语言界面注册表和静态首页本地化词典。", "新增回归合同，证明每种可选语言都是真实路由而非英文别名。"]
   },
   "validation": {
-    "en": [
-      "Audit all 36 language-level courses for 120 unique rows, 12 scenarios, ten functions, valid tokens, and genuine level progression.",
-      "Run TypeScript, the full repository test suite, verified production build, shared-site gates, migration validation, and source checks.",
-      "Use real Chrome and Safari after deployment to complete listening and writing word-order questions."
-    ],
-    "zh": [
-      "审计 36 门语言等级课程，确认各有 120 条唯一句子、12 个场景、10 种任务、有效词块和真实等级递进。",
-      "执行 TypeScript、完整仓库测试、正式构建、共享站点门禁、迁移验证和源码检查。",
-      "发布后使用真实 Chrome 与 Safari 完成听力和写作挑词组句。"
-    ]
+    "en": ["TypeScript passes with all twelve interface locale types.", "All 333 repository tests pass, including the new real-route localization contract.", "The verified vinext production build, artifact validation, and sensitive-data scan pass.", "After deployment, use real Chrome to switch to Japanese and Korean and verify visible text, URL, hamburger menu, footer, and Sprint dialog."],
+    "zh": ["十二种界面语言类型全部通过 TypeScript 检查。", "333 项仓库测试全部通过，包含新增真实语言路由合同。", "vinext 正式构建、产物验证和敏感信息扫描通过。", "发布后使用真实 Chrome 切换日语与韩语，验证正文、网址、汉堡菜单、页脚和今日速成弹窗。"]
   },
   "deferred": {
-    "en": ["No sentence-catalog scope is deferred; microphone pronunciation remains a separate browser capability."],
-    "zh": ["本次句库范围没有延期项目；麦克风发音识别仍属于独立的浏览器能力。"]
+    "en": ["Secondary authenticated and administrative pages remain in the continuing page-by-page portfolio localization migration; this release removes the public language-switching blocker first."],
+    "zh": ["登录后及管理类次级页面继续按页面逐项迁移；本次先解除公开语言切换的阻断问题。"]
   },
   "siteAdaptations": {
-    "en": ["This is SmartLingo-specific learning content and does not change other portfolio sites."],
-    "zh": ["本次为 SmartLingo 专属学习内容，不改变其他站点。"]
+    "en": ["SmartLingo keeps its twelve learning-language catalog separate from the learner’s interface language while using the same supported codes."],
+    "zh": ["SmartLingo 继续把学习目标语言与学习者界面语言分开保存，但两者采用同一套十二种支持语言代码。"]
   }
 }

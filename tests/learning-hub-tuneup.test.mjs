@@ -24,18 +24,19 @@ test("vocabulary library pagination returns exactly twenty and clamps pages", ()
 });
 
 test("home and dashboard use canonical feature routes without duplicate home panels", async () => {
-  const [home, dashboard, dashboardHub, header, assistant, assistantRoute] = await Promise.all([
+  const [home, dashboard, dashboardHub, header, assistant, assistantRoute, locale] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
     read("../components/DashboardLearningHub.tsx"),
     read("../components/SiteHeader.tsx"),
     read("../components/AssistantClient.tsx"),
     read("../app/api/assistant/route.ts"),
+    read("../lib/interface-locale.ts"),
   ]);
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) {
-    assert.match(header, new RegExp(label));
+    assert.match(locale, new RegExp(label));
   }
-  assert.match(home, /href=\{`\/\$\{lang\}\/play\?language=\$\{lang\}`\}/);
+  assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
   for (const route of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(route));
   assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
   assert.match(dashboard, /DashboardLearningHub/);

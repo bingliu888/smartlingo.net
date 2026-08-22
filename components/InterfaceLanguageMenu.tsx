@@ -5,8 +5,9 @@ import {
   SMARTLINGO_LANGUAGE_COMMUNITIES,
   type SmartLingoCommunityLanguage,
 } from "../lib/smartlingo-language-communities";
+import { interfaceCopyFor, isInterfaceLanguage, type InterfaceLanguage } from "../lib/interface-locale";
 
-type Lang = "en" | "zh";
+type Lang = InterfaceLanguage;
 
 const TARGET_LANGUAGE_KEY = "smartlingo-target-language";
 const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
@@ -42,13 +43,13 @@ function isCommunityLanguage(value: string | null): value is SmartLingoCommunity
 
 function localizedPath(pathname: string, language: Lang) {
   const segments = pathname.split("/");
-  if (segments[1] === "zh" || segments[1] === "en") segments[1] = language;
+  if (isInterfaceLanguage(segments[1])) segments[1] = language;
   else segments.splice(1, 0, language);
   return segments.join("/") || `/${language}`;
 }
 
 export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { lang: Lang; mobile?: boolean; onNavigate?: () => void }) {
-  const zh = lang === "zh";
+  const t = interfaceCopyFor(lang);
   const menu = useRef<HTMLDetailsElement>(null);
   const selected = useSyncExternalStore(
     subscribeToInterfaceLanguage,
@@ -86,9 +87,8 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
     if (menu.current) menu.current.open = false;
     onNavigate?.();
 
-    const renderedLanguage: Lang = code === "zh" ? "zh" : "en";
-    window.localStorage.setItem("smartlingo-language", renderedLanguage);
-    window.location.assign(localizedPath(window.location.pathname, renderedLanguage));
+    window.localStorage.setItem("smartlingo-language", code);
+    window.location.assign(localizedPath(window.location.pathname, code));
   }
 
   const options = SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
@@ -107,20 +107,20 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
     );
   });
 
-  if (mobile) return <section className="mobile-language-options" aria-label={zh ? "语言选择" : "Language selection"}>
-    <strong><GlobeIcon/>{zh ? "语言" : "Language"}</strong>
+  if (mobile) return <section className="mobile-language-options" aria-label={t.chooseLanguage}>
+    <strong><GlobeIcon/>{t.language}</strong>
     <div role="menu">{options}</div>
   </section>;
 
   return (
     <details ref={menu} className="interface-language-menu">
-      <summary aria-label={zh ? `当前界面语言：${currentInterface.nativeName}。打开语言选择` : `Current interface language: ${currentInterface.nativeName}. Open language selection`}>
+      <summary aria-label={`${t.language}: ${currentInterface.nativeName}`}>
         <span className="interface-language-current">{currentInterface.nativeName}</span>
         <span className="interface-language-chevron" aria-hidden="true">⌄</span>
       </summary>
-      <div className="interface-language-popover" role="menu" aria-label={zh ? "语言选择" : "Language selection"}>
+      <div className="interface-language-popover" role="menu" aria-label={t.chooseLanguage}>
         <header>
-          <strong>{zh ? "选择语言" : "Choose a language"}</strong>
+          <strong>{t.chooseLanguage}</strong>
         </header>
         <div>
           {options}
