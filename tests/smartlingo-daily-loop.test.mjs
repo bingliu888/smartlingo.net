@@ -8,6 +8,7 @@ import {
   calculateLearningStreak,
   calculateLearningXp,
   composeDailyLearningSession,
+  currentDailyQuizAnswers,
   mergeCheckpointDrafts,
   mergeDailyCheckpointDrafts,
   reconcileCheckpointQueue,
@@ -57,6 +58,23 @@ test("daily practice advances at local midnight while an unfinished course check
     { practiceDate: "2026-08-22", checkpointDate: "2026-08-21" },
   );
   assert.throws(() => resolveDailyLearningDates("2026-08-32", "2026-08-21"), /valid calendar date/);
+});
+
+test("quiz submission drops checkpoint answers from an earlier learner-local day", () => {
+  assert.deepEqual(
+    currentDailyQuizAnswers({
+      "daily-quiz:2026-08-21:en:1": "free:hello",
+      "daily-quiz:2026-08-22:en:1": "free:hello",
+      "daily-quiz:2026-08-22:en:2": "q1-o1",
+    }, [
+      "daily-quiz:2026-08-22:en:1",
+      "daily-quiz:2026-08-22:en:2",
+    ]),
+    {
+      "daily-quiz:2026-08-22:en:1": "free:hello",
+      "daily-quiz:2026-08-22:en:2": "q1-o1",
+    },
+  );
 });
 
 test("recent weak skills receive extra session time", () => {

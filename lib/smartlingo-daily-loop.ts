@@ -9,6 +9,15 @@ export const SMARTLINGO_DAILY_SKILLS = [
 export type SmartLingoDailySkill = (typeof SMARTLINGO_DAILY_SKILLS)[number];
 export type SmartLingoDailyMinutes = 15 | 30 | 45 | 60;
 
+export function currentDailyQuizAnswers(
+  answers: Readonly<Record<string, string>> | undefined,
+  questionIds: readonly string[],
+): Record<string, string> {
+  if (!answers) return {};
+  const currentIds = new Set(questionIds);
+  return Object.fromEntries(Object.entries(answers).filter(([questionId]) => currentIds.has(questionId)));
+}
+
 export interface SmartLingoBilingualText {
   readonly zh: string;
   readonly en: string;

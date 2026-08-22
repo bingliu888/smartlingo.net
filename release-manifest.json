@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-daily-practice-midnight-reset-2026-08-22",
+  "releaseId": "smartlingo-daily-practice-midnight-quiz-reset-2026-08-22",
   "site": "smartlingo.net",
   "title": { "en": "Daily practice resets without losing course-day progress", "zh": "每日练习跨日刷新且保留课程日进度" },
   "purpose": {
@@ -8,20 +8,20 @@
     "zh": "在学习者本地午夜后恢复全新的服务器判分五技能练习和每日测验，同时保留未完成的计时课程检查点。"
   },
   "features": {
-    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
-    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
+    "en": ["Generate reading, writing, listening, and dialogue task identities from the current learner-local date.", "Generate and look up the daily vocabulary quiz by the current learner-local date.", "Discard quiz answers restored from an earlier local date before hydration or submission.", "Keep the existing cross-device course-day plan and draft checkpoint resumable across dates."],
+    "zh": ["按学习者当前本地日期生成阅读、写作、听力和对话任务标识。", "按学习者当前本地日期生成并查询每日词汇测验。", "在恢复或提交前丢弃来自较早本地日期的测验答案。", "继续允许跨日期恢复既有的跨设备课程日计划和草稿检查点。"]
   },
   "affected": {
     "en": ["Signed-in Beginner course learning workspace", "Daily five-skill practice", "Daily vocabulary quiz and score log", "Cross-device course-day draft synchronization", "Project release report"],
     "zh": ["已登录初级课程学习工作区", "每日五技能练习", "每日词汇测验与成绩日志", "跨设备课程日草稿同步", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Separate the current practice date from the authoritative checkpoint date in the learning API.", "Use the practice date for task status, sentence rounds, quiz questions, quiz attempts, and quiz images.", "Use the checkpoint date only for checkpoint scope validation and persistence."],
-    "zh": ["在学习 API 中拆分当前练习日期与权威检查点日期。", "任务状态、组句轮次、测验题目、测验记录和测验图片统一使用练习日期。", "仅在检查点范围校验和持久化中使用检查点日期。"]
+    "en": ["Separate the current practice date from the authoritative checkpoint date in the learning API.", "Use the practice date for task status, sentence rounds, quiz questions, quiz attempts, and quiz images.", "Filter checkpoint-restored quiz answers against the current server-assigned question identifiers.", "Use the checkpoint date only for checkpoint scope validation and persistence."],
+    "zh": ["在学习 API 中拆分当前练习日期与权威检查点日期。", "任务状态、组句轮次、测验题目、测验记录和测验图片统一使用练习日期。", "根据服务器当前分配的题目标识过滤从检查点恢复的测验答案。", "仅在检查点范围校验和持久化中使用检查点日期。"]
   },
   "validation": {
-    "en": ["Run the daily-loop regression proving a new local date produces fresh practice while the prior checkpoint remains resumable.", "Run the sentence catalog, placement-learning, and 21-day QA contract suites.", "Run the full repository test, build, artifact, migration, sensitive-data, and shared-site policy gates.", "After deployment, repeat the failed signed-in Chrome course step and verify fresh tasks, feedback, score, and the 2026-08-22 learning log."],
-    "zh": ["运行每日循环回归测试，证明新本地日期会产生新练习且旧检查点仍可恢复。", "运行句子目录、分级学习及 21 天 QA 合同测试。", "运行完整仓库测试、构建、产物、迁移、敏感信息及共享站点政策门禁。", "发布后在已登录 Chrome 中重测失败的课程步骤，并验证新题、反馈、成绩及 2026-08-22 学习日志。"]
+    "en": ["Run regressions proving a new local date produces fresh practice, retains the prior checkpoint, and excludes prior-date quiz answers.", "Run the sentence catalog, placement-learning, and 21-day QA contract suites.", "Run the full repository test, build, artifact, migration, sensitive-data, and shared-site policy gates.", "After deployment, repeat the failed signed-in Chrome course and quiz steps and verify fresh tasks, feedback, score, and the 2026-08-22 learning log."],
+    "zh": ["运行回归测试，证明新本地日期会产生新练习、保留旧检查点并排除旧日期测验答案。", "运行句子目录、分级学习及 21 天 QA 合同测试。", "运行完整仓库测试、构建、产物、迁移、敏感信息及共享站点政策门禁。", "发布后在已登录 Chrome 中重测失败的课程与测验步骤，并验证新题、反馈、成绩及 2026-08-22 学习日志。"]
   },
   "deferred": {
     "en": ["Microphone-dependent speech scoring remains subject to Chrome device permission and will be reported as blocked if unavailable during production acceptance."],

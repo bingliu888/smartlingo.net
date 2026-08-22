@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
+import { currentDailyQuizAnswers, reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
 import { SmartCardStudio } from "./SmartCardStudio";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
@@ -960,7 +960,10 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     const { pendingAlreadyApplied, queuedAlreadyAligned } = reconciliation;
     if (pendingAlreadyApplied) pendingRequest = null;
     setAnswers(selectedDraft.answers ?? {});
-    setQuizAnswers(selectedDraft.quizAnswers ?? {});
+    setQuizAnswers(currentDailyQuizAnswers(
+      selectedDraft.quizAnswers,
+      learning?.dailyQuiz?.questions.map(question => question.id) ?? [],
+    ));
     setVocabularyMode(selectedDraft.vocabularyMode ?? "recognition");
     setVocabularyIndex(selectedDraft.vocabularyIndex ?? 0);
     setActiveSkill(selectedStep);
@@ -993,7 +996,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     const storedNeedsSync = Boolean(stored && !storedConflict && (pendingRequest || !queuedAlreadyAligned));
     setCheckpointSyncStatus(storedConflict ? "conflict" : storedNeedsSync ? "offline" : checkpoint?.syncStatus === "conflict" ? "conflict" : "synced");
     setDraftHydrated(true);
-  }, [checkpointScopeKey, checkpointStorageKey, initialSkill, learning?.checkpoint, learning?.dailyQuiz?.contentVersion, learning?.dailySessionPlan, learning?.sessionState]);
+  }, [checkpointScopeKey, checkpointStorageKey, initialSkill, learning?.checkpoint, learning?.dailyQuiz?.contentVersion, learning?.dailyQuiz?.questions, learning?.dailySessionPlan, learning?.sessionState]);
 
   useEffect(() => {
     if (checkpointSyncStatus !== "offline") return undefined;
@@ -1415,12 +1418,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
 
   async function submitDailyQuiz() {
     const questions = learning?.dailyQuiz?.questions || [];
-    if (!questions.length || questions.some(question => !quizAnswers[question.id])) {
+    const currentAnswers = currentDailyQuizAnswers(quizAnswers, questions.map(question => question.id));
+    if (!questions.length || questions.some(question => !currentAnswers[question.id])) {
       setNotice(t.quizRequired);
       return;
     }
     if (!quizOperationIdRef.current) quizOperationIdRef.current = crypto.randomUUID();
-    const result = await postLearning({ action: "submit_daily_quiz", answers: quizAnswers, clientOperationId: quizOperationIdRef.current }, "daily-quiz");
+    const result = await postLearning({ action: "submit_daily_quiz", answers: currentAnswers, clientOperationId: quizOperationIdRef.current }, "daily-quiz");
     if (result?.dailyQuizResult) {
       quizOperationIdRef.current = "";
       setQuizAnswers({});
