@@ -13,11 +13,11 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function AnonymousTrialPage({ params }: { params: Promise<{ lang: string; language: string }> }) {
   const { lang, language } = await params;
-  if ((lang !== "zh" && lang !== "en") || !isSmartLingoCommunityLanguage(language)) notFound();
+  if ((lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") || !isSmartLingoCommunityLanguage(language)) notFound();
   const item = SMARTLINGO_LANGUAGE_COMMUNITIES.find(candidate => candidate.code === language)!;
   const date = new Date().toISOString().slice(0, 10);
   const skills = ["reading", "writing", "listening", "dialogue"] as const;
   const cards = getBeginnerSessionVocabularyDeck(language, 1).map(card => ({ stableId: card.stableId, form: card.form, pronunciation: card.pronunciation, meaning: card.meaning }));
-  const tasks = skills.map(skill => buildDailyPracticeItem(language, skill, date, lang, "beginner"));
+  const tasks = skills.map(skill => buildDailyPracticeItem(language, skill, date, lang === "zh" ? "zh" : "en", "beginner"));
   return <main className="learning-page" data-layout-page="anonymous-trial"><SiteHeader lang={lang as any}/><AnonymousBeginnerTrial lang={lang as any} language={language} languageName={`${item.nativeName} · ${lang === "zh" ? item.nameZh : item.nameEn}`} speechLocale={item.speechLocale} direction={item.direction} cards={cards} tasks={tasks}/><SiteFooter lang={lang as any}/></main>;
 }

@@ -19,7 +19,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
   searchParams: Promise<{ language?: string; scene?: string }>;
 }) {
   const { lang: rawLang } = await params;
-  if (rawLang !== "zh" && rawLang !== "en") notFound();
+  if (rawLang !== "en" && rawLang !== "zh" && rawLang !== "es" && rawLang !== "ja" && rawLang !== "ko" && rawLang !== "fr" && rawLang !== "de" && rawLang !== "ru" && rawLang !== "it" && rawLang !== "pt" && rawLang !== "ar" && rawLang !== "hi") notFound();
   const lang = rawLang;
   const zh = lang === "zh";
   const query = await searchParams;

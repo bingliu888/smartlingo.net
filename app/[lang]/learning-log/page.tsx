@@ -15,7 +15,7 @@ export default async function LearningLogPage({ params, searchParams }: {
   searchParams: Promise<{ classId?: string }>;
 }) {
   const { lang } = await params;
-  if (lang !== "zh" && lang !== "en") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
   if (!await requestUser()) {
     const returnTo = `/${lang}/learning-log${query.classId ? `?classId=${encodeURIComponent(query.classId)}` : ""}`;

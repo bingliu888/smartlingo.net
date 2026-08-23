@@ -11,13 +11,13 @@ function sourceFiles(directory) {
 }
 
 test("every language-prefixed page accepts all twelve site languages", () => {
-  const guard = /lang\s*!==\s*"en"\s*&&\s*lang\s*!==\s*"zh"/;
   for (const file of sourceFiles("app")) {
     for (const [index, line] of readFileSync(file, "utf8").split("\n").entries()) {
-      if (!guard.test(line)) continue;
+      const guarded = [...line.matchAll(/[A-Za-z0-9_.]*lang\s*!==\s*"(en|zh)"/gi)].map(match => match[1]);
+      if (!line.includes("notFound()") || !guarded.includes("en") || !guarded.includes("zh")) continue;
       const context = `${file}:${index + 1}: ${line}`;
-      assert.match(line, /lang\s*!==\s*"ja"/, `stale bilingual-only route guard: ${context}`);
-      assert.match(line, /lang\s*!==\s*"hi"/, `incomplete twelve-language route guard: ${context}`);
+      assert.match(line, /[A-Za-z0-9_.]*lang\s*!==\s*"ja"/i, `stale bilingual-only route guard: ${context}`);
+      assert.match(line, /[A-Za-z0-9_.]*lang\s*!==\s*"hi"/i, `incomplete twelve-language route guard: ${context}`);
     }
   }
 });

@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function LearnPage({ params }: { params: Promise<{ lang: string; classId: string }> }) {
   const { lang, classId } = await params;
-  if (lang !== "zh" && lang !== "en") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   if (!await requestUser()) {
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/learn`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
