@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang, language } = await params;
   const locale = safeInterfaceLanguage(lang);
   const item = SMARTLINGO_LANGUAGE_COMMUNITIES.find(candidate => candidate.code === language);
-  return { title: item ? `${interfaceText(locale, item.nameEn, item.nameZh)} · ${interfaceText(locale, "Course details", "课程详情")}` : "SmartLingo" };
+  return { title: item ? `${item.nativeName} · ${interfaceText(locale, "Course details", "课程详情")}` : "SmartLingo" };
 }
 
 export default async function CourseLanguagePage({ params }: { params: Promise<{ lang: string; language: string }> }) {
@@ -24,7 +24,7 @@ export default async function CourseLanguagePage({ params }: { params: Promise<{
       <SiteHeader lang={locale}/>
       <section className="ai-public-hero" data-layout-fill="program-detail-hero">
         <p className="section-kicker">{language.toUpperCase()} · {interfaceText(locale, "COURSE DETAILS", "课程详情")}</p>
-        <h1>{item.nativeName} · {interfaceText(locale, item.nameEn, item.nameZh)}</h1>
+        <h1>{item.nativeName}</h1>
         <p>{interfaceText(locale, "Choose a fixed monthly course. Every plan includes a free first month and a dedicated A/V webinar classroom.", "选择固定月费课程。每个方案首月免费，并包含专属音视频网络研讨会教室。")}</p>
         <div className="ai-cert-actions" data-layout-track="program-detail-actions"><Link className="primary-button" href={`/${locale}/play?language=${language}`}>▶ {interfaceText(locale, "Free to Play", "免费游戏")}</Link><Link className="secondary-button" href={`/${locale}/programs/${language}/trial`}>{interfaceText(locale, "Free Trial", "免费试学")}</Link><Link className="secondary-button" href={`/${locale}/play/everyday?language=${language}`}>☀ {interfaceText(locale, "Everyday Speaking", "生活口语")}</Link></div>
       </section>
