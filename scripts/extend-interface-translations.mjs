@@ -1,0 +1,43 @@
+import fs from "node:fs/promises";
+
+const generatedUrl = new URL("../lib/home-interface-translations.generated.ts", import.meta.url);
+const sourceUrls = process.argv.slice(2).map(value => new URL(`../${value}`, import.meta.url));
+if (!sourceUrls.length) throw new Error("Pass at least one source file");
+
+const generated = await fs.readFile(generatedUrl, "utf8");
+const payload = generated.match(/homeInterfaceTranslations[^=]*=\s*([\s\S]*);\s*$/)?.[1];
+if (!payload) throw new Error("Unable to parse generated translation catalog");
+const translations = JSON.parse(payload);
+const pairs = new Map();
+for (const sourceUrl of sourceUrls) {
+  const source = await fs.readFile(sourceUrl, "utf8");
+  for (const match of source.matchAll(/\bt\(\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*\)/g)) {
+    pairs.set(JSON.parse(match[1]), JSON.parse(match[2]));
+  }
+  for (const match of source.matchAll(/\binterfaceText\([^,]+,\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*\)/g)) {
+    pairs.set(JSON.parse(match[1]), JSON.parse(match[2]));
+  }
+}
+
+const targets = ["ja", "ko", "es", "fr", "de", "ru", "it", "pt", "ar", "hi"];
+const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+for (const target of targets) {
+  translations[target] ||= {};
+  for (const english of pairs.keys()) {
+    if (translations[target][english]) continue;
+    const endpoint = new URL("https://clients5.google.com/translate_a/t");
+    endpoint.searchParams.set("client", "dict-chrome-ex");
+    endpoint.searchParams.set("sl", "en");
+    endpoint.searchParams.set("tl", target);
+    endpoint.searchParams.set("q", english);
+    const response = await fetch(endpoint, { signal: AbortSignal.timeout(30000) });
+    if (!response.ok) throw new Error(`${target} translation HTTP ${response.status}`);
+    const result = await response.json();
+    if (!Array.isArray(result) || typeof result[0] !== "string") throw new Error(`${target} invalid translation`);
+    translations[target][english] = result[0];
+    await wait(80);
+  }
+  process.stdout.write(`Extended ${target}\n`);
+}
+
+await fs.writeFile(generatedUrl, `// Generated interface translation catalog.\n// Public interface copy only; review changes before release.\nexport const homeInterfaceTranslations: Record<string, Record<string, string>> = ${JSON.stringify(translations, null, 2)};\n`);

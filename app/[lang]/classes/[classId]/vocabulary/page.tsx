@@ -4,10 +4,12 @@ import { SiteFooter } from "../../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../../components/SiteHeader";
 import { VocabularyMemoryWorkspace } from "../../../../../components/VocabularyMemoryWorkspace";
 import { requestUser } from "../../../../../lib/request-user";
+import { interfaceText, safeInterfaceLanguage } from "../../../../../lib/interface-locale";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  return { title: lang === "zh" ? "21 天词汇记忆 · SmartLingo" : "21-day vocabulary memory · SmartLingo" };
+  const locale = safeInterfaceLanguage(lang);
+  return { title: interfaceText(locale, "21-day vocabulary memory · SmartLingo", "21 天词汇记忆 · SmartLingo") };
 }
 
 export default async function VocabularyPage({ params }: { params: Promise<{ lang: string; classId: string }> }) {
@@ -19,7 +21,7 @@ export default async function VocabularyPage({ params }: { params: Promise<{ lan
   }
   return <main className="vocabulary-memory-page" data-layout-page="vocabulary-memory">
     <SiteHeader lang={lang as any}/>
-    <VocabularyMemoryWorkspace lang={lang as any} classId={classId}/>
+    <VocabularyMemoryWorkspace lang={safeInterfaceLanguage(lang)} classId={classId}/>
     <SiteFooter lang={lang as any}/>
   </main>;
 }

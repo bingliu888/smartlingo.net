@@ -1,4 +1,5 @@
 import { SMARTLINGO_LANGUAGE_COMMUNITIES, type SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
+import { homeInterfaceTranslations } from "./home-interface-translations.generated";
 
 export type InterfaceLanguage = SmartLingoCommunityLanguage;
 export const interfaceLanguages = SMARTLINGO_LANGUAGE_COMMUNITIES;
@@ -31,6 +32,12 @@ export const interfaceCopies: Record<InterfaceLanguage, InterfaceCopy> = {
   hi:{...en,everyday:"दैनिक बातचीत",play:"खेलते हुए सीखें",courses:"पाठ्यक्रम चुनें",colleges:"अकादमी चुनें",askAi:"AI से पूछें",primaryNav:"मुख्य नेविगेशन",openMenu:"मेनू खोलें",closeMenu:"मेनू बंद करें",home:"SmartLingo होम",language:"भाषा",chooseLanguage:"भाषा चुनें",footerNav:"फुटर नेविगेशन",footerTagline:"पहले दिन से बोलें · AI शिक्षक · तीन स्तर · पहला महीना मुफ़्त",project:"परियोजना",about:"हमारे बारे में",privacy:"गोपनीयता",terms:"शर्तें",askGuru:"शिक्षक से पूछें",account:"खाता मेनू",signIn:"साइन इन"},
 };
 export const interfaceCopyFor = (language: InterfaceLanguage) => interfaceCopies[language];
+
+export function interfaceText(language: InterfaceLanguage, english: string, chinese: string) {
+  if (language === "zh") return chinese;
+  if (language === "en") return english;
+  return homeInterfaceTranslations[language]?.[english] ?? english;
+}
 
 export function translateHomeCopy<T>(value: T, language: InterfaceLanguage, translations: Record<string, Record<string,string>>): T {
   if (language === "en") return value;
