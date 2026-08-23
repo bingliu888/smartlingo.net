@@ -42,10 +42,10 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
-  const t = copy[lang];
+  const t = copy[lang === "zh" ? "zh" : "en"];
   return (
     <main className="ai-cert-legal-page">
-      <SiteHeader lang={lang}/>
+      <SiteHeader lang={lang as any}/>
       <article className="ai-cert-legal-main">
         <p className="section-kicker">{t.eyebrow}</p>
         <h1>{t.title}</h1>
@@ -58,7 +58,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
         </p>
       </article>
-      <SiteFooter lang={lang}/>
+      <SiteFooter lang={lang as any}/>
     </main>
   );
 }

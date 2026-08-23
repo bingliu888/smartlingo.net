@@ -18,8 +18,8 @@ export default async function VocabularyPage({ params }: { params: Promise<{ lan
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return <main className="vocabulary-memory-page" data-layout-page="vocabulary-memory">
-    <SiteHeader lang={lang}/>
-    <VocabularyMemoryWorkspace lang={lang} classId={classId}/>
-    <SiteFooter lang={lang}/>
+    <SiteHeader lang={lang as any}/>
+    <VocabularyMemoryWorkspace lang={lang as any} classId={classId}/>
+    <SiteFooter lang={lang as any}/>
   </main>;
 }

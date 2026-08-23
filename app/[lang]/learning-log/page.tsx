@@ -23,9 +23,9 @@ export default async function LearningLogPage({ params, searchParams }: {
   }
   return (
     <main className="learning-page">
-      <SiteHeader lang={lang} />
-      <LearningWorkspace lang={lang} classId={query.classId || ""} calendarOnly />
-      <SiteFooter lang={lang} />
+      <SiteHeader lang={lang as any} />
+      <LearningWorkspace lang={lang as any} classId={query.classId || ""} calendarOnly />
+      <SiteFooter lang={lang as any} />
     </main>
   );
 }

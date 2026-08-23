@@ -29,9 +29,9 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
   const scene = SMARTLINGO_EVERYDAY_SCENARIOS.find(item => item.id === sceneId);
 
   if (language && selected && scene) return <main className="everyday-page everyday-player-page">
-    <SiteHeader lang={lang}/>
+    <SiteHeader lang={lang as any}/>
     <EverydaySpeakingPlayer
-      lang={lang}
+      lang={lang as any}
       language={language}
       languageName={`${selected.nativeName} · ${zh ? selected.nameZh : selected.nameEn}`}
       speechLocale={selected.speechLocale}
@@ -39,11 +39,11 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
       scene={scene}
       slides={buildEverydaySpeakingDeck(language, scene.id)}
     />
-    <SiteFooter lang={lang}/>
+    <SiteFooter lang={lang as any}/>
   </main>;
 
   return <main className="everyday-page">
-    <SiteHeader lang={lang}/>
+    <SiteHeader lang={lang as any}/>
     <section className="everyday-hero" data-layout-fill="everyday-speaking-hero">
       <p>REAL LIFE · LISTEN · SPEAK</p>
       <h1>{zh ? "生活口语，从真实的一天开始。" : "Everyday speaking starts with real life."}</h1>
@@ -51,7 +51,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
         ? (zh ? `已选择${selected.nameZh}。选择一个场景，进入 12 张自动听说幻灯片。` : `${selected.nameEn} selected. Choose a scene for twelve automatic listen-and-repeat slides.`)
         : (zh ? "先选择想学习的语言，再进入十二个最常用的初级生活场景。" : "Choose a target language, then enter twelve essential beginner situations.")}</span>
     </section>
-    {!language || !selected ? <GameLanguagePicker lang={lang} basePath={`/${lang}/play/everyday`}/> : <>
+    {!language || !selected ? <GameLanguagePicker lang={lang as any} basePath={`/${lang}/play/everyday`}/> : <>
       <section className="everyday-standard" data-layout-fill="everyday-speaking-standard"><strong>{zh ? "初级任务式口语" : "Beginner task-based speaking"}</strong><div><p>{zh ? "课程按 CEFR A1 / Pre-A1、ACTFL Novice 与成人生活适用性原则设计：先听懂熟悉短句，再用练过的词和简单表达满足即时需求。" : "Built around CEFR A1 / Pre-A1, ACTFL Novice, and adult life-applicability principles: understand familiar short language, then use practiced words and simple expressions for immediate needs."}</p><nav><a href="https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-descriptors" target="_blank" rel="noreferrer">CEFR ↗</a><a href="https://www.actfl.org/educator-resources/ncssfl-actfl-can-do-statements" target="_blank" rel="noreferrer">ACTFL Can-Do ↗</a><a href="https://www.cal.org/adultesl/resources/fundamental-principles.php" target="_blank" rel="noreferrer">CAL Adult ESL ↗</a></nav></div></section>
       <section className="everyday-scenes" aria-label={zh ? "生活口语场景" : "Everyday speaking scenes"}>
         {SMARTLINGO_EVERYDAY_SCENARIOS.map((item, index) => <Link key={item.id} href={`/${lang}/play/everyday?language=${language}&scene=${item.id}`}>
@@ -61,6 +61,6 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
       </section>
       <nav className="everyday-back"><Link href={`/${lang}/play?language=${language}`}>← {zh ? "返回游戏" : "Back to Play"}</Link></nav>
     </>}
-    <SiteFooter lang={lang}/>
+    <SiteFooter lang={lang as any}/>
   </main>;
 }

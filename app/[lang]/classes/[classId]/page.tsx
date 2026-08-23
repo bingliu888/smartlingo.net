@@ -31,9 +31,9 @@ export default async function ClassPage({
   }
   return (
     <main className="classes-page">
-      <SiteHeader lang={lang} />
-      <ClassStudio lang={lang} initialClassId={classId} initialInviteCode={query.invite} />
-      <SiteFooter lang={lang} />
+      <SiteHeader lang={lang as any} />
+      <ClassStudio lang={lang as any} initialClassId={classId} initialInviteCode={query.invite} />
+      <SiteFooter lang={lang as any} />
     </main>
   );
 }

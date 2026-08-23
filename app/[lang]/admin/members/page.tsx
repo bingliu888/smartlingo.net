@@ -54,7 +54,7 @@ export default async function AdminMembersPage({ params, searchParams }: { param
   const tabLabel = active === "admins" ? (zh ? "管理员" : "Administrators") : active === "subscribers" ? (zh ? "订阅者" : "Subscribers") : (zh ? "会员" : "Members");
 
   return <main>
-    <SiteHeader lang={lang}/>
+    <SiteHeader lang={lang as any}/>
     <div className="admin-shell" data-layout-page="admin-members" data-layout-fill="admin-shell">
       <div className="admin-toolbar">
         <div><p className="section-kicker">{zh ? "用户权限" : "USER ACCESS"}</p><h1>{zh ? "用户管理" : "User management"}</h1><p>{zh ? "会员账户始终保留；管理员和订阅者权限分别添加或删除。" : "Member accounts remain intact; administrator and subscriber roles are added or removed separately."}</p></div>
@@ -70,10 +70,10 @@ export default async function AdminMembersPage({ params, searchParams }: { param
         <a className={active === "subscribers" ? "active" : ""} href={`/${lang}/admin/members?tab=subscribers${suffix}`}>{zh ? "订阅者" : "Subscribers"}</a>
       </nav>
       <div className="admin-table-wrap">{members.length ? <table className="admin-table"><thead><tr><th>{zh ? "会员" : "Member"}</th><th>{zh ? "当前分页" : "Current tab"}</th><th>{zh ? "加入时间" : "Joined"}</th><th>{zh ? "订阅" : "Subscription"}</th><th>{zh ? "操作" : "Action"}</th></tr></thead><tbody>
-        {members.map((member) => <tr key={member.id}><td><strong>{member.displayName}</strong><br/><span>{member.email}</span></td><td><span className="admin-badge">{tabLabel}</span></td><td>{new Date(member.createdAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US")}</td><td>{member.paymentCount > 0 ? (zh ? `${member.paymentCount} 笔已付款` : `${member.paymentCount} paid`) : member.subscriberOverride === 1 ? (zh ? "管理员授予" : "Granted by admin") : (zh ? "无" : "None")}</td><td><span className="admin-row-actions"><a href={`/${lang}/admin/members/${encodeURIComponent(member.id)}`}>{zh ? "查看" : "View"}</a>{active === "admins" && <AdminRoleRemoveButton memberId={member.id} lang={lang} kind="admin" locked={isBootstrapAdminEmail(member.email) || member.id === user.id}/>} {active === "subscribers" && <AdminRoleRemoveButton memberId={member.id} lang={lang} kind="subscriber"/>}</span></td></tr>)}
+        {members.map((member) => <tr key={member.id}><td><strong>{member.displayName}</strong><br/><span>{member.email}</span></td><td><span className="admin-badge">{tabLabel}</span></td><td>{new Date(member.createdAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US")}</td><td>{member.paymentCount > 0 ? (zh ? `${member.paymentCount} 笔已付款` : `${member.paymentCount} paid`) : member.subscriberOverride === 1 ? (zh ? "管理员授予" : "Granted by admin") : (zh ? "无" : "None")}</td><td><span className="admin-row-actions"><a href={`/${lang}/admin/members/${encodeURIComponent(member.id)}`}>{zh ? "查看" : "View"}</a>{active === "admins" && <AdminRoleRemoveButton memberId={member.id} lang={lang as any} kind="admin" locked={isBootstrapAdminEmail(member.email) || member.id === user.id}/>} {active === "subscribers" && <AdminRoleRemoveButton memberId={member.id} lang={lang as any} kind="subscriber"/>}</span></td></tr>)}
       </tbody></table> : <div className="admin-empty">{query ? (zh ? "没有匹配的用户。" : "No matching users.") : (zh ? "此分页暂无用户。" : "No users in this tab yet.")}</div>}</div>
-      <AdminMemberActions lang={lang} tab={active}/>
+      <AdminMemberActions lang={lang as any} tab={active}/>
     </div>
-    <SiteFooter lang={lang}/>
+    <SiteFooter lang={lang as any}/>
   </main>;
 }

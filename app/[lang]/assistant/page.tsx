@@ -13,5 +13,5 @@ export default async function AssistantPage({ params, searchParams }: { params: 
   const target = query.language && isSmartLingoCommunityLanguage(query.language)
     ? SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === query.language)
     : undefined;
-  return <main className="assistant-page" data-layout-page="assistant"><SiteHeader lang={lang}/><AssistantClient lang={lang} targetLanguage={target?.code} speechLocale={target?.speechLocale} mode={query.mode}/></main>;
+  return <main className="assistant-page" data-layout-page="assistant"><SiteHeader lang={lang as any}/><AssistantClient lang={lang as any} targetLanguage={target?.code} speechLocale={target?.speechLocale} mode={query.mode}/></main>;
 }

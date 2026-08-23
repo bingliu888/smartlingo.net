@@ -26,14 +26,14 @@ export default async function LearningSessionPage({
   }
   return (
     <main className="learning-page" data-layout-page="learning-session">
-      <SiteHeader lang={lang} />
+      <SiteHeader lang={lang as any} />
       <LearningWorkspace
-        lang={lang}
+        lang={lang as any}
         classId={classId}
         view="session"
         initialSkill={query.training === "quiz" ? "exam" : query.training === "dialogue" ? "dialogue" : query.training === "vocabulary" ? "vocabulary" : query.training === "writing" ? "writing" : query.training === "listening" ? "listening" : undefined}
       />
-      <SiteFooter lang={lang} />
+      <SiteFooter lang={lang as any} />
     </main>
   );
 }

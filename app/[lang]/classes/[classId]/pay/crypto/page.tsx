@@ -17,5 +17,5 @@ export default async function CourseCryptoPage({ params }: { params: Promise<{ l
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/pay/crypto`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
-  return <main className="billing-page"><SiteHeader lang={lang}/><CryptoCheckout initialPlan={match[2] as CryptoPlanId} initialLanguageCode={match[1]} lockedCourseId={classId} lang={lang}/><SiteFooter lang={lang}/></main>;
+  return <main className="billing-page"><SiteHeader lang={lang as any}/><CryptoCheckout initialPlan={match[2] as CryptoPlanId} initialLanguageCode={match[1]} lockedCourseId={classId} lang={lang as any}/><SiteFooter lang={lang as any}/></main>;
 }

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-all-route-language-guards-2026-08-23-v1",
+  "releaseId": "smartlingo-all-route-language-runtime-2026-08-23-v2",
   "site": "smartlingo.net",
-  "title": {"en":"Complete twelve-language access across every SmartLingo route","zh":"完成 SmartLingo 全部路由十二语言访问"},
+  "title": {"en":"Complete twelve-language route access and runtime compatibility","zh":"完成 SmartLingo 十二语言路由访问与运行兼容"},
   "purpose": {"en":"Remove legacy bilingual-only guards that could block Japanese and other supported languages on learning and deep pages.","zh":"移除会阻断日语及其他支持语言学习页与深页访问的旧中英双语路由守卫。"},
   "features": {"en":["Allow every supported language on course learning, vocabulary, Sprint, trial, SmartCard, member, payment, legal, Project, sharing, and administration routes.","Add a repository contract that rejects future bilingual-only page guards."],"zh":["让课程学习、词汇、速成、试学、智慧卡、会员、付款、法律、Project、分享及管理路由全部支持已提供语言。","增加仓库契约，阻止未来重新引入仅限中英文的页面守卫。"]},
   "affected": {"en":["All language-prefixed public, learning, member, course, payment, legal, Project, and administration pages"],"zh":["全部带语言前缀的公开、学习、会员、课程、付款、法律、Project 及管理页面"]},
-  "changes": {"en":["Expand every remaining route guard from English and Chinese to the complete twelve-language site set.","Preserve SmartLingo vocabulary, Sprint, reward, course, identity, payment, and learning-record behavior."],"zh":["把所有遗留路由守卫从中英文扩展为完整十二语言集合。","保留 SmartLingo 词汇、速成、积分、课程、身份、付款及学习记录行为。"]},
+  "changes": {"en":["Expand every remaining route guard from English and Chinese to the complete twelve-language site set.","Keep the selected URL locale through shared shells while safely adapting bilingual legacy content contracts.","Preserve SmartLingo vocabulary, Sprint, reward, course, identity, payment, and learning-record behavior."],"zh":["把所有遗留路由守卫从中英文扩展为完整十二语言集合。","在共享页面外壳中保留 URL 所选语言，同时安全兼容遗留双语内容契约。","保留 SmartLingo 词汇、速成、积分、课程、身份、付款及学习记录行为。"]},
   "validation": {"en":["Run the route-guard contract, SmartLingo learning contracts, and production build before release.","Deploy, verify the exact Project record, and use real Chrome to open Japanese vocabulary, Sprint, trial, and account deep routes."],"zh":["发布前执行路由守卫契约、SmartLingo 学习契约与生产构建。","部署并核验 Project 精确记录，再用真实 Chrome 打开日语词汇、速成、试学及账户深页。"]},
   "deferred": {"en":["Real microphone scoring remains dependent on each learner device; no vocabulary or course records are changed by this routing release."],"zh":["真实麦克风评分仍取决于学习者设备；本次路由发布不改变词汇或课程记录。"]},
   "siteAdaptations": {"en":["Preserve SmartLingo's twelve target-language courses, five-skill learning model, anonymous trial, SmartCards, Sprint, and reward-point isolation."],"zh":["保留 SmartLingo 十二目标语言课程、五项技能学习模式、匿名试学、智慧卡、速成及积分隔离。"]}

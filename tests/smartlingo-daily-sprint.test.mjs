@@ -64,7 +64,7 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(play, /PlayFreeTrialPicker/);
   assert.match(freeTrialPicker, /免费试学/);
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
-  assert.match(play, /GameLanguagePicker lang=\{lang\} basePath=\{`\/\$\{lang\}\/play`\} selected=\{language\}/);
+  assert.match(play, /GameLanguagePicker lang=\{lang(?: as any)?\} basePath=\{`\/\$\{lang\}\/play`\} selected=\{language\}/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
   assert.match(playPicker, /selection\.source === initialTarget \? selection\.value : initialTarget/);

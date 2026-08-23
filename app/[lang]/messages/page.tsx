@@ -13,5 +13,5 @@ export default async function MessagesPage({ params, searchParams }: { params: P
   const requestHeaders = await headers(); const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
   const { member } = await searchParams;
-  return <main className="messages-page" data-layout-page="messages"><SiteHeader lang={lang}/><MessageCenter lang={lang} initialMemberId={member || ""}/></main>;
+  return <main className="messages-page" data-layout-page="messages"><SiteHeader lang={lang as any}/><MessageCenter lang={lang as any} initialMemberId={member || ""}/></main>;
 }

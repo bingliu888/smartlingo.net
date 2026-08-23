@@ -39,11 +39,11 @@ export default async function ClassesPage({
   }
   return (
     <main className="classes-page" data-layout-page="courses" data-layout-overlap-check="courses-page">
-      <SiteHeader lang={lang} />
+      <SiteHeader lang={lang as any} />
       <span data-layout-overlap-check="classes-start" style={{ display: "block", height: 1 }} />
-      <ClassStudio lang={lang} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
+      <ClassStudio lang={lang as any} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
       <span data-layout-overlap-check="classes-end" style={{ display: "block", height: 1 }} />
-      <SiteFooter lang={lang} />
+      <SiteFooter lang={lang as any} />
     </main>
   );
 }

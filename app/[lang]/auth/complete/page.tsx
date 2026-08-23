@@ -25,7 +25,7 @@ export default async function AuthCompletePage({
   const { lang } = await params;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
-  const returnTo = safeReturnTo(query.returnTo, lang);
+  const returnTo = safeReturnTo(query.returnTo, lang === "zh" ? "zh" : "en");
 
   return <main className="auth-page">
     <aside className="auth-art gc-auth-art smartlingo-auth-art">
@@ -35,9 +35,9 @@ export default async function AuthCompletePage({
     <section className="auth-panel">
       <div className="auth-top">
         <Link href={`/${lang}`}>← {lang === "zh" ? "返回首页" : "Back to home"}</Link>
-        <LanguageLink lang={lang}/>
+        <LanguageLink lang={lang as any}/>
       </div>
-      <ClerkSessionBridge lang={lang} returnTo={returnTo}/>
+      <ClerkSessionBridge lang={lang as any} returnTo={returnTo}/>
     </section>
   </main>;
 }

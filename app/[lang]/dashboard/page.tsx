@@ -63,7 +63,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   const requestHeaders = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
-  const t = copy[lang];
+  const t = copy[lang === "zh" ? "zh" : "en"];
   const certificateCount = (await getDatabase().prepare("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2 WHERE user_id = ?")
     .bind(user.id).first<{ count: number }>())?.count ?? 0;
   const joinedCourseResult = await getDatabase().prepare(`SELECT c.id,c.title,c.target_language AS targetLanguage,
@@ -76,21 +76,21 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
   const joinedCourses = joinedCourseResult.results ?? [];
   return (
     <main className="dashboard-page" data-layout-page="dashboard" data-layout-ready="true" data-layout-overlap-check="dashboard-page">
-      <SiteHeader lang={lang} />
+      <SiteHeader lang={lang as any} />
       <span data-layout-overlap-check="dashboard-start" style={{ display: "block", height: 1 }} />
       <div className="dashboard-wrap">
         <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p></div>
-        <DashboardDailySprint lang={lang} courses={joinedCourses}/>
-        <DashboardLearningHub lang={lang} courses={joinedCourses}/>
-        <MembershipPanel lang={lang} />
+        <DashboardDailySprint lang={lang as any} courses={joinedCourses}/>
+        <DashboardLearningHub lang={lang as any} courses={joinedCourses}/>
+        <MembershipPanel lang={lang as any} />
         <div className="dashboard-grid">
           <section className="dashboard-cert-card"><div className="dashboard-cert-count"><span aria-hidden="true">SL</span><strong>{certificateCount.toLocaleString()}</strong></div><div><p className="section-kicker">SMARTLINGO CERTS</p><h2>{t.certs}</h2><p>{t.certsBody}</p><a className="primary-button" href={`/${lang}/certificates`}>{t.certsAction} <span>→</span></a></div></section>
-          <aside className="account-card" id="account"><h2>{t.account}</h2><dl><div><dt>{lang === "zh" ? "邮箱" : "Email"}</dt><dd>{user.email}</dd></div><div><dt>{t.language}</dt><dd>{lang === "zh" ? "中文" : "English"}</dd></div></dl><TextSizeControl lang={lang} /><LogoutButton lang={lang} label={t.signOut} /></aside>
+          <aside className="account-card" id="account"><h2>{t.account}</h2><dl><div><dt>{lang === "zh" ? "邮箱" : "Email"}</dt><dd>{user.email}</dd></div><div><dt>{t.language}</dt><dd>{lang === "zh" ? "中文" : "English"}</dd></div></dl><TextSizeControl lang={lang as any} /><LogoutButton lang={lang as any} label={t.signOut} /></aside>
           <section className="coming-card"><div className="mini-table gc-mini-network" aria-hidden="true"><span>{lang === "zh" ? "免费" : "FREE"}</span><span>{lang === "zh" ? "进阶" : "PLUS"}</span><i>{lang === "zh" ? "协调" : "COORD"}</i><span>{lang === "zh" ? "开班" : "CLASS"}</span><span>{lang === "zh" ? "社区" : "SOCIAL"}</span></div><div><p className="section-kicker">{lang === "zh" ? "平台方案" : "PLATFORM PLANS"}</p><h2>{t.coming}</h2><p>{t.comingBody}</p></div></section>
         </div>
       </div>
       <span data-layout-overlap-check="dashboard-end" style={{ display: "block", height: 1 }} />
-      <SiteFooter lang={lang} />
+      <SiteFooter lang={lang as any} />
     </main>
   );
 }
