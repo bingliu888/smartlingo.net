@@ -6,7 +6,7 @@ import { getProjectRuntime } from "../../../../../lib/project-runtime";
 
 export default async function BuildReportPage({ params }: { params: Promise<{ lang: string; version: string }> }) {
   const { lang, version } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const runtime = await getProjectRuntime();
   const build = runtime.builds.find(item => item.version === Number(version));
   if (!build) notFound();

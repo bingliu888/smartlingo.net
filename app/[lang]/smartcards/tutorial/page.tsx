@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 export default async function SmartCardTutorial({ params }: { params: Promise<{ lang: string }> }) {
-  const { lang } = await params; if (lang !== "en" && lang !== "zh") notFound(); const zh = lang === "zh";
+  const { lang } = await params; if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound(); const zh = lang === "zh";
   const steps = zh ? [
     ["看词猜义", "每次只显示一张卡和一个目标词。点击可查看当前词的含义；下方选项只显示含义，不泄露其他目标词。"],
     ["间隔后再想", "离开几分钟或等到第二天再挑战。真正的记忆来自隔开后的提取，而不是短时间连续点击。"],

@@ -22,7 +22,7 @@ export default async function ClassPage({
   searchParams: Promise<{ invite?: string }>;
 }) {
   const { lang, classId } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
   const user = await requestUser();
   if (!user) {

@@ -7,7 +7,7 @@ import { getProjectRuntime } from "../../../../../lib/project-runtime";
 
 export default async function ProjectDay({ params }: { params: Promise<{ lang: string; date: string }> }) {
   const { lang, date } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const zh = lang === "zh";
   const tasks = tasksByDate(date);
   const runtime = await getProjectRuntime();

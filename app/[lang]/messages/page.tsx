@@ -9,7 +9,7 @@ import "./layout-contract.css";
 export const dynamic = "force-dynamic";
 
 export default async function MessagesPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ member?: string }> }) {
-  const { lang } = await params; if (lang !== "en" && lang !== "zh") notFound();
+  const { lang } = await params; if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const requestHeaders = await headers(); const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: requestHeaders.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login`);
   const { member } = await searchParams;

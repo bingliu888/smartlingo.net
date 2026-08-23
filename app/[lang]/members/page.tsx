@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MembersPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/members`);

@@ -95,7 +95,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function ProgramsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const t = copy[lang];
   return <main className="ai-cert-public-page lingo-public-page" data-layout-page="programs">
     <div className="ai-public-hero-shell" data-layout-fill="programs-hero-shell"><SiteHeader lang={lang}/><section className="ai-public-hero"><p className="section-kicker">SMARTLINGO · {lang === "zh" ? "选择课程" : "CHOOSE COURSE"}</p><h1 data-layout-text-fit="programs-title">{t.title}</h1><p data-readable-copy="programs-hero-copy">{t.intro}</p><div className="ai-cert-actions" data-layout-track="programs-actions"><Link className="primary-button" href="#language-catalog">{t.start} →</Link><Link className="secondary-button" href={`/${lang}/assistant`}>{t.guide}</Link></div></section></div>

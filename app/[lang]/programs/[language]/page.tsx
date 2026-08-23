@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function CourseLanguagePage({ params }: { params: Promise<{ lang: string; language: string }> }) {
   const { lang, language } = await params;
-  if ((lang !== "en" && lang !== "zh") || !isSmartLingoCommunityLanguage(language)) notFound();
+  if ((lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") || !isSmartLingoCommunityLanguage(language)) notFound();
   const item = SMARTLINGO_LANGUAGE_COMMUNITIES.find(candidate => candidate.code === language)!;
   return <main className="ai-cert-public-page lingo-public-page" data-layout-page="program-detail">
     <div className="ai-public-hero-shell" data-layout-fill="program-detail-hero-shell">

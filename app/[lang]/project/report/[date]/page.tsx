@@ -6,7 +6,7 @@ import { getProjectRuntime } from "../../../../../lib/project-runtime";
 
 export default async function ReportPage({ params }: { params: Promise<{ lang: string; date: string }> }) {
   const { lang, date } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const report = (await getProjectRuntime()).reports.find(item => item.date === date);
   if (!report) notFound();
   const zh = lang === "zh";

@@ -26,7 +26,7 @@ function searchPattern(value: string) {
 
 export default async function AdminMembersPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ tab?: string; q?: string }> }) {
   const [{ lang }, { tab, q }] = await Promise.all([params, searchParams]);
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/members`);

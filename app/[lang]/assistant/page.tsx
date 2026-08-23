@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AssistantPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ language?: string; mode?: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
   const target = query.language && isSmartLingoCommunityLanguage(query.language)
     ? SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === query.language)

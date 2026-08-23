@@ -25,7 +25,7 @@ export default async function SmartCardsPage({ params, searchParams }: {
     }>;
 }) {
     const { lang } = await params;
-    if (lang !== "en" && lang !== "zh")
+    if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi")
         notFound();
     const zh = lang === "zh";
     const challenge = (await searchParams).mode === "challenge";

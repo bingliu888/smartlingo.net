@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Card subscription · SmartLingo" };
 export default async function CardCompletePage({ params, searchParams }: { params: Promise<{ lang: string; classId: string }>; searchParams: Promise<{ session_id?: string }> }) {
   const { lang, classId } = await params;
   const { session_id: sessionId } = await searchParams;
-  if ((lang !== "en" && lang !== "zh") || !/^course_[a-z]{2}_(?:basic|intermediate|advanced)$/.test(classId) || !sessionId) notFound();
+  if ((lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") || !/^course_[a-z]{2}_(?:basic|intermediate|advanced)$/.test(classId) || !sessionId) notFound();
   if (!await requestUser()) {
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/pay/card/complete?session_id=${encodeURIComponent(sessionId)}`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);

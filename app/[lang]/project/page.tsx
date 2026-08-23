@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 
 export default async function ProjectPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ month?: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const { month } = await searchParams;
   return <ProjectDashboard lang={lang} month={month} />;
 }

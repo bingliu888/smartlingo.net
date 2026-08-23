@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Course crypto payment · SmartLingo"
 
 export default async function CourseCryptoPage({ params }: { params: Promise<{ lang: string; classId: string }> }) {
   const { lang, classId } = await params;
-  if (lang !== "en" && lang !== "zh") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const match = /^course_([a-z]{2})_(basic|intermediate|advanced)$/.exec(classId);
   if (!match) notFound();
   if (!await requestUser()) {

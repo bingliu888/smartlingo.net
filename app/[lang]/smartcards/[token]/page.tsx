@@ -7,6 +7,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 export default async function PublicSmartCardPage({ params, searchParams }: { params: Promise<{ lang: string; token: string }>; searchParams: Promise<{ mode?: string }> }) {
-  const { lang, token } = await params; if (lang !== "en" && lang !== "zh") notFound();
+  const { lang, token } = await params; if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   return <PublicSmartCardChallenge lang={lang} token={token} gameMode={(await searchParams).mode === "challenge" ? "challenge" : "practice"}/>;
 }

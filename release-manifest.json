@@ -1,34 +1,13 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-play-sprint-language-sync-2026-08-23-v1",
+  "releaseId": "smartlingo-all-route-language-guards-2026-08-23-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Keep Today’s Sprint aligned with the selected Play language", "zh": "让今日速成始终跟随 Play 已选语言" },
-  "purpose": {
-    "en": "Prevent a stale Today’s Sprint language after a learner changes the target language from the production Play picker.",
-    "zh": "防止学习者在正式站 Play 选择器切换目标语言后，今日速成仍保留旧语言。"
-  },
-  "features": {
-    "en": ["Synchronize the Sprint dialog selection whenever the Play page target-language parameter changes.", "Preserve the explicit learner choice made inside an already-open Sprint dialog."],
-    "zh": ["Play 页面目标语言参数变化时同步速成弹窗选项。", "保留学习者在已打开速成弹窗内作出的明确语言选择。"]
-  },
-  "affected": {
-    "en": ["Chinese-interface Play language picker", "Today’s Sprint dialog and start link", "Project release report"],
-    "zh": ["中文界面 Play 语言选择器", "今日速成弹窗与启动链接", "Project 发布报告"]
-  },
-  "changes": {
-    "en": ["Derive the active Sprint selection from the latest Play target while preserving an explicit choice made for that same target.", "Add a regression contract requiring the derived synchronization behavior."],
-    "zh": ["从最新 Play 目标派生当前速成语言，同时保留学习者针对同一目标作出的明确选择。", "增加要求该派生同步行为的回归契约。"]
-  },
-  "validation": {
-    "en": ["Run the complete repository release gate and all routed shared-site policy gates.", "Reproduce the stale Japanese selection before the fix and retest the same Play-to-Sprint path in production Chrome after deployment.", "Verify the selected language, five-minute start URL, Sprint course title, and persisted result agree."],
-    "zh": ["运行完整仓库发布门禁及所有已路由共享站点政策门禁。", "修复前复现日语选择滞留，并在部署后用正式站 Chrome 复测同一 Play 到速成路径。", "核验已选语言、5 分钟启动 URL、速成课程标题与持久化结果一致。"]
-  },
-  "deferred": {
-    "en": ["Real microphone scoring remains dependent on the local Chrome device capability and is reported separately by the 21-day QA run."],
-    "zh": ["真实麦克风评分仍取决于本机 Chrome 设备能力，并由 21 天 QA 运行单独报告。"]
-  },
-  "siteAdaptations": {
-    "en": ["The fix is limited to SmartLingo’s target-language-aware Play and Today’s Sprint flow; interface locale and course identifiers remain site-local."],
-    "zh": ["修复仅限 SmartLingo 的目标语言感知 Play 与今日速成流程；界面语言和课程标识仍保持站点本地化。"]
-  }
+  "title": {"en":"Complete twelve-language access across every SmartLingo route","zh":"完成 SmartLingo 全部路由十二语言访问"},
+  "purpose": {"en":"Remove legacy bilingual-only guards that could block Japanese and other supported languages on learning and deep pages.","zh":"移除会阻断日语及其他支持语言学习页与深页访问的旧中英双语路由守卫。"},
+  "features": {"en":["Allow every supported language on course learning, vocabulary, Sprint, trial, SmartCard, member, payment, legal, Project, sharing, and administration routes.","Add a repository contract that rejects future bilingual-only page guards."],"zh":["让课程学习、词汇、速成、试学、智慧卡、会员、付款、法律、Project、分享及管理路由全部支持已提供语言。","增加仓库契约，阻止未来重新引入仅限中英文的页面守卫。"]},
+  "affected": {"en":["All language-prefixed public, learning, member, course, payment, legal, Project, and administration pages"],"zh":["全部带语言前缀的公开、学习、会员、课程、付款、法律、Project 及管理页面"]},
+  "changes": {"en":["Expand every remaining route guard from English and Chinese to the complete twelve-language site set.","Preserve SmartLingo vocabulary, Sprint, reward, course, identity, payment, and learning-record behavior."],"zh":["把所有遗留路由守卫从中英文扩展为完整十二语言集合。","保留 SmartLingo 词汇、速成、积分、课程、身份、付款及学习记录行为。"]},
+  "validation": {"en":["Run the route-guard contract, SmartLingo learning contracts, and production build before release.","Deploy, verify the exact Project record, and use real Chrome to open Japanese vocabulary, Sprint, trial, and account deep routes."],"zh":["发布前执行路由守卫契约、SmartLingo 学习契约与生产构建。","部署并核验 Project 精确记录，再用真实 Chrome 打开日语词汇、速成、试学及账户深页。"]},
+  "deferred": {"en":["Real microphone scoring remains dependent on each learner device; no vocabulary or course records are changed by this routing release."],"zh":["真实麦克风评分仍取决于学习者设备；本次路由发布不改变词汇或课程记录。"]},
+  "siteAdaptations": {"en":["Preserve SmartLingo's twelve target-language courses, five-skill learning model, anonymous trial, SmartCards, Sprint, and reward-point isolation."],"zh":["保留 SmartLingo 十二目标语言课程、五项技能学习模式、匿名试学、智慧卡、速成及积分隔离。"]}
 }
