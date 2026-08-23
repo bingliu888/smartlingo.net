@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-dashboard-localization-2026-08-23-v9",
+  "releaseId": "smartlingo-dashboard-localization-2026-08-23-v10",
   "site": "smartlingo.net",
   "title": {"en":"Localize the member dashboard in all twelve languages","zh":"完整本地化十二语言会员仪表盘"},
   "purpose": {"en":"Remove the English fallback from the signed-in dashboard while preserving learner-authored values and SmartLingo data boundaries.","zh":"移除登录后仪表盘的英文回退，同时保护学员输入值与 SmartLingo 数据边界。"},
   "features": {"en":["Provide prebuilt dashboard interface copy for every non-English locale.","Localize dynamic interface text and accessibility attributes without rewriting inputs or textareas."],"zh":["为每种非英语站点语言提供预构建仪表盘界面文案。","本地化动态界面与无障碍属性，同时不改写输入框或文本域。"]},
   "affected": {"en":["Member dashboard, Today’s Sprint, learning hub, membership panel, and text-size controls"],"zh":["会员仪表盘、今日速成、学习中心、会员面板及文字大小控件"]},
-  "changes": {"en":["Add a mutation-aware locale runtime backed by public prebuilt copy.","Use the active twelve-language locale throughout dashboard components.","Exclude learner email, native language names, inputs, and textareas from translation."],"zh":["新增由公开预构建文案驱动的动态语言运行时。","在全部仪表盘组件中使用当前十二语言设置。","排除学员邮箱、语言本名、输入框与文本域。"]},
+  "changes": {"en":["Add a mutation-aware locale runtime backed by public prebuilt copy.","Use the active twelve-language locale throughout dashboard components, including dynamic duration and tab labels.","Exclude learner email, course titles, native language names, inputs, and textareas from translation."],"zh":["新增由公开预构建文案驱动的动态语言运行时。","在全部仪表盘组件中使用当前十二语言设置，包括动态时长与标签名称。","排除学员邮箱、课程标题、语言本名、输入框与文本域。"]},
   "validation": {"en":["Run type checking, dashboard localization contracts, shared input audit, production build, and deployment verification.","Use real Chrome on Japanese and Korean dashboard surfaces after deployment."],"zh":["执行类型检查、仪表盘语言契约、共享输入审计、生产构建与部署核验。","部署后用真实 Chrome 检查日语和韩语仪表盘。"]},
   "deferred": {"en":["Learner-authored course data remains displayed as authored; this release localizes the platform interface and built-in planner content."],"zh":["学员自行创建的课程数据仍按原文显示；本次发布本地化平台界面与内置规划器内容。"]},
   "siteAdaptations": {"en":["Preserve SmartLingo's twelve target-language courses, five-skill learning model, anonymous trial, SmartCards, Sprint, and reward-point isolation."],"zh":["保留 SmartLingo 十二目标语言课程、五项技能学习模式、匿名试学、智慧卡、速成及积分隔离。"]}

@@ -260,7 +260,7 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "PLATFORM PLANS": "プラットフォームプラン",
     "TODAY’S SPRINT": "今日のスプリント",
     "Today’s Sprint": "今日のスプリント",
-    "Choose a time for each joined language. Ten minutes is the default, with one five-skill round every five minutes.": "Choose a time for each joined language.デフォルトは 10 分で、5 分ごとに 5 つのスキルのラウンドが 1 回行われます。",
+    "Choose a time for each joined language. Ten minutes is the default, with one five-skill round every five minutes.": "参加中の各言語で学習時間を選びます。初期設定は10分で、5分ごとに五技能を1周します。",
     "Add a new language": "新しい言語を追加",
     "Add language": "言語を追加",
     "Sprint time": "スプリント時間",

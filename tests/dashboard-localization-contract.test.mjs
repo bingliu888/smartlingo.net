@@ -12,6 +12,7 @@ test("every dashboard locale uses prebuilt interface copy and preserves user-aut
   assert.match(dashboard, /translateHomeCopy\(copy\.en, locale, homeInterfaceTranslations\)/);
   assert.match(dashboard, /<SiteHeader lang=\{locale\} \/>/);
   assert.match(dashboard, /data-no-translate>\{user\.email\}/);
+  assert.match(await read("components/DashboardDailySprint.tsx"), /text\("Start", "开始"\).*text\("minutes", "分钟"\)/);
   assert.match(layout, /<LocaleRuntime locale=\{safeLanguage\}/);
   assert.match(runtime, /script,style,textarea/);
   assert.match(runtime, /attributeNames = \["aria-label", "title", "placeholder", "alt"\]/);
