@@ -90,6 +90,9 @@ test("home feature buttons and Choose course use canonical destination pages", a
   assert.match(detail, /SMARTLINGO_COURSE_PACKAGES/);
   assert.match(detail, /首月免费/);
   assert.match(detail, /fixedCourseId\(language, course\.tier\)/);
+  assert.match(detail, /interfaceText\(locale, "Choose your course level", "选择课程等级"\)/);
+  assert.match(detail, /course\.features\.en\.map/);
+  assert.doesNotMatch(detail, /lang === "zh"/);
   assert.doesNotMatch(choices, /lingo-training-menu|>Vocab<|>Speaking</);
   assert.doesNotMatch(css, /\.lingo-training-menu\{/);
   assert.match(css, /\.lingo-community-grid\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);

@@ -24,9 +24,9 @@ for (const sourceUrl of sourceUrls) {
     ts.forEachChild(node, collectStrings);
   };
   const visit = node => {
-    if (ts.isPropertyAssignment(node) && node.name.getText(sourceFile) === "en") {
+    if (ts.isPropertyAssignment(node) && ["en", "nameEn"].includes(node.name.getText(sourceFile))) {
       if (ts.isStringLiteralLike(node.initializer)) pairs.set(node.initializer.text, "");
-      else if (ts.isObjectLiteralExpression(node.initializer)) collectStrings(node.initializer);
+      else collectStrings(node.initializer);
     }
     ts.forEachChild(node, visit);
   };
