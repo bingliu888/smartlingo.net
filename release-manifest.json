@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-vocabulary-interface-localization-2026-08-23-v4",
+  "releaseId": "smartlingo-program-directory-localization-2026-08-23-v5",
   "site": "smartlingo.net",
-  "title": {"en":"Localize the complete vocabulary-learning interface","zh":"完整本地化词汇学习界面"},
-  "purpose": {"en":"Keep every supported site language on the vocabulary route and translate its learning controls, progress, reports, feedback, and metadata instead of falling back to English.","zh":"让词汇学习路由保留所有支持的网站语言，并翻译学习控件、进度、报告、反馈和元数据，不再回退英文。"},
-  "features": {"en":["Allow every supported language on course learning, vocabulary, Sprint, trial, SmartCard, member, payment, legal, Project, sharing, and administration routes.","Add a repository contract that rejects bilingual-only guards regardless of variable name or English/Chinese condition order."],"zh":["让课程学习、词汇、速成、试学、智慧卡、会员、付款、法律、Project、分享及管理路由全部支持已提供语言。","增加不受变量名或中英文条件顺序影响的仓库契约，阻止重新引入仅限中英文的页面守卫。"]},
-  "affected": {"en":["All language-prefixed public, learning, member, course, payment, legal, Project, and administration pages"],"zh":["全部带语言前缀的公开、学习、会员、课程、付款、法律、Project 及管理页面"]},
-  "changes": {"en":["Use the shared static interface catalog for vocabulary titles, controls, hints, speech states, summaries, pagination, and reports.","Add reviewable translations for Japanese, Korean, Spanish, French, German, Russian, Italian, Portuguese, Arabic, and Hindi.","Preserve SmartLingo vocabulary, pronunciation, sentence-building, progress, and learning-record behavior."],"zh":["让词汇页标题、控件、提示、语音状态、总结、分页和报告使用共享静态界面目录。","补齐可审查的日语、韩语、西语、法语、德语、俄语、意语、葡语、阿语和印地语翻译。","保留 SmartLingo 词汇、发音、组句、进度及学习记录行为。"]},
-  "validation": {"en":["Run TypeScript, the route-guard contract, SmartLingo learning contracts, and production build before release.","Deploy, verify the exact Project record, and use real Chrome to open and interact with the Japanese vocabulary deep route."],"zh":["发布前执行 TypeScript、路由守卫契约、SmartLingo 学习契约与生产构建。","部署并核验 Project 精确记录，再用真实 Chrome 打开并操作日语词汇深页。"]},
-  "deferred": {"en":["Real microphone scoring remains dependent on each learner device; no vocabulary or course records are changed by this routing release."],"zh":["真实麦克风评分仍取决于学习者设备；本次路由发布不改变词汇或课程记录。"]},
+  "title": {"en":"Localize the complete course-directory interface","zh":"完整本地化课程目录界面"},
+  "purpose": {"en":"Remove the English fallback from the twelve-language course directory and learning-path planner while preserving the selected site language on every deep link.","zh":"移除十二语言课程目录与学习路径规划器的英文回退，并让每个深层链接保持用户选择的网站语言。"},
+  "features": {"en":["Translate the course-directory hero, planner controls, skill names, durations, availability states, and action labels in all twelve site languages.","Use one shared static interface catalog so future planner copy is reviewable and testable."],"zh":["以十二种网站语言翻译课程目录首屏、规划器控件、技能名称、时长、可用状态及操作标签。","使用同一份静态界面目录，让后续规划器文案可审查、可测试。"]},
+  "affected": {"en":["Course directory and learning-path planner in all twelve site languages"],"zh":["十二种网站语言下的课程目录与学习路径规划器"]},
+  "changes": {"en":["Replace the bilingual page guard and English fallback with the shared twelve-language locale contract.","Localize planner shell text and bilingual course metadata through the static interface catalog.","Expand the translation-catalog maintenance script and add regression assertions for the deep course route."],"zh":["以共享十二语言区域契约替换双语页面守卫及英文回退。","通过静态界面目录本地化规划器外壳文案与双语课程元数据。","扩展翻译目录维护脚本，并为课程深层路由增加回归断言。"]},
+  "validation": {"en":["Run TypeScript, route-language, header, learning-community, and language-consistency contracts plus the production build.","Deploy, verify the exact Project release record, and use real Chrome to traverse the Japanese and Korean course-directory flows."],"zh":["执行 TypeScript、路由语言、页头、学习社区、语言一致性契约及生产构建。","部署并核验 Project 精确发布记录，再用真实 Chrome 走查日语与韩语课程目录流程。"]},
+  "deferred": {"en":["Learner-authored course data remains displayed as authored; this release localizes the platform interface and built-in planner content."],"zh":["学员自行创建的课程数据仍按原文显示；本次发布本地化平台界面与内置规划器内容。"]},
   "siteAdaptations": {"en":["Preserve SmartLingo's twelve target-language courses, five-skill learning model, anonymous trial, SmartCards, Sprint, and reward-point isolation."],"zh":["保留 SmartLingo 十二目标语言课程、五项技能学习模式、匿名试学、智慧卡、速成及积分隔离。"]}
 }

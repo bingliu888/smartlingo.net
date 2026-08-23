@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import ts from "typescript";
 
 const generatedUrl = new URL("../lib/home-interface-translations.generated.ts", import.meta.url);
 const sourceUrls = process.argv.slice(2).map(value => new URL(`../${value}`, import.meta.url));
@@ -17,6 +18,19 @@ for (const sourceUrl of sourceUrls) {
   for (const match of source.matchAll(/\binterfaceText\([^,]+,\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*\)/g)) {
     pairs.set(JSON.parse(match[1]), JSON.parse(match[2]));
   }
+  const sourceFile = ts.createSourceFile(sourceUrl.pathname, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const collectStrings = node => {
+    if (ts.isStringLiteralLike(node)) pairs.set(node.text, "");
+    ts.forEachChild(node, collectStrings);
+  };
+  const visit = node => {
+    if (ts.isPropertyAssignment(node) && node.name.getText(sourceFile) === "en") {
+      if (ts.isStringLiteralLike(node.initializer)) pairs.set(node.initializer.text, "");
+      else if (ts.isObjectLiteralExpression(node.initializer)) collectStrings(node.initializer);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
 }
 
 const targets = ["ja", "ko", "es", "fr", "de", "ru", "it", "pt", "ar", "hi"];

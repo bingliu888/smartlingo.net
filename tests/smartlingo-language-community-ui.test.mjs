@@ -78,7 +78,12 @@ test("home feature buttons and Choose course use canonical destination pages", a
   assert.match(choices, /SMARTLINGO_LANGUAGE_COMMUNITIES\.map/);
   assert.match(choices, /course_\$\{language\}_\$\{choice\}/);
   assert.doesNotMatch(choices, /\/enroll|\/placement|auth\/login\?returnTo=/);
-  assert.match(programs, /<LearningPathPlanner lang=\{lang\} catalogOnly\/>/);
+  assert.match(programs, /<LearningPathPlanner lang=\{locale\} catalogOnly\/>/);
+  assert.match(programs, /interfaceText\(locale, "Build usable vocabulary/);
+  assert.match(programs, /interfaceText\(locale, "CHOOSE COURSE", "选择课程"\)/);
+  assert.match(planner, /lang: InterfaceLanguage/);
+  assert.match(planner, /translateHomeCopy\(copy\[sourceLanguage\], lang, homeInterfaceTranslations\)/);
+  assert.match(planner, /translateHomeCopy\(SKILL_LABELS\[sourceLanguage\], lang, homeInterfaceTranslations\)/);
   assert.match(planner, /openCatalogLanguage/);
   assert.match(planner, /joined[\s\S]*?\/classes\/\$\{encodeURIComponent\(joined\.id\)\}/);
   assert.match(planner, /\/programs\/\$\{encodeURIComponent\(language\)\}/);

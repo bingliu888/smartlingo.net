@@ -14,6 +14,8 @@ import {
 } from "../lib/smartlingo-paths";
 import type { SmartLingoLevel } from "../lib/smartlingo-learning";
 import type { SmartLingoCommunityLanguage } from "../lib/smartlingo-language-communities";
+import { homeInterfaceTranslations } from "../lib/home-interface-translations.generated";
+import { interfaceText, translateHomeCopy, type InterfaceLanguage } from "../lib/interface-locale";
 import {
   SMARTLINGO_COURSE_DURATIONS,
   buildQuickCourse,
@@ -148,11 +150,14 @@ const copy = {
 } as const;
 
 export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false }: {
-  lang: "zh" | "en";
+  lang: InterfaceLanguage;
   initialLanguage?: SmartLingoCommunityLanguage;
   catalogOnly?: boolean;
 }) {
-  const t = copy[lang];
+  const sourceLanguage = lang === "zh" ? "zh" : "en";
+  const t = translateHomeCopy(copy[sourceLanguage], lang, homeInterfaceTranslations);
+  const skillLabels = translateHomeCopy(SKILL_LABELS[sourceLanguage], lang, homeInterfaceTranslations);
+  const localized = (value: { en: string; zh: string }) => interfaceText(lang, value.en, value.zh);
   const [targetLanguage, setTargetLanguage] = useState<SmartLingoCommunityLanguage>(initialLanguage ?? (lang === "zh" ? "en" : "es"));
   const [joinedCourses, setJoinedCourses] = useState<Array<{ id: string; targetLanguage: string; classKind?: string }>>([]);
   const [useCase, setUseCase] = useState<SmartLingoUseCase>("daily_life");
@@ -332,7 +337,7 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
               const course = buildQuickCourse(targetLanguage, days, courseLevel);
               return <label className={courseDays === days ? "selected" : ""} data-layout-track={`quick-course-${days}`} key={days}>
                 <input type="radio" name="courseDays" value={days} checked={courseDays === days} onChange={() => setCourseDays(days)}/>
-                <span><b>{course.title[lang]}</b><small>{course.summary[lang]}</small><em>{course.isFreeDefault ? t.free : t.paidLater} · {t.daily} {course.schedule[0].estimatedMinutes} {lang === "zh" ? "分钟" : "minutes"}</em></span>
+                <span><b>{localized(course.title)}</b><small>{localized(course.summary)}</small><em>{course.isFreeDefault ? t.free : t.paidLater} · {t.daily} {course.schedule[0].estimatedMinutes} {interfaceText(lang, "minutes", "分钟")}</em></span>
               </label>;
             })}
           </div>
@@ -359,15 +364,15 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       <div className="sl-stage-stack">
         {stages.map((stage, stageIndex) => <article className="sl-stage" data-layout-fill={`stage-${stage.id}`} key={stage.id}>
           <header data-readable-copy={`stage-${stage.id}-copy`}>
-            <span>{stage.level}</span><div><h3 data-layout-text-fit={`stage-title-${stage.id}`}>{stage.title[lang]}</h3><p>{stage.summary[lang]}</p></div><em>{stage.availability === "available" ? t.available : t.preview}</em>
+            <span>{stage.level}</span><div><h3 data-layout-text-fit={`stage-title-${stage.id}`}>{localized(stage.title)}</h3><p>{localized(stage.summary)}</p></div><em>{stage.availability === "available" ? t.available : t.preview}</em>
           </header>
           <div className="sl-unit-grid">
             {stage.units.map((unit, unitIndex) => <section className={unit.id === currentUnitId ? "current" : ""} data-layout-track={unit.id} key={unit.id}>
               <div><span>{stageIndex + 1}.{unitIndex + 1}</span>{unit.id === currentUnitId && <b>{t.current}</b>}</div>
-              <h4 data-layout-text-fit={`${unit.id}-title`}>{unit.title[lang]}</h4>
-              <p>{unit.summary[lang]}</p>
-              <dl><div><dt>{t.prerequisite}</dt><dd>{unit.prerequisiteUnitId ? unit.prerequisiteUnitId.replace(`sl-unit-${targetLanguage}-`, "") : t.first}</dd></div><div><dt>{t.scenario}</dt><dd>{unit.scenario[lang]}</dd></div></dl>
-              <ul>{unit.skills.map(skill => <li key={skill}>{SKILL_LABELS[lang][skill]}</li>)}</ul>
+              <h4 data-layout-text-fit={`${unit.id}-title`}>{localized(unit.title)}</h4>
+              <p>{localized(unit.summary)}</p>
+              <dl><div><dt>{t.prerequisite}</dt><dd>{unit.prerequisiteUnitId ? unit.prerequisiteUnitId.replace(`sl-unit-${targetLanguage}-`, "") : t.first}</dd></div><div><dt>{t.scenario}</dt><dd>{localized(unit.scenario)}</dd></div></dl>
+              <ul>{unit.skills.map(skill => <li key={skill}>{skillLabels[skill]}</li>)}</ul>
             </section>)}
           </div>
         </article>)}
