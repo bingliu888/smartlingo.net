@@ -2,6 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { assistantComposerCopy, type InterfaceLanguage } from "../lib/interface-locale";
 
 type ChatMessage = { role: "user" | "assistant"; content: string; imageUrl?: string };
 type PendingImage = { file: File; dataUrl: string; previewUrl: string };
@@ -53,8 +54,9 @@ function recognitionConstructor(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 }
 
-export function AssistantClient({ lang, targetLanguage, speechLocale, mode }: { lang: "en" | "zh"; targetLanguage?: string; speechLocale?: string; mode?: string }) {
+export function AssistantClient({ lang, targetLanguage, speechLocale, mode }: { lang: InterfaceLanguage; targetLanguage?: string; speechLocale?: string; mode?: string }) {
   const zh = lang === "zh";
+  const composerCopy = assistantComposerCopy[lang];
   const { isLoaded: identityLoaded, isSignedIn } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -80,6 +82,11 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode }: { 
   const speechSession = useRef(0);
   const cameraInput = useRef<HTMLInputElement | null>(null);
   const photoInput = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    composer.current?.setAttribute("placeholder", composerCopy.placeholder);
+    composer.current?.setAttribute("aria-label", composerCopy.question);
+  }, [composerCopy]);
 
   useEffect(() => {
     const updateViewportHeight = () => {

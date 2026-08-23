@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-program-directory-localization-2026-08-23-v7",
+  "releaseId": "smartlingo-assistant-input-localization-2026-08-23-v8",
   "site": "smartlingo.net",
-  "title": {"en":"Localize the complete course-directory interface","zh":"完整本地化课程目录界面"},
-  "purpose": {"en":"Remove the English fallback from the twelve-language course directory and learning-path planner while preserving the selected site language on every deep link.","zh":"移除十二语言课程目录与学习路径规划器的英文回退，并让每个深层链接保持用户选择的网站语言。"},
-  "features": {"en":["Translate the course-directory hero, planner controls, skill names, durations, availability states, and action labels in all twelve site languages.","Translate the selected-language course detail, tier names, package features, pricing units, and subscription actions instead of reverting to English after a catalog click.","Use one shared static interface catalog so future planner copy is reviewable and testable."],"zh":["以十二种网站语言翻译课程目录首屏、规划器控件、技能名称、时长、可用状态及操作标签。","翻译选定语言后的课程详情、等级名称、方案功能、价格单位和订阅操作，避免点击目录后重新回退英文。","使用同一份静态界面目录，让后续规划器文案可审查、可测试。"]},
-  "affected": {"en":["Course directory, selected-language course details, and learning-path planner in all twelve site languages"],"zh":["十二种网站语言下的课程目录、选定语言课程详情与学习路径规划器"]},
-  "changes": {"en":["Replace the bilingual page guard and English fallback with the shared twelve-language locale contract.","Localize planner shell text and bilingual course metadata through the static interface catalog.","Use each learning language's authoritative native name on its course detail instead of an ambiguous machine-translated demonym.","Expand the translation-catalog maintenance script and add regression assertions for the deep course route."],"zh":["以共享十二语言区域契约替换双语页面守卫及英文回退。","通过静态界面目录本地化规划器外壳文案与双语课程元数据。","在课程详情使用学习语言的权威原生名称，避免含义不清的机器翻译族称。","扩展翻译目录维护脚本，并为课程深层路由增加回归断言。"]},
-  "validation": {"en":["Run TypeScript, route-language, header, learning-community, and language-consistency contracts plus the production build.","Deploy, verify the exact Project release record, and use real Chrome to traverse the Japanese and Korean course-directory flows."],"zh":["执行 TypeScript、路由语言、页头、学习社区、语言一致性契约及生产构建。","部署并核验 Project 精确发布记录，再用真实 Chrome 走查日语与韩语课程目录流程。"]},
+  "title": {"en":"Localize Ask AI input controls in all twelve languages","zh":"完整本地化十二语言 AI 输入控件"},
+  "purpose": {"en":"Remove the English fallback from the Ask AI composer placeholder and accessible input name while preserving learner-authored text exactly.","zh":"移除 AI 咨询输入框占位文案及无障碍名称的英文回退，同时完整保留学习者输入内容。"},
+  "features": {"en":["Provide reviewed composer labels for every SmartLingo interface language.","Keep the textarea value outside interface translation."],"zh":["为 SmartLingo 每种界面语言提供已审核的输入控件文案。","输入框内容不参与界面翻译。"]},
+  "affected": {"en":["Ask AI composer placeholder and accessible input label in all twelve site languages"],"zh":["十二种网站语言下的 AI 咨询输入框占位文案及无障碍名称"]},
+  "changes": {"en":["Add a twelve-language assistant composer catalog.","Apply the active locale to dynamic textarea attributes without rewriting its value.","Add regression assertions for every supported placeholder."],"zh":["新增十二语言 AI 输入控件目录。","将当前语言应用于动态文本框属性而不改写输入值。","为全部支持语言的占位文案新增回归断言。"]},
+  "validation": {"en":["Run route-language and assistant-input localization contracts plus the production build.","Use real Chrome on the Japanese Ask AI page, enter test text, and verify the exact value remains unchanged."],"zh":["执行路由语言及 AI 输入本地化契约和生产构建。","使用真实 Chrome 打开日语 AI 咨询页，输入测试文字并确认内容保持完全不变。"]},
   "deferred": {"en":["Learner-authored course data remains displayed as authored; this release localizes the platform interface and built-in planner content."],"zh":["学员自行创建的课程数据仍按原文显示；本次发布本地化平台界面与内置规划器内容。"]},
   "siteAdaptations": {"en":["Preserve SmartLingo's twelve target-language courses, five-skill learning model, anonymous trial, SmartCards, Sprint, and reward-point isolation."],"zh":["保留 SmartLingo 十二目标语言课程、五项技能学习模式、匿名试学、智慧卡、速成及积分隔离。"]}
 }

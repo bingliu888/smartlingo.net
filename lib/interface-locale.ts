@@ -33,6 +33,22 @@ export const interfaceCopies: Record<InterfaceLanguage, InterfaceCopy> = {
 };
 export const interfaceCopyFor = (language: InterfaceLanguage) => interfaceCopies[language];
 
+type AssistantComposerCopy = { question:string; placeholder:string; faq:string; startVoice:string; stopVoice:string; send:string };
+export const assistantComposerCopy: Record<InterfaceLanguage, AssistantComposerCopy> = {
+  en:{question:"Your question",placeholder:"Message Guru…",faq:"Frequently asked questions",startVoice:"Start voice input",stopVoice:"Stop voice input",send:"Send message"},
+  zh:{question:"输入问题",placeholder:"给智能导师发消息…",faq:"常见问题",startVoice:"开始语音输入",stopVoice:"停止语音输入",send:"发送消息"},
+  ja:{question:"質問を入力",placeholder:"AI講師にメッセージ…",faq:"よくある質問",startVoice:"音声入力を開始",stopVoice:"音声入力を停止",send:"メッセージを送信"},
+  ko:{question:"질문 입력",placeholder:"AI 강사에게 메시지…",faq:"자주 묻는 질문",startVoice:"음성 입력 시작",stopVoice:"음성 입력 중지",send:"메시지 보내기"},
+  es:{question:"Escribe tu pregunta",placeholder:"Escribe al tutor de IA…",faq:"Preguntas frecuentes",startVoice:"Iniciar entrada de voz",stopVoice:"Detener entrada de voz",send:"Enviar mensaje"},
+  fr:{question:"Saisissez votre question",placeholder:"Écrire au tuteur IA…",faq:"Questions fréquentes",startVoice:"Démarrer la saisie vocale",stopVoice:"Arrêter la saisie vocale",send:"Envoyer le message"},
+  de:{question:"Frage eingeben",placeholder:"Dem KI-Tutor schreiben…",faq:"Häufige Fragen",startVoice:"Spracheingabe starten",stopVoice:"Spracheingabe stoppen",send:"Nachricht senden"},
+  ru:{question:"Введите вопрос",placeholder:"Написать ИИ-наставнику…",faq:"Частые вопросы",startVoice:"Начать голосовой ввод",stopVoice:"Остановить голосовой ввод",send:"Отправить сообщение"},
+  it:{question:"Inserisci la domanda",placeholder:"Scrivi al tutor IA…",faq:"Domande frequenti",startVoice:"Avvia input vocale",stopVoice:"Interrompi input vocale",send:"Invia messaggio"},
+  pt:{question:"Digite sua pergunta",placeholder:"Escreva ao tutor de IA…",faq:"Perguntas frequentes",startVoice:"Iniciar entrada de voz",stopVoice:"Parar entrada de voz",send:"Enviar mensagem"},
+  ar:{question:"أدخل سؤالك",placeholder:"اكتب إلى معلّم الذكاء الاصطناعي…",faq:"الأسئلة الشائعة",startVoice:"بدء الإدخال الصوتي",stopVoice:"إيقاف الإدخال الصوتي",send:"إرسال الرسالة"},
+  hi:{question:"अपना प्रश्न लिखें",placeholder:"AI शिक्षक को संदेश लिखें…",faq:"अक्सर पूछे जाने वाले प्रश्न",startVoice:"आवाज़ इनपुट शुरू करें",stopVoice:"आवाज़ इनपुट रोकें",send:"संदेश भेजें"},
+};
+
 export function interfaceText(language: InterfaceLanguage, english: string, chinese: string) {
   if (language === "zh") return chinese;
   if (language === "en") return english;
