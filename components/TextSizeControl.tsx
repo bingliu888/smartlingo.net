@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type TextSize = "comfortable" | "large" | "extra-large";
 const storageKey = "smartlingo-guru-text-size";
@@ -19,7 +20,7 @@ export function TextSizeInitializer() {
   return null;
 }
 
-export function TextSizeControl({ lang }: { lang: "en" | "zh" }) {
+export function TextSizeControl({ lang }: { lang: InterfaceLanguage }) {
   const [value, setValue] = useState<TextSize>("comfortable");
   useEffect(() => {
     const saved = window.localStorage.getItem(storageKey) as TextSize | null;

@@ -5,10 +5,11 @@ import { useMemo, useState } from "react";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import type { DashboardJoinedCourse } from "./DashboardLearningHub";
 import styles from "./DashboardDailySprint.module.css";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 const DURATIONS = [5, 10, 15, 20] as const;
 
-export function DashboardDailySprint({ lang, courses }: { lang: "zh" | "en"; courses: DashboardJoinedCourse[] }) {
+export function DashboardDailySprint({ lang, courses }: { lang: InterfaceLanguage; courses: DashboardJoinedCourse[] }) {
   const zh = lang === "zh";
   const [minutes, setMinutes] = useState<Record<string, (typeof DURATIONS)[number]>>({});
   const entries = useMemo(() => SMARTLINGO_LANGUAGE_COMMUNITIES.flatMap(language => {

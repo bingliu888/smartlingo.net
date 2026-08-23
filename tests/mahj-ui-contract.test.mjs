@@ -20,7 +20,7 @@ test("primary public and signed-in surfaces use the shared SiteHeader", async ()
     read("../app/[lang]/refund-policy/page.tsx"),
     read("../components/ProjectDashboard.tsx"),
   ]);
-  for (const source of files) assert.match(source, /<SiteHeader lang=\{(?:lang|locale)\}\s*\/>/);
+  for (const source of files) assert.match(source, /<SiteHeader lang=\{(?:lang|locale)(?: as any)?\}\s*\/>/);
   assert.match(await read("../app/[lang]/community/page.tsx"), /redirect\(`\/\$\{lang\}\/programs`\)/);
 });
 

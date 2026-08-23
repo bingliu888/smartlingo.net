@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import styles from "./DashboardLearningHub.module.css";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 export type DashboardJoinedCourse = { id: string; title: string; targetLanguage: string; packageTier: string };
 type Area = "everyday" | "play" | "courses" | "ai";
 
-export function DashboardLearningHub({ lang, courses }: { lang: "zh" | "en"; courses: DashboardJoinedCourse[] }) {
+export function DashboardLearningHub({ lang, courses }: { lang: InterfaceLanguage; courses: DashboardJoinedCourse[] }) {
   const zh = lang === "zh";
   const languages = useMemo(() => SMARTLINGO_LANGUAGE_COMMUNITIES.filter(language => courses.some(course => course.targetLanguage === language.code)), [courses]);
   const first = languages[0]?.code || "";

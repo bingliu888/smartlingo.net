@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type ReferredMember = {
   id: string;
@@ -21,7 +22,7 @@ type PlatformData = {
   notifications: { language: string; marketingEmail: boolean; productEmail: boolean; reminderEmail: boolean };
 };
 
-export function MembershipPanel({ lang }: { lang: "en" | "zh" }) {
+export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
   const zh = lang === "zh";
   const [data, setData] = useState<PlatformData | null>(null);
   const [message, setMessage] = useState("");
