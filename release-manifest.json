@@ -1,34 +1,34 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-standard-language-header-2026-08-22-v3",
+  "releaseId": "smartlingo-play-sprint-language-sync-2026-08-23-v1",
   "site": "smartlingo.net",
-  "title": { "en": "Shared responsive wordmark and clean footer", "zh": "页眉页脚共用响应式品牌字标并清理页脚" },
+  "title": { "en": "Keep Today’s Sprint aligned with the selected Play language", "zh": "让今日速成始终跟随 Play 已选语言" },
   "purpose": {
-    "en": "Keep the SmartLingo brand readable when desktop navigation uses two rows, reuse the same segmented wordmark in the footer, and remove the redundant footer language switcher.",
-    "zh": "当桌面导航使用两行时保持 SmartLingo 品牌清晰可读，让页脚复用同一分段字标，并移除重复的页脚语言切换。"
+    "en": "Prevent a stale Today’s Sprint language after a learner changes the target language from the production Play picker.",
+    "zh": "防止学习者在正式站 Play 选择器切换目标语言后，今日速成仍保留旧语言。"
   },
   "features": {
-    "en": ["Wrap the brand only between Smart and Lingo in the two-row desktop range.", "Place the active-language text button before the account icon.", "Use a standard solid dropdown chevron and make the URL locale authoritative for the active menu option."],
-    "zh": ["在桌面两行范围内只允许在 Smart 与 Lingo 之间换行。", "将当前语言文字按钮固定在用户图标之前。", "使用标准实心下拉箭头，并以 URL 语言作为菜单当前选项的唯一权威状态。"]
+    "en": ["Synchronize the Sprint dialog selection whenever the Play page target-language parameter changes.", "Preserve the explicit learner choice made inside an already-open Sprint dialog."],
+    "zh": ["Play 页面目标语言参数变化时同步速成弹窗选项。", "保留学习者在已打开速成弹窗内作出的明确语言选择。"]
   },
   "affected": {
-    "en": ["Global header", "Global footer", "Authentication brand surface", "Project release report"],
-    "zh": ["全局页眉", "全局页脚", "登录品牌界面", "Project 发布报告"]
+    "en": ["Chinese-interface Play language picker", "Today’s Sprint dialog and start link", "Project release report"],
+    "zh": ["中文界面 Play 语言选择器", "今日速成弹窗与启动链接", "Project 发布报告"]
   },
   "changes": {
-    "en": ["Add a reusable segmented SmartLingo wordmark.", "Move the language menu before the account icon and replace the hollow chevron with a solid chevron.", "Remove the footer language selector and repeated product links; keep About, Privacy, Terms, and Project in that order."],
-    "zh": ["新增可复用的分段 SmartLingo 字标。", "将语言菜单移到用户图标之前，并把空心箭头替换为实心箭头。", "移除页脚语言选择器与重复产品链接，并按顺序只保留 About、Privacy、Terms、Project。"]
+    "en": ["Derive the active Sprint selection from the latest Play target while preserving an explicit choice made for that same target.", "Add a regression contract requiring the derived synchronization behavior."],
+    "zh": ["从最新 Play 目标派生当前速成语言，同时保留学习者针对同一目标作出的明确选择。", "增加要求该派生同步行为的回归契约。"]
   },
   "validation": {
-    "en": ["Run the complete repository test suite, type check, production build, and shared-site policy gates.", "Verify the segmented two-line header wordmark at the affected desktop width in production Chrome.", "Verify the footer reuses the header wordmark and contains no language switcher."],
-    "zh": ["运行完整仓库测试、类型检查、正式构建及共享站点政策门禁。", "在正式站 Chrome 的受影响桌面宽度核验分段双行页眉字标。", "核验页脚复用页眉字标且不再包含语言切换。"]
+    "en": ["Run the complete repository release gate and all routed shared-site policy gates.", "Reproduce the stale Japanese selection before the fix and retest the same Play-to-Sprint path in production Chrome after deployment.", "Verify the selected language, five-minute start URL, Sprint course title, and persisted result agree."],
+    "zh": ["运行完整仓库发布门禁及所有已路由共享站点政策门禁。", "修复前复现日语选择滞留，并在部署后用正式站 Chrome 复测同一 Play 到速成路径。", "核验已选语言、5 分钟启动 URL、速成课程标题与持久化结果一致。"]
   },
   "deferred": {
-    "en": ["No learning, billing, referral, certificate, challenge, or leaderboard behavior changes in this release."],
-    "zh": ["本次发布不改变学习、支付、推荐、证书、挑战或排行榜行为。"]
+    "en": ["Real microphone scoring remains dependent on the local Chrome device capability and is reported separately by the 21-day QA run."],
+    "zh": ["真实麦克风评分仍取决于本机 Chrome 设备能力，并由 21 天 QA 运行单独报告。"]
   },
   "siteAdaptations": {
-    "en": ["SmartLingo keeps the exact same green Lingo segment and S icon in both header and footer while adopting the global wordmark and footer-language rules."],
-    "zh": ["SmartLingo 在采用全局字标与页脚语言规则时，让页眉和页脚保留完全相同的绿色 Lingo 分段和 S 图标。"]
+    "en": ["The fix is limited to SmartLingo’s target-language-aware Play and Today’s Sprint flow; interface locale and course identifiers remain site-local."],
+    "zh": ["修复仅限 SmartLingo 的目标语言感知 Play 与今日速成流程；界面语言和课程标识仍保持站点本地化。"]
   }
 }

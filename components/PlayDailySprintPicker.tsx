@@ -19,7 +19,9 @@ const sprintCopy = {
 export function PlayDailySprintPicker({ lang, initialLanguage, triggerClassName, triggerLabel, children }: { lang: InterfaceLanguage; initialLanguage?: string; triggerClassName?: string; triggerLabel?: string; children?: ReactNode }) {
   const t = sprintCopy[lang as keyof typeof sprintCopy] ?? sprintCopy.en;
   const [open, setOpen] = useState(false);
-  const [language, setLanguage] = useState(initialLanguage || "");
+  const initialTarget = initialLanguage || "";
+  const [selection, setSelection] = useState({ source: initialTarget, value: initialTarget });
+  const language = selection.source === initialTarget ? selection.value : initialTarget;
   const [minutes, setMinutes] = useState<(typeof DURATIONS)[number]>(10);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function PlayDailySprintPicker({ lang, initialLanguage, triggerClassName,
         <button className="play-sprint-close" type="button" onClick={() => setOpen(false)} aria-label={t.close}>×</button>
         <p>DAILY SPRINT</p>
         <h2 id="play-sprint-title">{t.heading}</h2><span>{t.intro}</span><h3>{t.stepLanguage}</h3>
-        <div className="play-sprint-languages">{SMARTLINGO_LANGUAGE_COMMUNITIES.map(item => <button type="button" aria-pressed={language === item.code} className={language === item.code ? "selected" : ""} onClick={() => { setLanguage(item.code); rememberTargetLanguage(item.code); }} key={item.code}><small>{item.code.toUpperCase()}</small><strong>{item.nativeName}</strong><span>{item.nameEn}</span></button>)}</div>
+        <div className="play-sprint-languages">{SMARTLINGO_LANGUAGE_COMMUNITIES.map(item => <button type="button" aria-pressed={language === item.code} className={language === item.code ? "selected" : ""} onClick={() => { setSelection({ source: initialTarget, value: item.code }); rememberTargetLanguage(item.code); }} key={item.code}><small>{item.code.toUpperCase()}</small><strong>{item.nativeName}</strong><span>{item.nameEn}</span></button>)}</div>
         <h3>{t.stepTime}</h3><div className="play-sprint-times">{DURATIONS.map(value => <button type="button" aria-pressed={minutes === value} className={minutes === value ? "selected" : ""} onClick={() => setMinutes(value)} key={value}><strong>{value}</strong><span>{t.minute}</span><small>{value / 5} {value === 5 ? t.round : t.rounds}</small></button>)}</div>
         {language ? <Link className="play-sprint-start" href={`/${lang}/classes/course_${language}_basic/sprint?minutes=${minutes}&source=play`}>{t.start.replace("{minutes}", String(minutes))} →</Link> : <button className="play-sprint-start" type="button" disabled>{t.first}</button>}
       </section>

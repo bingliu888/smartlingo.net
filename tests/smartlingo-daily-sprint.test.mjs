@@ -67,6 +67,8 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(play, /GameLanguagePicker lang=\{lang\} basePath=\{`\/\$\{lang\}\/play`\} selected=\{language\}/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
+  assert.match(playPicker, /selection\.source === initialTarget \? selection\.value : initialTarget/);
+  assert.match(playPicker, /setSelection\(\{ source: initialTarget, value: item\.code \}\)/);
   assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
   assert.match(playPicker, /source=play/);
   assert.match(play, /play\/rankings/);
