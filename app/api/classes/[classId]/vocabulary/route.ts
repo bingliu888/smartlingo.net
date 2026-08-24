@@ -94,16 +94,17 @@ async function authorize(request: Request, classId: string) {
 }
 
 async function catalogFor(database: ReturnType<typeof getDatabase>, targetLanguage: string, level: string) {
+  const rank = LEVEL_RANK[level] || 1;
   const result = await database.prepare(`SELECT id,stable_key AS stableKey,version,target_language AS targetLanguage,
     level,difficulty,frequency_degree AS frequencyDegree,scene_key AS sceneKey,sequence,form,pronunciation,target_phonetic AS targetPhonetic,
     pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,
     pronunciation_guides AS pronunciationGuides,
     meaning_en AS meaningEn,meaning_zh AS meaningZh
     FROM smartlingo_vocabulary_items WHERE target_language=? AND review_status='published'
+      AND (level='beginner' OR (? >= 2 AND level='intermediate') OR (? >= 3 AND level='advanced'))
     ORDER BY difficulty ASC,frequency_degree DESC,sequence,id`)
-    .bind(targetLanguage).run<CatalogRow>();
-  const rank = LEVEL_RANK[level] || 1;
-  return (result.results || []).filter(item => (LEVEL_RANK[item.level] || 99) <= rank);
+    .bind(targetLanguage, rank, rank).run<CatalogRow>();
+  return result.results || [];
 }
 
 async function progressFor(database: ReturnType<typeof getDatabase>, userId: string, pathId: string) {
@@ -188,7 +189,7 @@ async function writeReport(database: ReturnType<typeof getDatabase>, userId: str
       summary.unlearned, summary.percent, summary.stars, now, now).run();
 }
 
-async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "", uiLang: "zh" | "en" = "en", includeAdaptiveSentences = true) {
+async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "", uiLang: "zh" | "en" = "en") {
   const level = access.packageTier || access.level || "beginner";
   const now = Math.floor(Date.now() / 1000);
   const catalog = await catalogFor(database, access.targetLanguage, level);
@@ -206,7 +207,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     : [...due, ...fresh.slice(0, 20), ...started]
       .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
       .slice(0, 20);
-  const adaptive = selected.length && includeAdaptiveSentences ? await adaptiveSentenceRounds({
+  const adaptive = selected.length ? await adaptiveSentenceRounds({
     database,
     language: access.targetLanguage as SmartLingoLearningLanguage,
     level: level as SmartLingoLevel,
@@ -301,8 +302,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
       scheduled.masteredAt === null ? null : Math.floor(scheduled.masteredAt / 1000),
       scheduled.dueAt === null ? null : Math.floor(scheduled.dueAt / 1000), now, now, now,
       correct ? 1 : 0, correct ? 0 : 1).run();
-  // The learner already has this round's sentence deck from GET. Do not block
-  // immediate answer feedback on a newly shifted deck's optional AI sentence
-  // generation; the client preserves the current dailyDeck until the next GET.
-  return Response.json({ correct, ...(await responsePayload(auth.database, auth.user.id, auth.access, localDate, true, "", body.lang === "zh" ? "zh" : "en", false)) });
+  // The learner already has this round's cards, sentences, library, and reports
+  // from GET. Rebuilding and returning that large payload here delayed visible
+  // grading even after the progress write had succeeded. Persist only the new
+  // daily summary, then return the minimal state needed for immediate feedback.
+  const updatedProgress = await progressFor(auth.database, auth.user.id, auth.access.pathId);
+  const summary = summarize(catalog, updatedProgress);
+  await writeReport(auth.database, auth.user.id, auth.access.pathId, auth.access.classId, localDate, summary);
+  return Response.json({ correct, summary });
 }

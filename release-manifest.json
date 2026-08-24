@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-signed-in-vocabulary-feedback-2026-08-24-v27",
+  "releaseId": "smartlingo-signed-in-vocabulary-feedback-2026-08-24-v28",
   "site": "smartlingo.net",
   "title": {
-    "en": "Restore immediate signed-in vocabulary answer feedback",
-    "zh": "恢复登录用户词汇答题即时反馈"
+    "en": "Return minimal signed-in vocabulary answer feedback",
+    "zh": "以最小响应恢复登录用户词汇答题反馈"
   },
   "purpose": {
-    "en": "Remove the production blocker found by the ordinary test learner: choosing a course vocabulary answer must return the server grade and Continue state immediately instead of waiting for optional artificial-intelligence sentence generation for a future deck.",
-    "zh": "消除普通测试学员发现的生产阻断：选择课程词汇答案后应立即返回服务器判分及继续状态，不再等待未来词组的可选人工智能句子生成。"
+    "en": "Remove the production blocker confirmed after v27: the progress write succeeded, but the browser still waited for an unnecessary full course-library response before showing the server grade and Continue state.",
+    "zh": "消除 v27 后确认的生产阻断：学习进度虽已成功写入，但浏览器仍等待不必要的完整课程词库响应，因而无法及时显示服务器判分与继续状态。"
   },
   "features": {
     "en": [
@@ -32,14 +32,14 @@
   },
   "changes": {
     "en": [
-      "Add an explicit response-payload switch controlling adaptive sentence generation.",
-      "Disable future-deck adaptive generation on POST because the client preserves the active deck returned by GET.",
-      "Continue rebuilding the persisted summary, reports, and vocabulary library after every answer."
+      "Restrict the vocabulary catalog query to the learner's active cumulative level in D1 instead of filtering unrelated higher levels in application memory.",
+      "After each progress write, persist the updated daily summary and return only correctness plus summary to the browser.",
+      "Keep the active cards, sentence deck, library, and reports from GET in client state instead of replacing them with a large POST payload."
     ],
     "zh": [
-      "为响应数据增加明确的自适应句子生成开关。",
-      "POST 提交时关闭未来词组的自适应生成，因为客户端会保留 GET 返回的当前词组。",
-      "每次答题后继续重建已持久化的摘要、报告与词汇库。"
+      "在 D1 中把词汇目录查询限制为学员当前累计级别，不再于应用内存中过滤无关的更高级词条。",
+      "每次进度写入后保存更新后的日报摘要，并只向浏览器返回正确性及摘要。",
+      "在客户端保留 GET 返回的当前词卡、句子、词库和报告，不再用庞大的 POST 响应替换。"
     ]
   },
   "validation": {

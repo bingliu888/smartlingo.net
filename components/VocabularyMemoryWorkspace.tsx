@@ -40,6 +40,7 @@ const SCENES: Record<string, string> = { greetings: "☀️", introductions: "�
 export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLanguage; classId: string }) {
   const zh = lang === "zh";
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
+  const unavailableMessage = interfaceText(lang, "The course vocabulary is temporarily unavailable.", "暂时无法读取课程词库。");
   const [data, setData] = useState<Payload | null>(null);
   const [tab, setTab] = useState<Status>("unlearned");
   const [index, setIndex] = useState(0);
@@ -69,9 +70,9 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
   }, [classId, zone, zh]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => { void load().catch(() => setError(t("The course vocabulary is temporarily unavailable.", "暂时无法读取课程词库。"))); }, 0);
+    const timer = window.setTimeout(() => { void load().catch(() => setError(unavailableMessage)); }, 0);
     return () => window.clearTimeout(timer);
-  }, [load, lang]);
+  }, [load, unavailableMessage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -126,10 +127,10 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ cardId: card.id, selectedId, answer, mode: card.mode, timeZone: zone, lang: zh ? "zh" : "en" }),
     });
-    const payload = await response.json().catch(() => ({})) as Payload;
+    const payload = await response.json().catch(() => ({})) as { correct?: boolean; summary?: Summary; error?: string };
     setBusy(false);
     if (!response.ok) { setError(payload.error || t("Unable to save. Try again.", "提交失败，请再试一次。")); return; }
-    setData(current => current ? { ...payload, dailyDeck: current.dailyDeck } : payload);
+    if (payload.summary) setData(current => current ? { ...current, summary: payload.summary! } : current);
     setPronunciationScores([]);
     setAnswerCorrect(Boolean(payload.correct));
     setPhase("feedback");
@@ -262,7 +263,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
           <nav className="vm-speed-controls" aria-label={t("Model speaking speed", "示范语速")}><button type="button" onClick={() => playWord(.86)}>🔊 {t("Normal", "正常语速")}</button><button type="button" onClick={() => playWord(.58)}>🐢 {t("Slow", "慢速")}</button></nav>
           <div>{coachStatus === "model" || coachStatus === "listening" || coachStatus === "scoring" ? <span role="status">{coachStatus === "listening" ? t("Speak now…", "请开始说…") : coachStatus === "scoring" ? t("Scoring…", "评分中…") : t("Playing model…", "正在播放示范…")}</span> : <button type="button" onClick={() => coachStatus === "complete" && pronunciationScores.length >= 3 ? setPhase("sentence") : void runPronunciationTurn(Math.max(1, pronunciationRound))}>{t("Continue", "继续")}</button>}</div>
         </div> : null}
-        {phase === "sentence" ? <SentenceBuilderRound lang={lang as any} mode="writing" speechLocale={SPEECH_LOCALES[data?.targetLanguage || ""] || "en-US"} exercises={[{ ...card.sentence, prompt: zh ? card.sentence.promptZh : card.sentence.promptEn }]} onComplete={nextCard}/> : null}
+        {phase === "sentence" ? <SentenceBuilderRound lang={zh ? "zh" : "en"} mode="writing" speechLocale={SPEECH_LOCALES[data?.targetLanguage || ""] || "en-US"} exercises={[{ ...card.sentence, prompt: zh ? card.sentence.promptZh : card.sentence.promptEn }]} onComplete={nextCard}/> : null}
       </div> : <div className="vm-round-summary" role="dialog" aria-modal="true" aria-labelledby="vm-round-summary-title"><section><span>✦</span><h3 id="vm-round-summary-title">{t("This 20-word round is complete", "本轮 20 个词已完成")}</h3><p>{repeatAfterMe ? t("You completed 20 word checks, three scored repeats per word, and sentence building. Continue with the next 20 words?", "你已完成 20 个词的学习、每词三次评分跟读和组句。要继续下一组 20 个词吗？") : t("You completed 20 word checks and sentence building. Continue with the next 20 words?", "你已完成 20 个词的学习与组句。要继续下一组 20 个词吗？")}</p><nav><button type="button" onClick={continueTwentyWordRound}>{t("Continue", "继续下一组")} →</button><Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{t("Not now", "暂不继续")}</Link></nav></section></div>}
     </section>
 
