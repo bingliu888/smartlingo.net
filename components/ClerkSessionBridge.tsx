@@ -3,12 +3,13 @@
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 export function ClerkSessionBridge({
   lang,
   returnTo,
 }: {
-  lang: "en" | "zh";
+  lang: InterfaceLanguage;
   returnTo: string;
 }) {
   const zh = lang === "zh";
