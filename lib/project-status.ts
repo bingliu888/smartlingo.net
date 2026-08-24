@@ -363,6 +363,50 @@ export const projectReports: ProjectReport[] = [
       en: "Retry four-language speech scoring in Chrome with real audio input; have an authorized administrator read-only verify payment, referral, certificate, course-credit, challenge-reward, and leaderboard ledgers, then decide whether redeemable credit claims should be disabled for automated acceptance accounts.",
     },
   },
+  {
+    date: "2026-08-24",
+    title: {
+      zh: "21 天真实学习验收第 4 天 · 麦克风输入受阻",
+      en: "21-day real-learning acceptance, day 4 · microphone input blocked",
+    },
+    beta: {
+      zh: "查看听力修复与未完成验收证据",
+      en: "Review the Listening fix and incomplete acceptance evidence",
+    },
+    completed: 4,
+    summary: {
+      zh: "匿名测试学习者 qa_test_learner_1 在正式站中文界面复现并验证英语课程听力词块方向缺陷。修复后，听力隐藏英语原句、提供英语词块、显示正确反馈并将题号从 1/10 推进到 2/10；英语词汇与阅读日志已持久化。Chrome 语音识别能进入聆听状态，但自动化环境没有可用人声输入，约十秒后无转写、无评分结束，因此当天四语完整验收停止并标记为受阻，不判定为通过。",
+      en: "The anonymized learner qa_test_learner_1 reproduced and verified the English Course Listening tile-direction defect on the production Chinese interface. After the fix, Listening hid the English sentence, offered English tiles, showed correct feedback, and advanced from 1/10 to 2/10; English vocabulary and reading logs persisted. Chrome speech recognition entered its listening state but the automation environment had no usable human voice input, ending after about ten seconds without a transcript or score. The complete four-language acceptance therefore stopped as blocked and is not reported as a pass.",
+    },
+    validation: {
+      zh: [
+        "正式地址：https://smartlingo.net；太平洋日期 2026-08-24；匿名测试键 qa_test_learner_1；中文界面与可见账户身份已核对；浏览器控制台错误为 0",
+        "句子合同通过：36 门正式课程每门 120 句，Listening 与 Writing 每日各 10 道唯一题；GitHub route preflight 32714614636 的 16/16 匿名路由检查成功，且未作为登录或学习证据",
+        "英语：计划 2 分钟，深度技能为口语；词汇反馈已保存，阅读 100/100 已保存，写作正确反馈并从 1/10 到 2/10；听力修复后以英语原句方向正确作答并从 1/10 到 2/10；8 月 24 日日志显示词汇 1 次/1 分钟、阅读 1 次/2 分钟",
+        "英语有效学习分钟未形成排除诊断与部署时间的完整连续测量，因此不声称达到 2 分钟最低值；考试、今日速成、智慧卡与生活口语未完成，没有可报告的当日服务器测验或 Sprint 最终分数",
+        "日语计划 2 分钟/听力重点、西班牙语计划 2 分钟/口语重点、意大利语计划 5 分钟/写作重点；三语均因同一真实语音输入依赖未开始，实测有效学习为 0 分钟，课程、Play、生活口语、分数与持久日志均未通过",
+        "缺陷修复提交 02f01ce2b2b944ba4d0aa8550f4ad1a07e234694，边缘部署 32715899537 成功；352/352 测试、62 个 D1 迁移、类型检查、生产构建、敏感信息与边缘运行产物检查、260/260 WebKit 布局及共享站点门禁通过",
+        "未进入支付、推荐、证书、课程积分、挑战奖励或排行榜流程；测试学习者无管理员账本权限，因此零账本复核保持受阻而不是声称通过",
+      ],
+      en: [
+        "Production URL: https://smartlingo.net; Pacific date: 2026-08-24; anonymized learner key: qa_test_learner_1; Chinese interface and visible account identity verified; browser console errors: 0",
+        "Sentence contracts passed: all 36 official courses expose 120 sentences, with ten unique daily Listening and Writing items; GitHub route preflight 32714614636 passed 16/16 anonymous route checks and was not treated as login or learning evidence",
+        "English: 2 minutes planned, speaking deep focus; vocabulary feedback persisted, Reading 100/100 persisted, Writing showed correct feedback and advanced 1/10 to 2/10; fixed Listening rebuilt the hidden English sentence correctly and advanced 1/10 to 2/10; the August 24 log shows vocabulary 1 time/1 minute and reading 1 time/2 minutes",
+        "English active-learning time was not captured as one complete measurement excluding diagnosis and deployment, so the two-minute minimum is not claimed; Exam, Today's Sprint, SmartCard, and Everyday Speaking were incomplete, with no current-day server quiz or Sprint final score to report",
+        "Japanese planned 2 minutes/listening focus, Spanish planned 2 minutes/speaking focus, and Italian planned 5 minutes/writing focus; all three were not started after the shared real-voice-input dependency failed, with 0 measured active minutes and no passing Course, Play, Everyday, score, or persisted-log evidence",
+        "Defect fix commit 02f01ce2b2b944ba4d0aa8550f4ad1a07e234694 deployed successfully in Cloudflare run 32715899537; 352/352 tests, 62 D1 migrations, TypeScript, production build, sensitive-data and Worker-artifact checks, 260/260 WebKit layout cases, and shared-site gates passed",
+        "No payment, referral, certificate, course-credit, challenge-reward, or leaderboard flow was entered; the learner lacks administrator ledger access, so zero-ledger verification remains blocked rather than reported as passed",
+      ],
+    },
+    rollback: {
+      zh: "本报告只增加非私密验收证据；如报告展示异常，可回滚报告提交。听力修复可回滚到上一成功边缘运行版本，但不得改写已持久化的合法学习记录。",
+      en: "This report adds only non-secret acceptance evidence and can be rolled back if its presentation regresses. The Listening fix can roll back to the prior successful Worker, but legitimate persisted learning records must not be rewritten.",
+    },
+    next: {
+      zh: "恢复可提供真实人声输入的 Chrome 麦克风环境后，从英语口语同一步骤重试，再完成四语 Course、Play、生活口语、计划时长、服务器分数与管理员只读账本复核。",
+      en: "When Chrome has real human voice input, retry from the same English speaking step, then complete all four languages' Course, Play, Everyday Speaking, planned durations, server scores, and administrator read-only ledger verification.",
+    },
+  },
 ];
 
 export const taskById = (id: string) => projectTasks.find(task => task.id === id);
