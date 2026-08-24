@@ -8,6 +8,6 @@
   "affected": {"en":["Signed-in Dashboard learning hub, auth completion locale handoff, and live production acceptance documentation"],"zh":["登录用户面板学习中心、登录完成语言跳转及生产验收文档"]},
   "changes": {"en":["Dashboard languages continue to derive only from active subscribed courses.","Each learning tile preserves its own selected-language state and sends that language in the destination URL or course context.","The acceptance matrix tests Chinese-to-Japanese first and English-to-Italian second across anonymous and member boundaries.","Use the already validated interface locale when completing the Clerk session bridge."],"zh":["用户面板语言仍只来自有效订阅课程。","每个学习入口独立保留所选语言，并在目标 URL 或课程上下文中携带该语言。","验收矩阵先测试中文学日文，再测试英文学意大利文，并覆盖匿名与会员边界。","Clerk 会话完成桥接使用已经验证的当前界面语言。"]},
   "validation": {"en":["Targeted Dashboard, Sprint, acceptance-plan, localization, and Clerk tests passed.","SmartLingo shared policy, architecture, base-feature, and contract gates passed.","Vinext production build, diff check, sensitive-data scan, and local anonymous Play browser verification passed."],"zh":["用户面板、速成、验收计划、本地化及 Clerk 目标测试通过。","SmartLingo 共享政策、架构、基础功能及契约检查通过。","Vinext 生产构建、差异检查、敏感数据扫描及匿名 Play 本地浏览器验证通过。"]},
-  "deferred": {"en":[],"zh":[]},
+  "deferred": {"en":["No tests are intentionally deferred for this Dashboard and acceptance-plan release."],"zh":["本次用户面板与验收计划发布没有有意延期的测试。"]},
   "siteAdaptations": {"en":["Preserve SmartLingo branding, subscribed-course boundaries, Clerk, Cloudflare, AI, commerce, and site-owned data."],"zh":["保留 SmartLingo 品牌、订阅课程边界、Clerk、Cloudflare、AI、商业及站点自有数据。"]}
 }
