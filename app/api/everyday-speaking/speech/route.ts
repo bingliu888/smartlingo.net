@@ -1,6 +1,6 @@
 import { getDatabase, getSessionUser } from "@/lib/auth";
 import { isSmartAiGatewayError, transcribeSmartAiSpeech } from "@/lib/smartlingo-ai-gateway";
-import { buildEverydaySpeakingDeck, isSmartLingoEverydayScenario } from "@/lib/smartlingo-everyday-speaking";
+import { buildEverydaySpeakingDeckFromDatabase, isSmartLingoEverydayScenario } from "@/lib/smartlingo-everyday-speaking";
 import { isSmartLingoCommunityLanguage } from "@/lib/smartlingo-language-communities";
 import { scoreSmartCardPronunciation } from "@/lib/smartlingo-smartcards";
 
@@ -29,10 +29,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Pronunciation audio is invalid" }, { status: 400 });
   }
 
-  const slide = buildEverydaySpeakingDeck(language, scene).find(item => item.id === slideId);
+  const database = getDatabase();
+  const level = slideId.includes("-advanced-") ? "advanced" : slideId.includes("-intermediate-") ? "intermediate" : "beginner";
+  const deck = await buildEverydaySpeakingDeckFromDatabase({ database, language, sceneId: scene, level });
+  const slide = deck.find(item => item.id === slideId);
   if (!slide) return Response.json({ error: "Everyday speaking slide not found" }, { status: 404 });
 
-  const database = getDatabase();
   const user = await getSessionUser(request);
   const guestSignal = `${request.headers.get("cf-connecting-ip") || "anonymous"}:${request.headers.get("user-agent") || "browser"}`;
   const subject = user ? `user:${user.id}:everyday-speech` : `guest:${await sha256(guestSignal)}:everyday-speech`;

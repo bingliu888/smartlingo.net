@@ -14,9 +14,15 @@ test("everyday speaking provides twelve illustrated three-level scenarios with v
     for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
       for (const level of ["beginner", "intermediate", "advanced"]) {
         const deck = buildEverydaySpeakingDeck(language, scene.id, level);
-        assert.ok(deck.length >= 14, `${language}/${scene.id}/${level}`);
+        assert.ok(deck.length >= 24, `${language}/${scene.id}/${level}`);
         assert.ok(deck.some(slide => slide.kind === "word"));
-        assert.ok(deck.some(slide => slide.kind === "sentence"));
+        const dialogue = deck.filter(slide => slide.kind === "sentence");
+        assert.equal(dialogue.length, 20, `${language}/${scene.id}/${level} dialogue turns`);
+        assert.equal(new Set(dialogue.map(slide => slide.pairIndex)).size, 10);
+        for (let pair = 0; pair < 10; pair += 1) {
+          const turns = dialogue.filter(slide => slide.pairIndex === pair);
+          assert.deepEqual(turns.map(slide => slide.role), ["staff", "learner"]);
+        }
         for (const slide of deck) {
           assert.ok(slide.form.trim());
           assert.ok(slide.meaningZh.trim());
@@ -53,6 +59,12 @@ test("the player includes three scored attempts, two speeds, explicit continuati
 test("everyday speaking has a validated multilingual server transcription fallback", async () => {
   const route = await read("../app/api/everyday-speaking/speech/route.ts");
   for (const marker of ["isSmartLingoCommunityLanguage", "isSmartLingoEverydayScenario", "buildEverydaySpeakingDeck", "transcribeSmartAiSpeech", "scoreSmartCardPronunciation", "MAX_AUDIO_BYTES"]) assert.match(route, new RegExp(marker));
+});
+
+test("the scene page falls back to prebuilt dialogue when D1 or Luna is unavailable", async () => {
+  const page = await read("../app/[lang]/play/everyday/page.tsx");
+  assert.match(page, /buildEverydaySpeakingDeckFromDatabase/);
+  assert.match(page, /catch \{[\s\S]*buildEverydaySpeakingDeck\(language, scene\.id, level\)/);
 });
 
 test("mobile header never displays the separate account icon beside the hamburger", async () => {

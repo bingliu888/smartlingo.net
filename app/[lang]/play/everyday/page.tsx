@@ -4,8 +4,9 @@ import { EverydaySpeakingPlayer } from "../../../../components/EverydaySpeakingP
 import { GameLanguagePicker } from "../../../../components/GameLanguagePicker";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
-import { buildEverydaySpeakingDeck, isSmartLingoEverydayScenario, SMARTLINGO_EVERYDAY_SCENARIOS } from "../../../../lib/smartlingo-everyday-speaking";
+import { buildEverydaySpeakingDeck, buildEverydaySpeakingDeckFromDatabase, isSmartLingoEverydayScenario, SMARTLINGO_EVERYDAY_SCENARIOS } from "../../../../lib/smartlingo-everyday-speaking";
 import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES } from "../../../../lib/smartlingo-language-communities";
+import { getDatabase } from "../../../../lib/auth";
 import "./everyday.css";
 import "./standard-links.css";
 
@@ -29,7 +30,14 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
   const scene = SMARTLINGO_EVERYDAY_SCENARIOS.find(item => item.id === sceneId);
   const level = query.level === "intermediate" || query.level === "advanced" ? query.level : "beginner";
 
-  if (language && selected && scene) return <main className="everyday-page everyday-player-page">
+  if (language && selected && scene) {
+    let slides;
+    try {
+      slides = await buildEverydaySpeakingDeckFromDatabase({ database: getDatabase(), language, sceneId: scene.id, level });
+    } catch {
+      slides = buildEverydaySpeakingDeck(language, scene.id, level);
+    }
+    return <main className="everyday-page everyday-player-page">
     <SiteHeader lang={lang as any}/>
     <EverydaySpeakingPlayer
       lang={lang as any}
@@ -38,10 +46,11 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
       speechLocale={selected.speechLocale}
       direction={selected.direction}
       scene={scene}
-      slides={buildEverydaySpeakingDeck(language, scene.id, level)}
+      slides={slides}
     />
     <SiteFooter lang={lang as any}/>
-  </main>;
+    </main>;
+  }
 
   return <main className="everyday-page">
     <SiteHeader lang={lang as any}/>

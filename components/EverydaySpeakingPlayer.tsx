@@ -17,6 +17,8 @@ type Slide = {
   kind: "word" | "sentence";
   imageKey: BeginnerVocabularyImageKey | null;
   anchorVocabulary?: string;
+  role?: "staff" | "learner";
+  pairIndex?: number;
 };
 
 type RecognitionLike = {
@@ -40,7 +42,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   languageName: string;
   speechLocale: string;
   direction: "ltr" | "rtl";
-  scene: { id: string; nameZh: string; nameEn: string; goalZh: string; goalEn: string; image: string };
+  scene: { id: string; nameZh: string; nameEn: string; goalZh: string; goalEn: string; image: string; motionMedia?: readonly string[] };
   slides: readonly Slide[];
 }) {
   const zh = lang === "zh";
@@ -56,6 +58,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   const [readyToContinue, setReadyToContinue] = useState(false);
   const [modelRate, setModelRate] = useState(.84);
   const [repeatAfterMe, setRepeatAfterMe] = useState(false);
+  const [userLanguageHelp, setUserLanguageHelp] = useState(false);
   const [demoNonce, setDemoNonce] = useState(0);
   const timerRef = useRef<number | null>(null);
   const speechCleanupRef = useRef<() => void>(() => undefined);
@@ -107,9 +110,16 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     };
     utterance.onend = schedule;
     utterance.onerror = schedule;
-    speech.speak(utterance);
+    if (userLanguageHelp) {
+      const bridge = new SpeechSynthesisUtterance(zh ? slide.meaningZh : slide.meaningEn);
+      bridge.lang = zh ? "zh-CN" : "en-US";
+      bridge.rate = .88;
+      bridge.onend = () => speech.speak(utterance);
+      bridge.onerror = () => speech.speak(utterance);
+      speech.speak(bridge);
+    } else speech.speak(utterance);
     return () => { clearTimer(); speech.cancel(); };
-  }, [clearTimer, complete, demoNonce, index, modelRate, paused, repeatAfterMe, slide, speechLocale, started, zh]);
+  }, [clearTimer, complete, demoNonce, index, modelRate, paused, repeatAfterMe, slide, speechLocale, started, userLanguageHelp, zh]);
 
   useEffect(() => () => {
     clearTimer();
@@ -334,7 +344,11 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     }
   }
 
-  const customerTurn = slide.kind === "sentence" && index % 2 === 0;
+  const sentenceIndex = slides.slice(0, index + 1).filter(item => item.kind === "sentence").length - 1;
+  const customerTurn = slide.kind === "sentence" && (slide.role ? slide.role === "learner" : sentenceIndex % 2 === 1);
+  const sceneMedia = slide.kind === "sentence" && scene.motionMedia?.length
+    ? scene.motionMedia[(slide.pairIndex ?? Math.floor(Math.max(0, sentenceIndex) / 2)) % scene.motionMedia.length]
+    : scene.image;
   const speakerLabel = slide.kind === "word" ? (zh ? "场景词汇教练" : "Vocabulary guide") : customerTurn ? (zh ? "顾客 / 学习者" : "Customer / learner") : (zh ? "工作人员" : "Staff member");
   return <section className="everyday-player" data-layout-fill="everyday-speaking-player">
     <header className="everyday-player-heading">
@@ -342,8 +356,9 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
       <aside><strong>{bestScore}</strong><span>{repeatAfterMe ? (zh ? "本轮最高跟读分" : "Best speaking score") : (zh ? "跟读默认关闭" : "Repeat is off")}</span></aside>
     </header>
     <label className="everyday-repeat-check"><input type="checkbox" checked={repeatAfterMe} onChange={event => setRepeat(event.target.checked)}/><span><b>{zh ? "开启三次跟读与评分" : "Repeat after me three times with scoring"}</b><small>{zh ? "默认关闭；需要口语训练时再开启麦克风。" : "Off by default. Enable it only when you want microphone practice."}</small></span></label>
+    <fieldset className="everyday-language-help"><legend>{zh ? "用户语言语音辅助" : "User-language spoken help"}</legend><label><input type="radio" name="user-language-help" checked={!userLanguageHelp} onChange={() => setUserLanguageHelp(false)}/>{zh ? "关闭" : "Off"}</label><label><input type="radio" name="user-language-help" checked={userLanguageHelp} onChange={() => setUserLanguageHelp(true)}/>{zh ? "开启" : "On"}</label><small>{zh ? "开启后先用用户语言提示，再播放学习语言；评分仍只检查学习语言。" : "When on, hear a bridge-language cue before the learning language. Scoring still checks only the learning language."}</small></fieldset>
     <div className="everyday-stage" dir={direction}>
-      <img src={scene.image} alt={zh ? `${scene.nameZh}生活口语场景` : `${scene.nameEn} everyday speaking scene`}/>
+      <img src={sceneMedia} alt={zh ? `${scene.nameZh}生活口语场景` : `${scene.nameEn} everyday speaking scene`}/>
       <div className="everyday-shade"/>
       <div className="everyday-progress"><span style={{ width: `${(index + 1) * 100 / slides.length}%` }}/></div>
       <div className={`everyday-conversation-person ${customerTurn ? "customer" : "staff"}`} aria-hidden="true"><span>{customerTurn ? "👤" : "●"}</span><i>{speakerLabel}</i></div>
@@ -372,6 +387,6 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     {started && !complete && repeatAfterMe ? <div className="everyday-attempts" aria-label={zh ? "三次跟读成绩" : "Three speaking attempt scores"}>{[1, 2, 3].map(turn => <b className={turn <= attemptScores.length ? "scored" : ""} key={turn}>{attemptScores[turn - 1] ?? turn}</b>)}</div> : null}
     {started && !complete && repeatAfterMe && (micState === "denied" || micState === "error" || micState === "unsupported") ? <div className="everyday-fallback"><button className="everyday-speech-retry" type="button" onClick={() => { setMicState("idle"); setMessage(zh ? "AI 正在重新示范，请听完后跟读。" : "The AI is modeling it again; listen and repeat."); setDemoNonce(value => value + 1); }}>{zh ? "🎙 重新听并跟读" : "🎙 Listen and retry"}</button><button className="everyday-speech-retry" type="button" onClick={manualAttempt}>{zh ? "我已跟读" : "I said it"}</button></div> : null}
     {started && !complete && readyToContinue ? <button className="everyday-continue" type="button" onClick={() => move(index + 1)}>{zh ? "继续" : "Continue"} →</button> : null}
-    <style>{`.everyday-repeat-check{width:min(1180px,100%);margin:0 auto 16px;padding:14px 17px;display:flex;align-items:center;gap:12px;border:1px solid #bad5ca;border-radius:15px;background:#fff}.everyday-repeat-check input{width:22px;height:22px;accent-color:#087d62}.everyday-repeat-check span,.everyday-repeat-check small{display:block}.everyday-repeat-check small{margin-top:3px;color:#61756d}.everyday-stage>img{animation:everyday-camera 14s ease-in-out infinite alternate}.everyday-conversation-person{position:absolute;z-index:3;bottom:28px;right:25px;display:grid;justify-items:center;color:#fff;filter:drop-shadow(0 7px 16px #0018)}.everyday-conversation-person.customer{right:auto;left:25px}.everyday-conversation-person span{width:66px;height:66px;display:grid;place-items:center;border:3px solid #fff;border-radius:50%;background:#087d62;font-size:34px}.everyday-conversation-person.staff span{background:#234c76}.everyday-conversation-person i{margin-top:6px;padding:5px 9px;border-radius:999px;background:#082f28db;font-style:normal;font-size:11px}.everyday-copy{animation:everyday-bubble .35s ease-out}.everyday-word-picture{width:min(180px,38vw);aspect-ratio:1;border:5px solid #fff;border-radius:20px;box-shadow:0 12px 34px #0017}.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-fallback,.everyday-attempts{margin:12px auto 0;display:flex;justify-content:center;gap:10px}.everyday-attempts b{width:42px;height:42px;display:grid;place-items:center;border:2px solid #bfd3ca;border-radius:50%;color:#60746c}.everyday-attempts b.scored{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry,.everyday-continue{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}.everyday-fallback .everyday-speech-retry{margin:0}.everyday-continue{min-width:180px;justify-content:center;background:#087d62;color:#fff}@keyframes everyday-camera{from{transform:scale(1.01) translateX(-.5%)}to{transform:scale(1.08) translateX(.8%)}}@keyframes everyday-bubble{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.everyday-stage>img,.everyday-copy{animation:none}}@media(max-width:620px){.everyday-controls .everyday-repeat-toggle{grid-column:span 2}.everyday-fallback{flex-direction:column;align-items:center}.everyday-conversation-person{display:none}}`}</style>
+    <style>{`.everyday-repeat-check,.everyday-language-help{width:min(1180px,100%);margin:0 auto 16px;padding:14px 17px;border:1px solid #bad5ca;border-radius:15px;background:#fff}.everyday-repeat-check{display:flex;align-items:center;gap:12px}.everyday-repeat-check input{width:22px;height:22px;accent-color:#087d62}.everyday-repeat-check span,.everyday-repeat-check small{display:block}.everyday-repeat-check small{margin-top:3px;color:#61756d}.everyday-language-help{display:flex;align-items:center;gap:16px}.everyday-language-help legend{padding:0 7px;font-weight:900}.everyday-language-help label{display:flex;align-items:center;gap:6px;font-weight:850}.everyday-language-help input{accent-color:#087d62}.everyday-language-help small{margin-left:auto;color:#61756d}.everyday-stage>img{animation:everyday-camera 14s ease-in-out infinite alternate}.everyday-conversation-person{position:absolute;z-index:3;bottom:28px;right:25px;display:grid;justify-items:center;color:#fff;filter:drop-shadow(0 7px 16px #0018)}.everyday-conversation-person.customer{right:auto;left:25px}.everyday-conversation-person span{width:66px;height:66px;display:grid;place-items:center;border:3px solid #fff;border-radius:50%;background:#087d62;font-size:34px}.everyday-conversation-person.staff span{background:#234c76}.everyday-conversation-person i{margin-top:6px;padding:5px 9px;border-radius:999px;background:#082f28db;font-style:normal;font-size:11px}.everyday-copy{animation:everyday-bubble .35s ease-out}.everyday-word-picture{width:min(180px,38vw);aspect-ratio:1;border:5px solid #fff;border-radius:20px;box-shadow:0 12px 34px #0017}.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-fallback,.everyday-attempts{margin:12px auto 0;display:flex;justify-content:center;gap:10px}.everyday-attempts b{width:42px;height:42px;display:grid;place-items:center;border:2px solid #bfd3ca;border-radius:50%;color:#60746c}.everyday-attempts b.scored{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry,.everyday-continue{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}.everyday-fallback .everyday-speech-retry{margin:0}.everyday-continue{min-width:180px;justify-content:center;background:#087d62;color:#fff}@keyframes everyday-camera{from{transform:scale(1.01) translateX(-.5%)}to{transform:scale(1.08) translateX(.8%)}}@keyframes everyday-bubble{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.everyday-stage>img,.everyday-copy{animation:none}}@media(max-width:620px){.everyday-language-help{align-items:flex-start;flex-wrap:wrap}.everyday-language-help small{width:100%;margin:0}.everyday-controls .everyday-repeat-toggle{grid-column:span 2}.everyday-fallback{flex-direction:column;align-items:center}.everyday-conversation-person{display:none}}`}</style>
   </section>;
 }
