@@ -40,8 +40,9 @@ test("creating a college atomically creates and places its introduction for an a
 });
 
 test("My colleges owns the coordinator upgrade and college creation journey",async()=>{
-  const [page,header,create,checkout,complete,webhook,migration]=await Promise.all([
+  const [page,header,card,create,checkout,complete,webhook,migration]=await Promise.all([
     read("app/[lang]/colleges/mine/page.tsx"),read("components/HeaderAccount.tsx"),
+    read("components/CollegeCard.tsx"),
     read("app/[lang]/college/create/page.tsx"),read("app/api/billing/platform/checkout/route.ts"),
     read("app/api/billing/platform/complete/route.ts"),read("app/api/billing/card/webhook/route.ts"),
     read("drizzle/0159_college_coordinator_subscription.sql"),
@@ -50,6 +51,7 @@ test("My colleges owns the coordinator upgrade and college creation journey",asy
   assert.match(page,/<strong>\$\{\(COLLEGE_COORDINATOR_MONTHLY_CENTS \/ 100\)\.toFixed\(0\)\}<\/strong>/);
   assert.doesNotMatch(page,/\$\$\{/);
   assert.match(header,/colleges\/mine/);assert.match(create,/canCreateCollege/);
+  assert.match(card,/lang:InterfaceLanguage/);
   for(const source of [checkout,complete,webhook])assert.match(source,/coordinator/);
   assert.match(checkout,/10_000|COLLEGE_COORDINATOR_MONTHLY_CENTS/);
   assert.match(migration,/stripe_subscription_id/);
