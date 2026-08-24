@@ -6,19 +6,22 @@ import { SMARTLINGO_COMMUNITY_LANGUAGE_CODES } from "../lib/smartlingo-language-
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
-test("everyday speaking provides twelve illustrated scenarios and twelve slides in every target language", async () => {
+test("everyday speaking provides twelve illustrated three-level scenarios with vocabulary and practical dialogue", async () => {
   assert.equal(SMARTLINGO_EVERYDAY_SCENARIOS.length, 12);
   assert.equal(SMARTLINGO_COMMUNITY_LANGUAGE_CODES.length, 12);
   for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
     await access(new URL(`../public/everyday-speaking/${scene.id}.jpg`, import.meta.url));
     for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
-      const deck = buildEverydaySpeakingDeck(language, scene.id);
-      assert.equal(deck.length, 12, `${language}/${scene.id}`);
-      for (const slide of deck) {
-        assert.ok(slide.form.trim());
-        assert.ok(slide.pronunciation.trim());
-        assert.ok(slide.meaningZh.trim());
-        assert.ok(slide.meaningEn.trim());
+      for (const level of ["beginner", "intermediate", "advanced"]) {
+        const deck = buildEverydaySpeakingDeck(language, scene.id, level);
+        assert.ok(deck.length >= 14, `${language}/${scene.id}/${level}`);
+        assert.ok(deck.some(slide => slide.kind === "word"));
+        assert.ok(deck.some(slide => slide.kind === "sentence"));
+        for (const slide of deck) {
+          assert.ok(slide.form.trim());
+          assert.ok(slide.meaningZh.trim());
+          assert.ok(slide.meaningEn.trim());
+        }
       }
     }
   }
@@ -34,11 +37,12 @@ test("course details replace the back button with language-preserving everyday s
 
 test("the player includes three scored attempts, two speeds, explicit continuation, replay, and quit", async () => {
   const player = await read("../components/EverydaySpeakingPlayer.tsx");
-  for (const marker of ["speechSynthesis", "SpeechRecognition", "MediaRecorder", "getUserMedia", "scoreSmartCardPronunciation", "开始生活口语", "再玩一次", "第一张", "上一张", "下一张", "最后一张", "暂停", "退出", "正常语速", "慢速", "三次跟读", "Continue"]) assert.match(player, new RegExp(marker));
+  for (const marker of ["speechSynthesis", "SpeechRecognition", "MediaRecorder", "getUserMedia", "scoreSmartCardPronunciation", "开始真实场景对话", "再玩一次", "第一张", "上一张", "下一张", "最后一张", "暂停", "退出", "正常语速", "慢速", "三次跟读", "Continue", "真实对话", "VocabularyPicture"]) assert.match(player, new RegExp(marker));
   assert.match(player, /slides\.length/);
   assert.match(player, /move\(0\)/);
   assert.match(player, /move\(slides\.length - 1\)/);
-  assert.doesNotMatch(player, /useRepeatAfterMePreference|repeatAfterMe/);
+  assert.match(player, /useState\(false\).*repeatAfterMe|repeatAfterMe, setRepeatAfterMe/s);
+  assert.match(player, /开启三次跟读与评分/);
   assert.match(player, /attemptScores/);
   assert.match(player, /readyToContinue/);
   assert.match(player, /\/api\/everyday-speaking\/speech/);

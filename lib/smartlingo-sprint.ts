@@ -23,7 +23,9 @@ export type SprintRound = {
 };
 
 export type SprintPlan = {
-  contentVersion: "smartlingo-sprint-2026-08-23.1";
+  contentVersion: "smartlingo-sprint-2026-08-23.2";
+  learningReleaseId: string;
+  sentenceSource: "gpt-5.6-luna" | "safe-fallback" | "graded-catalog";
   language: SmartLingoLearningLanguage;
   level: SmartLingoLevel;
   uiLang: SmartLingoInterfaceLanguage;
@@ -59,13 +61,16 @@ export function buildSprintPlan(input: {
   uiLang: SmartLingoInterfaceLanguage;
   durationMinutes: SprintDuration;
   vocabulary: readonly SprintVocabulary[];
+  sentenceRounds?: readonly (readonly ReturnType<typeof buildCourseSentenceBank>[number][])[];
+  learningReleaseId?: string;
+  sentenceSource?: SprintPlan["sentenceSource"];
 }): SprintPlan {
   const bank = buildCourseSentenceBank(input.language, input.level);
   const roundCount = input.durationMinutes / 5;
   const sprintVocabulary = input.vocabulary.slice(0, roundCount * 5);
   const rounds = Array.from({ length: roundCount }, (_, roundIndex) => {
     const seed = `${input.runId}:${roundIndex + 1}`;
-    const sentences = rotate(bank, seed, 6);
+    const sentences = input.sentenceRounds?.[roundIndex]?.length === 6 ? [...input.sentenceRounds[roundIndex]] : rotate(bank, seed, 6);
     const reading = sentences[0];
     const listening = sentences[1];
     const writing = sentences[2];
@@ -101,7 +106,7 @@ export function buildSprintPlan(input: {
       dialogue: { id: dialogue.id, prompt: promptFor(dialogue, input.uiLang), audioText: dialogue.targetSentence, expected: dialogue.targetSentence },
     } satisfies SprintRound;
   });
-  return { contentVersion: "smartlingo-sprint-2026-08-23.1", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
+  return { contentVersion: "smartlingo-sprint-2026-08-23.2", learningReleaseId: input.learningReleaseId || "graded-catalog", sentenceSource: input.sentenceSource || "graded-catalog", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
 }
 
 function transcriptScore(expected: string, actual: string) {

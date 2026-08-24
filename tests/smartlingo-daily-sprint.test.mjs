@@ -48,7 +48,7 @@ test("Daily Sprint scoring is server-derived across all five skills", () => {
   assert.equal(incomplete.score, 0);
 });
 
-test("course and Play surfaces expose Daily Sprint, rankings, and digital redemption", () => {
+test("course and anonymous Play expose six isolated learning activities", () => {
   const menu = readFileSync(new URL("../components/CourseTrainingMenu.tsx", import.meta.url), "utf8");
   const play = readFileSync(new URL("../app/[lang]/play/page.tsx", import.meta.url), "utf8");
   const playPicker = readFileSync(new URL("../components/PlayDailySprintPicker.tsx", import.meta.url), "utf8");
@@ -60,13 +60,14 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(menu, /今日速成/);
   assert.match(menu, /\[5,10,15,20\]/);
   assert.match(play, /PlayDailySprintPicker/);
-  assert.match(play, /isSmartLingoCommunityLanguage\(query\.language\) \? query\.language : lang/);
-  assert.doesNotMatch(play, /\{language \? <>/);
-  for (const tile of ["智慧卡练习", "智慧卡挑战", "排行榜", "兑换中心"]) assert.match(play, new RegExp(tile));
+  for (const tile of ["智慧卡练习", "智慧卡挑战", "生活口语", "排行榜"]) assert.match(play, new RegExp(tile));
+  assert.match(freeTrialPicker, /免费试学/);
   assert.match(play, /PlayFreeTrialPicker/);
   assert.match(freeTrialPicker, /免费试学/);
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
-  assert.match(play, /GameLanguagePicker lang=\{lang(?: as any)?\} basePath=\{`\/\$\{lang\}\/play`\} selected=\{language\}/);
+  assert.match(play, /href=\{`\/\$\{lang\}\/smartcards`\}/);
+  assert.match(play, /href=\{`\/\$\{lang\}\/play\/everyday`\}/);
+  assert.doesNotMatch(play, /searchParams|query\.language|initialLanguage=/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
   assert.match(playPicker, /selection\.source === initialTarget \? selection\.value : initialTarget/);
@@ -74,8 +75,6 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
   assert.match(playPicker, /source=play/);
   assert.match(play, /play\/rankings/);
-  assert.match(play, /play\/redeem/);
-  assert.ok(play.indexOf("play/redeem") < play.lastIndexOf("PlayFreeTrialPicker"));
   assert.match(dashboard, /DashboardDailySprint/);
   assert.match(dashboardSprint, /添加语言/);
   assert.equal((dashboardSprint.match(/Add language/g) || []).length, 1);
@@ -103,7 +102,7 @@ test("Home feature buttons use the same canonical pages as navigation, and the t
   assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
 });
 
-test("anonymous Sprint always starts fresh while signed-in members resume D1 checkpoints", async () => {
+test("anonymous Sprint overwrites its short cookie while signed-in members resume D1 checkpoints", async () => {
   for (const language of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.equal(isPublicBeginnerSprintClassId(`course_${language}_basic`), true);
   }
@@ -128,11 +127,14 @@ test("anonymous Sprint always starts fresh while signed-in members resume D1 che
   assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);
   assert.match(sprintRoute, /anonymous: value\.anonymous/);
   assert.doesNotMatch(sprintClient, /document\.cookie|localStorage|sessionStorage|resumeRunId/);
-  assert.match(sprintClient, /if \(!plan \|\| anonymous \|\| !runId/);
+  assert.match(sprintClient, /if \(!plan \|\| !runId/);
   assert.match(sprintClient, /action: "checkpoint"/);
   assert.match(sprintRoute, /progress_json AS progressJson/);
   assert.match(sprintRoute, /status='in_progress' ORDER BY started_at DESC LIMIT 1/);
-  assert.match(sprintRoute, /if \(value\.anonymous \|\| !value\.user\) return Response\.json\(\{ saved: false, anonymous: true \}\)/);
+  assert.match(sprintRoute, /smartlingo-anonymous-sprint/);
+  assert.match(sprintRoute, /Set-Cookie/);
+  assert.match(sprintRoute, /Max-Age=7200/);
+  assert.match(sprintRoute, /if \(value\.anonymous \|\| !value\.user\)/);
   assert.match(sprintClient, /免费注册/);
   assert.match(sprintClient, /登录/);
   assert.match(sprintClient, /recognition\.stop\(\)/);
@@ -143,6 +145,8 @@ test("anonymous Sprint always starts fresh while signed-in members resume D1 che
   assert.doesNotMatch(sprintClient, /beginSpeech\(/);
   assert.doesNotMatch(sprintClient, /if \(!round \|\| !word \|\| !vocabChecked\) return/);
   assert.match(sprintClient, /sprint-flip-card/);
+  assert.match(sprintClient, /VocabularyPicture/);
+  assert.match(sprintClient, /useState\(false\).*repeatAfterMe|repeatAfterMe, setRepeatAfterMe/s);
   assert.match(sprintClient, /选择正确的意思，或点击卡片翻面/);
   assert.match(sprintClient, /vocabularyAnswers/);
   assert.match(sprintClient, /正确答案：/);
@@ -158,6 +162,7 @@ test("anonymous Sprint always starts fresh while signed-in members resume D1 che
   assert.match(sprintClient, /setRemainingSeconds\(300\)/);
   assert.match(sprintClient, /否，退出/);
   assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,sequence,id/);
+  assert.match(sprintRoute, /adaptiveSentenceRounds/);
   assert.doesNotMatch(sprintRoute, /resumeRunId/);
 });
 

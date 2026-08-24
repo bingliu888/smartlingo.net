@@ -1,1 +1,89 @@
-.everyday-page,.everyday-page *{box-sizing:border-box}.everyday-page{min-height:100vh;background:radial-gradient(circle at 78% 0,#c8ffe8,transparent 26%),#f8f3e8;color:#132f28;overflow-x:clip}.everyday-hero,.everyday-standard,.everyday-scenes,.everyday-back,.everyday-player{width:min(1180px,calc(100% - 36px));margin-inline:auto}.everyday-hero{padding:clamp(68px,9vw,118px) 0 42px}.everyday-hero>p{margin:0;color:#087d62;font-size:12px;font-weight:950;letter-spacing:.15em}.everyday-hero h1{max-width:1000px;margin:13px 0 22px;font:700 clamp(46px,7vw,88px)/.98 "Iowan Old Style","Noto Serif SC",serif;letter-spacing:-.045em;overflow-wrap:anywhere}.everyday-hero>span{display:block;max-width:72ch;color:#5a6f68;font-size:18px;line-height:1.7}.everyday-standard{margin-block:0 28px;padding:22px 25px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;border:1px solid #bdd8ce;border-radius:18px;background:#e5f6ef}.everyday-standard strong{font-size:20px}.everyday-standard p{margin:0;line-height:1.7}.everyday-scenes{padding-bottom:36px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.everyday-scenes>a{min-width:0;min-height:340px;position:relative;display:block;overflow:hidden;border-radius:24px;background:#123f35;color:#fff;box-shadow:0 20px 50px #173c3023}.everyday-scenes img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;transition:transform .35s}.everyday-scenes>a:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,25,22,.14),rgba(4,25,22,.9))}.everyday-scenes>a:hover img{transform:scale(1.035)}.everyday-scenes>a>div{height:100%;min-width:0;padding:24px;position:relative;z-index:1;display:flex;flex-direction:column}.everyday-scenes small{color:#97f0d2;font-weight:900;letter-spacing:.08em}.everyday-scenes span{margin-top:auto;font-size:30px}.everyday-scenes strong{margin:8px 0 5px;font-size:32px}.everyday-scenes p{margin:0;color:#d7e9e2;line-height:1.5}.everyday-scenes b{margin-top:18px}.everyday-back{padding-bottom:88px}.everyday-back a{display:inline-flex;min-height:46px;align-items:center;padding:0 18px;border:1px solid #94b9ab;border-radius:999px;font-weight:850}.everyday-player{padding:clamp(44px,6vw,80px) 0 90px}.everyday-player-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:24px;margin-bottom:25px}.everyday-player-heading p{margin:0;color:#087d62;font-size:12px;font-weight:950;letter-spacing:.12em}.everyday-player-heading h1{margin:8px 0 10px;font-size:clamp(42px,6vw,76px);line-height:1}.everyday-player-heading>div>span{color:#587067;font-size:17px}.everyday-player-heading aside{min-width:180px;padding:18px 22px;border-radius:18px;background:#123f35;color:#fff}.everyday-player-heading aside strong,.everyday-player-heading aside span{display:block}.everyday-player-heading aside strong{font-size:44px}.everyday-player-heading aside span{color:#b9d9ce}.everyday-stage{min-height:clamp(480px,61vw,700px);position:relative;overflow:hidden;border-radius:30px;background:#082c25;color:#fff;box-shadow:0 28px 70px #163c3036}.everyday-stage>img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover}.everyday-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,22,19,.8),rgba(3,22,19,.46) 52%,rgba(3,22,19,.62))}.everyday-progress{height:7px;position:absolute;z-index:2;inset:0 0 auto;background:#ffffff38}.everyday-progress span{height:100%;display:block;background:#6ee2b9;transition:width .25s}.everyday-copy{width:min(780px,calc(100% - 64px));position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}.everyday-copy>p{font-weight:900;color:#9ce8cd}.everyday-copy>small{display:block;margin-top:28px;letter-spacing:.14em}.everyday-copy h2{margin:18px 0 10px;font-size:clamp(44px,8vw,92px);line-height:1.03;overflow-wrap:anywhere;text-shadow:0 4px 30px #001812}.everyday-copy b,.everyday-copy span,.everyday-copy em{display:block}.everyday-copy b{font-size:clamp(18px,2.4vw,28px);color:#c2f1e2}.everyday-copy span{margin-top:12px;font-size:clamp(18px,2.2vw,26px)}.everyday-copy em{min-height:27px;margin-top:26px;color:#ffe3a6;font-style:normal}.everyday-start,.everyday-complete{position:absolute;z-index:4;inset:0;display:grid;place-items:center;align-content:center;text-align:center;background:rgba(4,35,29,.84);color:#fff;border:0;backdrop-filter:blur(10px)}.everyday-start{cursor:pointer}.everyday-start>span{width:78px;height:78px;display:grid;place-items:center;border-radius:50%;background:#75e5bd;color:#123f35;font-size:30px}.everyday-start strong{margin-top:18px;font-size:30px}.everyday-start small{margin-top:8px;color:#bde5d8}.everyday-complete{padding:25px}.everyday-complete>span{font-size:64px;color:#ffe08d}.everyday-complete h2{font-size:clamp(32px,5vw,58px)}.everyday-complete p{max-width:60ch;color:#cbe3db}.everyday-complete nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}.everyday-complete button,.everyday-complete a{min-height:48px;padding:0 20px;display:inline-flex;align-items:center;border:1px solid #70d7b3;border-radius:999px;background:#6ee2b9;color:#123f35;font-weight:900}.everyday-complete a{background:transparent;color:#fff}.everyday-controls{margin-top:15px;padding:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;border:1px solid #c4d4ce;border-radius:20px;background:#fff}.everyday-controls button,.everyday-controls a{min-width:52px;min-height:48px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #b7cbc3;border-radius:13px;background:#f7faf8;color:#14372e;font:850 17px/1 inherit;cursor:pointer}.everyday-controls button:disabled{opacity:.35;cursor:not-allowed}.everyday-controls .everyday-mic{background:#087d62;color:#fff}.everyday-controls .everyday-pause{background:#e8f4ef}.everyday-controls .everyday-quit{border-color:#d6aaa1;color:#9b3c2e;background:#fff5f1}@media(max-width:900px){.everyday-scenes{grid-template-columns:1fr 1fr}.everyday-standard{grid-template-columns:1fr}.everyday-player-heading{grid-template-columns:1fr}.everyday-player-heading aside{width:100%}}@media(max-width:620px){.everyday-hero,.everyday-standard,.everyday-scenes,.everyday-back,.everyday-player{width:calc(100% - 28px)}.everyday-scenes{grid-template-columns:1fr}.everyday-scenes>a{min-height:300px}.everyday-stage{min-height:580px;border-radius:20px}.everyday-copy{width:calc(100% - 30px)}.everyday-copy h2{font-size:clamp(40px,15vw,66px)}.everyday-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.everyday-controls .everyday-mic,.everyday-controls .everyday-pause,.everyday-controls .everyday-quit{grid-column:span 2}.everyday-controls button,.everyday-controls a{min-width:0;padding-inline:8px}.everyday-complete nav{display:grid;width:100%}}
+.everyday-page,.everyday-page *{box-sizing:border-box}
+.everyday-page{min-height:100vh;background:radial-gradient(circle at 78% 0,#c8ffe8,transparent 26%),#f8f3e8;color:#132f28;overflow-x:clip}
+.everyday-hero,.everyday-standard,.everyday-scenes,.everyday-back,.everyday-player{width:min(1180px,calc(100% - 36px));margin-inline:auto}
+.everyday-hero{padding:clamp(68px,9vw,118px) 0 42px}
+.everyday-hero>p{margin:0;color:#087d62;font-size:12px;font-weight:950;letter-spacing:.15em}
+.everyday-hero h1{max-width:1000px;margin:13px 0 22px;font:700 clamp(46px,7vw,88px)/.98 "Iowan Old Style","Noto Serif SC",serif;letter-spacing:-.045em;overflow-wrap:anywhere}
+.everyday-hero>span{display:block;max-width:72ch;color:#5a6f68;font-size:18px;line-height:1.7}
+.everyday-standard{margin-block:0 28px;padding:22px 25px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;border:1px solid #bdd8ce;border-radius:18px;background:#e5f6ef}
+.everyday-standard strong{font-size:20px}
+.everyday-standard p{margin:0;line-height:1.7}
+.everyday-scenes{padding-bottom:36px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.everyday-scenes>a{min-width:0;min-height:340px;position:relative;display:block;overflow:hidden;border-radius:24px;background:#123f35;color:#fff;box-shadow:0 20px 50px #173c3023}
+.everyday-scenes img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover;transition:transform .35s}
+.everyday-scenes>a:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,25,22,.14),rgba(4,25,22,.9))}
+.everyday-scenes>a:hover img{transform:scale(1.035)}
+.everyday-scenes>a>div{height:100%;min-width:0;padding:24px;position:relative;z-index:1;display:flex;flex-direction:column}
+.everyday-scenes small{color:#97f0d2;font-weight:900;letter-spacing:.08em}
+.everyday-scenes span{margin-top:auto;font-size:30px}
+.everyday-scenes strong{margin:8px 0 5px;font-size:32px}
+.everyday-scenes p{margin:0;color:#d7e9e2;line-height:1.5}
+.everyday-scenes b{margin-top:18px}
+.everyday-back{padding-bottom:88px}
+.everyday-back a{display:inline-flex;min-height:46px;align-items:center;padding:0 18px;border:1px solid #94b9ab;border-radius:999px;font-weight:850}
+.everyday-player{padding:clamp(44px,6vw,80px) 0 90px}
+.everyday-player-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:24px;margin-bottom:25px}
+.everyday-player-heading p{margin:0;color:#087d62;font-size:12px;font-weight:950;letter-spacing:.12em}
+.everyday-player-heading h1{margin:8px 0 10px;font-size:clamp(42px,6vw,76px);line-height:1}
+.everyday-player-heading>div>span{color:#587067;font-size:17px}
+.everyday-player-heading aside{min-width:180px;padding:18px 22px;border-radius:18px;background:#123f35;color:#fff}
+.everyday-player-heading aside strong,.everyday-player-heading aside span{display:block}
+.everyday-player-heading aside strong{font-size:44px}
+.everyday-player-heading aside span{color:#b9d9ce}
+.everyday-stage{min-height:clamp(480px,61vw,700px);position:relative;overflow:hidden;border-radius:30px;background:#082c25;color:#fff;box-shadow:0 28px 70px #163c3036}
+.everyday-stage>img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover}
+.everyday-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,22,19,.8),rgba(3,22,19,.46) 52%,rgba(3,22,19,.62))}
+.everyday-progress{height:7px;position:absolute;z-index:2;inset:0 0 auto;background:#ffffff38}
+.everyday-progress span{height:100%;display:block;background:#6ee2b9;transition:width .25s}
+.everyday-copy{width:min(780px,calc(100% - 64px));position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}
+.everyday-copy>p{font-weight:900;color:#9ce8cd}
+.everyday-copy>small{display:block;margin-top:28px;letter-spacing:.14em}
+.everyday-copy h2{margin:18px 0 10px;font-size:clamp(44px,8vw,92px);line-height:1.03;overflow-wrap:anywhere;text-shadow:0 4px 30px #001812}
+.everyday-copy b,.everyday-copy span,.everyday-copy em{display:block}
+.everyday-copy b{font-size:clamp(18px,2.4vw,28px);color:#c2f1e2}
+.everyday-copy span{margin-top:12px;font-size:clamp(18px,2.2vw,26px)}
+.everyday-copy em{min-height:27px;margin-top:26px;color:#ffe3a6;font-style:normal}
+.everyday-start,.everyday-complete{position:absolute;z-index:4;inset:0;display:grid;place-items:center;align-content:center;text-align:center;background:rgba(4,35,29,.84);color:#fff;border:0;backdrop-filter:blur(10px)}
+.everyday-start{cursor:pointer}
+.everyday-start>span{width:78px;height:78px;display:grid;place-items:center;border-radius:50%;background:#75e5bd;color:#123f35;font-size:30px}
+.everyday-start strong{margin-top:18px;font-size:30px}
+.everyday-start small{margin-top:8px;color:#bde5d8}
+.everyday-complete{padding:25px}
+.everyday-complete>span{font-size:64px;color:#ffe08d}
+.everyday-complete h2{font-size:clamp(32px,5vw,58px)}
+.everyday-complete p{max-width:60ch;color:#cbe3db}
+.everyday-complete nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.everyday-complete button,.everyday-complete a{min-height:48px;padding:0 20px;display:inline-flex;align-items:center;border:1px solid #70d7b3;border-radius:999px;background:#6ee2b9;color:#123f35;font-weight:900}
+.everyday-complete a{background:transparent;color:#fff}
+.everyday-controls{margin-top:15px;padding:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;border:1px solid #c4d4ce;border-radius:20px;background:#fff}
+.everyday-controls button,.everyday-controls a{min-width:52px;min-height:48px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #b7cbc3;border-radius:13px;background:#f7faf8;color:#14372e;font:850 17px/1 inherit;cursor:pointer}
+.everyday-controls button:disabled{opacity:.35;cursor:not-allowed}
+.everyday-controls .everyday-mic{background:#087d62;color:#fff}
+.everyday-controls .everyday-pause{background:#e8f4ef}
+.everyday-controls .everyday-quit{border-color:#d6aaa1;color:#9b3c2e;background:#fff5f1}
+@media(max-width:900px){.everyday-scenes{grid-template-columns:1fr 1fr}
+.everyday-standard{grid-template-columns:1fr}
+.everyday-player-heading{grid-template-columns:1fr}
+.everyday-player-heading aside{width:100%}
+}
+@media(max-width:620px){.everyday-hero,.everyday-standard,.everyday-scenes,.everyday-back,.everyday-player{width:calc(100% - 28px)}
+.everyday-scenes{grid-template-columns:1fr}
+.everyday-scenes>a{min-height:300px}
+.everyday-stage{min-height:580px;border-radius:20px}
+.everyday-copy{width:calc(100% - 30px)}
+.everyday-copy h2{font-size:clamp(40px,15vw,66px)}
+.everyday-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.everyday-controls .everyday-mic,.everyday-controls .everyday-pause,.everyday-controls .everyday-quit{grid-column:span 2}
+.everyday-controls button,.everyday-controls a{min-width:0;padding-inline:8px}
+.everyday-complete nav{display:grid;width:100%}
+}
+
+.everyday-scene-choice{min-width:0;display:grid;overflow:hidden;border:1px solid #bcd2c9;border-radius:24px;background:#fff;box-shadow:0 20px 50px #173c3023}
+.everyday-scenes .everyday-scene-choice>a{min-width:0;min-height:340px;position:relative;display:block;overflow:hidden;background:#123f35;color:#fff}
+.everyday-scenes .everyday-scene-choice>a:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,25,22,.14),rgba(4,25,22,.9))}
+.everyday-scenes .everyday-scene-choice>a:hover img{transform:scale(1.035)}
+.everyday-scenes .everyday-scene-choice>a>div{height:100%;min-width:0;padding:24px;position:relative;z-index:1;display:flex;flex-direction:column}
+.everyday-scene-choice>nav{padding:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.everyday-scene-choice>nav a{min-width:0;padding:9px 4px;border:1px solid #bdd1c9;border-radius:9px;background:#f0f8f4;color:#087d62;text-align:center;text-decoration:none;font-size:12px;font-weight:900}
+.everyday-scene-choice>nav a:hover{background:#dffff2}
+@media(max-width:620px){.everyday-scenes .everyday-scene-choice>a{min-height:300px}}

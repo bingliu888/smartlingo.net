@@ -11,6 +11,8 @@ import {
 import { localDateKey, requireOfficialClassMembership, safeTimeZone } from "@/lib/smartlingo-learning-access";
 import { buildCourseSentenceBank, tokenizeSentence } from "@/lib/smartlingo-sentence-exercises";
 import type { SmartLingoLearningLanguage, SmartLingoLevel } from "@/lib/smartlingo-learning";
+import { adaptiveSentenceRounds } from "@/lib/smartlingo-adaptive-sentences";
+import type { SmartLingoSentenceExercise } from "@/lib/smartlingo-sentence-exercises";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +117,7 @@ async function progressFor(database: ReturnType<typeof getDatabase>, userId: str
   return new Map((result.results || []).map(row => [row.wordKey, row]));
 }
 
-function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<string, ProgressRow>, now: number) {
+function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<string, ProgressRow>, now: number, adaptiveSentence?: SmartLingoSentenceExercise) {
   const row = progress.get(progressKey(item));
   const state = memoryState(item, row, now);
   const alternatives = catalog.filter(candidate => candidate.id !== item.id)
@@ -129,7 +131,7 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     const parsed = JSON.parse(item.pronunciationGuides) as unknown;
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) pronunciationGuides = parsed as Record<string, string>;
   } catch { /* Migration constraints keep published rows valid. */ }
-  const sentence = buildCourseSentenceBank(item.targetLanguage as SmartLingoLearningLanguage, item.level as SmartLingoLevel)[(item.sequence - 1) % 120];
+  const sentence = adaptiveSentence || buildCourseSentenceBank(item.targetLanguage as SmartLingoLearningLanguage, item.level as SmartLingoLevel)[(item.sequence - 1) % 120];
   return {
     id: item.id,
     progressKey: progressKey(item),
@@ -186,7 +188,7 @@ async function writeReport(database: ReturnType<typeof getDatabase>, userId: str
       summary.unlearned, summary.percent, summary.stars, now, now).run();
 }
 
-async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "") {
+async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "", uiLang: "zh" | "en" = "en") {
   const level = access.packageTier || access.level || "beginner";
   const now = Math.floor(Date.now() / 1000);
   const catalog = await catalogFor(database, access.targetLanguage, level);
@@ -204,6 +206,13 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     : [...due, ...fresh.slice(0, 20), ...started]
       .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
       .slice(0, 20);
+  const adaptive = selected.length ? await adaptiveSentenceRounds({
+    database,
+    language: access.targetLanguage as SmartLingoLearningLanguage,
+    level: level as SmartLingoLevel,
+    uiLang,
+    roundVocabulary: Array.from({ length: Math.ceil(selected.length / 5) }, (_, roundIndex) => selected.slice(roundIndex * 5, roundIndex * 5 + 5).map(item => ({ id: item.id, form: item.form, pronunciation: item.pronunciation, meaning: uiLang === "zh" ? item.meaningZh : item.meaningEn, difficulty: item.difficulty, frequencyDegree: item.frequencyDegree }))),
+  }) : null;
   const items = catalog.map(item => libraryPayload(item, progress, now));
   const reportResult = await database.prepare(`SELECT local_date AS localDate,total_count AS total,mastered_count AS mastered,
     learning_count AS learning,unlearned_count AS unlearned,mastery_percent AS percent,stars
@@ -215,7 +224,9 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     level,
     methodology: { days: SMARTLINGO_VOCABULARY_MEMORY_DAYS, minimumModes: 3 },
     summary,
-    dailyDeck: selected.map(item => cardPayload(item, catalog, progress, now)),
+    learningReleaseId: adaptive?.releaseId || "graded-catalog",
+    sentenceSource: adaptive?.sourceType || "graded-catalog",
+    dailyDeck: selected.map((item, index) => cardPayload(item, catalog, progress, now, adaptive?.rounds[Math.floor(index / 5)]?.[index % 5])),
     items,
     reports: [{ localDate, ...summary }, ...(reportResult.results || []).filter(report => (report as { localDate?: string }).localDate !== localDate)].slice(0, 21),
   };
@@ -228,7 +239,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
   const timeZone = safeTimeZone(new URL(request.url).searchParams.get("timeZone"));
   const localDate = localDateKey(Math.floor(Date.now() / 1000), timeZone);
   const startWordId = new URL(request.url).searchParams.get("startWordId") || "";
-  return Response.json(await responsePayload(auth.database, auth.user.id, auth.access, localDate, false, startWordId));
+  const uiLang = new URL(request.url).searchParams.get("lang") === "zh" ? "zh" : "en";
+  return Response.json(await responsePayload(auth.database, auth.user.id, auth.access, localDate, false, startWordId, uiLang));
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ classId: string }> }) {
@@ -236,7 +248,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   const auth = await authorize(request, classId);
   if ("error" in auth) return auth.error;
   const body = await request.json().catch(() => null) as {
-    action?: string; cardId?: string; selectedId?: string; answer?: string; mode?: string; timeZone?: string; transcript?: string;
+    action?: string; cardId?: string; selectedId?: string; answer?: string; mode?: string; timeZone?: string; transcript?: string; lang?: string;
   } | null;
   if (!body?.cardId) return Response.json({ error: "A current vocabulary card is required" }, { status: 400 });
   const timeZone = safeTimeZone(body.timeZone || null);
@@ -289,5 +301,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
       scheduled.masteredAt === null ? null : Math.floor(scheduled.masteredAt / 1000),
       scheduled.dueAt === null ? null : Math.floor(scheduled.dueAt / 1000), now, now, now,
       correct ? 1 : 0, correct ? 0 : 1).run();
-  return Response.json({ correct, ...(await responsePayload(auth.database, auth.user.id, auth.access, localDate, true)) });
+  return Response.json({ correct, ...(await responsePayload(auth.database, auth.user.id, auth.access, localDate, true, "", body.lang === "zh" ? "zh" : "en")) });
 }

@@ -109,14 +109,14 @@ test("renders localized, non-duplicated titles across public routes", async () =
   assert.match(project.headers.get("location") ?? "", /\/zh\/auth\/login/);
 });
 
-test("Play defaults to the interface language and renders every activity tile", async () => {
+test("anonymous Play renders six activities without reusing a target language", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `play-all-tiles-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   for (const [pathname, language, labels] of [
-    ["/zh/play", "zh", ["今日速成", "智慧卡练习", "智慧卡挑战", "免费试学", "排行榜", "兑换中心"]],
-    ["/en/play", "en", ["Today’s Sprint", "Smart Card Practice", "Smart Card Challenge", "Free Trial", "Rankings", "Redeem"]],
+    ["/zh/play", "zh", ["今日速成", "智慧卡练习", "智慧卡挑战", "生活口语", "免费试学", "排行榜"]],
+    ["/en/play", "en", ["Today’s Sprint", "Smart Card Practice", "Smart Card Challenge", "Everyday Speaking", "Free Trial", "Rankings"]],
   ]) {
     const response = await worker.fetch(
       new Request(`http://localhost${pathname}`, { headers: { accept: "*/*" } }),
@@ -126,8 +126,8 @@ test("Play defaults to the interface language and renders every activity tile", 
     assert.equal(response.status, 200, pathname);
     const html = await response.text();
     for (const label of labels) assert.match(html, new RegExp(label), `${pathname}: ${label}`);
-    assert.match(html, new RegExp(`href="\\/${language}\\/play\\?language=${language}"`));
-    assert.match(html, new RegExp(`href="\\/${language}\\/smartcards\\/starter-${language}"`));
+    assert.match(html, new RegExp(`href="\\/${language}\\/smartcards"`));
+    assert.match(html, new RegExp(`href="\\/${language}\\/play\\/everyday"`));
     assert.match(html, /class="game-tile free-trial-tile"/);
     assert.doesNotMatch(html, new RegExp(`href="\\/${language}\\/programs\\/${language}\\/trial"`));
   }

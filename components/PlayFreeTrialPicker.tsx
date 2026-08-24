@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
-import { rememberTargetLanguage } from "./InterfaceLanguageMenu";
 
 const SKILLS = [
   { id: "vocabulary", zh: "词汇", en: "Vocabulary", noteZh: "智慧卡、跟读与组句", noteEn: "SmartCards, speaking, and sentences" },
@@ -35,7 +34,7 @@ export function PlayFreeTrialPicker({ lang, initialLanguage }: { lang: "zh" | "e
         <p>FREE TRIAL · BEGINNER</p><h2 id="trial-picker-title">{zh ? "选择语言，再选择一项学习" : "Choose a language, then one activity"}</h2>
         <span>{zh ? "五项学习默认全部未选择。每项进入独立页面，网址包含对应的初级课程编号。" : "Nothing is preselected. Each activity opens its own page with the beginner course ID in the URL."}</span>
         <h3>{zh ? "1. 选择语言" : "1. Choose a language"}</h3>
-        <div className="trial-picker-languages">{SMARTLINGO_LANGUAGE_COMMUNITIES.map(item => <button type="button" className={language === item.code ? "selected" : ""} aria-pressed={language === item.code} onClick={() => { setLanguage(item.code); rememberTargetLanguage(item.code); }} key={item.code}><small>{item.code.toUpperCase()}</small><strong>{zh ? item.nameZh : item.nameEn}</strong><span>{item.nativeName}</span></button>)}</div>
+        <div className="trial-picker-languages">{SMARTLINGO_LANGUAGE_COMMUNITIES.map(item => <button type="button" className={language === item.code ? "selected" : ""} aria-pressed={language === item.code} onClick={() => setLanguage(item.code)} key={item.code}><small>{item.code.toUpperCase()}</small><strong>{zh ? item.nameZh : item.nameEn}</strong><span>{item.nativeName}</span></button>)}</div>
         <h3>{zh ? "2. 选择一项学习" : "2. Choose one activity"}</h3>
         <div className="trial-picker-skills">{SKILLS.map(skill => language ? <Link href={`/${lang}/classes/course_${language}_basic/trial/${skill.id}`} key={skill.id}><strong>{zh ? skill.zh : skill.en}</strong><span>{zh ? skill.noteZh : skill.noteEn}</span><b>→</b></Link> : <button type="button" disabled key={skill.id}><strong>{zh ? skill.zh : skill.en}</strong><span>{zh ? "请先选择语言" : "Choose a language first"}</span></button>)}</div>
       </section>

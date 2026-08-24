@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
+import { VocabularyPicture } from "./VocabularyPicture";
+import type { BeginnerVocabularyImageKey } from "../lib/smartlingo-vocabulary-images";
 
 type Slide = {
   id: string;
@@ -12,6 +14,9 @@ type Slide = {
   meaningEn: string;
   stageZh: string;
   stageEn: string;
+  kind: "word" | "sentence";
+  imageKey: BeginnerVocabularyImageKey | null;
+  anchorVocabulary?: string;
 };
 
 type RecognitionLike = {
@@ -50,6 +55,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   const [attemptScores, setAttemptScores] = useState<number[]>([]);
   const [readyToContinue, setReadyToContinue] = useState(false);
   const [modelRate, setModelRate] = useState(.84);
+  const [repeatAfterMe, setRepeatAfterMe] = useState(false);
   const [demoNonce, setDemoNonce] = useState(0);
   const timerRef = useRef<number | null>(null);
   const speechCleanupRef = useRef<() => void>(() => undefined);
@@ -91,6 +97,11 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     utterance.lang = speechLocale;
     utterance.rate = modelRate;
     const schedule = () => {
+      if (!repeatAfterMe) {
+        setReadyToContinue(true);
+        setMessage(zh ? "听完示范后，可查看词义并继续。" : "Model complete. Review the meaning, then continue.");
+        return;
+      }
       setMessage(zh ? `第 ${attemptsRef.current + 1}/3 次：请跟我说，AI 会自动评分。` : `Attempt ${attemptsRef.current + 1}/3: repeat after me for an automatic score.`);
       timerRef.current = window.setTimeout(() => listenRef.current(), 450);
     };
@@ -98,7 +109,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     utterance.onerror = schedule;
     speech.speak(utterance);
     return () => { clearTimer(); speech.cancel(); };
-  }, [clearTimer, complete, demoNonce, index, modelRate, paused, slide, speechLocale, started, zh]);
+  }, [clearTimer, complete, demoNonce, index, modelRate, paused, repeatAfterMe, slide, speechLocale, started, zh]);
 
   useEffect(() => () => {
     clearTimer();
@@ -111,6 +122,20 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setPaused(false);
     setComplete(false);
     setMessage("");
+  }
+
+  function setRepeat(enabled: boolean) {
+    clearTimer();
+    window.speechSynthesis?.cancel();
+    speechCleanupRef.current();
+    setListening(false);
+    setMicState("idle");
+    attemptsRef.current = 0;
+    setAttemptScores([]);
+    setReadyToContinue(!enabled && started);
+    setMessage(enabled ? (zh ? "跟读评分已开启；每句可跟读三次。" : "Repeat-after-me scoring is on for three attempts per line.") : (zh ? "跟读评分已关闭；听完即可继续。" : "Repeat-after-me scoring is off; listen and continue."));
+    setRepeatAfterMe(enabled);
+    if (started) setDemoNonce(value => value + 1);
   }
 
   function togglePause() {
@@ -309,24 +334,29 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     }
   }
 
+  const customerTurn = slide.kind === "sentence" && index % 2 === 0;
+  const speakerLabel = slide.kind === "word" ? (zh ? "场景词汇教练" : "Vocabulary guide") : customerTurn ? (zh ? "顾客 / 学习者" : "Customer / learner") : (zh ? "工作人员" : "Staff member");
   return <section className="everyday-player" data-layout-fill="everyday-speaking-player">
     <header className="everyday-player-heading">
       <div><p>{languageName} · {zh ? "生活口语" : "Everyday speaking"}</p><h1>{zh ? scene.nameZh : scene.nameEn}</h1><span>{zh ? scene.goalZh : scene.goalEn}</span></div>
-      <aside><strong>{bestScore}</strong><span>{zh ? "本轮最高跟读分" : "Best speaking score"}</span></aside>
+      <aside><strong>{bestScore}</strong><span>{repeatAfterMe ? (zh ? "本轮最高跟读分" : "Best speaking score") : (zh ? "跟读默认关闭" : "Repeat is off")}</span></aside>
     </header>
+    <label className="everyday-repeat-check"><input type="checkbox" checked={repeatAfterMe} onChange={event => setRepeat(event.target.checked)}/><span><b>{zh ? "开启三次跟读与评分" : "Repeat after me three times with scoring"}</b><small>{zh ? "默认关闭；需要口语训练时再开启麦克风。" : "Off by default. Enable it only when you want microphone practice."}</small></span></label>
     <div className="everyday-stage" dir={direction}>
       <img src={scene.image} alt={zh ? `${scene.nameZh}生活口语场景` : `${scene.nameEn} everyday speaking scene`}/>
       <div className="everyday-shade"/>
       <div className="everyday-progress"><span style={{ width: `${(index + 1) * 100 / slides.length}%` }}/></div>
-      <div className="everyday-copy">
+      <div className={`everyday-conversation-person ${customerTurn ? "customer" : "staff"}`} aria-hidden="true"><span>{customerTurn ? "👤" : "●"}</span><i>{speakerLabel}</i></div>
+      <div className={`everyday-copy ${customerTurn ? "customer-turn" : "staff-turn"}`}>
         <p>{index + 1} / {slides.length} · {zh ? slide.stageZh : slide.stageEn}</p>
-        <small>{zh ? "请跟我说" : "REPEAT AFTER ME"}</small>
+        <small>{speakerLabel} · {repeatAfterMe ? (zh ? "请跟我说" : "REPEAT AFTER ME") : (zh ? "先听真实对话" : "LISTEN IN CONTEXT")}</small>
+        {slide.kind === "word" ? <VocabularyPicture imageKey={slide.imageKey} label={zh ? slide.meaningZh : slide.meaningEn} className="everyday-word-picture"/> : null}
         <h2>{slide.form}</h2>
         <b>{slide.pronunciation}</b>
         <span>{zh ? slide.meaningZh : slide.meaningEn}</span>
         <em aria-live="polite">{message}</em>
       </div>
-      {!started ? <button className="everyday-start" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始生活口语" : "Start speaking lesson"}</strong><small>{zh ? "AI 示范 · 每句跟读 3 次 · 即时评分" : "AI models · repeat each phrase 3 times · instant scores"}</small></button> : null}
+      {!started ? <button className="everyday-start" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始真实场景对话" : "Start the real-life conversation"}</strong><small>{repeatAfterMe ? (zh ? "人物对话 · 每句跟读 3 次 · 即时评分" : "Role-play · repeat each line 3 times · instant scores") : (zh ? "人物对话 · 场景词汇 · 听完继续" : "Role-play · scene vocabulary · listen and continue")}</small></button> : null}
       {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? "再玩一次巩固短句，或选择另一个真实生活场景。" : "Play again to reinforce the phrases, or choose another real-life scene."}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${lang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
     </div>
     <div className="everyday-controls" aria-label={zh ? "幻灯片控制" : "Slide controls"}>
@@ -339,9 +369,9 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
       <button className="everyday-pause" onClick={togglePause} disabled={!started || complete}>{paused ? (zh ? "▶ 继续" : "▶ Play") : (zh ? "Ⅱ 暂停" : "Ⅱ Pause")}</button>
       <Link className="everyday-quit" href={`/${lang}/play/everyday?language=${language}`}>{zh ? "退出" : "Quit"}</Link>
     </div>
-    {started && !complete ? <div className="everyday-attempts" aria-label={zh ? "三次跟读成绩" : "Three speaking attempt scores"}>{[1, 2, 3].map(turn => <b className={turn <= attemptScores.length ? "scored" : ""} key={turn}>{attemptScores[turn - 1] ?? turn}</b>)}</div> : null}
-    {started && !complete && (micState === "denied" || micState === "error" || micState === "unsupported") ? <div className="everyday-fallback"><button className="everyday-speech-retry" type="button" onClick={() => { setMicState("idle"); setMessage(zh ? "AI 正在重新示范，请听完后跟读。" : "The AI is modeling it again; listen and repeat."); setDemoNonce(value => value + 1); }}>{zh ? "🎙 重新听并跟读" : "🎙 Listen and retry"}</button><button className="everyday-speech-retry" type="button" onClick={manualAttempt}>{zh ? "我已跟读" : "I said it"}</button></div> : null}
+    {started && !complete && repeatAfterMe ? <div className="everyday-attempts" aria-label={zh ? "三次跟读成绩" : "Three speaking attempt scores"}>{[1, 2, 3].map(turn => <b className={turn <= attemptScores.length ? "scored" : ""} key={turn}>{attemptScores[turn - 1] ?? turn}</b>)}</div> : null}
+    {started && !complete && repeatAfterMe && (micState === "denied" || micState === "error" || micState === "unsupported") ? <div className="everyday-fallback"><button className="everyday-speech-retry" type="button" onClick={() => { setMicState("idle"); setMessage(zh ? "AI 正在重新示范，请听完后跟读。" : "The AI is modeling it again; listen and repeat."); setDemoNonce(value => value + 1); }}>{zh ? "🎙 重新听并跟读" : "🎙 Listen and retry"}</button><button className="everyday-speech-retry" type="button" onClick={manualAttempt}>{zh ? "我已跟读" : "I said it"}</button></div> : null}
     {started && !complete && readyToContinue ? <button className="everyday-continue" type="button" onClick={() => move(index + 1)}>{zh ? "继续" : "Continue"} →</button> : null}
-    <style>{`.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-fallback,.everyday-attempts{margin:12px auto 0;display:flex;justify-content:center;gap:10px}.everyday-attempts b{width:42px;height:42px;display:grid;place-items:center;border:2px solid #bfd3ca;border-radius:50%;color:#60746c}.everyday-attempts b.scored{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry,.everyday-continue{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}.everyday-fallback .everyday-speech-retry{margin:0}.everyday-continue{min-width:180px;justify-content:center;background:#087d62;color:#fff}@media(max-width:620px){.everyday-controls .everyday-repeat-toggle{grid-column:span 2}.everyday-fallback{flex-direction:column;align-items:center}}`}</style>
+    <style>{`.everyday-repeat-check{width:min(1180px,100%);margin:0 auto 16px;padding:14px 17px;display:flex;align-items:center;gap:12px;border:1px solid #bad5ca;border-radius:15px;background:#fff}.everyday-repeat-check input{width:22px;height:22px;accent-color:#087d62}.everyday-repeat-check span,.everyday-repeat-check small{display:block}.everyday-repeat-check small{margin-top:3px;color:#61756d}.everyday-stage>img{animation:everyday-camera 14s ease-in-out infinite alternate}.everyday-conversation-person{position:absolute;z-index:3;bottom:28px;right:25px;display:grid;justify-items:center;color:#fff;filter:drop-shadow(0 7px 16px #0018)}.everyday-conversation-person.customer{right:auto;left:25px}.everyday-conversation-person span{width:66px;height:66px;display:grid;place-items:center;border:3px solid #fff;border-radius:50%;background:#087d62;font-size:34px}.everyday-conversation-person.staff span{background:#234c76}.everyday-conversation-person i{margin-top:6px;padding:5px 9px;border-radius:999px;background:#082f28db;font-style:normal;font-size:11px}.everyday-copy{animation:everyday-bubble .35s ease-out}.everyday-word-picture{width:min(180px,38vw);aspect-ratio:1;border:5px solid #fff;border-radius:20px;box-shadow:0 12px 34px #0017}.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-fallback,.everyday-attempts{margin:12px auto 0;display:flex;justify-content:center;gap:10px}.everyday-attempts b{width:42px;height:42px;display:grid;place-items:center;border:2px solid #bfd3ca;border-radius:50%;color:#60746c}.everyday-attempts b.scored{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry,.everyday-continue{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}.everyday-fallback .everyday-speech-retry{margin:0}.everyday-continue{min-width:180px;justify-content:center;background:#087d62;color:#fff}@keyframes everyday-camera{from{transform:scale(1.01) translateX(-.5%)}to{transform:scale(1.08) translateX(.8%)}}@keyframes everyday-bubble{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.everyday-stage>img,.everyday-copy{animation:none}}@media(max-width:620px){.everyday-controls .everyday-repeat-toggle{grid-column:span 2}.everyday-fallback{flex-direction:column;align-items:center}.everyday-conversation-person{display:none}}`}</style>
   </section>;
 }

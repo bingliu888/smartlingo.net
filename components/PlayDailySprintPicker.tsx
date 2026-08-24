@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
-import { rememberTargetLanguage } from "./InterfaceLanguageMenu";
 import type { InterfaceLanguage } from "../lib/interface-locale";
 
 const DURATIONS = [5, 10, 15, 20] as const;
@@ -41,7 +40,7 @@ export function PlayDailySprintPicker({ lang, initialLanguage, triggerClassName,
         <button className="play-sprint-close" type="button" onClick={() => setOpen(false)} aria-label={t.close}>×</button>
         <p>DAILY SPRINT</p>
         <h2 id="play-sprint-title">{t.heading}</h2><span>{t.intro}</span><h3>{t.stepLanguage}</h3>
-        <div className="play-sprint-languages">{SMARTLINGO_LANGUAGE_COMMUNITIES.map(item => <button type="button" aria-pressed={language === item.code} className={language === item.code ? "selected" : ""} onClick={() => { setSelection({ source: initialTarget, value: item.code }); rememberTargetLanguage(item.code); }} key={item.code}><small>{item.code.toUpperCase()}</small><strong>{item.nativeName}</strong><span>{item.nameEn}</span></button>)}</div>
+        <div className="play-sprint-languages">{SMARTLINGO_LANGUAGE_COMMUNITIES.map(item => <button type="button" aria-pressed={language === item.code} className={language === item.code ? "selected" : ""} onClick={() => setSelection({ source: initialTarget, value: item.code })} key={item.code}><small>{item.code.toUpperCase()}</small><strong>{item.nativeName}</strong><span>{item.nameEn}</span></button>)}</div>
         <h3>{t.stepTime}</h3><div className="play-sprint-times">{DURATIONS.map(value => <button type="button" aria-pressed={minutes === value} className={minutes === value ? "selected" : ""} onClick={() => setMinutes(value)} key={value}><strong>{value}</strong><span>{t.minute}</span><small>{value / 5} {value === 5 ? t.round : t.rounds}</small></button>)}</div>
         {language ? <Link className="play-sprint-start" href={`/${lang}/classes/course_${language}_basic/sprint?minutes=${minutes}&source=play`}>{t.start.replace("{minutes}", String(minutes))} →</Link> : <button className="play-sprint-start" type="button" disabled>{t.first}</button>}
       </section>

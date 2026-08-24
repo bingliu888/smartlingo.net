@@ -1,5 +1,8 @@
 import { beginnerVocabularySeedsForDay } from "./smartlingo-beginner-vocabulary.ts";
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities.ts";
+import { buildCourseSentenceBank } from "./smartlingo-sentence-exercises.ts";
+import { beginnerVocabularyImageKey } from "./smartlingo-vocabulary-images.ts";
+import type { SmartLingoLevel } from "./smartlingo-learning.ts";
 
 export const SMARTLINGO_EVERYDAY_SCENARIOS = [
   { id: "airport", icon: "✈", nameZh: "机场", nameEn: "Airport", goalZh: "问路、找登机口与处理行程", goalEn: "Ask directions, find the gate, and manage a trip", image: "/everyday-speaking/airport.jpg", days: [1, 3, 4] },
@@ -22,20 +25,34 @@ export function isSmartLingoEverydayScenario(value: string): value is SmartLingo
   return SMARTLINGO_EVERYDAY_SCENARIOS.some(scene => scene.id === value);
 }
 
-export function buildEverydaySpeakingDeck(language: SmartLingoCommunityLanguage, sceneId: SmartLingoEverydayScenarioId) {
+type Essential = { forms: Record<SmartLingoCommunityLanguage, string>; meaningZh: string; meaningEn: string; pronunciation?: Partial<Record<SmartLingoCommunityLanguage, string>> };
+
+const GROCERY_ESSENTIALS: Essential[] = [
+  { forms:{zh:"鸡蛋",en:"eggs",es:"huevos",ja:"卵",ko:"계란",fr:"œufs",de:"Eier",ru:"яйца",it:"uova",pt:"ovos",ar:"بيض",hi:"अंडे"},meaningZh:"鸡蛋",meaningEn:"eggs" },
+  { forms:{zh:"肉",en:"meat",es:"carne",ja:"肉",ko:"고기",fr:"viande",de:"Fleisch",ru:"мясо",it:"carne",pt:"carne",ar:"لحم",hi:"मांस"},meaningZh:"肉",meaningEn:"meat" },
+  { forms:{zh:"蔬菜",en:"vegetables",es:"verduras",ja:"野菜",ko:"채소",fr:"légumes",de:"Gemüse",ru:"овощи",it:"verdure",pt:"legumes",ar:"خضروات",hi:"सब्ज़ियाँ"},meaningZh:"蔬菜",meaningEn:"vegetables" },
+  { forms:{zh:"牛奶",en:"milk",es:"leche",ja:"牛乳",ko:"우유",fr:"lait",de:"Milch",ru:"молоко",it:"latte",pt:"leite",ar:"حليب",hi:"दूध"},meaningZh:"牛奶",meaningEn:"milk" },
+  { forms:{zh:"大米",en:"rice",es:"arroz",ja:"米",ko:"쌀",fr:"riz",de:"Reis",ru:"рис",it:"riso",pt:"arroz",ar:"أرز",hi:"चावल"},meaningZh:"大米",meaningEn:"rice" },
+  { forms:{zh:"面包",en:"bread",es:"pan",ja:"パン",ko:"빵",fr:"pain",de:"Brot",ru:"хлеб",it:"pane",pt:"pão",ar:"خبز",hi:"रोटी"},meaningZh:"面包",meaningEn:"bread" },
+  { forms:{zh:"苹果",en:"apple",es:"manzana",ja:"りんご",ko:"사과",fr:"pomme",de:"Apfel",ru:"яблоко",it:"mela",pt:"maçã",ar:"تفاح",hi:"सेब"},meaningZh:"苹果",meaningEn:"apple" },
+  { forms:{zh:"香蕉",en:"banana",es:"banana",ja:"バナナ",ko:"바나나",fr:"banane",de:"Banane",ru:"банан",it:"banana",pt:"banana",ar:"موز",hi:"केला"},meaningZh:"香蕉",meaningEn:"banana" },
+];
+
+const CAFE_ESSENTIALS: Essential[] = [
+  { forms:{zh:"咖啡",en:"coffee",es:"café",ja:"コーヒー",ko:"커피",fr:"café",de:"Kaffee",ru:"кофе",it:"caffè",pt:"café",ar:"قهوة",hi:"कॉफी"},meaningZh:"咖啡",meaningEn:"coffee" },
+  { forms:{zh:"水",en:"water",es:"agua",ja:"水",ko:"물",fr:"eau",de:"Wasser",ru:"вода",it:"acqua",pt:"água",ar:"ماء",hi:"पानी"},meaningZh:"水",meaningEn:"water" },
+  { forms:{zh:"牛奶",en:"milk",es:"leche",ja:"牛乳",ko:"우유",fr:"lait",de:"Milch",ru:"молоко",it:"latte",pt:"leite",ar:"حليب",hi:"दूध"},meaningZh:"牛奶",meaningEn:"milk" },
+  { forms:{zh:"面包",en:"bread",es:"pan",ja:"パン",ko:"빵",fr:"pain",de:"Brot",ru:"хлеб",it:"pane",pt:"pão",ar:"خبز",hi:"रोटी"},meaningZh:"面包",meaningEn:"bread" },
+];
+
+export function buildEverydaySpeakingDeck(language: SmartLingoCommunityLanguage, sceneId: SmartLingoEverydayScenarioId, level: SmartLingoLevel = "beginner") {
   const scene = SMARTLINGO_EVERYDAY_SCENARIOS.find(item => item.id === sceneId)!;
-  const stages = [
-    { zh: "礼貌开场", en: "Polite opening" },
-    { zh: "场景关键词", en: "Scene essentials" },
-    { zh: "完成基本任务", en: "Complete the task" },
-  ] as const;
-  return scene.days.flatMap((day, stageIndex) => beginnerVocabularySeedsForDay(language, day).map((seed, itemIndex) => ({
-    id: `${scene.id}-${stageIndex + 1}-${itemIndex + 1}`,
-    form: seed[0],
-    pronunciation: seed[1],
-    meaningZh: seed[2],
-    meaningEn: seed[3],
-    stageZh: stages[stageIndex].zh,
-    stageEn: stages[stageIndex].en,
-  })));
+  const essentials = sceneId === "grocery" ? GROCERY_ESSENTIALS : sceneId === "cafe" ? CAFE_ESSENTIALS : null;
+  const vocabulary = essentials
+    ? essentials.map((item, index) => ({ id:`${scene.id}-${level}-word-${index + 1}`,kind:"word" as const,form:item.forms[language],pronunciation:item.pronunciation?.[language] || "",meaningZh:item.meaningZh,meaningEn:item.meaningEn,stageZh:"先认识实物",stageEn:"Meet the essentials",imageKey:beginnerVocabularyImageKey(item.forms[language],item.meaningZh,item.meaningEn) }))
+    : scene.days.slice(0,2).flatMap((day,stageIndex)=>beginnerVocabularySeedsForDay(language,day).map((seed,itemIndex)=>({id:`${scene.id}-${level}-word-${stageIndex + 1}-${itemIndex + 1}`,kind:"word" as const,form:seed[0],pronunciation:seed[1],meaningZh:seed[2],meaningEn:seed[3],stageZh:"场景关键词",stageEn:"Scene essentials",imageKey:beginnerVocabularyImageKey(seed[0],seed[2],seed[3])})));
+  const sentences = buildCourseSentenceBank(language, level).filter(item => item.scenario === sceneId).map((item,index)=>({
+    id:`${scene.id}-${level}-sentence-${index + 1}`,kind:"sentence" as const,form:item.targetSentence,pronunciation:"",meaningZh:item.translation.zh,meaningEn:item.translation.en,stageZh:level === "beginner" ? "完成基本任务" : level === "intermediate" ? "处理更多变化" : "自然应对复杂情况",stageEn:level === "beginner" ? "Complete the basic task" : level === "intermediate" ? "Handle more variation" : "Navigate a complex situation",imageKey:beginnerVocabularyImageKey(item.anchorVocabulary,item.translation.zh,item.translation.en),anchorVocabulary:item.anchorVocabulary,
+  }));
+  return [...vocabulary, ...sentences];
 }

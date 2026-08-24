@@ -170,7 +170,9 @@ test("SmartCard practice auto-scores then continues while the timed challenge ho
   assert.doesNotMatch(source, /Listen & speak/);
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);
-  assert.doesNotMatch(source, /option\.form/);
+  assert.match(source, /VocabularyPicture/);
+  assert.match(source, /beginnerVocabularyImageKey\(option\.form/);
+  assert.match(source, /repeatAfterMe, setRepeatAfterMe\] = useState\(false\)/);
   assert.doesNotMatch(source, /<small>\{card\.sceneKey\}<\/small>/);
 });
 
@@ -207,8 +209,9 @@ test("game navigation keeps target language, progress, local-time art, and score
   const leaderboard = readFileSync(new URL("../app/api/smartcards/leaderboard/route.ts", import.meta.url), "utf8");
   assert.match(course, /play\?language=\$\{language\}/);
   assert.match(course, /免费游戏/);
-  assert.match(play, /smartcards\/starter-\$\{language\}/);
-  assert.match(play, /play\/challenge\?language=\$\{language\}/);
+  assert.match(play, /href=\{`\/\$\{lang\}\/smartcards`\}/);
+  assert.match(play, /href=\{`\/\$\{lang\}\/play\/challenge`\}/);
+  assert.doesNotMatch(play, /smartcards\/starter-\$\{language\}/);
   assert.match(play, /PlayFreeTrialPicker/);
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
   assert.match(freeTrialPicker, /免费试学/);
