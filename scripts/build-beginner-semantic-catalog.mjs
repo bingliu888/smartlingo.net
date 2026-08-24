@@ -49,7 +49,12 @@ for (let sheetIndex = 0; sheetIndex < Math.ceil(fallbackCount / plan.sheetSize);
     "Original language-neutral SmartLingo semantic SVG micro-scenes for rare beginner concepts, with deterministic category iconography and no text.",
   ].map(sqlValue).join(",")},unixepoch(),unixepoch())`);
 }
-const migration = `INSERT INTO smartlingo_learning_media_assets(asset_key,asset_path,media_kind,generation_source,release_id,subject_manifest_json,prompt_summary,reviewed_at,created_at) VALUES\n${mediaRows.join(",\n")}\nON CONFLICT(asset_key) DO UPDATE SET asset_path=excluded.asset_path,release_id=excluded.release_id,subject_manifest_json=excluded.subject_manifest_json,reviewed_at=excluded.reviewed_at;\n\nPRAGMA optimize;\n`;
+// Cloudflare D1 rejects a single multi-row statement once it crosses SQLite's
+// remote statement-size limit. Keep each asset upsert independently retryable.
+const mediaStatements = mediaRows.map(row =>
+  `INSERT INTO smartlingo_learning_media_assets(asset_key,asset_path,media_kind,generation_source,release_id,subject_manifest_json,prompt_summary,reviewed_at,created_at) VALUES\n${row}\nON CONFLICT(asset_key) DO UPDATE SET asset_path=excluded.asset_path,release_id=excluded.release_id,subject_manifest_json=excluded.subject_manifest_json,reviewed_at=excluded.reviewed_at;`,
+);
+const migration = `${mediaStatements.join("\n\n")}\n\nPRAGMA optimize;\n`;
 writeFileSync(new URL("../drizzle/0165_beginner_semantic_media.sql", import.meta.url), migration);
 console.log(JSON.stringify({
   concepts: concepts.length,
