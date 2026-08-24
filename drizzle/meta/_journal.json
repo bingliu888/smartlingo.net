@@ -400,6 +400,13 @@
       "when": 1787515200000,
       "tag": "0161_adaptive_learning_content",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1787518800000,
+      "tag": "0162_beginner_social_media",
+      "breakpoints": true
     }
   ]
 }

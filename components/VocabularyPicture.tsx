@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react";
 import {
-  BEGINNER_VOCABULARY_SPRITE,
   beginnerVocabularySpritePosition,
+  beginnerVocabularySpriteSource,
   type BeginnerVocabularyImageKey,
 } from "../lib/smartlingo-vocabulary-images";
 
 export function VocabularyPicture({ imageKey, label, className = "" }: { imageKey: BeginnerVocabularyImageKey | null; label: string; className?: string }) {
   if (!imageKey) return <span className={`vocabulary-picture vocabulary-picture-fallback ${className}`} aria-hidden="true">◇</span>;
   const style = {
-    backgroundImage: `url('${BEGINNER_VOCABULARY_SPRITE}')`,
+    backgroundImage: `url('${beginnerVocabularySpriteSource(imageKey)}')`,
     backgroundPosition: beginnerVocabularySpritePosition(imageKey),
     backgroundSize: "400% 400%",
   } satisfies CSSProperties;

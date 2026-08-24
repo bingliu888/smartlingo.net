@@ -7,14 +7,19 @@ import { BEGINNER_VOCABULARY_IMAGE_KEYS, beginnerVocabularyImageKey } from "../l
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("beginner picture choices use a reviewed original AI asset with multilingual matching", async () => {
-  const asset = SMARTLINGO_GENERATED_LEARNING_MEDIA[0];
-  assert.equal(asset.generationSource, "openai-image-generation");
-  assert.equal(asset.humanReview, "approved");
-  assert.deepEqual([...asset.subjects], [...BEGINNER_VOCABULARY_IMAGE_KEYS]);
-  await access(new URL(`../public${asset.assetPath}`, import.meta.url));
+  assert.equal(SMARTLINGO_GENERATED_LEARNING_MEDIA.length, 2);
+  for (const asset of SMARTLINGO_GENERATED_LEARNING_MEDIA) {
+    assert.equal(asset.generationSource, "openai-image-generation");
+    assert.equal(asset.humanReview, "approved");
+    await access(new URL(`../public${asset.assetPath}`, import.meta.url));
+  }
+  assert.deepEqual(SMARTLINGO_GENERATED_LEARNING_MEDIA.flatMap(asset => [...asset.subjects]), [...BEGINNER_VOCABULARY_IMAGE_KEYS]);
   assert.equal(beginnerVocabularyImageKey("卵", "鸡蛋"), "egg");
   assert.equal(beginnerVocabularyImageKey("acqua", "water"), "water");
   assert.equal(beginnerVocabularyImageKey("蔬菜"), "vegetables");
+  assert.equal(beginnerVocabularyImageKey("こんにちは", "你好"), "hello");
+  assert.equal(beginnerVocabularyImageKey("すみません", "对不起"), "sorry");
+  assert.equal(beginnerVocabularyImageKey("woman", "女人"), "woman");
   assert.ok(SMARTLINGO_SCENE_MEDIA_POLICY.requirements.some(item => item.includes("fallback")));
 });
 

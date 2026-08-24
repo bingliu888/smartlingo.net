@@ -1,4 +1,9 @@
-import { BEGINNER_VOCABULARY_IMAGE_KEYS, BEGINNER_VOCABULARY_SPRITE } from "./smartlingo-vocabulary-images.ts";
+import {
+  BEGINNER_OBJECT_IMAGE_KEYS,
+  BEGINNER_SOCIAL_IMAGE_KEYS,
+  BEGINNER_SOCIAL_VOCABULARY_SPRITE,
+  BEGINNER_VOCABULARY_SPRITE,
+} from "./smartlingo-vocabulary-images.ts";
 
 export const SMARTLINGO_GENERATED_LEARNING_MEDIA = [{
   assetKey: "beginner-vocabulary-sprite-2026-08-23",
@@ -7,8 +12,18 @@ export const SMARTLINGO_GENERATED_LEARNING_MEDIA = [{
   generationSource: "openai-image-generation",
   generatedAt: "2026-08-23",
   releaseId: "bootstrap-2026-08-23",
-  subjects: BEGINNER_VOCABULARY_IMAGE_KEYS,
+  subjects: BEGINNER_OBJECT_IMAGE_KEYS,
   promptSummary: "Original SmartLingo 4x4 educational picture-choice sprite with isolated concrete objects, consistent polished 3D-flat visual language, no text, logos, or third-party characters.",
+  humanReview: "approved",
+}, {
+  assetKey: "beginner-social-vocabulary-sprite-2026-08-23",
+  assetPath: BEGINNER_SOCIAL_VOCABULARY_SPRITE,
+  mediaKind: "image-sprite",
+  generationSource: "openai-image-generation",
+  generatedAt: "2026-08-23",
+  releaseId: "bootstrap-2026-08-23",
+  subjects: BEGINNER_SOCIAL_IMAGE_KEYS,
+  promptSummary: "Original SmartLingo 4x4 educational picture-choice sprite for greetings, polite actions, people, family, and daily essentials; expressive human scenes, no text, logos, or third-party characters.",
   humanReview: "approved",
 }] as const;
 
