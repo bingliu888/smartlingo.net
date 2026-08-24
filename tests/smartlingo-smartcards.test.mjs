@@ -91,6 +91,8 @@ test("21-day vocabulary practice uses the three-turn Sprint pronunciation scorin
   const route = readFileSync(new URL("../app/api/classes/[classId]/vocabulary/route.ts", import.meta.url), "utf8");
   assert.match(component, /runPronunciationTurn/);
   assert.match(component, /round >= 3/);
+  assert.match(component, /pronunciationScores\.length >= 3/);
+  assert.match(component, /t\("Continue", "继续"\)/);
   assert.match(component, /pronunciationScores/);
   assert.match(component, /pronunciationGuides\?\.\[lang\]/);
   assert.match(component, /SPEECH_LOCALES\[data\?\.targetLanguage/);

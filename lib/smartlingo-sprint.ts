@@ -9,19 +9,21 @@ export type SprintVocabulary = {
   form: string;
   pronunciation: string;
   meaning: string;
+  difficulty: number;
+  frequencyDegree: number;
 };
 
 export type SprintRound = {
   number: number;
   vocabulary: SprintVocabulary[];
   reading: { id: string; prompt: string; options: { id: string; label: string }[]; answerId: string };
-  listening: { id: string; scenario: string; prompt: string; audioText: string; answerTokens: string[]; expected: string };
-  writing: { id: string; scenario: string; prompt: string; answerTokens: string[]; expected: string };
+  listening: { id: string; scenario: string; prompt: string; audioText: string; answerTokens: string[]; expected: string; sourceLanguage: string; answerLanguage: string };
+  writing: { id: string; scenario: string; prompt: string; answerTokens: string[]; expected: string; sourceLanguage: string; answerLanguage: string };
   dialogue: { id: string; prompt: string; audioText: string; expected: string };
 };
 
 export type SprintPlan = {
-  contentVersion: "smartlingo-sprint-2026-08-21.2";
+  contentVersion: "smartlingo-sprint-2026-08-23.1";
   language: SmartLingoLearningLanguage;
   level: SmartLingoLevel;
   uiLang: SmartLingoInterfaceLanguage;
@@ -46,6 +48,10 @@ function promptFor(sentence: { translation: { zh: string; en: string } }, lang: 
   return sentence.translation[lang];
 }
 
+function bridgeLanguage(target: SmartLingoLearningLanguage, uiLang: SmartLingoInterfaceLanguage): SmartLingoInterfaceLanguage {
+  return target === uiLang ? (uiLang === "zh" ? "en" : "zh") : uiLang;
+}
+
 export function buildSprintPlan(input: {
   runId: string;
   language: SmartLingoLearningLanguage;
@@ -56,7 +62,7 @@ export function buildSprintPlan(input: {
 }): SprintPlan {
   const bank = buildCourseSentenceBank(input.language, input.level);
   const roundCount = input.durationMinutes / 5;
-  const sprintVocabulary = rotate(input.vocabulary, `${input.runId}:vocabulary`, roundCount * 5);
+  const sprintVocabulary = input.vocabulary.slice(0, roundCount * 5);
   const rounds = Array.from({ length: roundCount }, (_, roundIndex) => {
     const seed = `${input.runId}:${roundIndex + 1}`;
     const sentences = rotate(bank, seed, 6);
@@ -64,9 +70,10 @@ export function buildSprintPlan(input: {
     const listening = sentences[1];
     const writing = sentences[2];
     const dialogue = sentences[3];
+    const bridge = bridgeLanguage(input.language, input.uiLang);
     const distractors = [sentences[4], sentences[5]];
     const options = [reading, ...distractors]
-      .map(item => ({ id: item.id, label: promptFor(item, input.uiLang) }))
+      .map(item => ({ id: item.id, label: promptFor(item, bridge) }))
       .sort((left, right) => hash(`${seed}:${left.id}`) - hash(`${seed}:${right.id}`));
     return {
       number: roundIndex + 1,
@@ -75,22 +82,26 @@ export function buildSprintPlan(input: {
       listening: {
         id: listening.id,
         scenario: listening.scenario,
-        prompt: "",
+        prompt: promptFor(listening, bridge),
         audioText: listening.targetSentence,
-        answerTokens: tokenizeSentence(listening.targetSentence, input.language),
-        expected: listening.targetSentence,
+        answerTokens: tokenizeSentence(promptFor(listening, bridge), bridge),
+        expected: promptFor(listening, bridge),
+        sourceLanguage: input.language,
+        answerLanguage: bridge,
       },
       writing: {
         id: writing.id,
         scenario: writing.scenario,
-        prompt: promptFor(writing, input.uiLang),
+        prompt: promptFor(writing, bridge),
         answerTokens: tokenizeSentence(writing.targetSentence, input.language),
         expected: writing.targetSentence,
+        sourceLanguage: bridge,
+        answerLanguage: input.language,
       },
       dialogue: { id: dialogue.id, prompt: promptFor(dialogue, input.uiLang), audioText: dialogue.targetSentence, expected: dialogue.targetSentence },
     } satisfies SprintRound;
   });
-  return { contentVersion: "smartlingo-sprint-2026-08-21.2", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
+  return { contentVersion: "smartlingo-sprint-2026-08-23.1", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
 }
 
 function transcriptScore(expected: string, actual: string) {

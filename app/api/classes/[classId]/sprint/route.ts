@@ -4,7 +4,7 @@ import { SMARTLINGO_LEARNING_LANGUAGE_CODES, type SmartLingoInterfaceLanguage, t
 import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS, type SprintAnswer, type SprintDuration, type SprintPlan, type SprintVocabulary } from "@/lib/smartlingo-sprint";
 
 type Params = { params: Promise<{ classId: string }> };
-type Body = { action?: string; durationMinutes?: number; lang?: string; timeZone?: string; runId?: string; responses?: SprintAnswer[]; source?: string };
+type Body = { action?: string; durationMinutes?: number; lang?: string; timeZone?: string; runId?: string; responses?: SprintAnswer[]; source?: string; progress?: { roundIndex?: number; stage?: string; wordIndex?: number; responses?: SprintAnswer[]; remainingSeconds?: number } };
 
 function level(value: string): SmartLingoLevel { return value === "advanced" || value === "intermediate" ? value : "beginner"; }
 function uiLang(value: string | undefined): SmartLingoInterfaceLanguage { return value === "en" ? "en" : "zh"; }
@@ -31,11 +31,19 @@ export async function POST(request: Request, { params }: Params) {
   const value = await access(request, classId, body.source === "play"); if ("error" in value) return value.error;
   if (body.action === "start") {
     const selectedDuration = duration(body.durationMinutes); if (!selectedDuration) return Response.json({ error: "Choose 5, 10, 15, or 20 minutes" }, { status: 400 });
-    const zone = safeTimeZone(body.timeZone || "UTC"); const now = Math.floor(Date.now() / 1000); const runId = createId();
+    const zone = safeTimeZone(body.timeZone || "UTC"); const now = Math.floor(Date.now() / 1000);
+    if (!value.anonymous && value.user) {
+      const saved = await value.database.prepare(`SELECT id,plan_json AS planJson,progress_json AS progressJson FROM smartlingo_daily_sprint_runs
+        WHERE user_id=? AND class_id=? AND duration_minutes=? AND status='in_progress' ORDER BY started_at DESC LIMIT 1`)
+        .bind(value.user.id,classId,selectedDuration).first<{ id: string; planJson: string; progressJson: string }>();
+      if (saved) return Response.json({ runId: saved.id, plan: JSON.parse(saved.planJson), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: false, resumed: true });
+    }
+    const runId = createId();
     const language = value.course.targetLanguage as SmartLingoLearningLanguage; const courseLevel = level(value.course.level);
     const vocabularyResult = await value.database.prepare(`SELECT id,form,COALESCE(target_phonetic,pronunciation,'') AS pronunciation,
-      CASE WHEN ?='zh' THEN meaning_zh ELSE meaning_en END AS meaning FROM smartlingo_vocabulary_items
-      WHERE target_language=? AND level=? AND review_status='published' ORDER BY sequence LIMIT 1000`)
+      CASE WHEN ?='zh' THEN meaning_zh ELSE meaning_en END AS meaning,difficulty,frequency_degree AS frequencyDegree FROM smartlingo_vocabulary_items
+      WHERE target_language=? AND level=? AND review_status='published'
+      ORDER BY difficulty ASC,frequency_degree DESC,sequence,id LIMIT 1000`)
       .bind(uiLang(body.lang), language, courseLevel).run<SprintVocabulary>();
     const vocabulary = vocabularyResult.results || [];
     if (vocabulary.length < 5) return Response.json({ error: "Course vocabulary is not ready" }, { status: 409 });
@@ -45,6 +53,16 @@ export async function POST(request: Request, { params }: Params) {
       VALUES(?,?,?,?,?,?,?,?,?,?,'in_progress',?)`)
       .bind(runId,value.user.id,classId,language,courseLevel,selectedDuration,plan.rounds.length,localDateKey(now,zone),zone,JSON.stringify(plan),now).run();
     return Response.json({ runId, plan, courseTitle: value.course.title, anonymous: value.anonymous });
+  }
+  if (body.action === "checkpoint") {
+    if (value.anonymous || !value.user) return Response.json({ saved: false, anonymous: true });
+    const progress = body.progress;
+    const stages = ["vocabulary","reading","listening","writing","dialogue"];
+    if (!body.runId || !progress || !stages.includes(String(progress.stage)) || !Array.isArray(progress.responses)) return Response.json({ error: "Valid Sprint progress is required" }, { status: 400 });
+    const safeProgress = { roundIndex: Math.max(0, Math.min(3, Number(progress.roundIndex || 0))), stage: String(progress.stage), wordIndex: Math.max(0, Math.min(4, Number(progress.wordIndex || 0))), responses: progress.responses.slice(0, 4), remainingSeconds: Math.max(0, Math.min(2400, Number(progress.remainingSeconds || 0))) };
+    const saved = await value.database.prepare(`UPDATE smartlingo_daily_sprint_runs SET progress_json=?,checkpointed_at=? WHERE id=? AND user_id=? AND class_id=? AND status='in_progress'`)
+      .bind(JSON.stringify(safeProgress),Math.floor(Date.now()/1000),body.runId,value.user.id,classId).run();
+    return Response.json({ saved: saved.success });
   }
   if (body.action === "complete") {
     if (value.anonymous || !value.user) return Response.json({ error: "Sign in to save a Sprint score" }, { status: 401 });

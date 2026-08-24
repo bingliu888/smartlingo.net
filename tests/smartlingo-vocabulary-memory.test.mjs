@@ -30,7 +30,14 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /listeningWatchdog = window\.setTimeout/);
   assert.match(workspace, /recognition\.onend = recoverListening/);
   assert.match(workspace, /也可以跳过本词/);
-  assert.match(workspace, /useRepeatAfterMePreference/);
+  assert.match(workspace, /New word/);
+  assert.match(workspace, /Previous mistake/);
+  assert.match(workspace, /playWord\(\.86\)/);
+  assert.match(workspace, /playWord\(\.58\)/);
+  assert.match(workspace, /setPhase\("feedback"\)/);
+  assert.match(workspace, /continueAfterFeedback/);
+  assert.match(workspace, /selectedOptionId/);
+  assert.doesNotMatch(workspace, /<SentenceBuilderRound autoAdvance/);
   assert.match(workspace, /startFromWord/);
   assert.match(workspace, /vm-pagination/);
   assert.match(route, /startWordId/);
@@ -64,6 +71,7 @@ test("daily deck prioritizes due reviews, uses twenty-word rounds, and reports r
   assert.match(route, /\.slice\(0, 20\)/);
   assert.match(route, /frequency_degree AS frequencyDegree/);
   assert.match(route, /ORDER BY difficulty ASC,frequency_degree DESC/);
+  assert.match(route, /a\.difficulty - b\.difficulty \|\| b\.frequencyDegree - a\.frequencyDegree/);
   assert.match(route, /const total = catalog\.length/);
   assert.match(route, /percent <= 0 \? 0 : Math\.min\(5, Math\.ceil\(percent \/ 20\)\)/);
 });

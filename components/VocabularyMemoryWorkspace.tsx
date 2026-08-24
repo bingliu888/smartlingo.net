@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRepeatAfterMePreference } from "./useRepeatAfterMePreference";
 import { vocabularyLibraryPage } from "../lib/smartlingo-learning-hub";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
 import { interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
@@ -42,11 +41,11 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
   const [data, setData] = useState<Payload | null>(null);
   const [tab, setTab] = useState<Status>("unlearned");
   const [index, setIndex] = useState(0);
-  const [tries, setTries] = useState(0);
-  const [wrongIds, setWrongIds] = useState<string[]>([]);
+  const [selectedOptionId, setSelectedOptionId] = useState("");
   const [typed, setTyped] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [phase, setPhase] = useState<"answer" | "speak" | "sentence" | "done">("answer");
+  const [phase, setPhase] = useState<"answer" | "feedback" | "speak" | "sentence" | "done">("answer");
+  const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
   const [speechMessage, setSpeechMessage] = useState("");
   const [pronunciationRound, setPronunciationRound] = useState(0);
   const [pronunciationScores, setPronunciationScores] = useState<number[]>([]);
@@ -55,7 +54,6 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [libraryPage, setLibraryPage] = useState(1);
-  const [repeatAfterMe, setRepeatAfterMe] = useRepeatAfterMePreference();
   const zone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", []);
 
   const load = useCallback(async (startWordId?: string) => {
@@ -89,12 +87,12 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
   const meaning = (item: { meaningZh: string; meaningEn: string }) => zh ? item.meaningZh : item.meaningEn;
   const textMode = card?.mode === "spelling" || card?.mode === "cloze";
 
-  function playWord(after?: () => void) {
+  function playWord(rate = .86, after?: () => void) {
     if (!card || !("speechSynthesis" in window)) { after?.(); return; }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(card.form);
     utterance.lang = SPEECH_LOCALES[data?.targetLanguage || ""] || data?.targetLanguage || "en-US";
-    utterance.rate = .72;
+    utterance.rate = rate;
     let settled = false;
     const finish = () => {
       if (settled) return;
@@ -124,39 +122,33 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
     if (!response.ok) { setError(payload.error || t("Unable to save. Try again.", "提交失败，请再试一次。")); return; }
     setData(current => current ? { ...payload, dailyDeck: current.dailyDeck } : payload);
     setPronunciationScores([]);
-    if (payload.correct) {
-      setPhase("speak"); setSpeechMessage(repeatAfterMe ? t("Correct! One retrieval recorded. Now listen and repeat.", "答对了！+1 次有效回忆。现在听并跟读。") : t("Correct! Repeat is off; the next word follows the model audio.", "答对了！“跟我读”已关闭，听完示范后进入下一词。"));
-    } else {
-      setPhase("speak"); setSpeechMessage(repeatAfterMe ? `${t("Remember for today", "今天先记住")}：${card.form} · ${meaning(card)}。${t("Listen and repeat; it returns tomorrow.", "听一遍再跟读，明天会再次出现。")}` : `${t("Remember for today", "今天先记住")}：${card.form} · ${meaning(card)}。${t("Repeat is off.", "“跟我读”已关闭。")}`);
-    }
-    if (repeatAfterMe) {
-      setPronunciationRound(1);
-      window.setTimeout(() => { void runPronunciationTurn(1); }, 250);
-    } else {
-      setPronunciationRound(0);
-      playWord(() => window.setTimeout(() => setPhase("sentence"), 900));
-    }
+    setAnswerCorrect(Boolean(payload.correct));
+    setPhase("feedback");
   }
 
-  function choose(optionId: string) {
-    if (!card || phase !== "answer") return;
-    if (optionId === card.id) { void submit(optionId); return; }
-    const next = tries + 1;
-    setTries(next); setWrongIds(current => [...current, optionId]);
-    if (next >= 3) void submit(optionId);
+  function checkSelected() {
+    if (!card || !selectedOptionId || phase !== "answer") return;
+    void submit(selectedOptionId);
   }
 
   function checkTyped() {
     if (!card || !typed.trim()) return;
     const clean = (value: string) => value.normalize("NFKC").toLocaleLowerCase().replace(/\s+/g, " ").trim();
-    if (clean(typed) === clean(card.form)) { void submit(card.id, typed); return; }
-    const next = tries + 1; setTries(next);
-    if (next >= 3) void submit("wrong", typed);
+    void submit(clean(typed) === clean(card.form) ? card.id : "wrong", typed);
+  }
+
+  function continueAfterFeedback() {
+    setPhase("speak");
+    setPronunciationRound(1);
+    setCoachStatus("idle");
+    setSpeechMessage(answerCorrect
+      ? t("Correct! Now follow the model three times. Each attempt receives a score.", "回答正确！现在跟读三次，每次都会获得评分。")
+      : `${t("Remember this word", "请记住这个词")}：${card?.form || ""} · ${card ? meaning(card) : ""}。${t("Now follow the model three times.", "现在跟读三次。")}`);
   }
 
   function nextCard() {
     setIndex(current => Math.min(current + 1, Math.max(0, cards.length - 1)));
-    setTries(0); setWrongIds([]); setTyped(""); setRevealed(false); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
+    setSelectedOptionId(""); setTyped(""); setRevealed(false); setAnswerCorrect(null); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
     setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
   }
 
@@ -165,7 +157,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
     setBusy(true); setError("");
     try {
       await load(wordId);
-      setIndex(0); setTries(0); setWrongIds([]); setTyped(""); setRevealed(false); setPhase("answer");
+      setIndex(0); setSelectedOptionId(""); setTyped(""); setRevealed(false); setAnswerCorrect(null); setPhase("answer");
       setSpeechMessage(""); setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
       document.getElementById("vm-practice")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch {
@@ -211,20 +203,15 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
           const score = payload.pronunciationFeedback.score;
           setPronunciationScores(current => [...current, score]);
           setSpeechMessage(`${zh ? `第 ${round} 次听到“${heard}”` : `${t("Round", "第")} ${round}: “${heard}”`} · ${score} ${t("points", "分")}。${payload.pronunciationFeedback.feedback[lang === "zh" ? "zh" : "en"]}`);
-          if (round >= 3) {
-            setCoachStatus("complete");
-            window.setTimeout(() => setPhase("sentence"), 1500);
-          } else {
-            setPronunciationRound(round + 1);
-            window.setTimeout(() => { void runPronunciationTurn(round + 1); }, 900);
-          }
+          setCoachStatus(round >= 3 ? "complete" : "idle");
+          setPronunciationRound(round >= 3 ? 3 : round + 1);
         }).catch(() => { setCoachStatus("idle"); setSpeechMessage(t("Scoring failed. Select “Continue” to retry this round.", "评分暂时失败，请点“继续跟读”重试本轮。")); });
     };
     recognition.onerror = recoverListening;
     recognition.onend = recoverListening;
     setCoachStatus("model");
     setSpeechMessage(zh ? `第 ${round}/3 次：先听示范，然后跟读。` : `${t("Round", "第")} ${round}/3: ${t("listen, then repeat.", "先听示范，然后跟读。")}`);
-    playWord(() => {
+    playWord(.86, () => {
       setCoachStatus("listening");
       try {
         recognition.start();
@@ -254,20 +241,21 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
     </section>
 
     <section className="vm-practice" id="vm-practice" aria-labelledby="vm-practice-title">
-      <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{t("Today's SmartCard practice", "今日智慧卡练习")}</h2></div><div className="vm-practice-tools"><button type="button" aria-pressed={repeatAfterMe} className={repeatAfterMe ? "on" : ""} onClick={() => setRepeatAfterMe(!repeatAfterMe)}>{t("Repeat", "跟我读")}: {repeatAfterMe ? t("On", "开") : t("Off", "关")}</button><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length} · {practicePercent}%</span></strong></div></header>
-      {card && phase !== "done" ? <div className={`vm-card tries-${tries}`} dir={card.direction} style={{ backgroundImage: `linear-gradient(${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"},${tries >= 2 ? "rgba(111,39,30,.58)" : tries === 1 ? "rgba(126,79,5,.52)" : "rgba(3,55,47,.58)"}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
+      <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{t("Today's SmartCard practice", "今日智慧卡练习")}</h2></div><div className="vm-practice-tools"><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length} · {practicePercent}%</span></strong></div></header>
+      {card && phase !== "done" ? <div className="vm-card" dir={card.direction} style={{ backgroundImage: `linear-gradient(rgba(3,55,47,.64),rgba(3,55,47,.64)),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
         <div className="vm-progress" role="progressbar" aria-label={t("Today's card progress", "今日词卡进度")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={practicePercent}><span style={{ width: `${practicePercent}%` }}/></div>
+        <div className="vm-card-status"><strong>{card.status === "unlearned" ? t("New word", "新词") : t("Previous mistake", "以前错过")}</strong><span>{t("Difficulty", "难度")} {card.difficulty}/5</span><span>{t("Frequency", "常用度")} {card.frequencyDegree}/10</span></div>
         <div className="vm-card-scene"><span>{SCENES[card.sceneKey] || "✨"}</span><small>{modeLabel[card.mode]} · {t("Memory stage", "记忆阶段")} {card.memoryStage}/5</small></div>
-        {phase === "answer" && !revealed ? <button className="vm-study-card" type="button" onClick={() => setRevealed(true)}><strong>{card.form}</strong>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<small>{t("Tap to flip and see the meaning", "点一下翻卡查看释义")}</small></button> : phase === "answer" && revealed ? <div className="vm-card-back"><h3>{meaning(card)}</h3><p><b>{t("Difficulty", "难度")} {card.difficulty}/5</b><b>{t("Frequency", "常用度")} {card.frequencyDegree}/10</b></p></div> : card.mode === "listening" ? <button className="vm-listen-prompt" type="button" onClick={() => playWord()}>▶ {t("Play word", "播放发音")}</button> : phase !== "sentence" ? <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3> : null}
-        {tries ? <p className="vm-hint" role="status">{tries === 1 ? `${t("Hint: this belongs to the", "提示：这是")} “${card.sceneKey}” ${t("scene.", "场景词。")}` : `${t("More help: it starts with", "再提示：开头是")} “${Array.from(card.form)[0]}”，${t("characters", "字符数")} ${Array.from(card.form).length}。`}</p> : null}
-        {phase === "answer" ? !revealed ? null : textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={t("Type the target-language word", "输入目标语言词语")}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{t("Check", "检查")}</button></div> : <div className="vm-options">{card.options.map(option => <button type="button" disabled={busy || wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div> : phase === "speak" ? <div className="vm-speak">
+        {phase === "answer" && !revealed ? <div className="vm-study-card"><strong>{card.form}</strong>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<small>{t("Learn the word, then continue to check its meaning.", "先认识这个词，再继续检查词义。")}</small><button type="button" onClick={() => setRevealed(true)}>{t("Continue", "继续")}</button></div> : phase === "answer" && revealed ? <div className="vm-card-back"><h3>{meaning(card)}</h3></div> : phase === "feedback" ? <div className={`vm-answer-feedback ${answerCorrect ? "correct" : "incorrect"}`} role="status"><strong>{answerCorrect ? `✓ ${t("Correct", "回答正确")}` : `× ${t("Keep learning", "继续学习")}`}</strong><p>{answerCorrect ? t("One retrieval has been recorded.", "已记录一次有效回忆。") : <>{t("Correct answer", "正确答案")}：<b>{card.form}</b> · {meaning(card)}</>}</p><button type="button" onClick={continueAfterFeedback}>{t("Continue", "继续")}</button></div> : card.mode === "listening" ? <div className="vm-speed-controls"><button type="button" onClick={() => playWord(.86)}>🔊 {t("Normal", "正常语速")}</button><button type="button" onClick={() => playWord(.58)}>🐢 {t("Slow", "慢速")}</button></div> : phase !== "sentence" && phase !== "speak" ? <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3> : null}
+        {phase === "answer" ? !revealed ? null : textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={t("Type the target-language word", "输入目标语言词语")}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{t("Check", "检查")}</button></div> : <><div className="vm-options">{card.options.map(option => <button type="button" aria-pressed={selectedOptionId === option.id} className={selectedOptionId === option.id ? "selected" : ""} disabled={busy} onClick={() => setSelectedOptionId(option.id)} key={option.id}>{card.mode === "recall" ? option.form : meaning(option)}</button>)}</div><footer className="vm-step-action"><button type="button" disabled={!selectedOptionId || busy} onClick={checkSelected}>{t("Check", "检查")}</button></footer></> : phase === "speak" ? <div className="vm-speak">
           <p>{speechMessage}</p><h3>{card.form}</h3>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<span>{t("Approximate reading aid", "当前语言助读（近似）")} · {card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span>
           <div className="vm-rounds" aria-label={t("Three pronunciation scores", "三次跟读分数")}>{[1,2,3].map(round => <b className={round <= pronunciationScores.length ? "scored" : round === pronunciationRound ? "active" : ""} key={round}>{pronunciationScores[round - 1] ?? round}</b>)}</div>
           {pronunciationScores.length ? <strong className="vm-average">{t("Average", "平均")} {Math.round(pronunciationScores.reduce((sum, score) => sum + score, 0) / pronunciationScores.length)}</strong> : null}
-          <div>{coachStatus === "idle" ? <button type="button" onClick={() => void runPronunciationTurn(Math.max(1, pronunciationRound))}>🎙 {t("Retry this round", "未听清，请重试本轮")}</button> : <span role="status">{coachStatus === "listening" ? t("Speak now…", "请开始说…") : coachStatus === "scoring" ? t("Scoring…", "评分中…") : coachStatus === "complete" ? t("Complete—sentence next", "完成，即将组句") : t("Playing model…", "正在播放示范…")}</span>}</div>
+          <nav className="vm-speed-controls" aria-label={t("Model speaking speed", "示范语速")}><button type="button" onClick={() => playWord(.86)}>🔊 {t("Normal", "正常语速")}</button><button type="button" onClick={() => playWord(.58)}>🐢 {t("Slow", "慢速")}</button></nav>
+          <div>{coachStatus === "model" || coachStatus === "listening" || coachStatus === "scoring" ? <span role="status">{coachStatus === "listening" ? t("Speak now…", "请开始说…") : coachStatus === "scoring" ? t("Scoring…", "评分中…") : t("Playing model…", "正在播放示范…")}</span> : <button type="button" onClick={() => coachStatus === "complete" && pronunciationScores.length >= 3 ? setPhase("sentence") : void runPronunciationTurn(Math.max(1, pronunciationRound))}>{t("Continue", "继续")}</button>}</div>
         </div> : null}
-        {phase === "sentence" ? <SentenceBuilderRound autoAdvance lang={lang as any} mode="writing" speechLocale={SPEECH_LOCALES[data?.targetLanguage || ""] || "en-US"} exercises={[{ ...card.sentence, prompt: zh ? card.sentence.promptZh : card.sentence.promptEn }]} onComplete={nextCard}/> : null}
-      </div> : <div className="vm-round-summary" role="dialog" aria-modal="true" aria-labelledby="vm-round-summary-title"><section><span>✦</span><h3 id="vm-round-summary-title">{t("This 20-word round is complete", "本轮 20 个词已完成")}</h3><p>{t("You completed SmartCard answers, three automatic repeats, and sentence building. Continue with the next 20 words?", "已完成智慧卡答题、三次自动跟读和句子组句。要继续下一组 20 个词吗？")}</p><nav><button type="button" onClick={continueTwentyWordRound}>{t("Continue", "继续下一组")} →</button><Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{t("Not now", "暂不继续")}</Link></nav></section></div>}
+        {phase === "sentence" ? <SentenceBuilderRound lang={lang as any} mode="writing" speechLocale={SPEECH_LOCALES[data?.targetLanguage || ""] || "en-US"} exercises={[{ ...card.sentence, prompt: zh ? card.sentence.promptZh : card.sentence.promptEn }]} onComplete={nextCard}/> : null}
+      </div> : <div className="vm-round-summary" role="dialog" aria-modal="true" aria-labelledby="vm-round-summary-title"><section><span>✦</span><h3 id="vm-round-summary-title">{t("This 20-word round is complete", "本轮 20 个词已完成")}</h3><p>{t("You completed 20 word checks, three scored follow-me attempts per word, and sentence building. Continue with the next 20 words?", "你已完成 20 个词的检查、每词三次评分跟读和组句。要继续下一组 20 个词吗？")}</p><nav><button type="button" onClick={continueTwentyWordRound}>{t("Continue", "继续下一组")} →</button><Link href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{t("Not now", "暂不继续")}</Link></nav></section></div>}
     </section>
 
     <section className="vm-library"><header><div><p>{t("VOCABULARY LIBRARY", "词汇库")}</p><h2>{t("My course vocabulary", "我的课程词汇")}</h2></div><div role="tablist">{(["mastered","learning","unlearned"] as Status[]).map(status => <button role="tab" aria-selected={tab === status} className={tab === status ? "active" : ""} onClick={() => { setTab(status); setLibraryPage(1); }} key={status}>{status === "mastered" ? t("Mastered", "学会了") : status === "learning" ? t("Learning", "正在学") : t("Not started", "还未学")} <b>{data.summary[status]}</b></button>)}</div></header>
@@ -280,7 +268,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
     </> : null}
     {!data && !error ? <p className="vm-loading">{t("Preparing today's cards…", "正在整理今天的词卡…")}</p> : null}{error ? <p className="vm-error" role="alert">{error}</p> : null}
     <style>{`.vm-speak>.vm-rounds{margin-top:18px}.vm-rounds b{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:rgba(255,255,255,.12)}.vm-rounds b.active{outline:3px solid #ffe69a;background:#b57514}.vm-rounds b.scored{background:#fff;color:#0a5e4c}.vm-average{display:block;margin-top:12px;font-size:24px}`}</style>
-    <style>{`.vm-study-card{width:100%;min-height:260px;margin:24px 0;padding:28px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer}.vm-study-card strong{font-size:clamp(38px,7vw,76px);overflow-wrap:anywhere}.vm-study-card b,.vm-study-card small{color:#d0e7df}.vm-card-back{text-align:center}.vm-card-back h3{font-size:clamp(35px,6vw,64px)}.vm-card-back p{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.vm-card-back b{padding:9px 13px;border-radius:999px;background:rgba(255,255,255,.15)}`}</style>
+    <style>{`.vm-card-status{margin-top:18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.vm-card-status strong,.vm-card-status span{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.15);font-size:12px;font-weight:950;letter-spacing:.04em}.vm-card-status strong{background:#f1b647;color:#18332b;text-transform:uppercase;text-shadow:none}.vm-study-card{width:100%;min-height:260px;margin:24px 0;padding:28px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(255,255,255,.4);border-radius:20px;background:rgba(255,255,255,.12);color:#fff}.vm-study-card strong{font-size:clamp(38px,7vw,76px);overflow-wrap:anywhere}.vm-study-card b,.vm-study-card small{color:#d0e7df}.vm-study-card button,.vm-step-action button,.vm-answer-feedback button{min-width:160px;min-height:52px;margin-top:14px;padding:10px 20px;border:0;border-radius:15px;background:#fff;color:#09634f;font-weight:950}.vm-card-back{text-align:center}.vm-card-back h3{font-size:clamp(35px,6vw,64px)}.vm-options button.selected{border-color:#91f1ce;background:#fff;color:#09634f;outline:3px solid #69d6b1}.vm-step-action{max-width:none;margin-top:18px;padding:18px 0 0;display:flex;justify-content:flex-end;border-top:1px solid rgba(255,255,255,.3)}.vm-step-action button:disabled{opacity:.42}.vm-answer-feedback{margin-top:28px;padding:24px;border-radius:18px;background:#dff9e9;color:#075c48;text-align:left;text-shadow:none}.vm-answer-feedback.incorrect{background:#ffe3df;color:#9b3027}.vm-answer-feedback>strong{font-size:25px}.vm-answer-feedback p{line-height:1.6}.vm-answer-feedback button{display:block;margin-left:auto;background:#087d62;color:#fff}.vm-answer-feedback.incorrect button{background:#d84a3d}.vm-speed-controls{margin:22px 0;display:flex;justify-content:center;gap:10px}.vm-speed-controls button{min-height:50px;padding:11px 16px;border:1px solid rgba(255,255,255,.48);border-radius:14px;background:rgba(255,255,255,.14);color:#fff;font-weight:900}.vm-speak>.vm-speed-controls{margin-top:18px}@media(max-width:600px){.vm-card-status{align-items:stretch}.vm-card-status strong,.vm-card-status span{flex:1;text-align:center}.vm-step-action button,.vm-answer-feedback button{width:100%}.vm-speed-controls{display:grid;grid-template-columns:1fr 1fr}}`}</style>
     <style>{`.vm-practice-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.vm-practice-tools>button{min-height:42px;padding:0 15px;border:1px solid #b5c6bf;border-radius:999px;background:#eef2f0;color:#40564e;font-weight:850}.vm-practice-tools>button.on{border-color:#087d62;background:#ddf7ed;color:#076650}.vm-practice-tools>strong{font-size:34px;color:#087d62}.vm-practice-tools>strong span{color:#8a9691;font-size:17px}.vm-library-note{margin:20px 0 0;color:#60716b;line-height:1.6}.vm-word-grid .vm-word-start{min-width:0;padding:17px;display:flex;gap:13px;border:1px solid #d8e1dd;border-radius:16px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}.vm-word-grid .vm-word-start:hover,.vm-word-grid .vm-word-start:focus-visible{border-color:#087d62;background:#effaf5;transform:translateY(-2px)}.vm-word-grid .vm-word-start:disabled{opacity:.55}.vm-word-grid .vm-word-start>span{font-size:28px}.vm-word-grid .vm-word-start>div{min-width:0}.vm-pagination{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:14px}.vm-pagination button{min-height:44px;padding:0 17px;border:1px solid #b9cec5;border-radius:999px;background:#fff;color:#08745e;font-weight:850}.vm-pagination button:disabled{opacity:.4}.vm-pagination span{font-weight:900}@media(max-width:600px){.vm-practice>header{align-items:flex-start;flex-direction:column}.vm-practice-tools{width:100%;justify-content:space-between}}`}</style>
     <style>{`.vm-round-summary{position:fixed;z-index:1000;inset:0;padding:18px;display:grid;place-items:center;background:rgba(5,29,24,.75)}.vm-round-summary>section{width:min(560px,100%);padding:clamp(28px,5vw,48px);border-radius:26px;background:#f7f3ea;color:#17342c;text-align:center}.vm-round-summary>section>span{font-size:64px;color:#e5a326}.vm-round-summary h3{font-size:clamp(30px,5vw,48px)}.vm-round-summary p{line-height:1.7}.vm-round-summary nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}.vm-round-summary button,.vm-round-summary a{min-height:52px;padding:12px;display:grid;place-items:center;border:1px solid #a9c2b8;border-radius:14px;background:#fff;color:#17342c;font-weight:900;text-decoration:none}.vm-round-summary button{border:0;background:#087d62;color:#fff}@media(max-width:560px){.vm-round-summary nav{grid-template-columns:1fr}}`}</style>
     <style>{styles}</style>

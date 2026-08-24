@@ -8,6 +8,12 @@ type Exercise = {
   prompt: string;
   audioText?: string;
   answerTokens: readonly string[];
+  sourceLanguage?: string;
+  answerLanguage?: string;
+};
+
+const LANGUAGE_NAMES: Record<string, { zh: string; en: string }> = {
+  zh: { zh: "中文", en: "Chinese" }, en: { zh: "英语", en: "English" }, es: { zh: "西班牙语", en: "Spanish" }, ja: { zh: "日语", en: "Japanese" }, ko: { zh: "韩语", en: "Korean" }, fr: { zh: "法语", en: "French" }, de: { zh: "德语", en: "German" }, ru: { zh: "俄语", en: "Russian" }, it: { zh: "意大利语", en: "Italian" }, pt: { zh: "葡萄牙语", en: "Portuguese" }, ar: { zh: "阿拉伯语", en: "Arabic" }, hi: { zh: "印地语", en: "Hindi" },
 };
 
 function hash(value: string) {
@@ -47,6 +53,8 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   const built = selectedTiles.map(tile => tile.label).join(" ");
   const expected = exercise?.answerTokens.join(" ") || "";
   const complete = index >= exercises.length;
+  const sourceName = exercise?.sourceLanguage ? LANGUAGE_NAMES[exercise.sourceLanguage]?.[lang] || exercise.sourceLanguage : "";
+  const answerName = exercise?.answerLanguage ? LANGUAGE_NAMES[exercise.answerLanguage]?.[lang] || exercise.answerLanguage : "";
 
   useEffect(() => {
     setIndex(0); setSelected([]); setAnswers([]); setFeedback("idle");
@@ -85,7 +93,7 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   return <section className={`sentence-builder ${feedback}`} aria-label={mode === "listening" ? (zh ? "听力组句练习" : "Listening sentence builder") : (zh ? "写作组句练习" : "Writing sentence builder")}>
     <header><button type="button" className="sentence-close" aria-label={zh ? "清空本题" : "Clear this answer"} onClick={() => { setSelected([]); setFeedback("idle"); }}>×</button><div className="sentence-progress"><span style={{ width: `${(index + 1) * 100 / exercises.length}%` }}/></div><strong>{index + 1} / {exercises.length}</strong></header>
     <div className="sentence-prompt">
-      <p>{mode === "listening" ? (zh ? "选择听到的内容" : "Build what you hear") : (zh ? "用所学语言写出这句话" : "Build this sentence in the language you are learning")}</p>
+      <p>{sourceName && answerName ? (mode === "listening" ? (zh ? `听${sourceName}，用${answerName}组成意思` : `Listen in ${sourceName}; build the meaning in ${answerName}`) : (zh ? `阅读${sourceName}，用${answerName}组句` : `Read in ${sourceName}; build the sentence in ${answerName}`)) : mode === "listening" ? (zh ? "选择听到的内容" : "Build what you hear") : (zh ? "用所学语言写出这句话" : "Build this sentence in the language you are learning")}</p>
       {mode === "listening" ? <nav><button type="button" onClick={() => play(.86)} aria-label={zh ? "正常速度播放" : "Play at normal speed"}>🔊</button><button type="button" onClick={() => play(.58)} aria-label={zh ? "慢速播放" : "Play slowly"}>🐢</button></nav> : <blockquote>{exercise.prompt}</blockquote>}
     </div>
     <div className="sentence-answer" aria-label={zh ? "已选择的词" : "Selected words"}>{selectedTiles.length ? selectedTiles.map(tile => <button type="button" onClick={() => feedback === "idle" && setSelected(current => current.filter(id => id !== tile.id))} key={tile.id}>{tile.label}</button>) : <span>{zh ? "点选下方词语组成句子" : "Choose words below to build the sentence"}</span>}</div>

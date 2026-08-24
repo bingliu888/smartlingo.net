@@ -9,6 +9,8 @@ const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   form: `word ${index + 1}`,
   pronunciation: `/word ${index + 1}/`,
   meaning: `词义 ${index + 1}`,
+  difficulty: 1 + Math.floor(index / 250),
+  frequencyDegree: 10 - (index % 10),
 }));
 
 test("Daily Sprint offers the four requested durations and one complete five-skill round per five minutes", () => {
@@ -100,7 +102,7 @@ test("Home feature buttons use the same canonical pages as navigation, and the t
   assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
 });
 
-test("open Beginner Sprint is anonymous-only when signed out and never persists its local result", async () => {
+test("anonymous Sprint always starts fresh while signed-in members resume D1 checkpoints", async () => {
   for (const language of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.equal(isPublicBeginnerSprintClassId(`course_${language}_basic`), true);
   }
@@ -124,8 +126,12 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
   assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);
   assert.match(sprintRoute, /anonymous: value\.anonymous/);
-  assert.match(sprintClient, /if\(anonymous\)\{setResult\(gradeSprintPlan\(plan,responsesRef\.current\)\)/);
-  assert.match(sprintClient, /本次匿名学习不会写入账户或数据库/);
+  assert.doesNotMatch(sprintClient, /document\.cookie|localStorage|sessionStorage|resumeRunId/);
+  assert.match(sprintClient, /if \(!plan \|\| anonymous \|\| !runId/);
+  assert.match(sprintClient, /action: "checkpoint"/);
+  assert.match(sprintRoute, /progress_json AS progressJson/);
+  assert.match(sprintRoute, /status='in_progress' ORDER BY started_at DESC LIMIT 1/);
+  assert.match(sprintRoute, /if \(value\.anonymous \|\| !value\.user\) return Response\.json\(\{ saved: false, anonymous: true \}\)/);
   assert.match(sprintClient, /免费注册/);
   assert.match(sprintClient, /登录/);
   assert.match(sprintClient, /recognition\.stop\(\)/);
@@ -139,9 +145,9 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintClient, /选择正确的意思，或点击卡片翻面/);
   assert.match(sprintClient, /vocabularyAnswers/);
   assert.match(sprintClient, /正确答案：/);
-  assert.match(sprintClient, /自动跟读句子三遍，再选择正确意思/);
+  assert.match(sprintClient, /跟读句子三遍，再选择正确意思/);
   assert.match(sprintClient, /SentenceBuilderRound/);
-  assert.match(sprintClient, /autoAdvance/);
+  assert.doesNotMatch(sprintClient, /<SentenceBuilderRound autoAdvance/);
   assert.match(sentenceBuilder, /const exerciseKey = exercises\.map\(item => item\.id\)\.join\("\|"\)/);
   assert.match(sentenceBuilder, /\}, \[exerciseKey\]\)/);
   assert.doesNotMatch(sentenceBuilder, /\}, \[exercises\]\)/);
@@ -150,6 +156,22 @@ test("open Beginner Sprint is anonymous-only when signed out and never persists 
   assert.match(sprintClient, /是否延长 5 分钟完成/);
   assert.match(sprintClient, /setRemainingSeconds\(300\)/);
   assert.match(sprintClient, /否，退出/);
+  assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,sequence,id/);
+  assert.doesNotMatch(sprintRoute, /resumeRunId/);
+});
+
+test("sentence building always crosses from one language to another", () => {
+  const zhTarget = buildSprintPlan({ runId: "bridge-zh", language: "zh", level: "beginner", uiLang: "zh", durationMinutes: 5, vocabulary });
+  const enTarget = buildSprintPlan({ runId: "bridge-en", language: "en", level: "beginner", uiLang: "en", durationMinutes: 5, vocabulary });
+  for (const plan of [zhTarget, enTarget]) {
+    const round = plan.rounds[0];
+    assert.notEqual(round.listening.sourceLanguage, round.listening.answerLanguage);
+    assert.notEqual(round.writing.sourceLanguage, round.writing.answerLanguage);
+    assert.notEqual(round.listening.expected, round.listening.audioText);
+  }
+  const sentenceBuilder = readFileSync(new URL("../components/SentenceBuilderRound.tsx", import.meta.url), "utf8");
+  assert.match(sentenceBuilder, /Listen in \$\{sourceName\}; build the meaning in \$\{answerName\}/);
+  assert.match(sentenceBuilder, /Read in \$\{sourceName\}; build the sentence in \$\{answerName\}/);
 });
 
 test("migration adds idempotent rank and redemption ownership boundaries", () => {
@@ -159,4 +181,11 @@ test("migration adds idempotent rank and redemption ownership boundaries", () =>
   assert.match(migration, /smartlingo_digital_reward_owner_uq/);
   assert.match(migration, /entry_type IN \([^\n]*'digital_redeem'/);
   assert.match(migration, /smartlingo_course_credit_balance_insert_trg/);
+});
+
+test("Sprint resume migration stores member-only checkpoints", () => {
+  const migration = readFileSync(new URL("../drizzle/0157_daily_sprint_resume.sql", import.meta.url), "utf8");
+  assert.match(migration, /ADD COLUMN progress_json TEXT NOT NULL DEFAULT '\{\}' CHECK\(json_valid\(progress_json\)\)/);
+  assert.match(migration, /ADD COLUMN checkpointed_at INTEGER/);
+  assert.match(migration, /user_id,class_id,status,started_at DESC/);
 });
