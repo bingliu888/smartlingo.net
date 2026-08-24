@@ -29,6 +29,7 @@ type ProgressRow = {
   lastScore: number | null; dueAt: number | null; lastReviewedAt: number | null;
   successfulDates: string; firstLearnedAt: number | null; masteredAt: number | null;
 };
+type PracticeSessionRow = { id: string; deckIdsJson: string; currentIndex: number };
 
 const MODES = ["recognition", "recall", "listening", "spelling", "cloze"] as const;
 const LEVEL_RANK: Record<string, number> = { beginner: 1, intermediate: 2, advanced: 3 };
@@ -118,6 +119,32 @@ async function progressFor(database: ReturnType<typeof getDatabase>, userId: str
   return new Map((result.results || []).map(row => [row.wordKey, row]));
 }
 
+function sessionDeckIds(row: PracticeSessionRow | null) {
+  if (!row) return [];
+  try {
+    const parsed = JSON.parse(row.deckIdsJson) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string").slice(0, 20)
+      : [];
+  } catch { return []; }
+}
+
+async function practiceSessionFor(database: ReturnType<typeof getDatabase>, userId: string, pathId: string, localDate: string) {
+  return database.prepare(`SELECT id,deck_ids_json AS deckIdsJson,current_index AS currentIndex
+    FROM smartlingo_vocabulary_practice_sessions WHERE user_id=? AND path_id=? AND local_date=? LIMIT 1`)
+    .bind(userId, pathId, localDate).first<PracticeSessionRow>();
+}
+
+async function savePracticeSession(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string }, localDate: string, deckIds: string[]) {
+  const now = Math.floor(Date.now() / 1000);
+  await database.prepare(`INSERT INTO smartlingo_vocabulary_practice_sessions
+    (id,user_id,path_id,class_id,local_date,deck_ids_json,current_index,created_at,updated_at)
+    VALUES(?,?,?,?,?,?,0,?,?)
+    ON CONFLICT(user_id,path_id,local_date) DO UPDATE SET class_id=excluded.class_id,
+    deck_ids_json=excluded.deck_ids_json,current_index=0,updated_at=excluded.updated_at`)
+    .bind(createId(), userId, access.pathId, access.classId, localDate, JSON.stringify(deckIds.slice(0, 20)), now, now).run();
+}
+
 function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<string, ProgressRow>, now: number, adaptiveSentence?: SmartLingoSentenceExercise) {
   const row = progress.get(progressKey(item));
   const state = memoryState(item, row, now);
@@ -202,11 +229,18 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     .sort((a, b) => a.difficulty - b.difficulty || b.frequencyDegree - a.frequencyDegree || a.sequence - b.sequence);
   const due = started.filter(item => (progress.get(progressKey(item))?.dueAt ?? 0) <= now);
   const startIndex = startWordId ? catalog.findIndex(item => item.id === startWordId) : -1;
-  const selected = startIndex >= 0
+  const proposed = startIndex >= 0
     ? [...catalog.slice(startIndex), ...catalog.slice(0, startIndex)].slice(0, 20)
     : [...due, ...fresh.slice(0, 20), ...started]
       .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
       .slice(0, 20);
+  const existingSession = startWordId ? null : await practiceSessionFor(database, userId, access.pathId, localDate);
+  const storedIds = sessionDeckIds(existingSession);
+  const storedDeck = storedIds.map(id => catalog.find(item => item.id === id)).filter((item): item is CatalogRow => Boolean(item));
+  const reuseSession = Boolean(existingSession && storedIds.length === storedDeck.length && storedDeck.length > 0);
+  const selected = reuseSession ? storedDeck : proposed;
+  if (!reuseSession || startWordId) await savePracticeSession(database, userId, access, localDate, selected.map(item => item.id));
+  const sessionPosition = reuseSession ? Math.min(Math.max(0, Number(existingSession?.currentIndex || 0)), selected.length) : 0;
   const adaptive = selected.length ? await adaptiveSentenceRounds({
     database,
     language: access.targetLanguage as SmartLingoLearningLanguage,
@@ -227,6 +261,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     summary,
     learningReleaseId: adaptive?.releaseId || "graded-catalog",
     sentenceSource: adaptive?.sourceType || "graded-catalog",
+    sessionPosition,
     dailyDeck: selected.map((item, index) => cardPayload(item, catalog, progress, now, adaptive?.rounds[Math.floor(index / 5)]?.[index % 5])),
     items,
     reports: [{ localDate, ...summary }, ...(reportResult.results || []).filter(report => (report as { localDate?: string }).localDate !== localDate)].slice(0, 21),
@@ -255,6 +290,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   const timeZone = safeTimeZone(body.timeZone || null);
   const now = Math.floor(Date.now() / 1000);
   const localDate = localDateKey(now, timeZone);
+  if (body.action === "advance_session") {
+    const session = await practiceSessionFor(auth.database, auth.user.id, auth.access.pathId, localDate);
+    const deckIds = sessionDeckIds(session);
+    const position = Math.min(Math.max(0, Number(session?.currentIndex || 0)), deckIds.length);
+    if (!session || deckIds[position] !== body.cardId) {
+      return Response.json({ error: "The vocabulary session is stale; reload today's deck" }, { status: 409 });
+    }
+    const nextPosition = Math.min(position + 1, deckIds.length);
+    await auth.database.prepare(`UPDATE smartlingo_vocabulary_practice_sessions SET current_index=?,updated_at=?
+      WHERE id=? AND current_index=?`).bind(nextPosition, now, session.id, position).run();
+    return Response.json({ sessionPosition: nextPosition });
+  }
   const level = auth.access.packageTier || auth.access.level || "beginner";
   const catalog = await catalogFor(auth.database, auth.access.targetLanguage, level);
   const item = catalog.find(candidate => candidate.id === body.cardId);

@@ -23,7 +23,7 @@ type Summary = { total: number; mastered: number; learning: number; unlearned: n
 type Report = Summary & { localDate: string };
 type Payload = {
   localDate: string; targetLanguage: string; level: string; methodology: { days: number[]; minimumModes: number };
-  summary: Summary; dailyDeck: Card[]; items: LibraryItem[]; reports: Report[]; correct?: boolean; error?: string;
+  summary: Summary; sessionPosition: number; dailyDeck: Card[]; items: LibraryItem[]; reports: Report[]; correct?: boolean; error?: string;
 };
 type SpeechRecognitionLike = {
   lang: string; interimResults: boolean; continuous: boolean;
@@ -67,6 +67,10 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
     const payload = await response.json().catch(() => ({})) as Payload;
     if (!response.ok) throw new Error(payload.error || "LOAD_FAILED");
     setData(payload);
+    const nextIndex = Math.min(Math.max(0, Number(payload.sessionPosition || 0)), payload.dailyDeck.length);
+    setIndex(nextIndex); setSelectedOptionId(""); setTyped(""); setRevealed(false); setAnswerCorrect(null);
+    setPhase(nextIndex >= payload.dailyDeck.length ? "done" : "answer"); setSpeechMessage("");
+    setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
   }, [classId, zone, zh]);
 
   useEffect(() => {
@@ -155,9 +159,23 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
       : `${t("Remember this word", "请记住这个词")}：${card?.form || ""} · ${card ? meaning(card) : ""}。${t("Now follow the model three times.", "现在跟读三次。")}`);
   }
 
-  function nextCard() {
-    setIndex(current => Math.min(current + 1, Math.max(0, cards.length - 1)));
-    setSelectedOptionId(""); setTyped(""); setRevealed(false); setAnswerCorrect(null); setPhase(index + 1 >= cards.length ? "done" : "answer"); setSpeechMessage("");
+  async function nextCard() {
+    if (!card || busy) return;
+    setBusy(true); setError("");
+    const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/vocabulary`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "advance_session", cardId: card.id, timeZone: zone }),
+    });
+    const payload = await response.json().catch(() => ({})) as { sessionPosition?: number; error?: string };
+    setBusy(false);
+    if (!response.ok || typeof payload.sessionPosition !== "number") {
+      setError(payload.error || t("Unable to save the next position. Try Continue again.", "暂时无法保存下一位置，请再次点击继续。"));
+      setPhase("feedback");
+      return;
+    }
+    const nextIndex = Math.min(Math.max(0, payload.sessionPosition), cards.length);
+    setIndex(nextIndex);
+    setSelectedOptionId(""); setTyped(""); setRevealed(false); setAnswerCorrect(null); setPhase(nextIndex >= cards.length ? "done" : "answer"); setSpeechMessage("");
     setPronunciationRound(0); setPronunciationScores([]); setCoachStatus("idle");
   }
 

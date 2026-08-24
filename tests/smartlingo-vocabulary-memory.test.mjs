@@ -5,12 +5,13 @@ import test from "node:test";
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("21-day vocabulary center is database-backed, server-graded, and fully bilingual", async () => {
-  const [route, workspace, page, menu, migration] = await Promise.all([
+  const [route, workspace, page, menu, migration, resumeMigration] = await Promise.all([
     read("../app/api/classes/[classId]/vocabulary/route.ts"),
     read("../components/VocabularyMemoryWorkspace.tsx"),
     read("../app/[lang]/classes/[classId]/vocabulary/page.tsx"),
     read("../components/CourseTrainingMenu.tsx"),
     read("../drizzle/0126_vocabulary_21_day_memory.sql"),
+    read("../drizzle/0168_vocabulary_practice_resume.sql"),
   ]);
   assert.match(route, /smartlingo_vocabulary_items/);
   assert.match(route, /review_status='published'/);
@@ -46,6 +47,13 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(route, /return Response\.json\(\{ correct, summary \}\)/);
   assert.doesNotMatch(route, /return Response\.json\(\{ correct, \.\.\.\(await responsePayload/);
   assert.match(workspace, /\{ \.\.\.current, summary: payload\.summary! \}/);
+  assert.match(route, /smartlingo_vocabulary_practice_sessions/);
+  assert.match(route, /body\.action === "advance_session"/);
+  assert.match(route, /sessionPosition/);
+  assert.match(workspace, /action: "advance_session"/);
+  assert.match(workspace, /payload\.sessionPosition/);
+  assert.match(resumeMigration, /UNIQUE\(user_id,path_id,local_date\)/);
+  assert.match(resumeMigration, /current_index INTEGER NOT NULL DEFAULT 0 CHECK\(current_index BETWEEN 0 AND 20\)/);
   assert.match(workspace, /practicePercent/);
   assert.match(workspace, /role="progressbar"/);
   assert.match(workspace, /learning-world-\$\{timeScene\}\.jpg/);

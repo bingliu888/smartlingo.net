@@ -442,6 +442,13 @@
       "when": 1787562000000,
       "tag": "0167_learning_days_rewards_rankings",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "6",
+      "when": 1787565600000,
+      "tag": "0168_vocabulary_practice_resume",
+      "breakpoints": true
     }
   ]
 }
