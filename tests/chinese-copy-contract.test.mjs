@@ -103,7 +103,7 @@ test("every Chinese route inherits localized language-learning metadata", async 
   assert.match(layout, /SmartLingo — 从第一天开口，与课程一起进步/);
   assert.match(layout, /template: "%s \| SmartLingo"/);
   assert.match(home, /metaTitle: "SmartLingo — 从第一天开口"/);
-  assert.match(programs, /lang === "zh" \? "语言学习路径" : "Language learning paths"/);
+  assert.match(programs, /interfaceText\(locale, "Language learning paths", "语言学习路径"\)/);
   assert.match(project, /lang === "zh" \? "项目进展" : "Project progress"/);
   assert.doesNotMatch(`${layout}\n${home}\n${programs}`, /人工智能实操学习与会员开班|21 天学会/);
 });

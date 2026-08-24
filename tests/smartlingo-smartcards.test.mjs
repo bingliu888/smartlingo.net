@@ -118,17 +118,11 @@ test("0127 keeps learner-facing meanings free of category and language metadata"
 
 test("public game and redemption routes keep scores and balances server-authoritative", () => {
   const publicRoute = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
-  const classRoute = readFileSync(new URL("../app/api/classes/[classId]/smartcards/route.ts", import.meta.url), "utf8");
-  const game = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   const redemptionRoute = readFileSync(new URL("../app/api/billing/credits/redeem/route.ts", import.meta.url), "utf8");
   assert.match(publicRoute, /scoreSmartCardPronunciation/);
   assert.match(publicRoute, /startingPoints \+ correctCount \* POLICY\.correctPoints/);
   assert.doesNotMatch(publicRoute, /body\.(?:score|points|rewardPoints|balancePoints)/);
   assert.match(publicRoute, /HttpOnly; Secure; SameSite=Lax/);
-  assert.match(publicRoute, /ORDER BY item\.difficulty ASC,item\.frequency_degree DESC/);
-  assert.match(classRoute, /difficulty ASC,frequency_degree DESC/);
-  assert.match(game, /card\.difficulty/);
-  assert.match(game, /card\.frequencyDegree/);
   assert.match(redemptionRoute, /COALESCE\(SUM\(points\),0\)/);
   assert.match(redemptionRoute, /-value\.course\.priceCents/);
   assert.match(redemptionRoute, /provider_subscription_id[^]*credit:/);

@@ -30,12 +30,29 @@ test("college catalog uses the four requested specialties and adds the three adm
   assert.deepEqual(sortCollegesByCode([{code:"820104"},{code:"820101"},{code:"820103"},{code:"820102"}]).map(item=>item.code),["820101","820102","820103","820104"]);
 });
 
-test("creating a college atomically creates and places its introduction",async()=>{
+test("creating a college atomically creates and places its introduction for an authorized coordinator",async()=>{
   const data=await read("lib/smartlingo-colleges.ts"),route=await read("app/api/colleges/route.ts");
   assert.match(data,/INSERT INTO smartlingo_language_classes/);
   assert.match(data,/kind,position,created_at\) VALUES\(\?,\?,'introductory',0/);
   assert.match(data,/getDatabase\(\)\.batch/);
-  assert.match(route,/getAdminUser/);
+  assert.match(route,/canCreateCollege/);
+  assert.match(route,/College Coordinator subscription required/);
+});
+
+test("My colleges owns the coordinator upgrade and college creation journey",async()=>{
+  const [page,header,create,checkout,complete,webhook,migration]=await Promise.all([
+    read("app/[lang]/colleges/mine/page.tsx"),read("components/HeaderAccount.tsx"),
+    read("app/[lang]/college/create/page.tsx"),read("app/api/billing/platform/checkout/route.ts"),
+    read("app/api/billing/platform/complete/route.ts"),read("app/api/billing/card/webhook/route.ts"),
+    read("drizzle/0159_college_coordinator_subscription.sql"),
+  ]);
+  for(const marker of ["College Coordinator","学院协调员","Create college","创建学院"])assert.match(page,new RegExp(marker));
+  assert.match(page,/<strong>\$\{\(COLLEGE_COORDINATOR_MONTHLY_CENTS \/ 100\)\.toFixed\(0\)\}<\/strong>/);
+  assert.doesNotMatch(page,/\$\$\{/);
+  assert.match(header,/colleges\/mine/);assert.match(create,/canCreateCollege/);
+  for(const source of [checkout,complete,webhook])assert.match(source,/coordinator/);
+  assert.match(checkout,/10_000|COLLEGE_COORDINATOR_MONTHLY_CENTS/);
+  assert.match(migration,/stripe_subscription_id/);
 });
 
 test("directory supports code entry, search, tags, access filters, and My colleges",async()=>{

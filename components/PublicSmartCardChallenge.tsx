@@ -14,8 +14,6 @@ type Card = {
     meaningEn: string;
     meaningZh: string;
     sceneKey: string;
-    difficulty: number;
-    frequencyDegree: number;
 };
 type Policy = {
     startingPoints: number;
@@ -141,11 +139,6 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const cards = useMemo(() => data?.deck?.cards || [], [data?.deck?.cards]);
     const card = cards[index] || null;
     const policy = data?.policy || { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100, challengeSeconds: 10, winnerBonusBasisPoints: 1000 };
-    useEffect(() => {
-        const board = document.querySelector<HTMLElement>(".smart-game .game-board");
-        if (!board || !card) return;
-        board.dataset.learningPriority = zh ? `难度 ${card.difficulty}/5  ·  常用度 ${card.frequencyDegree}/10` : `Difficulty ${card.difficulty}/5  ·  Frequency ${card.frequencyDegree}/10`;
-    }, [card, zh]);
     useEffect(() => { if (cards.length && !evidence.current.length)
         evidence.current = cards.map(item => ({ cardId: item.id, choices: [], transcripts: [] })); }, [cards]);
     const options = useMemo(() => { if (!card)

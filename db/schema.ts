@@ -156,6 +156,8 @@ export const subscriptions = sqliteTable("subscriptions", {
   userId: text("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
   paypalSubscriptionId: text("paypal_subscription_id").unique(),
   paypalPlanId: text("paypal_plan_id"),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripeCustomerId: text("stripe_customer_id"),
   cadence: text("cadence").notNull(),
   status: text("status").notNull().default("pending"),
   trialEndsAt: integer("trial_ends_at"),

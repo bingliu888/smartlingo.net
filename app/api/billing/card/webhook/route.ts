@@ -1,4 +1,5 @@
 import { stripeRequest, runtimeValue, syncStripeCourseSubscription, type StripeSubscription } from "@/lib/stripe-course-subscription";
+import { syncStripePlatformSubscription } from "@/lib/stripe-platform-subscription";
 
 function hex(bytes: ArrayBuffer) {
   return Array.from(new Uint8Array(bytes), value => value.toString(16).padStart(2, "0")).join("");
@@ -42,7 +43,11 @@ export async function POST(request: Request) {
     }
     const userId = subscription?.metadata?.user_id;
     const classId = subscription?.metadata?.class_id;
-    if (subscription && userId && classId) await syncStripeCourseSubscription(userId, classId, subscription);
+    if (subscription && userId && subscription.metadata?.scope === "platform" && subscription.metadata?.cadence === "coordinator") {
+      await syncStripePlatformSubscription(userId, subscription);
+    } else if (subscription && userId && classId) {
+      await syncStripeCourseSubscription(userId, classId, subscription);
+    }
     return Response.json({ received: true });
   } catch {
     return Response.json({ error: "Stripe event could not be synchronized" }, { status: 502 });

@@ -9,7 +9,7 @@ type DeckRow = {
   level: string; title: string; version: number; visibility: string; shareToken: string;
   itemCount: number; bestScore: number | null; createdAt: number;
 };
-type CardRow = { id: string; form: string; pronunciation: string; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number; frequencyDegree: number };
+type CardRow = { id: string; form: string; pronunciation: string; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number };
 
 function dateFor(timeZone: unknown) {
   try {
@@ -38,10 +38,10 @@ async function courseAccess(request: Request, classId: string) {
 
 async function deckItems(database: ReturnType<typeof getDatabase>, deckId: string) {
   const result = await database.prepare(`SELECT item.id,item.form,item.pronunciation,
-    item.meaning_en AS meaningEn,item.meaning_zh AS meaningZh,item.scene_key AS sceneKey,item.difficulty,item.frequency_degree AS frequencyDegree
+    item.meaning_en AS meaningEn,item.meaning_zh AS meaningZh,item.scene_key AS sceneKey,item.difficulty
     FROM smartlingo_smartcard_items deck_item
     JOIN smartlingo_vocabulary_items item ON item.id=deck_item.vocabulary_item_id
-    WHERE deck_item.deck_id=? ORDER BY item.difficulty ASC,item.frequency_degree DESC,deck_item.position,item.id`).bind(deckId).run<CardRow>();
+    WHERE deck_item.deck_id=? ORDER BY deck_item.position`).bind(deckId).run<CardRow>();
   return result.results || [];
 }
 
@@ -98,7 +98,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
     const level = access.course.packageTier === "advanced" ? "advanced" : access.course.packageTier === "intermediate" ? "intermediate" : "beginner";
     const vocabulary = await access.database.prepare(`SELECT id FROM smartlingo_vocabulary_items
       WHERE target_language=? AND review_status='published' AND level IN (?, 'beginner')
-      ORDER BY CASE level WHEN ? THEN 0 ELSE 1 END,difficulty ASC,frequency_degree DESC,sequence,id LIMIT 12`)
+      ORDER BY CASE level WHEN ? THEN 0 ELSE 1 END, difficulty, sequence LIMIT 12`)
       .bind(access.course.targetLanguage, level, level).run<{ id: string }>();
     const cards = vocabulary.results || [];
     if (cards.length < 4) return Response.json({ error: "Reviewed vocabulary is not ready for this course yet" }, { status: 409 });

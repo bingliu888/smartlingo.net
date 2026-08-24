@@ -6,7 +6,7 @@ export type StripeSubscription = {
   trial_start?: number | null;
   trial_end?: number | null;
   current_period_end?: number | null;
-  metadata?: { class_id?: string; user_id?: string };
+  metadata?: { class_id?: string; user_id?: string; cadence?: string; scope?: string };
 };
 
 export async function runtimeValue(name: string) {

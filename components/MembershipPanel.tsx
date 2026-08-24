@@ -85,14 +85,13 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
 
     <section className="member-panel">
       <div className="member-heading">
-        <div><p className="section-kicker">{zh ? "学习、开班与平台订阅" : "LEARNING, COURSES & PLATFORM PLANS"}</p><h2>{zh ? "免费学习，也可以带领自己的语言班。" : "Learn free—and lead your own language class."}</h2></div>
-        <Link className="primary-button" href={`/${lang}/classes?mine=1`}>{zh ? "打开我的课程" : "Open my courses"}</Link>
+        <div><p className="section-kicker">{zh ? "平台方案与推荐" : "PLATFORM PLANS & REFERRALS"}</p><h2>{zh ? "管理方案、推荐关系和会员偏好。" : "Manage your plan, referrals, and member preferences."}</h2></div>
+        <Link className="primary-button" href={`/${lang}/colleges/mine`}>{zh ? "打开我的学院" : "Open My colleges"}</Link>
       </div>
 
       <div className="member-grid membership-tier-grid">
         <article className={plan === (zh ? "免费方案" : "Free") ? "active" : ""}><small>{zh ? "课程预览" : "COURSE PREVIEW"}</small><strong>{zh ? "选择课程" : "Choose course"}</strong><p>{zh ? "浏览十二种语言与三级固定月费课程；每门课程首月免费。" : "Browse twelve languages and three fixed monthly levels; every course starts with a free month."}</p></article>
         <article className={plan === (zh ? "进阶方案" : "Plus") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "进阶方案" : "Plus"}</strong><p>{zh ? "更多复习、实时语音额度和个人进度分析。" : "Expanded review, live-audio allowance, and personal progress insights."}</p></article>
-        <article className={plan === (zh ? "协调员方案" : "Coordinator") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "协调员方案" : "Coordinator"}</strong><p>{zh ? "更高课程人数、作业、答疑时间和运营分析；不开启开班资格门槛。" : "Higher roster limits, assignments, office hours, and operations analytics—without gating the right to create a class."}</p></article>
       </div>
 
       <div className="member-grid">

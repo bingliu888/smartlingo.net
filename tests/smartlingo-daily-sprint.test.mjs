@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
 import { isPublicBeginnerSprintClassId, requirePublicBeginnerSprintCourse } from "../lib/smartlingo-learning-access.ts";
 
@@ -78,7 +77,8 @@ test("course and Play surfaces expose Daily Sprint, rankings, and digital redemp
   assert.match(play, /play\/redeem/);
   assert.ok(play.indexOf("play/redeem") < play.lastIndexOf("PlayFreeTrialPicker"));
   assert.match(dashboard, /DashboardDailySprint/);
-  assert.match(dashboardSprint, /添加新语言/);
+  assert.match(dashboardSprint, /添加语言/);
+  assert.equal((dashboardSprint.match(/Add language/g) || []).length, 1);
   assert.match(dashboardSprint, /minutes\[language\.code\] \|\| 10/);
   assert.match(sprintRoute, /requireOfficialClassMembership/);
   assert.match(sprintRoute, /status='completed'/);
@@ -103,7 +103,7 @@ test("Home feature buttons use the same canonical pages as navigation, and the t
   assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
 });
 
-test("picker starts a fresh anonymous Sprint while refresh and signed-in members resume checkpoints", async () => {
+test("anonymous Sprint always starts fresh while signed-in members resume D1 checkpoints", async () => {
   for (const language of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.equal(isPublicBeginnerSprintClassId(`course_${language}_basic`), true);
   }
@@ -120,26 +120,19 @@ test("picker starts a fresh anonymous Sprint while refresh and signed-in members
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
   const sprintClient = readFileSync(new URL("../components/DailySprint.tsx", import.meta.url), "utf8");
   const sentenceBuilder = readFileSync(new URL("../components/SentenceBuilderRound.tsx", import.meta.url), "utf8");
-  const picker = readFileSync(new URL("../components/PlayDailySprintPicker.tsx", import.meta.url), "utf8");
   assert.match(sprintPage, /query\.source==="play"/);
   assert.match(sprintPage, /isPublicBeginnerSprintClassId\(classId\)/);
   assert.match(sprintPage, /query\.source==="play"\|\|isPublicBeginnerSprintClassId\(classId\)/);
   assert.match(sprintPage, /publicPlay=\{publicPlay\}/);
-  assert.match(sprintPage, /freshAnonymous=\{query\.fresh==="1"\}/);
-  assert.match(picker, /source=play&fresh=1/);
   assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
   assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);
   assert.match(sprintRoute, /anonymous: value\.anonymous/);
   assert.doesNotMatch(sprintClient, /document\.cookie|localStorage|sessionStorage|resumeRunId/);
-  assert.match(sprintClient, /if \(!plan \|\| !runId/);
+  assert.match(sprintClient, /if \(!plan \|\| anonymous \|\| !runId/);
   assert.match(sprintClient, /action: "checkpoint"/);
   assert.match(sprintRoute, /progress_json AS progressJson/);
   assert.match(sprintRoute, /status='in_progress' ORDER BY started_at DESC LIMIT 1/);
-  assert.match(sprintRoute, /smartlingo_guest_sprint_runs/);
-  assert.match(sprintRoute, /sl_guest_sprint/);
-  assert.match(sprintRoute, /HttpOnly; Secure; SameSite=Lax/);
-  assert.match(sprintRoute, /if \(value\.anonymous && !body\.fresh\)/);
-  assert.match(sprintRoute, /body\.fresh.*status='abandoned'/s);
+  assert.match(sprintRoute, /if \(value\.anonymous \|\| !value\.user\) return Response\.json\(\{ saved: false, anonymous: true \}\)/);
   assert.match(sprintClient, /免费注册/);
   assert.match(sprintClient, /登录/);
   assert.match(sprintClient, /recognition\.stop\(\)/);
@@ -196,17 +189,4 @@ test("Sprint resume migration stores member-only checkpoints", () => {
   assert.match(migration, /ADD COLUMN progress_json TEXT NOT NULL DEFAULT '\{\}' CHECK\(json_valid\(progress_json\)\)/);
   assert.match(migration, /ADD COLUMN checkpointed_at INTEGER/);
   assert.match(migration, /user_id,class_id,status,started_at DESC/);
-});
-
-test("anonymous Sprint resume is keyed by an opaque cookie without account identity", () => {
-  const migration = readFileSync(new URL("../drizzle/0158_anonymous_sprint_cookie_resume.sql", import.meta.url), "utf8");
-  assert.match(migration, /CREATE TABLE smartlingo_guest_sprint_runs/);
-  assert.match(migration, /guest_key_hash TEXT NOT NULL CHECK\(length\(guest_key_hash\)=64\)/);
-  assert.doesNotMatch(migration, /user_id/);
-  assert.match(migration, /progress_json TEXT NOT NULL DEFAULT '\{\}'/);
-  const database = new DatabaseSync(":memory:");
-  database.exec("PRAGMA foreign_keys=ON; CREATE TABLE smartlingo_language_classes(id TEXT PRIMARY KEY)");
-  database.exec(migration);
-  assert.equal(database.prepare("SELECT COUNT(*) AS total FROM sqlite_master WHERE type='table' AND name='smartlingo_guest_sprint_runs'").get().total, 1);
-  database.close();
 });

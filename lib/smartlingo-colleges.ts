@@ -94,6 +94,17 @@ export function canManageCollege(college: Pick<CollegeRow, "ownerUserId">, user:
   return Boolean(user && (college.ownerUserId === user.id || user.email.trim().toLowerCase() === "bingliu@cybeye.com"));
 }
 
+export async function canCreateCollege(user: SessionUser | null) {
+  if (!user) return false;
+  if (user.email.trim().toLowerCase() === "bingliu@cybeye.com") return true;
+  const now = Math.floor(Date.now() / 1000);
+  const subscription = await getDatabase().prepare(`SELECT 1 FROM subscriptions
+    WHERE user_id=? AND cadence='coordinator' AND status IN ('active','trialing')
+      AND (current_period_ends_at IS NULL OR current_period_ends_at>?) LIMIT 1`)
+    .bind(user.id, now).first();
+  return Boolean(subscription);
+}
+
 async function generateCollegeCode() {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0");

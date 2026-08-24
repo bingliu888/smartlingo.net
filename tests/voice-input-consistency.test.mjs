@@ -25,7 +25,7 @@ test("Ask Guru text stays public while microphone access requires sign-in", asyn
   assert.doesNotMatch(page, /requestUser|signedIn|auth\/login/);
 });
 
-test("signed-in dashboard exposes joined-language learning tabs including AI practice", async () => {
+test("signed-in dashboard exposes joined-language cards for the four requested learning features", async () => {
   const [dashboard, hub] = await Promise.all([
     readFile(new URL("../app/[lang]/dashboard/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/DashboardLearningHub.tsx", import.meta.url), "utf8"),
@@ -33,8 +33,11 @@ test("signed-in dashboard exposes joined-language learning tabs including AI pra
 
   assert.match(dashboard, /<DashboardLearningHub/);
   assert.match(hub, /courses: DashboardJoinedCourse\[\]/);
-  assert.match(hub, /role="tablist"/);
-  assert.match(hub, /`\/\$\{lang\}\/assistant\?language=\$\{language\.code\}`/);
+  assert.match(hub, /Smart Card Practice/);
+  assert.match(hub, /Smart Card Challenge/);
+  assert.match(hub, /Everyday speaking/);
+  assert.match(hub, /Courses/);
+  assert.doesNotMatch(hub, /assistant\?language|Ask AI|咨询AI/);
   assert.match(hub, /生活口语/);
-  assert.match(hub, /边玩边学/);
+  assert.match(hub, /智慧卡练习/);
 });

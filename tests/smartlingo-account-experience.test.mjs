@@ -14,17 +14,16 @@ test("signed-in account menu keeps the simplified member navigation", async () =
   assert.doesNotMatch(source, /职业档案|人才库|Gold|Platinum|黄金|铂金|BACC|license/i);
 });
 
-test("dashboard presents three platform plans without gating member-created courses", async () => {
+test("dashboard keeps learning and referrals while college creation moves to My colleges", async () => {
   const [dashboard, panel] = await Promise.all([
     read("app/[lang]/dashboard/page.tsx"),
     read("components/MembershipPanel.tsx"),
   ]);
   const joined = `${dashboard}\n${panel}`;
 
-  for (const label of ["免费方案", "进阶方案", "协调员方案"]) assert.match(joined, new RegExp(label));
-  assert.match(joined, /每位会员都能开班/);
-  assert.match(panel, /免费学习，也可以带领自己的语言班/);
-  assert.match(panel, /不开启开班资格门槛/);
+  for (const label of ["免费方案", "进阶方案"]) assert.match(joined, new RegExp(label));
+  assert.match(panel, /打开我的学院/);
+  assert.doesNotMatch(joined, /每位会员都能开班|免费学习，也可以带领自己的语言班|不开启开班资格门槛/);
   assert.match(panel, /介绍人积分只在平台成功收取订阅费后产生/);
   assert.match(panel, /课程购买、班主收款、Stripe Connect 转账、退款、争议和打赏一律不产生介绍人积分/);
   assert.match(dashboard, /DashboardLearningHub/);

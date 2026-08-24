@@ -183,6 +183,6 @@ test("route and UI contracts preserve progress, retain retake history, create no
   assert.match(planner, /跳过测评，从基础开始/);
   assert.match(planner, /data-layout-fill="stage-unit-map"/);
   assert.match(planner, /data-layout-track=\{unit\.id\}/);
-  assert.match(programs, /<LearningPathPlanner lang=\{lang\}/);
+  assert.match(programs, /<LearningPathPlanner lang=\{locale\}/);
   assert.match(programs, /data-layout-page="programs"/);
 });

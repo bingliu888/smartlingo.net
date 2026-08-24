@@ -30,8 +30,6 @@ const copy = {
     voiceTitle: "Practice a useful conversation hands-free",
     voiceBody: "Open Ask Guru, tap the microphone and speak. Your words appear in the message box for you to review before sending.",
     voiceAction: "Live Audio AI Chat",
-    coming: "Three platform plans, with course creation open to every member",
-    comingBody: "Choose a Beginner, Intermediate, or Advanced language course. Every course starts with a free month and includes an A/V webinar classroom.",
     certs: "Certificates",
     certsBody: "Passed SmartLingo courses appear here with your final score and issue date.",
     certsAction: "View certificates",
@@ -51,8 +49,6 @@ const copy = {
     voiceTitle: "随时开口练习一段实用会话",
     voiceBody: "打开智能导师页面后点击麦克风并开始说话。语音会转成文字，您可以确认内容后再发送。",
     voiceAction: "实时智能语音对话",
-    coming: "三种平台方案，每位会员都能开班",
-    comingBody: "选择初期、中级或高级语言课程；每门课程首月免费，并配有音视频网络研讨会教室。",
     certs: "结业证书",
     certsBody: "通过 SmartLingo 课程后，最终成绩和颁发日期会保存在这里。",
     certsAction: "查看证书",
@@ -90,7 +86,6 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
         <div className="dashboard-grid">
           <section className="dashboard-cert-card"><div className="dashboard-cert-count"><span aria-hidden="true">SL</span><strong>{certificateCount.toLocaleString()}</strong></div><div><p className="section-kicker">SMARTLINGO CERTS</p><h2>{t.certs}</h2><p>{t.certsBody}</p><a className="primary-button" href={`/${lang}/certificates`}>{t.certsAction} <span>→</span></a></div></section>
           <aside className="account-card" id="account"><h2>{t.account}</h2><dl><div><dt>{lang === "zh" ? "邮箱" : "Email"}</dt><dd data-no-translate>{user.email}</dd></div><div><dt>{t.language}</dt><dd data-no-translate>{localeName}</dd></div></dl><TextSizeControl lang={locale} /><LogoutButton lang={locale} label={t.signOut} /></aside>
-          <section className="coming-card"><div className="mini-table gc-mini-network" aria-hidden="true"><span>{lang === "zh" ? "免费" : "FREE"}</span><span>{lang === "zh" ? "进阶" : "PLUS"}</span><i>{lang === "zh" ? "协调" : "COORD"}</i><span>{lang === "zh" ? "开班" : "CLASS"}</span><span>{lang === "zh" ? "社区" : "SOCIAL"}</span></div><div><p className="section-kicker">{lang === "zh" ? "平台方案" : "PLATFORM PLANS"}</p><h2>{t.coming}</h2><p>{t.comingBody}</p></div></section>
         </div>
       </div>
       <span data-layout-overlap-check="dashboard-end" style={{ display: "block", height: 1 }} />
