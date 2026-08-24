@@ -42,6 +42,8 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /vm-pagination/);
   assert.match(route, /startWordId/);
   assert.match(route, /catalog\.slice\(startIndex\)/);
+  assert.match(route, /includeAdaptiveSentences = true/);
+  assert.match(route, /body\.lang === "zh" \? "zh" : "en", false/);
   assert.match(workspace, /practicePercent/);
   assert.match(workspace, /role="progressbar"/);
   assert.match(workspace, /learning-world-\$\{timeScene\}\.jpg/);

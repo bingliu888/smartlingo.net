@@ -188,7 +188,7 @@ async function writeReport(database: ReturnType<typeof getDatabase>, userId: str
       summary.unlearned, summary.percent, summary.stars, now, now).run();
 }
 
-async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "", uiLang: "zh" | "en" = "en") {
+async function responsePayload(database: ReturnType<typeof getDatabase>, userId: string, access: { pathId: string; classId: string; targetLanguage: string; level: string; packageTier: string | null }, localDate: string, persistReport = false, startWordId = "", uiLang: "zh" | "en" = "en", includeAdaptiveSentences = true) {
   const level = access.packageTier || access.level || "beginner";
   const now = Math.floor(Date.now() / 1000);
   const catalog = await catalogFor(database, access.targetLanguage, level);
@@ -206,7 +206,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     : [...due, ...fresh.slice(0, 20), ...started]
       .filter((item, index, values) => values.findIndex(candidate => candidate.id === item.id) === index)
       .slice(0, 20);
-  const adaptive = selected.length ? await adaptiveSentenceRounds({
+  const adaptive = selected.length && includeAdaptiveSentences ? await adaptiveSentenceRounds({
     database,
     language: access.targetLanguage as SmartLingoLearningLanguage,
     level: level as SmartLingoLevel,
@@ -301,5 +301,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
       scheduled.masteredAt === null ? null : Math.floor(scheduled.masteredAt / 1000),
       scheduled.dueAt === null ? null : Math.floor(scheduled.dueAt / 1000), now, now, now,
       correct ? 1 : 0, correct ? 0 : 1).run();
-  return Response.json({ correct, ...(await responsePayload(auth.database, auth.user.id, auth.access, localDate, true, "", body.lang === "zh" ? "zh" : "en")) });
+  // The learner already has this round's sentence deck from GET. Do not block
+  // immediate answer feedback on a newly shifted deck's optional AI sentence
+  // generation; the client preserves the current dailyDeck until the next GET.
+  return Response.json({ correct, ...(await responsePayload(auth.database, auth.user.id, auth.access, localDate, true, "", body.lang === "zh" ? "zh" : "en", false)) });
 }
