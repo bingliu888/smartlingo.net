@@ -20,8 +20,21 @@ CREATE TABLE IF NOT EXISTS smartlingo_daily_sprint_runs (
 CREATE INDEX IF NOT EXISTS smartlingo_daily_sprint_rank_idx ON smartlingo_daily_sprint_runs(target_language,local_date,status,score DESC,completed_at ASC);
 CREATE INDEX IF NOT EXISTS smartlingo_daily_sprint_user_idx ON smartlingo_daily_sprint_runs(user_id,started_at DESC);
 CREATE INDEX IF NOT EXISTS smartlingo_daily_sprint_resume_idx ON smartlingo_daily_sprint_runs(user_id,class_id,status,started_at DESC);
-ALTER TABLE smartlingo_daily_sprint_runs ADD COLUMN day_number INTEGER NOT NULL DEFAULT 1 CHECK(day_number BETWEEN 1 AND 21);
-ALTER TABLE smartlingo_smartcard_practice_sessions ADD COLUMN day_number INTEGER NOT NULL DEFAULT 1 CHECK(day_number BETWEEN 1 AND 21);
+CREATE TABLE smartlingo_daily_sprint_run_days (
+  run_id TEXT PRIMARY KEY NOT NULL REFERENCES smartlingo_daily_sprint_runs(id) ON DELETE CASCADE,
+  day_number INTEGER NOT NULL CHECK(day_number BETWEEN 1 AND 21),
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX smartlingo_daily_sprint_run_day_idx ON smartlingo_daily_sprint_run_days(day_number,run_id);
+CREATE TABLE smartlingo_smartcard_practice_session_days (
+  subject_key TEXT NOT NULL,
+  deck_id TEXT NOT NULL REFERENCES smartlingo_smartcard_decks(id) ON DELETE CASCADE,
+  deck_version INTEGER NOT NULL CHECK(deck_version>0),
+  day_number INTEGER NOT NULL CHECK(day_number BETWEEN 1 AND 21),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY(subject_key,deck_id,deck_version)
+);
+CREATE INDEX smartlingo_smartcard_practice_day_idx ON smartlingo_smartcard_practice_session_days(deck_id,day_number,updated_at DESC);
 --> statement-breakpoint
 CREATE TABLE smartlingo_learning_reward_rules (
   id TEXT PRIMARY KEY NOT NULL,
@@ -67,10 +80,6 @@ CREATE TABLE smartlingo_learning_score_history (
 );
 CREATE INDEX smartlingo_learning_score_user_idx ON smartlingo_learning_score_history(user_id,created_at DESC);
 CREATE INDEX smartlingo_learning_score_rank_idx ON smartlingo_learning_score_history(feature,level,target_language,score DESC,created_at ASC);
---> statement-breakpoint
-ALTER TABLE smartlingo_smartcard_daily_settlements ADD COLUMN level TEXT NOT NULL DEFAULT 'beginner' CHECK(level IN ('beginner','intermediate','advanced'));
-DROP INDEX smartlingo_smartcard_daily_settlement_uq;
-CREATE UNIQUE INDEX smartlingo_smartcard_daily_settlement_uq ON smartlingo_smartcard_daily_settlements(target_language,level,local_date);
 --> statement-breakpoint
 CREATE TABLE smartlingo_smartcard_daily_question_sets (
   id TEXT PRIMARY KEY NOT NULL,

@@ -157,7 +157,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   const user = await getSessionUser(request); const value = await readDeck((await params).token,request,user?.id); if (!value) return Response.json({ error: "SmartCard deck not found" }, { status: 404 });
   const guest = guestKey(request); const guestHash = await sha256(guest.value);
   const pending = await value.database.prepare(`SELECT COALESCE(SUM(score),0) AS points FROM smartlingo_smartcard_game_runs WHERE guest_key_hash=? AND game_mode='practice' AND claim_status='pending'`).bind(guestHash).first<{ points: number }>();
-  const saved = await value.database.prepare(`SELECT current_index AS currentIndex,points,evidence_json AS evidenceJson FROM smartlingo_smartcard_practice_sessions WHERE subject_key=? AND deck_id=? AND deck_version=? AND day_number=? AND completed_at IS NULL LIMIT 1`).bind(practiceSubject(user?.id || null,guestHash),value.deck.id,value.deck.version,value.dayNumber).first<{ currentIndex:number; points:number; evidenceJson:string }>();
+  const saved = await value.database.prepare(`SELECT session.current_index AS currentIndex,session.points,session.evidence_json AS evidenceJson FROM smartlingo_smartcard_practice_sessions session
+    JOIN smartlingo_smartcard_practice_session_days session_day ON session_day.subject_key=session.subject_key AND session_day.deck_id=session.deck_id AND session_day.deck_version=session.deck_version
+    WHERE session.subject_key=? AND session.deck_id=? AND session.deck_version=? AND session_day.day_number=? AND session.completed_at IS NULL LIMIT 1`).bind(practiceSubject(user?.id || null,guestHash),value.deck.id,value.deck.version,value.dayNumber).first<{ currentIndex:number; points:number; evidenceJson:string }>();
   let practiceProgress: { currentIndex:number; points:number; cards:SavedPracticeEvidence[] } | null = null;
   if (saved && saved.currentIndex > 0 && saved.currentIndex < value.cards.length) {
     try {
@@ -181,7 +183,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const evidence = parseSavedPracticeEvidence(body.cards,value.cards);
     if (!Number.isInteger(currentIndex) || currentIndex < 1 || currentIndex >= value.cards.length || evidence.length !== currentIndex) return withCookie(Response.json({ error:"Practice progress is invalid" },{status:400}),guest);
     const points = practicePoints(value.cards,evidence);
-    await value.database.prepare(`INSERT INTO smartlingo_smartcard_practice_sessions(id,subject_key,deck_id,deck_version,current_index,points,evidence_json,created_at,updated_at,day_number) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(subject_key,deck_id,deck_version) DO UPDATE SET current_index=excluded.current_index,points=excluded.points,evidence_json=excluded.evidence_json,completed_at=NULL,updated_at=excluded.updated_at,day_number=excluded.day_number`).bind(createId(),practiceSubject(user?.id || null,guestHash),value.deck.id,value.deck.version,currentIndex,points,JSON.stringify(evidence),now,now,value.dayNumber).run();
+    const subjectKey=practiceSubject(user?.id || null,guestHash);
+    await value.database.batch([
+      value.database.prepare(`INSERT INTO smartlingo_smartcard_practice_sessions(id,subject_key,deck_id,deck_version,current_index,points,evidence_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(subject_key,deck_id,deck_version) DO UPDATE SET current_index=excluded.current_index,points=excluded.points,evidence_json=excluded.evidence_json,completed_at=NULL,updated_at=excluded.updated_at`).bind(createId(),subjectKey,value.deck.id,value.deck.version,currentIndex,points,JSON.stringify(evidence),now,now),
+      value.database.prepare(`INSERT INTO smartlingo_smartcard_practice_session_days(subject_key,deck_id,deck_version,day_number,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(subject_key,deck_id,deck_version) DO UPDATE SET day_number=excluded.day_number,updated_at=excluded.updated_at`).bind(subjectKey,value.deck.id,value.deck.version,value.dayNumber,now),
+    ]);
     return withCookie(Response.json({ currentIndex,points }),guest);
   }
   if (body.action === "challenge-start") {

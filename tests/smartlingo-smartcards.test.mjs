@@ -249,7 +249,7 @@ test("game navigation keeps target language, progress, local-time art, and score
   assert.match(leaderboard, /smartlingo_smartcard_daily_settlements/);
   assert.match(leaderboard, /smartcard_winner_earn/);
   assert.match(leaderboard, /challengeDateClosedGlobally/);
-  assert.match(leaderboard, /settlement\.level=\?/);
+  assert.match(leaderboard, /settlementLanguageKey/);
   assert.match(calendar, /localCalendarDate/);
   assert.match(game, /date=\$\{challengeClock\.current\.date\}/);
 });
@@ -281,10 +281,10 @@ test("database permits learning retries but awards one capped credit per deck ve
   try {
     database.exec("PRAGMA foreign_keys=ON");
     applyTrackedMigrations(database, readMigrationManifest());
-    const settlementColumns = database.prepare("PRAGMA table_info(smartlingo_smartcard_daily_settlements)").all().map(item => item.name);
-    const settlementUniqueColumns = database.prepare("PRAGMA index_info(smartlingo_smartcard_daily_settlement_uq)").all().map(item => item.name);
-    assert.ok(settlementColumns.includes("level"));
-    assert.deepEqual(settlementUniqueColumns,["target_language","level","local_date"]);
+    const questionSetUniqueColumns = database.prepare("PRAGMA index_info(sqlite_autoindex_smartlingo_smartcard_daily_question_sets_2)").all().map(item => item.name);
+    const practiceDayColumns = database.prepare("PRAGMA table_info(smartlingo_smartcard_practice_session_days)").all().map(item => item.name);
+    assert.deepEqual(questionSetUniqueColumns,["target_language","level","local_date"]);
+    assert.ok(practiceDayColumns.includes("day_number"));
     database.prepare(`INSERT INTO users(id,email,display_name,password_hash,preferred_language,role,created_at)
       VALUES('card-learner','card-learner@example.invalid','Card Learner','disabled','en','member',1)`).run();
     const insertAttempt = database.prepare(`INSERT INTO smartlingo_smartcard_challenge_attempts

@@ -44,8 +44,9 @@ export async function POST(request: Request, { params }: Params) {
       ? await nextLearningDay(value.database, value.user.id, "sprint", courseLevel, language, classId)
       : safeLearningDay(body.dayNumber);
     if (!value.anonymous && value.user) {
-      const saved = await value.database.prepare(`SELECT id,plan_json AS planJson,progress_json AS progressJson FROM smartlingo_daily_sprint_runs
-        WHERE user_id=? AND class_id=? AND duration_minutes=? AND day_number=? AND status='in_progress' ORDER BY started_at DESC LIMIT 1`)
+      const saved = await value.database.prepare(`SELECT run.id,run.plan_json AS planJson,run.progress_json AS progressJson FROM smartlingo_daily_sprint_runs run
+        JOIN smartlingo_daily_sprint_run_days run_day ON run_day.run_id=run.id
+        WHERE run.user_id=? AND run.class_id=? AND run.duration_minutes=? AND run_day.day_number=? AND run.status='in_progress' ORDER BY run.started_at DESC LIMIT 1`)
         .bind(value.user.id,classId,selectedDuration,dayNumber).first<{ id: string; planJson: string; progressJson: string }>();
       if (saved) return Response.json({ runId: saved.id, plan: JSON.parse(saved.planJson), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: false, resumed: true, dayNumber });
     }
@@ -62,10 +63,13 @@ export async function POST(request: Request, { params }: Params) {
     const roundVocabulary = Array.from({ length: selectedDuration / 5 }, (_, index) => dayVocabulary.slice(index * 5, index * 5 + 5));
     const adaptive = await adaptiveSentenceRounds({ database: value.database, language, level: courseLevel, uiLang: uiLang(body.lang), roundVocabulary });
     const plan = buildSprintPlan({ runId, language, level: courseLevel, uiLang: uiLang(body.lang), durationMinutes: selectedDuration, vocabulary: dayVocabulary, sentenceRounds: adaptive.rounds, learningReleaseId: adaptive.releaseId, sentenceSource: adaptive.sourceType });
-    if (!value.anonymous && value.user) await value.database.prepare(`INSERT INTO smartlingo_daily_sprint_runs
-      (id,user_id,class_id,target_language,level,duration_minutes,round_count,local_date,time_zone,plan_json,status,started_at,day_number)
-      VALUES(?,?,?,?,?,?,?,?,?,?,'in_progress',?,?)`)
-      .bind(runId,value.user.id,classId,language,courseLevel,selectedDuration,plan.rounds.length,localDateKey(now,zone),zone,JSON.stringify(plan),now,dayNumber).run();
+    if (!value.anonymous && value.user) await value.database.batch([
+      value.database.prepare(`INSERT INTO smartlingo_daily_sprint_runs
+        (id,user_id,class_id,target_language,level,duration_minutes,round_count,local_date,time_zone,plan_json,status,started_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,'in_progress',?)`)
+        .bind(runId,value.user.id,classId,language,courseLevel,selectedDuration,plan.rounds.length,localDateKey(now,zone),zone,JSON.stringify(plan),now),
+      value.database.prepare(`INSERT INTO smartlingo_daily_sprint_run_days(run_id,day_number,created_at) VALUES(?,?,?)`).bind(runId,dayNumber,now),
+    ]);
     const response = Response.json({ runId, plan, courseTitle: value.course.title, anonymous: value.anonymous, dayNumber });
     if (value.anonymous) response.headers.append("Set-Cookie", anonymousSprintCookie({ runId, classId, language, durationMinutes: selectedDuration, dayNumber, roundIndex: 0, stage: "vocabulary", wordIndex: 0, remainingSeconds: selectedDuration * 60 }));
     return response;
@@ -87,8 +91,9 @@ export async function POST(request: Request, { params }: Params) {
   if (body.action === "complete") {
     if (value.anonymous || !value.user) return Response.json({ error: "Sign in to save a Sprint score" }, { status: 401 });
     const runId = typeof body.runId === "string" ? body.runId : "";
-    const row = await value.database.prepare(`SELECT plan_json AS planJson,status,day_number AS dayNumber,target_language AS targetLanguage,level,local_date AS localDate FROM smartlingo_daily_sprint_runs
-      WHERE id=? AND user_id=? AND class_id=? LIMIT 1`).bind(runId,value.user.id,classId).first<{ planJson: string; status: string; dayNumber: number; targetLanguage: string; level: SmartLingoLevel; localDate: string }>();
+    const row = await value.database.prepare(`SELECT run.plan_json AS planJson,run.status,run_day.day_number AS dayNumber,run.target_language AS targetLanguage,run.level,run.local_date AS localDate FROM smartlingo_daily_sprint_runs run
+      JOIN smartlingo_daily_sprint_run_days run_day ON run_day.run_id=run.id
+      WHERE run.id=? AND run.user_id=? AND run.class_id=? LIMIT 1`).bind(runId,value.user.id,classId).first<{ planJson: string; status: string; dayNumber: number; targetLanguage: string; level: SmartLingoLevel; localDate: string }>();
     if (!row) return Response.json({ error: "Sprint not found" }, { status: 404 });
     if (row.status === "completed") return Response.json({ error: "Sprint already completed" }, { status: 409 });
     const plan = JSON.parse(row.planJson) as SprintPlan; const responses = Array.isArray(body.responses) ? body.responses.slice(0, plan.rounds.length) : [];

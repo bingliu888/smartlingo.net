@@ -29,7 +29,7 @@
   "affected": {"en":["Today’s Sprint picker/player/API, SmartCard directory/practice/challenge/calendar/API, subscribed course workspace/API, Everyday Speaking levels and audio, member Dashboard, Admin Dashboard, SiteHeader, score history, rankings, vocabulary visuals, D1 schema, and release contracts."],"zh":["今日速成选择器、播放器与接口；智慧卡目录、练习、挑战、日历与接口；已订阅课程工作台与接口；生活口语等级和语音；用户面板、管理面板、全站导航、成绩记录、排行榜、词汇视觉、D1 架构及发布合同。"]},
   "changes": {
     "en": [
-      "Add tracked migration 0167 with day columns, reward rules, unified learning-score history, daily SmartCard question sets, and 24 new official Intermediate/Advanced deck identities.",
+      "Add tracked migration 0167 with additive day-state tables, reward rules, unified learning-score history, daily SmartCard question sets, and 24 new official Intermediate/Advanced deck identities.",
       "Select learning words with the existing pedagogical order of difficulty ascending then frequency descending; allocate 20 words per selected day and keep cumulative adaptive sentences constrained to current and prior learned vocabulary.",
       "Separate motivational learning rewards from legacy course-credit commerce and protect admin changes with permanent bootstrap-administrator authorization.",
       "Record only server-computed signed-in completions in score history; no anonymous session, audio, or transcript is persisted by these changes.",
@@ -37,7 +37,7 @@
       "Preserve the established 7- and 14-day introductory course products; the 21-day selector applies to the core 30-day and higher-level course journeys without changing course prices or entitlements."
     ],
     "zh": [
-      "新增受跟踪迁移 0167：学习日字段、奖励规则、统一学习成绩历史、智慧卡每日题集，以及 24 个新的正式中级/高级卡组标识。",
+      "新增受跟踪迁移 0167：增量学习日状态表、奖励规则、统一学习成绩历史、智慧卡每日题集，以及 24 个新的正式中级/高级卡组标识。",
       "按既有教学顺序选择单词：难度升序、常用度降序；每个所选学习日分配 20 个词，累积自适应句子只使用当前及此前已学词汇。",
       "将学习激励分与旧有课程抵扣积分商业账本严格分离，管理员修改仅允许永久初始管理员执行。",
       "成绩历史只记录服务器计算的登录用户完成结果；本次变化不会持久化匿名会话、录音或语音转写。",

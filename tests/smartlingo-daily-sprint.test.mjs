@@ -124,13 +124,14 @@ test("anonymous Sprint overwrites its short cookie while signed-in members resum
   assert.match(sprintPage, /query\.source==="play"\|\|isPublicBeginnerSprintClassId\(classId\)/);
   assert.match(sprintPage, /publicPlay=\{publicPlay\}/);
   assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
-  assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.prepare\(`INSERT INTO smartlingo_daily_sprint_runs/);
+  assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.batch\(\[/);
+  assert.match(sprintRoute, /smartlingo_daily_sprint_run_days/);
   assert.match(sprintRoute, /anonymous: value\.anonymous/);
   assert.doesNotMatch(sprintClient, /document\.cookie|localStorage|sessionStorage|resumeRunId/);
   assert.match(sprintClient, /if \(!plan \|\| !runId/);
   assert.match(sprintClient, /action: "checkpoint"/);
   assert.match(sprintRoute, /progress_json AS progressJson/);
-  assert.match(sprintRoute, /status='in_progress' ORDER BY started_at DESC LIMIT 1/);
+  assert.match(sprintRoute, /run\.status='in_progress' ORDER BY run\.started_at DESC LIMIT 1/);
   assert.match(sprintRoute, /smartlingo-anonymous-sprint/);
   assert.match(sprintRoute, /Set-Cookie/);
   assert.match(sprintRoute, /Max-Age=7200/);
