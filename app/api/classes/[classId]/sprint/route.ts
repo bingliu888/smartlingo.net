@@ -1,7 +1,7 @@
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
 import { localDateKey, requireOfficialClassMembership, requirePublicBeginnerSprintCourse, safeTimeZone } from "@/lib/smartlingo-learning-access";
 import { SMARTLINGO_LEARNING_LANGUAGE_CODES, type SmartLingoInterfaceLanguage, type SmartLingoLearningLanguage, type SmartLingoLevel } from "@/lib/smartlingo-learning";
-import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS, type SprintAnswer, type SprintDuration, type SprintPlan, type SprintVocabulary } from "@/lib/smartlingo-sprint";
+import { buildSprintPlan, gradeSprintPlan, sanitizeSprintPlan, SPRINT_DURATIONS, type SprintAnswer, type SprintDuration, type SprintPlan, type SprintVocabulary } from "@/lib/smartlingo-sprint";
 import { adaptiveSentenceRounds } from "@/lib/smartlingo-adaptive-sentences";
 import { learningReward, nextLearningDay, safeLearningDay } from "@/lib/smartlingo-learning-days";
 
@@ -48,7 +48,7 @@ export async function POST(request: Request, { params }: Params) {
         JOIN smartlingo_daily_sprint_run_days run_day ON run_day.run_id=run.id
         WHERE run.user_id=? AND run.class_id=? AND run.duration_minutes=? AND run_day.day_number=? AND run.status='in_progress' ORDER BY run.started_at DESC LIMIT 1`)
         .bind(value.user.id,classId,selectedDuration,dayNumber).first<{ id: string; planJson: string; progressJson: string }>();
-      if (saved) return Response.json({ runId: saved.id, plan: JSON.parse(saved.planJson), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: false, resumed: true, dayNumber });
+      if (saved) return Response.json({ runId: saved.id, plan: sanitizeSprintPlan(JSON.parse(saved.planJson) as SprintPlan), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: false, resumed: true, dayNumber });
     }
     const runId = createId();
     const vocabularyResult = await value.database.prepare(`SELECT id,form,COALESCE(target_phonetic,pronunciation,'') AS pronunciation,

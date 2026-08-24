@@ -23,7 +23,7 @@ export type SprintRound = {
 };
 
 export type SprintPlan = {
-  contentVersion: "smartlingo-sprint-2026-08-23.2";
+  contentVersion: "smartlingo-sprint-2026-08-24.3";
   learningReleaseId: string;
   sentenceSource: "gpt-5.6-luna" | "safe-fallback" | "graded-catalog";
   language: SmartLingoLearningLanguage;
@@ -54,6 +54,33 @@ function bridgeLanguage(target: SmartLingoLearningLanguage, uiLang: SmartLingoIn
   return target === uiLang ? (uiLang === "zh" ? "en" : "zh") : uiLang;
 }
 
+function distinctReadingOptions(
+  candidates: readonly { id: string; label: string }[],
+  answerId: string,
+) {
+  const unique = new Map<string, { id: string; label: string }>();
+  for (const option of candidates) {
+    const key = normalizeSentenceAnswer(option.label);
+    if (!key) continue;
+    const existing = unique.get(key);
+    if (!existing || option.id === answerId) unique.set(key, option);
+  }
+  return [...unique.values()].slice(0, 3);
+}
+
+export function sanitizeSprintPlan(plan: SprintPlan): SprintPlan {
+  return {
+    ...plan,
+    rounds: plan.rounds.map(round => ({
+      ...round,
+      reading: {
+        ...round.reading,
+        options: distinctReadingOptions(round.reading.options, round.reading.answerId),
+      },
+    })),
+  };
+}
+
 export function buildSprintPlan(input: {
   runId: string;
   language: SmartLingoLearningLanguage;
@@ -76,10 +103,14 @@ export function buildSprintPlan(input: {
     const writing = sentences[2];
     const dialogue = sentences[3];
     const bridge = bridgeLanguage(input.language, input.uiLang);
-    const distractors = [sentences[4], sentences[5]];
-    const options = [reading, ...distractors]
-      .map(item => ({ id: item.id, label: promptFor(item, bridge) }))
-      .sort((left, right) => hash(`${seed}:${left.id}`) - hash(`${seed}:${right.id}`));
+    const currentReadingOptions = sentences.map(item => ({ id: item.id, label: promptFor(item, bridge) }));
+    const fallbackReadingOptions = rotate(bank, `${seed}:reading-options`, bank.length)
+      .map(item => ({ id: item.id, label: promptFor(item, bridge) }));
+    const options = distinctReadingOptions([
+      currentReadingOptions[0],
+      ...currentReadingOptions.slice(1).sort((left, right) => hash(`${seed}:${left.id}`) - hash(`${seed}:${right.id}`)),
+      ...fallbackReadingOptions,
+    ], reading.id);
     return {
       number: roundIndex + 1,
       vocabulary: sprintVocabulary.slice(roundIndex * 5, roundIndex * 5 + 5),
@@ -106,7 +137,7 @@ export function buildSprintPlan(input: {
       dialogue: { id: dialogue.id, prompt: promptFor(dialogue, input.uiLang), audioText: dialogue.targetSentence, expected: dialogue.targetSentence },
     } satisfies SprintRound;
   });
-  return { contentVersion: "smartlingo-sprint-2026-08-23.2", learningReleaseId: input.learningReleaseId || "graded-catalog", sentenceSource: input.sentenceSource || "graded-catalog", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
+  return { contentVersion: "smartlingo-sprint-2026-08-24.3", learningReleaseId: input.learningReleaseId || "graded-catalog", sentenceSource: input.sentenceSource || "graded-catalog", language: input.language, level: input.level, uiLang: input.uiLang, durationMinutes: input.durationMinutes, rounds };
 }
 
 function transcriptScore(expected: string, actual: string) {

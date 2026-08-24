@@ -1,55 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-signed-in-vocabulary-resume-2026-08-24-v29",
+  "releaseId": "smartlingo-sprint-reading-choice-2026-08-24-v30",
   "site": "smartlingo.net",
   "title": {
-    "en": "Resume the exact signed-in vocabulary practice position",
-    "zh": "准确恢复登录用户词汇练习位置"
+    "en": "Remove ambiguous duplicate Sprint reading choices",
+    "zh": "消除今日速成阅读题的重复歧义选项"
   },
   "purpose": {
-    "en": "Close the production persistence gap confirmed after v28: learned-word progress survived, but refreshing reset the learner's visible 20-card round to position 1.",
-    "zh": "修复 v28 后确认的生产持久化缺口：已学词进度能够保留，但刷新会把可见的 20 词轮次重置到第 1 张。"
+    "en": "Close the production reading defect found after v29: two choices could expose the same accessible label while only one hidden identifier was accepted.",
+    "zh": "修复 v29 后生产验收发现的阅读缺陷：两个选项可能显示相同的可访问文本，但只有一个隐藏标识会被判为正确。"
   },
   "features": {
     "en": [
-      "Store each signed-in learner's date-scoped 20-card course vocabulary deck and current position in D1.",
-      "Advance the server checkpoint only after the sentence step's explicit Continue action.",
-      "Restore the same card and visible position after refresh while keeping Repeat After Me off by default."
+      "Guarantee distinct visible and accessible labels for every Sprint reading choice.",
+      "Keep the correct option when repairing an older in-progress plan that already contains duplicate labels.",
+      "Prefer distractors generated from the current round's learned vocabulary before using same-level catalog fallback sentences."
     ],
     "zh": [
-      "在 D1 中保存每位登录学员按本地日期划分的 20 词课程牌组及当前位置。",
-      "仅在组句步骤明确点击继续后推进服务器断点。",
-      "刷新后恢复同一词卡及可见序号，同时保持跟读默认关闭。"
+      "保证每道今日速成阅读题的可见文本和可访问名称均不重复。",
+      "修复已有重复选项的进行中计划时保留真正的正确选项。",
+      "优先使用本轮已学词生成的句子作为干扰项，必要时才使用同级目录回退句。"
     ]
   },
   "affected": {
     "en": [
-      "Signed-in course vocabulary deck and position persistence; no Clerk, payment, administrator, sibling-site, or anonymous-cookie behavior."
+      "Signed-in and anonymous Today's Sprint reading choices, including resumed signed-in plans; no Clerk, payment, administrator, sibling-site, or unrelated learning behavior."
     ],
     "zh": [
-      "登录课程词汇牌组及位置持久化；不影响 Clerk、支付、管理员、兄弟站点或匿名 Cookie 行为。"
+      "登录及匿名今日速成的阅读选项（包括恢复的登录计划）；不影响 Clerk、支付、管理员、兄弟站点或无关学习行为。"
     ]
   },
   "changes": {
     "en": [
-      "Add a constrained, user/path/local-date-unique vocabulary practice session table.",
-      "Reuse the persisted daily deck and return its server-authoritative current position on each load.",
-      "Add a minimal authenticated advance operation and make the client wait for its database acknowledgement before moving."
+      "Normalize reading labels and deterministically collapse duplicates while preserving the answer identifier.",
+      "Build three unique choices from all current adaptive round sentences before consulting graded same-level fallback content.",
+      "Sanitize stored in-progress Sprint plans when they are resumed, so existing affected runs become usable without deleting progress."
     ],
     "zh": [
-      "新增受约束且按用户、路径、本地日期唯一的词汇练习会话表。",
-      "每次加载复用已保存的当天牌组，并返回服务器权威当前位置。",
-      "新增最小化登录推进操作，客户端收到数据库确认后才进入下一张。"
+      "规范化阅读选项文本，并在保留正确答案标识的前提下确定性合并重复项。",
+      "先从当前自适应学习轮次的全部句子构建三个唯一选项，再查询同级分级回退内容。",
+      "恢复进行中的今日速成计划时清理已保存的重复选项，无需删除学员进度。"
     ]
   },
   "validation": {
     "en": [
-      "Run focused persistence contracts, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
-      "Deploy migration 0168 only through GitHub Actions to Cloudflare, then repeat the ordinary test learner's answer, feedback, Continue, sentence, next-card, refresh, and exact-position path."
+      "Run the duplicate-choice regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
+      "Deploy only through GitHub Actions to Cloudflare, resume the affected ordinary test learner Sprint, and verify all visible reading choices are unique and the visible matching answer grades correctly."
     ],
     "zh": [
-      "执行持久化定向合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
-      "仅通过 GitHub Actions 向 Cloudflare 发布迁移 0168，再复测普通测试学员的答题、反馈、继续、组句、下一张、刷新及准确位置。"
+      "执行重复选项回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
+      "仅通过 GitHub Actions 发布到 Cloudflare，恢复受影响普通测试学员的今日速成，并验证所有阅读选项文本唯一且匹配答案能正确判分。"
     ]
   },
   "deferred": {

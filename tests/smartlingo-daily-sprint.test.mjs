@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
+import { buildSprintPlan, gradeSprintPlan, sanitizeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
 import { isPublicBeginnerSprintClassId, requirePublicBeginnerSprintCourse } from "../lib/smartlingo-learning-access.ts";
 
 const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
@@ -46,6 +46,30 @@ test("Daily Sprint scoring is server-derived across all five skills", () => {
   assert.equal(gradeSprintPlan(plan, wrongVocabulary).skillScores.vocabulary, 0);
   const incomplete = gradeSprintPlan(plan, plan.rounds.map(() => ({})));
   assert.equal(incomplete.score, 0);
+});
+
+test("Daily Sprint never renders ambiguous duplicate reading answers", () => {
+  const plan = buildSprintPlan({ runId: "duplicate-reading", language: "en", level: "beginner", uiLang: "zh", durationMinutes: 5, vocabulary });
+  const round = plan.rounds[0];
+  const answer = round.reading.options.find(option => option.id === round.reading.answerId);
+  assert.ok(answer);
+  const legacy = {
+    ...plan,
+    rounds: [{
+      ...round,
+      reading: {
+        ...round.reading,
+        options: [
+          { id: "ambiguous-distractor", label: answer.label },
+          ...round.reading.options,
+        ],
+      },
+    }],
+  };
+  const repaired = sanitizeSprintPlan(legacy);
+  assert.equal(repaired.rounds[0].reading.options.filter(option => option.label === answer.label).length, 1);
+  assert.equal(repaired.rounds[0].reading.options.find(option => option.label === answer.label)?.id, round.reading.answerId);
+  assert.equal(new Set(repaired.rounds[0].reading.options.map(option => option.label.normalize("NFKC").trim().toLocaleLowerCase())).size, repaired.rounds[0].reading.options.length);
 });
 
 test("course and anonymous Play expose six isolated learning activities", () => {
