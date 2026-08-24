@@ -69,6 +69,10 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
     WHERE linked.room_id=? AND (c.owner_user_id=? OR (m.status='active' AND
       (s.status='active' OR (s.status='trialing' AND s.trial_ends_at>unixepoch())))) LIMIT 1`).bind(user.id,user.id,room.id,user.id).first();
   if(courseMember)return {allowed:true,admin:false,host,manager};
+  const departmentMember=await getDatabase().prepare(`SELECT enrollment.id FROM smartlingo_department_classrooms mapping
+    JOIN smartlingo_department_enrollments enrollment ON enrollment.department_id=mapping.department_id
+    WHERE mapping.room_id=? AND enrollment.user_id=? AND enrollment.status IN ('trialing','active') LIMIT 1`).bind(room.id,user.id).first();
+  if(departmentMember)return {allowed:true,admin:false,host,manager};
   const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND lower(email)=lower(?) LIMIT 1").bind(room.id,user.email).first();
   return {allowed:Boolean(invited),admin:false,host:false,manager:false};
 }

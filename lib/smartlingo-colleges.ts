@@ -97,12 +97,8 @@ export function canManageCollege(college: Pick<CollegeRow, "ownerUserId">, user:
 export async function canCreateCollege(user: SessionUser | null) {
   if (!user) return false;
   if (user.email.trim().toLowerCase() === "bingliu@cybeye.com") return true;
-  const now = Math.floor(Date.now() / 1000);
-  const subscription = await getDatabase().prepare(`SELECT 1 FROM subscriptions
-    WHERE user_id=? AND cadence='coordinator' AND status IN ('active','trialing')
-      AND (current_period_ends_at IS NULL OR current_period_ends_at>?) LIMIT 1`)
-    .bind(user.id, now).first();
-  return Boolean(subscription);
+  return Boolean(await getDatabase().prepare(`SELECT 1 FROM smartlingo_college_supervisor_licenses
+    WHERE user_id=? AND status='active' LIMIT 1`).bind(user.id).first());
 }
 
 async function generateCollegeCode() {

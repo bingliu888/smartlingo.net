@@ -1,30 +1,40 @@
-import { createId, getDatabase } from "./auth";
-import { stripeRequest, type StripeSubscription } from "./stripe-course-subscription";
+import { getDatabase } from "./auth";
+import { collegeSupervisorPlan, type CollegeSupervisorTier } from "./college-supervisor-plans";
+import { stripeRequest } from "./stripe-course-subscription";
 
-export const COLLEGE_COORDINATOR_MONTHLY_CENTS = 10_000;
-
-type PlatformStripeSubscription = StripeSubscription & {
-  customer?: string | { id?: string } | null;
-  cancel_at_period_end?: boolean;
-  metadata?: { user_id?: string; cadence?: string; scope?: string };
+export type SupervisorCheckoutSession = {
+  id: string; status: string; payment_status?: string; mode: string; client_reference_id: string;
+  payment_intent?: string | { id?: string } | null;
+  metadata?: { user_id?: string; tier?: string; scope?: string };
 };
 
-export async function syncStripePlatformSubscription(userId: string, subscription: PlatformStripeSubscription) {
-  if (subscription.metadata?.user_id !== userId || subscription.metadata?.cadence !== "coordinator" || subscription.metadata?.scope !== "platform") throw new Error("STRIPE_SCOPE_MISMATCH");
+export async function syncStripeCollegeSupervisorLicense(userId: string, session: SupervisorCheckoutSession) {
+  const plan = collegeSupervisorPlan(session.metadata?.tier);
+  if (!plan || session.metadata?.user_id !== userId || session.metadata?.scope !== "college_supervisor"
+    || session.mode !== "payment" || session.status !== "complete" || session.payment_status !== "paid") throw new Error("STRIPE_SCOPE_MISMATCH");
+  const current = await getDatabase().prepare("SELECT tier,max_departments AS maxDepartments FROM smartlingo_college_supervisor_licenses WHERE user_id=? LIMIT 1")
+    .bind(userId).first<{tier:CollegeSupervisorTier;maxDepartments:number}>();
+  const rank = { basic: 0, premium: 1, supreme: 2 } as const;
+  if (current && rank[plan.tier] < rank[current.tier]) return { tier: current.tier, maxDepartments: current.maxDepartments, status: "active" as const };
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id || null;
   const now = Math.floor(Date.now() / 1000);
-  const status = subscription.status === "trialing" ? "trialing" : subscription.status === "active" ? "active" : subscription.status === "past_due" || subscription.status === "unpaid" ? "past_due" : "cancelled";
-  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id || null;
-  const currentPeriodEndsAt = Number(subscription.current_period_end || now);
-  await getDatabase().prepare(`INSERT INTO subscriptions
-    (id,user_id,cadence,status,current_period_ends_at,cancel_at_period_end,stripe_subscription_id,stripe_customer_id,created_at,updated_at)
-    VALUES(?,?,'coordinator',?,?,?,?,?,?,?)
-    ON CONFLICT(user_id) DO UPDATE SET cadence='coordinator',status=excluded.status,
-      current_period_ends_at=excluded.current_period_ends_at,cancel_at_period_end=excluded.cancel_at_period_end,
-      stripe_subscription_id=excluded.stripe_subscription_id,stripe_customer_id=excluded.stripe_customer_id,updated_at=excluded.updated_at`)
-    .bind(createId(), userId, status, currentPeriodEndsAt, subscription.cancel_at_period_end ? 1 : 0, subscription.id, customerId, now, now).run();
-  return { status, currentPeriodEndsAt };
+  await getDatabase().prepare(`INSERT INTO smartlingo_college_supervisor_licenses
+    (user_id,tier,price_cents,max_departments,status,stripe_checkout_session_id,stripe_payment_intent_id,purchased_at,created_at,updated_at)
+    VALUES(?,?,?,?,'active',?,?,?,?,?)
+    ON CONFLICT(user_id) DO UPDATE SET tier=excluded.tier,price_cents=excluded.price_cents,max_departments=excluded.max_departments,
+      status='active',stripe_checkout_session_id=excluded.stripe_checkout_session_id,
+      stripe_payment_intent_id=excluded.stripe_payment_intent_id,purchased_at=excluded.purchased_at,updated_at=excluded.updated_at`)
+    .bind(userId,plan.tier,plan.priceCents,plan.maxDepartments,session.id,paymentIntentId,now,now,now).run();
+  return { tier: plan.tier, maxDepartments: plan.maxDepartments, status: "active" as const };
 }
 
-export async function loadPlatformStripeSubscription(subscriptionId: string) {
-  return stripeRequest<PlatformStripeSubscription>(`/subscriptions/${encodeURIComponent(subscriptionId)}`);
+export async function loadSupervisorCheckoutSession(sessionId: string) {
+  return stripeRequest<SupervisorCheckoutSession>(`/checkout/sessions/${encodeURIComponent(sessionId)}?expand[]=payment_intent`);
+}
+
+export async function markSupervisorPaymentStatus(paymentIntentId:string,status:"refunded"|"disputed"){
+  if(!paymentIntentId)return false;
+  await getDatabase().prepare(`UPDATE smartlingo_college_supervisor_licenses SET status=?,updated_at=?
+    WHERE stripe_payment_intent_id=?`).bind(status,Math.floor(Date.now()/1000),paymentIntentId).run();
+  return true;
 }

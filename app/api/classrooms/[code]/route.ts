@@ -21,12 +21,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ co
     .bind(room.id).first<{ courseId: string }>();
   const practiceRoom = await database.prepare("SELECT course_id AS courseId FROM smartlingo_course_practice_rooms WHERE room_id=? LIMIT 1")
     .bind(room.id).first<{ courseId: string }>();
+  const departmentRoom = await database.prepare("SELECT department_id AS departmentId FROM smartlingo_department_classrooms WHERE room_id=? LIMIT 1")
+    .bind(room.id).first<{ departmentId: string }>();
   const title = String(body.title || room.title).trim().slice(0, 120);
   const description = String(body.description ?? room.description).trim().slice(0, 2_000);
   const subject = String(body.subject ?? room.subject).trim().slice(0, 80);
-  const classType = courseRoom || practiceRoom ? "private" : body.classType === "private" ? "private" : body.classType === "trial" ? "trial" : "public";
+  const classType = courseRoom || practiceRoom || departmentRoom ? "private" : body.classType === "private" ? "private" : body.classType === "trial" ? "trial" : "public";
   const streamingMode = courseRoom ? "video" : practiceRoom ? "audio" : body.streamingMode === "audio" ? "audio" : "video";
-  const realtimeMode = courseRoom ? "webinar" : practiceRoom ? "group_call" : body.realtimeMode === "webinar" ? "webinar" : body.realtimeMode === "livestream" ? "livestream" : "group_call";
+  const realtimeMode = courseRoom || departmentRoom ? "webinar" : practiceRoom ? "group_call" : body.realtimeMode === "webinar" ? "webinar" : body.realtimeMode === "livestream" ? "livestream" : "group_call";
   const startsAt = Math.floor(new Date(String(body.startsAt || new Date(room.startsAt * 1_000).toISOString())).getTime() / 1_000);
   const duration = Math.max(15, Math.min(480, Number(body.durationMinutes) || room.durationMinutes));
   const trial = classType === "trial" ? 7 * 24 * 60 : 0;
@@ -38,7 +40,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ co
   await database.prepare(`UPDATE live_class_rooms SET title=?,description=?,subject=?,class_type=?,streaming_mode=?,realtime_mode=?,
     starts_at=?,duration_minutes=?,trial_minutes=?,tuition_cents=?,mute_all=0,updated_at=? WHERE id=?`)
     .bind(title, description, subject, classType, streamingMode, realtimeMode, startsAt, duration, trial, tuition, Math.floor(Date.now() / 1_000), room.id).run();
-  return Response.json({ ok: true, courseWebinarLocked: Boolean(courseRoom), coursePracticeRoomLocked: Boolean(practiceRoom) });
+  return Response.json({ ok: true, courseWebinarLocked: Boolean(courseRoom), coursePracticeRoomLocked: Boolean(practiceRoom), departmentWebinarLocked: Boolean(departmentRoom) });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ code: string }> }) {
@@ -48,8 +50,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ c
   if (!await canManageClass(room, user)) return Response.json({ error: "Manager access required" }, { status: 403 });
   const database = getDatabase();
   if (await database.prepare(`SELECT room_id FROM smartlingo_course_classrooms WHERE room_id=?
-    UNION ALL SELECT room_id FROM smartlingo_course_practice_rooms WHERE room_id=? LIMIT 1`).bind(room.id, room.id).first()) {
-    return Response.json({ error: "Course teaching and practice rooms cannot be deleted" }, { status: 409 });
+    UNION ALL SELECT room_id FROM smartlingo_course_practice_rooms WHERE room_id=?
+    UNION ALL SELECT room_id FROM smartlingo_department_classrooms WHERE room_id=? LIMIT 1`).bind(room.id, room.id, room.id).first()) {
+    return Response.json({ error: "Course and department rooms cannot be deleted" }, { status: 409 });
   }
   const objects = (await database.prepare("SELECT r2_key AS r2Key FROM class_playlist_items WHERE room_id=? AND r2_key IS NOT NULL").bind(room.id).run<{ r2Key: string }>()).results || [];
   if (objects.length) {

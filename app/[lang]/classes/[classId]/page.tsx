@@ -19,20 +19,21 @@ export default async function ClassPage({
   searchParams,
 }: {
   params: Promise<{ lang: string; classId: string }>;
-  searchParams: Promise<{ invite?: string }>;
+  searchParams: Promise<{ invite?: string; department?: string }>;
 }) {
   const { lang, classId } = await params;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
   const user = await requestUser();
   if (!user) {
-    const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}${query.invite ? `?invite=${encodeURIComponent(query.invite)}` : ""}`;
+    const returnQuery=new URLSearchParams();if(query.invite)returnQuery.set("invite",query.invite);if(query.department)returnQuery.set("department",query.department);
+    const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}${returnQuery.size?`?${returnQuery}`:""}`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
     <main className="classes-page">
       <SiteHeader lang={lang as any} />
-      <ClassStudio lang={lang as any} initialClassId={classId} initialInviteCode={query.invite} />
+      <ClassStudio lang={lang as any} initialClassId={classId} initialInviteCode={query.invite} initialDepartmentId={query.department} />
       <SiteFooter lang={lang as any} />
     </main>
   );

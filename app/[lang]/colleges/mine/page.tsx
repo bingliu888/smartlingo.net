@@ -2,12 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CollegeCard } from "../../../../components/CollegeCard";
 import { CollegeCoordinatorUpgradeButton } from "../../../../components/CollegeCoordinatorUpgradeButton";
+import { CollegePayoutOnboardingButton } from "../../../../components/CollegePayoutOnboardingButton";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
 import { isInterfaceLanguage } from "../../../../lib/interface-locale";
 import { requestUser } from "../../../../lib/request-user";
 import { canCreateCollege, colleges } from "../../../../lib/smartlingo-colleges";
-import { COLLEGE_COORDINATOR_MONTHLY_CENTS } from "../../../../lib/stripe-platform-subscription";
+import { supervisorLicense } from "../../../../lib/college-departments";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,10 @@ export default async function MyCollegesPage({ params }: { params: Promise<{ lan
   const user = await requestUser();
   if (!user) redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/colleges/mine`)}`);
 
-  const [items, coordinator] = await Promise.all([
+  const [items, coordinator, license] = await Promise.all([
     colleges({ userId: user.id, mine: true }),
     canCreateCollege(user),
+    supervisorLicense(user.id),
   ]);
   const zh = lang === "zh";
 
@@ -29,8 +31,8 @@ export default async function MyCollegesPage({ params }: { params: Promise<{ lan
       <p className="section-kicker">MY COLLEGES</p>
       <h1>{zh ? "我的学院" : "My colleges"}</h1>
       <p>{zh
-        ? "这里汇总您已经加入、订阅或负责管理的学院。学院协调员可以从这里创建学院。"
-        : "See colleges you joined, subscribed to, or manage. College Coordinators can create a college here."}</p>
+        ? "这里汇总您已经加入、订阅或负责管理的学院。学院总监可以创建招生学院与语言部门。"
+        : "See colleges you joined, subscribed to, or manage. College Supervisors can create enrollment colleges and language departments."}</p>
       <div>
         {coordinator ? <Link className="primary-button" href={`/${lang}/college/create`}>
           ＋ {zh ? "创建学院" : "Create college"}
@@ -43,20 +45,18 @@ export default async function MyCollegesPage({ params }: { params: Promise<{ lan
 
     {!coordinator ? <section className="college-coordinator-plan">
       <div>
-        <p className="section-kicker">COLLEGE COORDINATOR</p>
-        <h2>{zh ? "成为学院协调员" : "Become a College Coordinator"}</h2>
+        <p className="section-kicker">COLLEGE SUPERVISOR</p>
+        <h2>{zh ? "成为学院总监" : "Become a College Supervisor"}</h2>
         <p>{zh
-          ? "订阅后可以创建学院、自动建立导论课程，并管理学院课程表。课程收入、退款和支付仍遵守独立的课程规则。"
-          : "Subscribe to create a college, receive an automatic introductory course, and manage its course table. Course revenue, refunds, and payments remain governed by separate course rules."}</p>
+          ? "一次性购买黄金、白金或钻石总监方案，可分别管理 3、9 或 15 个语言部门。课程由平台管理员创建和定价；部门课程收入按 70%／30% 自动分账。"
+          : "Buy Gold, Platinum, or Diamond once to manage 3, 9, or 15 language departments. Courses and prices remain admin-controlled; department course revenue splits 70/30 automatically."}</p>
       </div>
-      <aside>
-        <strong>${(COLLEGE_COORDINATOR_MONTHLY_CENTS / 100).toFixed(0)}</strong>
-        <span>{zh ? "美元／月" : "USD / month"}</span>
-        <CollegeCoordinatorUpgradeButton lang={lang}/>
-      </aside>
+      <CollegeCoordinatorUpgradeButton lang={lang}/>
     </section> : <section className="college-coordinator-active">
-      <strong>{zh ? "学院协调员资格有效" : "College Coordinator active"}</strong>
-      <span>{zh ? "您可以创建和管理学院。" : "You can create and manage colleges."}</span>
+      <strong>{zh ? "学院总监资格有效" : "College Supervisor active"}</strong>
+      <span>{license?`${zh?"已使用":"Used"} ${license.departmentCount} / ${license.maxDepartments} ${zh?"个部门":"departments"}`:""}</span>
+      <CollegePayoutOnboardingButton lang={lang}/>
+      {license?.tier!=="supreme"?<CollegeCoordinatorUpgradeButton lang={lang} currentTier={license?.tier}/>:null}
     </section>}
 
     <section className="my-colleges-list">
@@ -68,8 +68,8 @@ export default async function MyCollegesPage({ params }: { params: Promise<{ lan
         {items.map(college => <CollegeCard key={college.id} college={college} lang={lang}/>)}
       </div>
       {!items.length ? <p className="college-empty">{zh
-        ? "您还没有加入学院。可以先浏览学院，或订阅学院协调员方案后创建一个学院。"
-        : "You have not joined a college yet. Browse colleges, or subscribe as a College Coordinator to create one."}</p> : null}
+        ? "您还没有加入学院。可以先浏览学院，或购买学院总监方案后创建一个学院。"
+        : "You have not joined a college yet. Browse colleges, or buy a College Supervisor package to create one."}</p> : null}
     </section>
     <SiteFooter lang={lang}/>
   </main>;
