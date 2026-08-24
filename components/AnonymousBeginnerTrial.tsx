@@ -117,7 +117,9 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   const cardId = card?.id || card?.stableId || "";
   const meaning = card ? (zh ? card.meaningZh || card.meaning?.zh : card.meaningEn || card.meaning?.en) || "" : "";
   const counts = useMemo(() => catalog.reduce((all, item) => { all[statuses[item.id] || "unlearned"] += 1; return all; }, { mastered: 0, learning: 0, unlearned: 0 }), [catalog, statuses]);
-  const score = cardScores.length ? Math.round(cardScores.reduce((sum, value) => sum + value, 0) / cardScores.length) : 0;
+  const pendingAnswerScore = answerPoints > 0 && (phase === "feedback" || phase === "sentence" || phase === "speak") ? answerPoints : 0;
+  const visibleScores = pendingAnswerScore ? [...cardScores, pendingAnswerScore] : cardScores;
+  const score = visibleScores.length ? Math.round(visibleScores.reduce((sum, value) => sum + value, 0) / visibleScores.length) : 0;
   const filteredWords = catalog.filter(item => (statuses[item.id] || "unlearned") === reportTab);
   const pageCount = Math.max(1, Math.ceil(filteredWords.length / 20));
   const visiblePage = Math.min(libraryPage, pageCount);

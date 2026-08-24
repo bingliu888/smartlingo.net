@@ -91,6 +91,8 @@ test("anonymous Beginner trial is public, reads the published catalog, and keeps
   assert.match(trial, /phase: "sentence"/);
   assert.match(trial, /JSON\.stringify\(value\)/);
   assert.match(trial, /setPhase\("sentence"\)/);
+  assert.match(trial, /pendingAnswerScore/);
+  assert.match(trial, /visibleScores/);
   assert.match(trial, /useRepeatAfterMePreference/);
   assert.match(trial, /默认关闭/);
   assert.match(trial, /useState<Skill>/);

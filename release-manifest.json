@@ -1,73 +1,73 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-disclaimer-subscription-20260824",
+  "releaseId": "smartlingo-anonymous-trial-score-resume-2026-08-24-v26",
   "site": "smartlingo.net",
   "title": {
-    "en": "Publish localized Disclaimer and public Subscription footer access",
-    "zh": "发布本地化免责声明与公开订阅页脚入口"
+    "en": "Show and resume the anonymous Beginner in-progress score",
+    "zh": "显示并恢复匿名初级课程当前分数"
   },
   "purpose": {
-    "en": "Give every supported interface language a reviewed Disclaimer and a public footer path to subscription or plan information while requiring sign-in only when a user starts payment.",
-    "zh": "为每种受支持的界面语言提供经审阅的免责声明，并从公共页脚开放订阅或套餐信息；仅在用户开始付款时要求登录。"
+    "en": "Complete the real-Chrome recovery after v25 proved exact sentence-builder phase resume: include the current answered card in the visible daily score during feedback, sentence building, and refresh while keeping the feature cookie non-sensitive and speaking opt-in.",
+    "zh": "完成 v25 已验证组句阶段准确恢复后的真实 Chrome 修复：在反馈、组句及刷新期间把当前已答卡片计入可见今日进度分，同时保持功能 Cookie 非敏感和跟读自愿开启。"
   },
   "features": {
     "en": [
-      "Expose six localized footer links in the required About, Privacy, Terms, Disclaimer, Subscription, Project order.",
-      "Keep the subscription, pricing, membership, plan, or course catalog readable without sign-in and preserve sign-in enforcement on payment actions.",
-      "Publish the generic localized Disclaimer covering AI-assisted inaccuracies, pricing errors, third-party platforms, crypto risk, and final non-refundable payments."
+      "Keep the v25 feature-scoped study, feedback, sentence-builder, and completion phase resume.",
+      "Include the current answered card in the visible anonymous daily score before sentence completion.",
+      "Restore the pending answer score and exact sentence-builder phase after refresh without requesting microphone access."
     ],
     "zh": [
-      "按关于、隐私、条款、免责声明、订阅、项目的规定顺序公开六个本地化页脚链接。",
-      "订阅、定价、会员、套餐或课程目录无需登录即可阅读，并保留付款动作的登录要求。",
-      "发布通用本地化免责声明，涵盖 AI 辅助内容不准确、定价错误、第三方平台、加密资产风险以及最终且不可退款的付款。"
+      "保留 v25 已实现的学习、反馈、组句与完成阶段独立恢复。",
+      "在组句完成前把当前已答卡片计入匿名今日进度分。",
+      "刷新后恢复待完成卡片的答题分和准确组句阶段，且不请求麦克风权限。"
     ]
   },
   "affected": {
     "en": [
-      "Public footer, Disclaimer route, public subscription catalog, deployment verification, and Project release history"
+      "Anonymous Beginner Course vocabulary trial score display and its regression contract; no signed-in, payment, Clerk, database, cloud-binding, or sibling-site behavior."
     ],
     "zh": [
-      "公共页脚、免责声明路由、公开订阅目录、部署验证与 Project 发布历史"
+      "匿名初级课程词汇试学分数显示及其回归合同；不影响登录态、支付、Clerk、数据库、云绑定或兄弟站点。"
     ]
   },
   "changes": {
     "en": [
-      "Add localized Subscription labels for all 21 shared locales and route each site to its existing public catalog.",
-      "Cover X, Facebook, TikTok, wallet applications, and crypto exchanges in the localized Disclaimer.",
-      "State that all payments are final and non-refundable except where applicable law requires otherwise."
+      "Calculate the visible score from completed-card scores plus the current non-zero answer score while the learner is on feedback, optional speaking, or sentence building.",
+      "After sentence completion, replace the pending answer with the existing weighted completed-card score so the course scoring contract remains unchanged.",
+      "Store only non-sensitive position, phase, answer points, and completed-card scores in the anonymous feature cookie."
     ],
     "zh": [
-      "为共享的 21 种语言新增本地化订阅标签，并将每个站点链接到其现有公开目录。",
-      "在本地化免责声明中覆盖 X、Facebook、TikTok、钱包应用及加密货币交易所。",
-      "明确除适用法律另有强制要求外，所有付款均为最终付款且不可退款。"
+      "在反馈、自愿跟读或组句阶段，以已完成卡片分数加当前非零答题分计算可见进度分。",
+      "组句完成后用既有加权卡片分替换待完成答题分，保持课程计分合同不变。",
+      "匿名功能 Cookie 只保存非敏感的位置、阶段、答题分与已完成卡片分数。"
     ]
   },
   "validation": {
     "en": [
-      "Run shared footer, Disclaimer, public-catalog, and payment-boundary contract tests plus the production build.",
-      "Deploy through GitHub Actions and Cloudflare, verify production Disclaimer and Subscription access, and confirm the exact Project record."
+      "Run TypeScript, focused anonymous-trial contracts, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio contracts.",
+      "Deploy only through GitHub Actions to Cloudflare, verify the exact Project release record, and repeat the real-Chrome JA answer, Continue, refresh, phase-and-score acceptance."
     ],
     "zh": [
-      "执行共享页脚、免责声明、公开目录与付款边界契约测试及生产构建。",
-      "通过 GitHub Actions 与 Cloudflare 发布，验证生产免责声明和订阅访问，并确认精确的 Project 记录。"
+      "执行 TypeScript、匿名试学定向合同、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合合同。",
+      "仅通过 GitHub Actions 发布至 Cloudflare，核对精确 Project 发布记录，并重复真实 Chrome 的日语答题、继续、刷新、阶段及分数验收。"
     ]
   },
   "deferred": {
     "en": [
-      "Acoustic speech-scoring acceptance remains a separate opt-in human test and is not part of the default repeat-off 3 AM run."
+      "Signed-in en/ja/es/it persistence remains blocked until the dedicated test learner and authenticated Gmail session are available. Acoustic normal-versus-slow timing remains unverified in a Chrome session without speech synthesis."
     ],
     "zh": [
-      "声学语音评分验收属于另行选择开启的真人测试，不属于默认关闭跟读的凌晨 3 点任务。"
+      "登录态英/日/西/意持久化仍需专用测试学员及已登录 Gmail 会话；当前 Chrome 不提供语音合成，正常/慢速声学时长仍未验证。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve the existing 03:00 America/Los_Angeles LaunchAgent schedule, anonymized learner, Clerk/Gmail secret-handling boundary, Cloudflare deployment, and SmartLingo-only scope.",
-      "No other site, account, credential, payment rail, or cloud resource is modified."
+      "Preserve SmartLingo's existing anonymous feature isolation, Repeat After Me default-off behavior, GitHub-to-Cloudflare delivery, and SmartLingo-only data boundaries.",
+      "Do not modify any other site, account, credential, payment rail, database, or cloud resource."
     ],
     "zh": [
-      "保持现有 America/Los_Angeles 凌晨 3 点 LaunchAgent 计划、匿名测试学习者、Clerk/Gmail 敏感信息边界、Cloudflare 发布及仅限 SmartLingo 的范围。",
-      "不修改其他站点、账户、凭据、支付通道或云资源。"
+      "保持 SmartLingo 既有匿名功能隔离、跟读默认关闭、GitHub 至 Cloudflare 发布及仅限 SmartLingo 的数据边界。",
+      "不修改其他站点、账户、凭据、支付通道、数据库或云资源。"
     ]
   }
 }
