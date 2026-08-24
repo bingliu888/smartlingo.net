@@ -284,7 +284,7 @@ test("every language and course level has 120 stable sentence exercises and a te
       const round = buildDailySentenceRound(language, level, "2026-08-21", "listening");
       assert.equal(round.length, SMARTLINGO_SENTENCES_PER_ROUND);
       assert.equal(new Set(round.map(item => item.id)).size, SMARTLINGO_SENTENCES_PER_ROUND);
-      const perfect = gradeSentenceRound(round, JSON.stringify(round.map(item => item.targetSentence)), "listening", "zh");
+      const perfect = gradeSentenceRound(round, JSON.stringify(round.map(item => item.translation[item.language === "zh" ? "en" : "zh"])), "listening", "zh");
       assert.deepEqual({ score: perfect.score, correct: perfect.correctCount }, { score: 100, correct: 10 });
     }
   }

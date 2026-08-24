@@ -146,13 +146,13 @@ test("microphone failures distinguish denied permission from a retryable device 
   assert.equal(smartCardMicrophoneFailure("TimeoutError"), "unavailable");
 });
 
-test("single-card game hides other target words and has no submit button", () => {
+test("SmartCard practice auto-scores then continues while the timed challenge holds feedback for six seconds", () => {
   const source = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   assert.match(source, /请跟我说/);
   assert.match(source, /SpeechRecognition/);
   assert.match(source, /new MediaRecorder\(stream\)/);
   assert.match(source, /getUserMedia/);
-  assert.match(source, /AI 读完后会自动听您跟读/);
+  assert.match(source, /AI 示范后会自动听您跟读，共 3 次/);
   assert.match(source, /重新检查麦克风/);
   assert.match(source, /正在分析发音/);
   assert.match(source, /4500/);
@@ -160,7 +160,13 @@ test("single-card game hides other target words and has no submit button", () =>
   assert.match(source, /permission\.state === "granted"/);
   assert.match(source, /maxAlternatives = 5/);
   assert.doesNotMatch(source, /开始说/);
-  assert.doesNotMatch(source, /听并跟读/);
+  assert.match(source, /gameMode==="practice" \? <footer>/);
+  assert.match(source, /gameMode==="challenge" \? void choose\(option\.id\)/);
+  assert.match(source, /gameMode==="practice"&&selectedAnswerId&&!answerChecked/);
+  assert.match(source, /6000/);
+  assert.match(source, /6 秒后进入下一题/);
+  assert.match(source, /speechScores/);
+  assert.match(source, /recordManualSpeech/);
   assert.doesNotMatch(source, /Listen & speak/);
   assert.match(source, /policy\.startingPoints/);
   assert.doesNotMatch(source, />Submit</);

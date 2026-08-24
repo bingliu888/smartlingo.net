@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
-import { useRepeatAfterMePreference } from "./useRepeatAfterMePreference";
 
 type Slide = {
   id: string;
@@ -48,8 +47,10 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   const [micState, setMicState] = useState<MicState>("idle");
   const [message, setMessage] = useState("");
   const [bestScore, setBestScore] = useState(0);
+  const [attemptScores, setAttemptScores] = useState<number[]>([]);
+  const [readyToContinue, setReadyToContinue] = useState(false);
+  const [modelRate, setModelRate] = useState(.84);
   const [demoNonce, setDemoNonce] = useState(0);
-  const [repeatAfterMe, setRepeatAfterMe] = useRepeatAfterMePreference();
   const timerRef = useRef<number | null>(null);
   const speechCleanupRef = useRef<() => void>(() => undefined);
   const attemptsRef = useRef(0);
@@ -69,6 +70,8 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setListening(false);
     setMicState("idle");
     attemptsRef.current = 0;
+    setAttemptScores([]);
+    setReadyToContinue(false);
     setMessage("");
     if (next >= slides.length) { setComplete(true); return; }
     setComplete(false);
@@ -80,24 +83,22 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     clearTimer();
     const speech = (window as unknown as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
     if (!speech) {
-      timerRef.current = window.setTimeout(() => repeatAfterMe ? listenRef.current() : move(index + 1), repeatAfterMe ? 300 : 8000);
+      timerRef.current = window.setTimeout(() => listenRef.current(), 300);
       return clearTimer;
     }
     speech.cancel();
     const utterance = new SpeechSynthesisUtterance(slide.form);
     utterance.lang = speechLocale;
-    utterance.rate = .76;
+    utterance.rate = modelRate;
     const schedule = () => {
-      setMessage(repeatAfterMe
-        ? (zh ? "轮到您：请跟我说，AI 会自动评分。" : "Your turn: repeat after me for an automatic score.")
-        : (zh ? "“跟我读”已关闭；本页会继续自动播放。" : "Repeat after me is off; autoplay will continue."));
-      timerRef.current = window.setTimeout(() => repeatAfterMe ? listenRef.current() : move(index + 1), repeatAfterMe ? 450 : 8000);
+      setMessage(zh ? `第 ${attemptsRef.current + 1}/3 次：请跟我说，AI 会自动评分。` : `Attempt ${attemptsRef.current + 1}/3: repeat after me for an automatic score.`);
+      timerRef.current = window.setTimeout(() => listenRef.current(), 450);
     };
     utterance.onend = schedule;
     utterance.onerror = schedule;
     speech.speak(utterance);
     return () => { clearTimer(); speech.cancel(); };
-  }, [clearTimer, complete, demoNonce, index, move, paused, repeatAfterMe, slide, speechLocale, started, zh]);
+  }, [clearTimer, complete, demoNonce, index, modelRate, paused, slide, speechLocale, started, zh]);
 
   useEffect(() => () => {
     clearTimer();
@@ -130,7 +131,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setMessage(zh ? "正在准备麦克风……" : "Preparing the microphone…");
     if (!navigator.mediaDevices?.getUserMedia) {
       setMicState("unsupported");
-      setMessage(zh ? "此浏览器暂不支持麦克风评分；您仍可关闭“跟我读”继续自动播放。" : "Microphone scoring is unavailable. Turn Repeat off to continue autoplay.");
+      setMessage(zh ? "此浏览器暂不支持麦克风评分；跟读后可点“我已跟读”完成三次练习。" : "Microphone scoring is unavailable. Repeat aloud, then use “I said it” for each attempt.");
       return;
     }
     let stream: MediaStream;
@@ -185,12 +186,14 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
       setMicState("idle");
       setBestScore(current => Math.max(current, result.score));
       attemptsRef.current += 1;
+      setAttemptScores(current => [...current, result.score]);
       setMessage(result.passed
         ? (zh ? `听到“${transcript}” · ${result.score} 分，太棒了！` : `Heard “${transcript}” · ${result.score}. Great job!`)
         : attemptsRef.current < 3
           ? (zh ? `听到“${transcript}” · ${result.score} 分。AI 再示范一次，请慢慢说。` : `Heard “${transcript}” · ${result.score}. The AI will model it again; speak slowly.`)
-          : (zh ? `本句练习完成，最高 ${Math.max(bestScore, result.score)} 分；继续下一句。` : `Practice complete. Best ${Math.max(bestScore, result.score)}; moving on.`));
-      timerRef.current = window.setTimeout(() => result.passed || attemptsRef.current >= 3 ? move(index + 1) : setDemoNonce(value => value + 1), result.passed ? 1400 : 1700);
+          : (zh ? `三次跟读完成，最高 ${Math.max(bestScore, result.score)} 分。点“继续”进入下一句。` : `Three attempts complete. Best ${Math.max(bestScore, result.score)}. Tap Continue for the next phrase.`));
+      if (attemptsRef.current >= 3) setReadyToContinue(true);
+      else timerRef.current = window.setTimeout(() => setDemoNonce(value => value + 1), 1500);
     };
     const uploadRecording = async (audio: Blob) => {
       setListening(false);
@@ -287,8 +290,23 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setPaused(false);
     setMessage("");
     setBestScore(0);
+    setAttemptScores([]);
+    setReadyToContinue(false);
     setMicState("idle");
     attemptsRef.current = 0;
+  }
+
+  function manualAttempt() {
+    if (readyToContinue) return;
+    attemptsRef.current += 1;
+    setAttemptScores(current => [...current, 0]);
+    if (attemptsRef.current >= 3) {
+      setReadyToContinue(true);
+      setMessage(zh ? "三次跟读完成。当前浏览器未提供语音分数，点“继续”进入下一句。" : "Three attempts complete. This browser could not provide a score; tap Continue.");
+    } else {
+      setMessage(zh ? `已记录第 ${attemptsRef.current}/3 次跟读。再听一次示范。` : `Attempt ${attemptsRef.current}/3 recorded. Listen to the model again.`);
+      setDemoNonce(value => value + 1);
+    }
   }
 
   return <section className="everyday-player" data-layout-fill="everyday-speaking-player">
@@ -308,19 +326,22 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
         <span>{zh ? slide.meaningZh : slide.meaningEn}</span>
         <em aria-live="polite">{message}</em>
       </div>
-      {!started ? <button className="everyday-start" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始自动课程" : "Start auto lesson"}</strong><small>{zh ? "AI 示范 · 您跟读 · 12 张幻灯片" : "AI speaks · you repeat · 12 slides"}</small></button> : null}
+      {!started ? <button className="everyday-start" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始生活口语" : "Start speaking lesson"}</strong><small>{zh ? "AI 示范 · 每句跟读 3 次 · 即时评分" : "AI models · repeat each phrase 3 times · instant scores"}</small></button> : null}
       {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? "再玩一次巩固短句，或选择另一个真实生活场景。" : "Play again to reinforce the phrases, or choose another real-life scene."}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${lang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
     </div>
     <div className="everyday-controls" aria-label={zh ? "幻灯片控制" : "Slide controls"}>
       <button onClick={() => move(0)} disabled={index === 0} aria-label={zh ? "第一张" : "First slide"}>≪</button>
       <button onClick={() => move(index - 1)} disabled={index === 0} aria-label={zh ? "上一张" : "Previous slide"}>‹</button>
-      <button className={`everyday-repeat-toggle${repeatAfterMe ? " on" : ""}`} type="button" aria-pressed={repeatAfterMe} onClick={() => setRepeatAfterMe(!repeatAfterMe)}>{zh ? `跟我读：${repeatAfterMe ? "开" : "关"}` : `Repeat: ${repeatAfterMe ? "On" : "Off"}`}</button>
+      <button className={modelRate > .7 ? "everyday-repeat-toggle on" : "everyday-repeat-toggle"} type="button" onClick={() => { setModelRate(.84); setDemoNonce(value => value + 1); }}>🔊 {zh ? "正常语速" : "Normal"}</button>
+      <button className={modelRate <= .7 ? "everyday-repeat-toggle on" : "everyday-repeat-toggle"} type="button" onClick={() => { setModelRate(.58); setDemoNonce(value => value + 1); }}>🐢 {zh ? "慢速" : "Slow"}</button>
       <button onClick={() => move(index + 1)} disabled={complete} aria-label={zh ? "下一张" : "Next slide"}>›</button>
       <button onClick={() => move(slides.length - 1)} disabled={index === slides.length - 1} aria-label={zh ? "最后一张" : "Last slide"}>≫</button>
       <button className="everyday-pause" onClick={togglePause} disabled={!started || complete}>{paused ? (zh ? "▶ 继续" : "▶ Play") : (zh ? "Ⅱ 暂停" : "Ⅱ Pause")}</button>
       <Link className="everyday-quit" href={`/${lang}/play/everyday?language=${language}`}>{zh ? "退出" : "Quit"}</Link>
     </div>
-    {started && !complete && (micState === "denied" || micState === "error" || micState === "unsupported") ? <button className="everyday-speech-retry" type="button" onClick={() => { setMicState("idle"); setMessage(zh ? "AI 正在重新示范，请听完后跟读。" : "The AI is modeling it again; listen and repeat."); setDemoNonce(value => value + 1); }}>{zh ? "🎙 重新听并跟读" : "🎙 Listen and retry"}</button> : null}
-    <style>{`.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}@media(max-width:620px){.everyday-controls .everyday-repeat-toggle{grid-column:span 2}}`}</style>
+    {started && !complete ? <div className="everyday-attempts" aria-label={zh ? "三次跟读成绩" : "Three speaking attempt scores"}>{[1, 2, 3].map(turn => <b className={turn <= attemptScores.length ? "scored" : ""} key={turn}>{attemptScores[turn - 1] ?? turn}</b>)}</div> : null}
+    {started && !complete && (micState === "denied" || micState === "error" || micState === "unsupported") ? <div className="everyday-fallback"><button className="everyday-speech-retry" type="button" onClick={() => { setMicState("idle"); setMessage(zh ? "AI 正在重新示范，请听完后跟读。" : "The AI is modeling it again; listen and repeat."); setDemoNonce(value => value + 1); }}>{zh ? "🎙 重新听并跟读" : "🎙 Listen and retry"}</button><button className="everyday-speech-retry" type="button" onClick={manualAttempt}>{zh ? "我已跟读" : "I said it"}</button></div> : null}
+    {started && !complete && readyToContinue ? <button className="everyday-continue" type="button" onClick={() => move(index + 1)}>{zh ? "继续" : "Continue"} →</button> : null}
+    <style>{`.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-fallback,.everyday-attempts{margin:12px auto 0;display:flex;justify-content:center;gap:10px}.everyday-attempts b{width:42px;height:42px;display:grid;place-items:center;border:2px solid #bfd3ca;border-radius:50%;color:#60746c}.everyday-attempts b.scored{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry,.everyday-continue{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}.everyday-fallback .everyday-speech-retry{margin:0}.everyday-continue{min-width:180px;justify-content:center;background:#087d62;color:#fff}@media(max-width:620px){.everyday-controls .everyday-repeat-toggle{grid-column:span 2}.everyday-fallback{flex-direction:column;align-items:center}}`}</style>
   </section>;
 }

@@ -2175,6 +2175,7 @@ export async function POST(
       body.answer as string,
       false,
       assignedLevel,
+      uiLanguage,
     ).score;
     if (!state.sessionState || !state.dailySessionPlan) {
       return Response.json({ error: "An active course is required for daily practice." }, { status: 409 });

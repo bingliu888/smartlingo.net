@@ -12,6 +12,7 @@ import {
 } from "./smartlingo-beginner-vocabulary.ts";
 
 export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-21.1" as const;
+export const SMARTLINGO_GUIDED_FLOW_VERSION = "2026-08-23.2" as const;
 
 export const SMARTLINGO_LEARNING_LANGUAGE_CODES = [
   "zh",
@@ -759,6 +760,8 @@ export interface DailyPracticeItem {
     readonly prompt: string;
     readonly audioText?: string;
     readonly answerTokens: readonly string[];
+    readonly sourceLanguage: SmartLingoLearningLanguage | SmartLingoInterfaceLanguage;
+    readonly answerLanguage: SmartLingoLearningLanguage | SmartLingoInterfaceLanguage;
   }[];
   readonly estimatedMinutes: number;
   readonly direction: "ltr" | "rtl";
@@ -790,7 +793,7 @@ function buildDailyInternalQuestion(
   const question = buildPlacementQuestion(language, skill, round, level, date, "daily");
   return {
     ...question,
-    id: `daily:${date}:${language}:${skill}:${SMARTLINGO_LEARNING_CONTENT_VERSION}`,
+    id: `daily:${date}:${language}:${skill}:${SMARTLINGO_LEARNING_CONTENT_VERSION}-${SMARTLINGO_GUIDED_FLOW_VERSION}`,
   };
 }
 
@@ -804,6 +807,7 @@ export function buildDailyPracticeItem(
 ): DailyPracticeItem {
   const question = buildDailyInternalQuestion(language, skill, date, levelOverride);
   const level = levelOverride ?? question.level;
+  const bridgeLanguage: SmartLingoInterfaceLanguage = language === uiLang ? (uiLang === "zh" ? "en" : "zh") : uiLang;
   const sentenceExercises = skill === "listening" || skill === "writing"
     ? buildDailySentenceRound(language, level, date, skill).map(exercise => ({
       id: exercise.id,
@@ -812,7 +816,11 @@ export function buildDailyPracticeItem(
         ? (uiLang === "zh" ? "选择听到的内容" : "Build what you hear")
         : exercise.translation[uiLang],
       audioText: skill === "listening" ? exercise.targetSentence : undefined,
-      answerTokens: tokenizeSentence(exercise.targetSentence, language),
+      answerTokens: skill === "listening"
+        ? tokenizeSentence(exercise.translation[bridgeLanguage], bridgeLanguage)
+        : tokenizeSentence(exercise.targetSentence, language),
+      sourceLanguage: skill === "listening" ? language : bridgeLanguage,
+      answerLanguage: skill === "listening" ? bridgeLanguage : language,
     }))
     : undefined;
   return {
@@ -844,11 +852,12 @@ export function gradeDailyPracticeItem(
   answer: string | null | undefined,
   skipped = false,
   levelOverride?: SmartLingoLevel,
+  uiLang: SmartLingoInterfaceLanguage = "en",
 ): PlacementAnswerScore {
   if (!skipped && (skill === "listening" || skill === "writing")) {
     const question = buildDailyInternalQuestion(language, skill, date, levelOverride);
     const level = levelOverride ?? question.level;
-    const result = gradeSentenceRound(buildDailySentenceRound(language, level, date, skill), answer, skill, "en");
+    const result = gradeSentenceRound(buildDailySentenceRound(language, level, date, skill), answer, skill, uiLang);
     return { questionId: question.id, skill, round: question.round, level, score: result.score, skipped: false };
   }
   return scorePlacementAnswer(buildDailyInternalQuestion(language, skill, date, levelOverride), answer, skipped);

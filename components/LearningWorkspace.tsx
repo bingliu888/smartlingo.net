@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { currentDailyQuizAnswers, reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
+import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
 import { SmartCardStudio } from "./SmartCardStudio";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
@@ -107,6 +108,8 @@ type PracticeTask = {
     prompt: string;
     audioText?: string;
     answerTokens: string[];
+    sourceLanguage?: string;
+    answerLanguage?: string;
   }[];
   estimatedMinutes?: number;
   status?: "available" | "completed" | "skipped";
@@ -401,16 +404,16 @@ const COPY = {
     focusSaved: "已收藏",
     focusMistake: "反复出错",
     reviewedOriginal: "SmartLingo 原创 · 已人工审核",
-    followMe: "跟我读 5 次",
+    followMe: "跟我读 3 次",
     coachTitle: "SmartLingo 人工智能发音导师",
-    coachIntro: "我先读，您再跟读。完成 5 次后会显示本轮平均分，并可立即重新练习。",
+    coachIntro: "我先读，您再跟读。完成 3 次后会显示本轮平均分，再由您选择继续。",
     coachSpeaking: "请先听我读",
     coachListening: "现在请您跟读",
     coachScoring: "正在给出本次反馈",
     coachComplete: "本轮完成",
-    coachRound: "第 {round} / 5 次",
+    coachRound: "第 {round} / 3 次",
     coachAverage: "本轮平均分",
-    coachAgain: "再练 5 次",
+    coachAgain: "再练 3 次",
     prompt: "任务",
     context: "学习材料",
     play: "播放听力",
@@ -564,16 +567,16 @@ const COPY = {
     focusSaved: "Saved",
     focusMistake: "Repeated error",
     reviewedOriginal: "SmartLingo original · human reviewed",
-    followMe: "Follow me 5 times",
+    followMe: "Follow me 3 times",
     coachTitle: "SmartLingo AI pronunciation coach",
-    coachIntro: "I speak first, then you repeat. After five turns, see the round average and start again immediately.",
+    coachIntro: "I speak first, then you repeat. After three turns, see the average and choose when to continue.",
     coachSpeaking: "Listen to me first",
     coachListening: "Now repeat after me",
     coachScoring: "Scoring this turn",
     coachComplete: "Round complete",
-    coachRound: "Turn {round} of 5",
+    coachRound: "Turn {round} of 3",
     coachAverage: "Round average",
-    coachAgain: "Practice 5 more",
+    coachAgain: "Practice 3 more",
     prompt: "Task",
     context: "Learning material",
     play: "Play listening",
@@ -709,6 +712,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   const [loadedLogKey, setLoadedLogKey] = useState("");
   const [vocabularyMode, setVocabularyMode] = useState<VocabularyMode>("recognition");
   const [vocabularyIndex, setVocabularyIndex] = useState(0);
+  const [vocabularyReviewed, setVocabularyReviewed] = useState(false);
   const [revealState, setRevealState] = useState({ key: "", revealed: false });
   const [answers, setAnswers] = useState<Partial<Record<Skill, string>>>({});
   const [busyKey, setBusyKey] = useState("");
@@ -717,6 +721,8 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
   const [notice, setNotice] = useState("");
   const [dictating, setDictating] = useState<Skill | null>(null);
   const [dialogueMode, setDialogueMode] = useState<"follow" | "answer" | null>(null);
+  const [dialogueScores, setDialogueScores] = useState<number[]>([]);
+  const dialogueScoresRef = useRef<number[]>([]);
   const [pronouncing, setPronouncing] = useState(false);
   const [pronunciationFeedback, setPronunciationFeedback] = useState<LearningPayload["pronunciationFeedback"]>(undefined);
   const [pronunciationCoachStatus, setPronunciationCoachStatus] = useState<PronunciationCoachStatus>("idle");
@@ -1198,12 +1204,12 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     }
   }
 
-  function playText(text: string, locale?: string) {
+  function playText(text: string, locale?: string, rate = .82) {
     if (!text || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = locale || classInfo?.targetLanguage || "en-US";
-    utterance.rate = 0.82;
+    utterance.rate = rate;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -1228,7 +1234,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     recognition.start();
   }
 
-  function startDialogueTraining(task: PracticeTask, mode: "follow" | "answer") {
+  function startDialogueTraining(task: PracticeTask, mode: "follow" | "answer", continuing = false) {
     const browser = window as typeof window & {
       SpeechRecognition?: new () => SpeechRecognitionLike;
       webkitSpeechRecognition?: new () => SpeechRecognitionLike;
@@ -1238,6 +1244,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       setLearningError(lang === "zh" ? "当前浏览器不支持语音练习，请使用 Safari 或 Chrome 的最新版本。" : "Speech practice is unavailable in this browser. Try the latest Safari or Chrome.");
       return;
     }
+    if (!continuing) { dialogueScoresRef.current = []; setDialogueScores([]); setAnswers(current => ({ ...current, dialogue: "" })); }
     let listeningStarted = false;
     const listen = () => {
       if (listeningStarted) return;
@@ -1249,12 +1256,16 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       recognition.onresult = event => {
         const transcript = event.results[0]?.[0]?.transcript?.trim() || "";
         if (!transcript) return;
+        const expected = task.audioText || task.prompt;
+        const result = scoreSmartCardPronunciation(expected, transcript, "", classInfo?.targetLanguage || "en");
+        const scores = [...dialogueScoresRef.current, result.score];
+        dialogueScoresRef.current = scores;
+        setDialogueScores(scores);
         setAnswers(current => ({ ...current, dialogue: transcript }));
-        void postLearning({ action: "submit_task", taskId: task.taskId, skill: "dialogue", answer: transcript }, `dialogue:${mode}`).then(result => {
-          if (result) setAnswers(current => ({ ...current, dialogue: "" }));
-        });
+        if (scores.length < 3) window.setTimeout(() => startDialogueTraining(task, mode, true), 900);
+        else void submitTask(task, false, transcript);
       };
-      recognition.onend = () => { setDictating(null); setDialogueMode(null); };
+      recognition.onend = () => { setDictating(null); if (dialogueScoresRef.current.length >= 3) setDialogueMode(null); };
       recognition.onerror = () => { setDictating(null); setDialogueMode(null); };
       setDictating("dialogue");
       recognition.start();
@@ -1337,7 +1348,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         }
         setPronunciationFeedback(result.pronunciationFeedback);
         setPronunciationScores(current => [...current, result.pronunciationFeedback!.score]);
-        if (round >= 5) {
+        if (round >= 3) {
           setPronunciationCoachStatus("complete");
           setPronouncing(false);
           return;
@@ -1454,6 +1465,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
 
   function changeVocabularyMode(mode: VocabularyMode) {
     setVocabularyMode(mode);
+    setVocabularyReviewed(false);
     setRevealState({ key: "", revealed: false });
     setAnswers(current => ({ ...current, vocabulary: "" }));
   }
@@ -1471,10 +1483,15 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
       answer: answers.vocabulary || "",
     }, `vocabulary:${grade}`);
     if (result) {
-      setVocabularyIndex(current => Math.min(current + 1, Math.max(0, (result.vocabularyDeck?.length || 1) - 1)));
-      setRevealState({ key: "", revealed: false });
-      setAnswers(current => ({ ...current, vocabulary: "" }));
+      setVocabularyReviewed(true);
     }
+  }
+
+  function continueVocabulary() {
+    setVocabularyIndex(current => Math.min(current + 1, Math.max(0, vocabularyDeck.length - 1)));
+    setRevealState({ key: "", revealed: false });
+    setVocabularyReviewed(false);
+    setAnswers(current => ({ ...current, vocabulary: "" }));
   }
 
   async function setVocabularyFocus(focused: boolean) {
@@ -1484,8 +1501,8 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     await postLearning({ action: "set_vocabulary_focus", sampleId, focused }, "vocabulary-focus");
   }
 
-  async function submitTask(task: PracticeTask, skip = false) {
-    const answer = answers[task.skill]?.trim() || "";
+  async function submitTask(task: PracticeTask, skip = false, answerOverride?: string) {
+    const answer = answerOverride?.trim() || answers[task.skill]?.trim() || "";
     if (!skip && !answer) return;
     const result = await postLearning({
       action: skip ? "skip_task" : "submit_task",
@@ -1626,8 +1643,8 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
             <div className="sl-flashcard-progress">
               <strong>{t.flashcard} {vocabularyIndex + 1} / {vocabularyDeck.length}</strong>
               <div>
-                <button type="button" disabled={vocabularyIndex === 0} onClick={() => { setVocabularyIndex(current => Math.max(0, current - 1)); setRevealState({ key: "", revealed: false }); }}>{t.previousCard}</button>
-                <button type="button" disabled={vocabularyIndex >= vocabularyDeck.length - 1} onClick={() => { setVocabularyIndex(current => Math.min(vocabularyDeck.length - 1, current + 1)); setRevealState({ key: "", revealed: false }); }}>{t.nextCard}</button>
+                <button type="button" disabled={vocabularyIndex === 0} onClick={() => { setVocabularyIndex(current => Math.max(0, current - 1)); setRevealState({ key: "", revealed: false }); setVocabularyReviewed(false); }}>{t.previousCard}</button>
+                <button type="button" disabled={vocabularyIndex >= vocabularyDeck.length - 1} onClick={() => { setVocabularyIndex(current => Math.min(vocabularyDeck.length - 1, current + 1)); setRevealState({ key: "", revealed: false }); setVocabularyReviewed(false); }}>{t.nextCard}</button>
               </div>
             </div>
             <p className="sl-mode-help">{t.modeHelp[vocabularyMode]}</p>
@@ -1660,9 +1677,8 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               {vocabulary.pronunciation && vocabularyMode !== "listening" && vocabularyMode !== "spelling" ? <span>{vocabulary.pronunciation}</span> : null}
             </div>
             <div className="sl-inline-actions">
-              <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale)}>
-                ◉ {t.pronounce}
-              </button>
+              <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale, .86)}>🔊 {lang === "zh" ? "正常语速" : "Normal"}</button>
+              <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale, .58)}>🐢 {lang === "zh" ? "慢速" : "Slow"}</button>
               <button type="button" disabled={pronouncing || Boolean(busyKey)} onClick={() => startPronunciationPractice(vocabulary)}>◉ {pronouncing ? t.speakingNow : t.followMe}</button>
               <button type="button" onClick={() => setRevealState({ key: vocabularyKey, revealed: true })}>{t.reveal}</button>
               <button type="button" disabled={Boolean(busyKey)} aria-pressed={Boolean(vocabulary.progress?.isFocused)} onClick={() => setVocabularyFocus(!vocabulary.progress?.isFocused)}>
@@ -1695,7 +1711,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
               {vocabulary.sourceType === "smartlingo_original" && vocabulary.humanReviewStatus === "reviewed" ? <small className="sl-content-provenance">✓ {t.reviewedOriginal} · {vocabulary.level} · {vocabulary.topic}</small> : null}
               <p className="sl-grade-help">{t.gradeHelp}</p>
               <div className="sl-grade-actions">
-                {VOCABULARY_GRADES.map(grade => <button type="button" disabled={Boolean(busyKey)} onClick={() => gradeVocabulary(grade)} key={grade}>{t.grades[grade]}</button>)}
+                {vocabularyReviewed ? <button type="button" onClick={continueVocabulary}>{lang === "zh" ? "继续" : "Continue"} →</button> : VOCABULARY_GRADES.map(grade => <button type="button" disabled={Boolean(busyKey)} onClick={() => gradeVocabulary(grade)} key={grade}>{t.grades[grade]}</button>)}
               </div>
             </div> : null}
           </div> : <p className="sl-empty-task">{t.noTask}</p>}
@@ -1746,12 +1762,13 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
                   <small>{task.feedback.disclaimer.zh}</small>
                   <small lang="en">{task.feedback.disclaimer.en}</small>
                   <small>{t.contentVersion} {task.feedback.contentVersion}</small>
+                  <button type="button" className="sl-feedback-continue" onClick={() => setActiveSkill(skill === "dialogue" ? "exam" : SMART_SKILLS[Math.min(SMART_SKILLS.length - 1, SMART_SKILLS.indexOf(skill) + 1)])}>{lang === "zh" ? "继续" : "Continue"} →</button>
                 </section> : null}
               </> : <>
-                {(skill === "listening" || skill === "writing") && task.sentenceExercises?.length ? <SentenceBuilderRound lang={lang} mode={skill} speechLocale={task.speechLocale || "en-US"} exercises={task.sentenceExercises} onComplete={serialized => setAnswers(current => ({ ...current, [skill]: serialized }))}/> : task.options?.length ? <div className="sl-task-options">
+                {(skill === "listening" || skill === "writing") && task.sentenceExercises?.length ? <SentenceBuilderRound lang={lang} mode={skill} speechLocale={task.speechLocale || "en-US"} exercises={task.sentenceExercises} onComplete={serialized => { setAnswers(current => ({ ...current, [skill]: serialized })); void submitTask(task, false, serialized); }}/> : task.options?.length ? <div className="sl-task-options">
                   {task.options.map(option => {
                     const value = taskOptionValue(option);
-                    return <button className={answer === value ? "selected" : ""} aria-pressed={answer === value} type="button" onClick={() => setAnswers(current => ({ ...current, [skill]: value }))} key={value}>{option.label}</button>;
+                    return <button className={answer === value ? "selected" : ""} aria-pressed={answer === value} type="button" disabled={Boolean(busyKey)} onClick={() => { setAnswers(current => ({ ...current, [skill]: value })); void submitTask(task, false, value); }} key={value}>{option.label}</button>;
                   })}
                 </div> : <label className="sl-answer-field">
                   <span>{t.response}</span>
@@ -1760,14 +1777,17 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
                 {skill === "dialogue" && !task.options?.length ? <div className="sl-dialogue-actions" aria-label={lang === "zh" ? "口语训练方式" : "Speaking practice modes"}>
                   <button type="button" disabled={dictating === "dialogue" || Boolean(busyKey)} onClick={() => startDialogueTraining(task, "follow")}>{dialogueMode === "follow" ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "跟我说" : "Repeat after me")}</button>
                   <button type="button" disabled={dictating === "dialogue" || Boolean(busyKey)} onClick={() => startDialogueTraining(task, "answer")}>{dialogueMode === "answer" ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "回答我" : "Answer me")}</button>
-                  <small>{lang === "zh" ? "导师会先开口，再聆听并纠正您的回答。" : "The tutor speaks first, then listens and corrects your response."}</small>
+                  <button type="button" onClick={() => playText(task.audioText || task.prompt, task.speechLocale, .84)}>🔊 {lang === "zh" ? "正常语速" : "Normal"}</button>
+                  <button type="button" onClick={() => playText(task.audioText || task.prompt, task.speechLocale, .58)}>🐢 {lang === "zh" ? "慢速" : "Slow"}</button>
+                  <div className="sl-dialogue-scores">{[1, 2, 3].map(turn => <b className={turn <= dialogueScores.length ? "scored" : ""} key={turn}>{dialogueScores[turn - 1] ?? turn}</b>)}</div>
+                  <small>{lang === "zh" ? "导师先示范，再连续聆听并评分 3 次；完成后自动显示反馈。" : "The tutor models, then listens and scores three attempts before showing feedback automatically."}</small>
                 </div> : null}
                 {skill === "writing" && !task.options?.length && !task.sentenceExercises?.length ? <button className="sl-voice-action" type="button" disabled={dictating === skill} onClick={() => startDictation(skill, task.speechLocale)}>
                   ◉ {dictating === skill ? t.listeningNow : t.voice}
                 </button> : null}
                 <div className="sl-task-actions">
                   <button type="button" disabled={Boolean(busyKey)} onClick={() => submitTask(task, true)}>{t.skip}</button>
-                  <button className="sl-primary-action" type="button" disabled={Boolean(busyKey) || !answer.trim()} onClick={() => submitTask(task, false)}>{t.submit} →</button>
+                  <button className="sl-primary-action" type="button" disabled={Boolean(busyKey) || !answer.trim() || (skill === "dialogue" && dialogueScores.length < 3)} onClick={() => submitTask(task, false)}>{lang === "zh" ? "检查" : "Check"}</button>
                 </div>
               </>}
             </div> : <p className="sl-empty-task">{t.noTask}</p>}

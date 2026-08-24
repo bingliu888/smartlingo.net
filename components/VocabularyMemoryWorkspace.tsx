@@ -87,6 +87,12 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
   const meaning = (item: { meaningZh: string; meaningEn: string }) => zh ? item.meaningZh : item.meaningEn;
   const textMode = card?.mode === "spelling" || card?.mode === "cloze";
 
+  // Selection questions score immediately; typing questions score after the learner pauses.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (selectedOptionId && phase === "answer" && !busy) void submit(selectedOptionId); }, [selectedOptionId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!textMode || phase !== "answer" || !typed.trim() || busy) return; const timer = window.setTimeout(checkTyped, 900); return () => window.clearTimeout(timer); }, [typed, textMode, phase, busy]);
+
   function playWord(rate = .86, after?: () => void) {
     if (!card || !("speechSynthesis" in window)) { after?.(); return; }
     window.speechSynthesis.cancel();

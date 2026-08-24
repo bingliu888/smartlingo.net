@@ -32,15 +32,15 @@ test("course details replace the back button with language-preserving everyday s
   assert.doesNotMatch(page, /返回选择课程|Back to courses/);
 });
 
-test("the player includes autoplay, speech scoring, complete navigation controls, replay, and quit", async () => {
+test("the player includes three scored attempts, two speeds, explicit continuation, replay, and quit", async () => {
   const player = await read("../components/EverydaySpeakingPlayer.tsx");
-  for (const marker of ["speechSynthesis", "SpeechRecognition", "MediaRecorder", "getUserMedia", "scoreSmartCardPronunciation", "开始自动课程", "再玩一次", "第一张", "上一张", "下一张", "最后一张", "暂停", "退出"]) assert.match(player, new RegExp(marker));
+  for (const marker of ["speechSynthesis", "SpeechRecognition", "MediaRecorder", "getUserMedia", "scoreSmartCardPronunciation", "开始生活口语", "再玩一次", "第一张", "上一张", "下一张", "最后一张", "暂停", "退出", "正常语速", "慢速", "三次跟读", "Continue"]) assert.match(player, new RegExp(marker));
   assert.match(player, /slides\.length/);
   assert.match(player, /move\(0\)/);
   assert.match(player, /move\(slides\.length - 1\)/);
-  assert.match(player, /useRepeatAfterMePreference/);
-  assert.match(player, /repeatAfterMe \? listenRef\.current\(\)/);
-  assert.match(player, /aria-pressed=\{repeatAfterMe\}/);
+  assert.doesNotMatch(player, /useRepeatAfterMePreference|repeatAfterMe/);
+  assert.match(player, /attemptScores/);
+  assert.match(player, /readyToContinue/);
   assert.match(player, /\/api\/everyday-speaking\/speech/);
   assert.match(player, /watchdog = window\.setTimeout/);
   assert.doesNotMatch(player, />🎙 \{listening \?/);

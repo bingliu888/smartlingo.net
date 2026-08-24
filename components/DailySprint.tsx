@@ -123,12 +123,10 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
   function chooseVocabulary(choice: string) {
     if (!word || vocabChecked) return;
     setVocabChoice(choice);
-  }
-  function checkVocabulary() {
-    if (!word || !vocabChoice || vocabChecked) return;
     setVocabChecked(true); const current = responsesRef.current[roundIndex] || {};
-    update({ vocabularySeen: [...new Set([...(current.vocabularySeen || []), word.id])], vocabularyAnswers: { ...(current.vocabularyAnswers || {}), [word.id]: vocabChoice } });
+    update({ vocabularySeen: [...new Set([...(current.vocabularySeen || []), word.id])], vocabularyAnswers: { ...(current.vocabularyAnswers || {}), [word.id]: choice } });
   }
+  function checkVocabulary() { if (vocabChoice) chooseVocabulary(vocabChoice); }
   function startVocabularySpeaking() {
     if (!word) return;
     beginSpeechSeries(word.form, word.pronunciation, "vocabulary", nextWord);
@@ -142,11 +140,9 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
   function chooseReading(choice: string) {
     if (readingChecked) return;
     setReadingChoice(choice);
+    setReadingChecked(true); update({ reading: choice });
   }
-  function checkReading() {
-    if (!readingChoice || readingChecked) return;
-    setReadingChecked(true); update({ reading: readingChoice });
-  }
+  function checkReading() { if (readingChoice) chooseReading(readingChoice); }
   function startDialogue() {
     if (!round) return;
     setStage("dialogue"); resetSpeech("dialogue");

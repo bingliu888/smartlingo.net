@@ -82,6 +82,8 @@ test("sentence-builder UI supports both heard-sentence and translated-prompt wor
   assert.match(source, /mode: "listening" \| "writing"/);
   assert.match(source, /Build what you hear/);
   assert.match(source, /Build this sentence in the language you are learning/);
-  assert.match(source, /setSelected\(current => \[\.\.\.current, tile\.id\]\)/);
+  assert.match(source, /const nextSelected = \[\.\.\.selected, tileId\]/);
+  assert.match(source, /Fill all \$\{exercise\.answerTokens\.length\} slots to check automatically/);
+  assert.doesNotMatch(source, />\{zh \? "检查" : "Check"\}<\/button>/);
   assert.match(source, /Correct answer:/);
 });

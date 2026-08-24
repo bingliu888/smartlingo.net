@@ -16,7 +16,7 @@ type Card = {
 };
 type LibraryItem = { id: string; form: string; targetPhonetic: string; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl"; difficulty?: number; frequencyDegree?: number };
 type TrialPayload = { localDate: string; summary: { total: number }; dailyDeck: Card[]; items: LibraryItem[]; error?: string };
-type Task = { taskId: string; skill: Skill; prompt: string; context?: string; audioText?: string; options?: readonly { id: string; label: string }[]; sentenceExercises?: readonly { id: string; scenario: string; prompt: string; audioText?: string; answerTokens: readonly string[] }[]; direction?: "ltr" | "rtl" };
+type Task = { taskId: string; skill: Skill; prompt: string; context?: string; audioText?: string; options?: readonly { id: string; label: string }[]; sentenceExercises?: readonly { id: string; scenario: string; prompt: string; audioText?: string; answerTokens: readonly string[]; sourceLanguage?: string; answerLanguage?: string }[]; direction?: "ltr" | "rtl" };
 type RecognitionLike = { lang: string; interimResults: boolean; continuous: boolean; start(): void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onerror: (() => void) | null };
 
 const SKILLS: Skill[] = ["vocabulary", "reading", "writing", "listening", "dialogue"];

@@ -78,6 +78,11 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const [points, setPoints] = useState(100);
     const [answerTries, setAnswerTries] = useState(0);
     const [chosenIds, setChosenIds] = useState<string[]>([]);
+    const [selectedAnswerId, setSelectedAnswerId] = useState("");
+    const [answerChecked, setAnswerChecked] = useState(false);
+    const [answerResolved, setAnswerResolved] = useState(false);
+    const [speechScores, setSpeechScores] = useState<number[]>([]);
+    const [speechComplete, setSpeechComplete] = useState(false);
     const [message, setMessage] = useState("");
     const [busy, setBusy] = useState(false);
     const [listening, setListening] = useState(false);
@@ -109,6 +114,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     const challengeStarted = useRef(false);
     const timeoutSubmitted = useRef(false);
     const microphoneApproved = useRef(false);
+    const speechAwarded = useRef(false);
     const load = useCallback(async () => { const response = await fetch(`/api/smartcards/${encodeURIComponent(token)}`, { cache: "no-store" }); const payload = await response.json().catch(() => ({})) as Payload; if (!response.ok)
         throw new Error(payload.error); setData(payload); setPoints(payload.policy?.startingPoints || 100); }, [token]);
     useEffect(() => { const timer = window.setTimeout(() => { const local = new Date(); const hour = local.getHours(); setTimeScene(hour >= 5 && hour < 10 ? "dawn" : hour >= 10 && hour < 17 ? "day" : hour >= 17 && hour < 21 ? "sunset" : "night"); setDaySeed(Math.floor(new Date(local.getFullYear(), local.getMonth(), local.getDate()).getTime() / 86400000)); void load().catch(() => setMessage(zh ? "找不到这套 SmartCard。" : "This SmartCard deck is unavailable.")); }, 0); return () => { window.clearTimeout(timer); speechCleanupRef.current(); recognitionRef.current?.stop(); window.clearTimeout(advanceTimer.current); window.clearTimeout(scoreTimer.current); window.speechSynthesis?.cancel(); void audioRef.current?.close(); }; }, [load, zh]);
@@ -137,17 +143,20 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
         evidence.current = cards.map(item => ({ cardId: item.id, choices: [], transcripts: [] })); }, [cards]);
     const options = useMemo(() => { if (!card)
         return []; const others = cards.filter(item => item.id !== card.id); const distractors = [0, 1, 2].map(offset => others[(index * 3 + offset) % others.length]).filter(Boolean); const values = [card, ...distractors]; const shift = index % values.length; return [...values.slice(shift), ...values.slice(0, shift)]; }, [card, cards, index]);
-    function speak(text: string, onEnd?: () => void) { if (!window.speechSynthesis) {
+    // Practice choices score immediately; Challenge choices score once and hold feedback for six seconds.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(()=>{if(gameMode==="practice"&&selectedAnswerId&&!answerChecked&&!busy)void choose(selectedAnswerId);},[selectedAnswerId]);
+    function speak(text: string, onEnd?: () => void, rate = .84) { if (!window.speechSynthesis) {
         onEnd?.();
         return;
-    } window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = speechLang[data?.deck?.targetLanguage || ""] || data?.deck?.targetLanguage || "en-US"; utterance.rate = .84; const voice = window.speechSynthesis.getVoices().find(item => item.lang.toLowerCase().startsWith(utterance.lang.slice(0, 2).toLowerCase())); if (voice)
+    } window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = speechLang[data?.deck?.targetLanguage || ""] || data?.deck?.targetLanguage || "en-US"; utterance.rate = rate; const voice = window.speechSynthesis.getVoices().find(item => item.lang.toLowerCase().startsWith(utterance.lang.slice(0, 2).toLowerCase())); if (voice)
         utterance.voice = voice; utterance.onend = () => onEnd?.(); utterance.onerror = () => onEnd?.(); window.speechSynthesis.resume(); window.speechSynthesis.speak(utterance); }
     function celebrateScore(amount: number, showPoints = true) { if(showPoints){scoreEventId.current += 1; setScoreEffect({ id: scoreEventId.current, amount }); window.clearTimeout(scoreTimer.current); scoreTimer.current = window.setTimeout(() => setScoreEffect(null), 900);} if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) document.querySelector(showPoints?".score":".game-board")?.animate(amount > 0 ? [{ transform: "scale(1)" }, { transform: "scale(1.025)" }, { transform: "scale(1)" }] : [{ transform: "translateX(0)" }, { transform: "translateX(-7px)" }, { transform: "translateX(7px)" }, { transform: "translateX(0)" }], { duration: 420, easing: "ease-out" }); const browser = window as typeof window & { webkitAudioContext?: typeof AudioContext }; const Audio = window.AudioContext || browser.webkitAudioContext; if (!Audio)
         return; const context = audioRef.current || new Audio(); audioRef.current = context; void context.resume(); const oscillator = context.createOscillator(); const gain = context.createGain(); oscillator.type = amount > 0 ? "sine" : "triangle"; oscillator.frequency.setValueAtTime(amount > 0 ? 620 : 190, context.currentTime); if (amount > 0)
         oscillator.frequency.exponentialRampToValueAtTime(880, context.currentTime + .16); gain.gain.setValueAtTime(.0001, context.currentTime); gain.gain.exponentialRampToValueAtTime(.11, context.currentTime + .02); gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + .24); oscillator.connect(gain); gain.connect(context.destination); oscillator.start(); oscillator.stop(context.currentTime + .25); }
     async function post(body: object) { const response = await fetch(`/api/smartcards/${encodeURIComponent(token)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); const payload = await response.json().catch(() => ({})) as Record<string, unknown>; if (!response.ok)
         throw new Error(String(payload.error || "Request failed")); return payload; }
-    function nextCard() { setMessage(""); setFlipped(false); setAnswerTries(0); setChosenIds([]); if (index + 1 < cards.length) {
+    function nextCard() { setMessage(""); setFlipped(false); setAnswerTries(0); setChosenIds([]); setSelectedAnswerId(""); setAnswerChecked(false); setAnswerResolved(false); setSpeechScores([]); setSpeechComplete(false); speechAwarded.current=false; if (index + 1 < cards.length) {
         setIndex(value => value + 1);
         setPhase("answer");
     }
@@ -157,16 +166,16 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
         return; setBusy(true); evidence.current[index].choices.push(answerId); setChosenIds(current => [...current, answerId]); try {
         const result = await post({ action: "check-answer", cardId: card.id, answerId, gameMode, sessionId: challengeSessionId });
         if(gameMode==="challenge"){
-            celebrateScore(result.correct?1:-1,false); setMessage(result.correct?(zh?"答对了！":"Correct!"):(result.timedOut?(zh?"时间到，本题失败。":"Time is up. Question failed."):(zh?"本题答错，继续下一题。":"Incorrect. Moving to the next question.")));
-            if(result.complete)advanceTimer.current=window.setTimeout(()=>void finish(),450);else{setIndex(Number(result.nextIndex||index+1));setChosenIds([]);setChallengeDeadline(Number(result.questionStartedMs||Date.now())+policy.challengeSeconds*1000);timeoutSubmitted.current=false;advanceTimer.current=window.setTimeout(()=>setMessage(""),700);}
+            setAnswerChecked(true); celebrateScore(result.correct?1:-1,false); setMessage(result.correct?(zh?"答对了！6 秒后进入下一题。":"Correct! Next question in 6 seconds."):(result.timedOut?(zh?"时间到，本题失败。6 秒后继续。":"Time is up. Next question in 6 seconds."):(zh?"本题答错。6 秒后进入下一题。":"Incorrect. Next question in 6 seconds.")));
+            if(result.complete)advanceTimer.current=window.setTimeout(()=>void finish(),6000);else{advanceTimer.current=window.setTimeout(()=>{setIndex(Number(result.nextIndex||index+1));setChosenIds([]);setAnswerChecked(false);setMessage("");setChallengeDeadline(Number(result.questionStartedMs||Date.now())+policy.challengeSeconds*1000);timeoutSubmitted.current=false;},6000);}
             return;
         }
         if (result.correct) {
             setPoints(value => value + policy.correctPoints);
             celebrateScore(policy.correctPoints);
-            setMessage(zh ? `答对了！+${policy.correctPoints} 分，现在开口说。` : `Correct! +${policy.correctPoints}. Now say it.`);
-            setPhase("speech");
-            advanceTimer.current = window.setTimeout(() => speak(card.form, () => startListening()), 450);
+            setMessage(zh ? `答对了！+${policy.correctPoints} 分。` : `Correct! +${policy.correctPoints}.`);
+            setAnswerChecked(true);
+            setAnswerResolved(true);
         }
         else {
             const tries = answerTries + 1;
@@ -174,10 +183,8 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
             setPoints(value => Math.max(0, value - policy.wrongPenalty));
             celebrateScore(-policy.wrongPenalty);
             setMessage(zh ? `再试一次！-${policy.wrongPenalty} 分（${tries}/${policy.maxAttempts}）` : `Try again! −${policy.wrongPenalty} (${tries}/${policy.maxAttempts})`);
-            if (tries >= policy.maxAttempts) {
-                setPhase("speech");
-                advanceTimer.current = window.setTimeout(() => speak(card.form, () => startListening()), 800);
-            }
+            setAnswerChecked(true);
+            setAnswerResolved(tries >= policy.maxAttempts);
         }
     }
     catch {
@@ -186,6 +193,12 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     finally {
         setBusy(false);
     } }
+    function continueAnswer() {
+        if (!card) return;
+        if (!answerResolved) { setSelectedAnswerId(""); setAnswerChecked(false); return; }
+        setPhase("speech"); setSpeechScores([]); setSpeechComplete(false); setMessage(zh ? "第 1/3 次：先听示范，再跟读。" : "Attempt 1/3: listen, then repeat.");
+        advanceTimer.current = window.setTimeout(() => speak(card.form, () => startListening(), .84), 250);
+    }
     async function startListening() { if (!card || listening || micState === "requesting" || micState === "analyzing")
         return;
     speechCleanupRef.current();
@@ -337,27 +350,28 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
         return; try {
         const result = reviewed?.transcript ? reviewed : await post({ action: "check-pronunciation", cardId: card.id, transcripts });
         evidence.current[index].transcripts.push(String(result.transcript || transcripts[0]));
-        if (result.passed) {
-            setPoints(value => value + policy.pronunciationPoints);
-            celebrateScore(policy.pronunciationPoints);
-            setMessage(zh ? `发音很好！+${policy.pronunciationPoints} 分` : `Nice pronunciation! +${policy.pronunciationPoints}`);
-            advanceTimer.current = window.setTimeout(nextCard, 900);
-        }
-        else {
-            const tries = evidence.current[index].transcripts.length;
-            if (tries < policy.maxAttempts) {
-                setMessage(zh ? `再清楚一点，我们重来（${tries}/${policy.maxAttempts}）。` : `A little clearer. Let's try again (${tries}/${policy.maxAttempts}).`);
-                advanceTimer.current = window.setTimeout(() => speak(card.form, () => startListening()), 700);
-            }
-            else {
-                setMessage(zh ? "练习完成，继续下一张！" : "Practice complete—on to the next card!");
-                advanceTimer.current = window.setTimeout(nextCard, 900);
-            }
+        const tries = evidence.current[index].transcripts.length;
+        const score = Number(result.score || (result.passed ? 100 : 0));
+        setSpeechScores(current => [...current, score]);
+        if (result.passed && !speechAwarded.current) { speechAwarded.current=true; setPoints(value => value + policy.pronunciationPoints); celebrateScore(policy.pronunciationPoints); }
+        if (tries < 3) {
+            setMessage(zh ? `第 ${tries}/3 次 ${score} 分。继续听示范并跟读。` : `Attempt ${tries}/3 scored ${score}. Listen and repeat again.`);
+            advanceTimer.current = window.setTimeout(() => speak(card.form, () => startListening(), .84), 700);
+        } else {
+            setSpeechComplete(true);
+            setMessage(zh ? `三次跟读完成，平均 ${Math.round([...speechScores, score].reduce((sum, item) => sum + item, 0) / 3)} 分。` : `Three attempts complete. Average ${Math.round([...speechScores, score].reduce((sum, item) => sum + item, 0) / 3)}.`);
         }
     }
     catch {
         setMessage(zh ? "暂时无法检查发音，可重试或继续。" : "Pronunciation check is unavailable; retry or continue.");
     } }
+    function recordManualSpeech() {
+        if (speechComplete) return;
+        const nextScores=[...speechScores,0];
+        setSpeechScores(nextScores);
+        if(nextScores.length>=3){setSpeechComplete(true);setMessage(zh?"三次跟读已完成。当前浏览器未提供语音分数。":"Three attempts complete. This browser could not provide a speech score.");}
+        else{setMessage(zh?`已记录第 ${nextScores.length}/3 次跟读。请再听示范并跟读。`:`Attempt ${nextScores.length}/3 recorded. Listen and repeat again.`);advanceTimer.current=window.setTimeout(()=>speak(card?.form||"",()=>startListening(),.84),500);}
+    }
     async function finish(sessionOverride?:string) { setPhase("complete"); setBusy(true); try {
         const result = await post({ action: "game-complete", gameMode, sessionId:sessionOverride||challengeSessionId, cards: evidence.current, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
         setPoints(Number(result.score || 0));
@@ -370,12 +384,13 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice" }:
     finally {
         setBusy(false);
     } }
-    function replay() { evidence.current = cards.map(item => ({ cardId: item.id, choices: [], transcripts: [] })); setIndex(0); setPoints(policy.startingPoints); setAnswerTries(0); setChosenIds([]); setFlipped(false); setFinalResult(null); setPhase("answer"); setMessage(""); }
+    function replay() { evidence.current = cards.map(item => ({ cardId: item.id, choices: [], transcripts: [] })); speechAwarded.current=false; setIndex(0); setPoints(policy.startingPoints); setAnswerTries(0); setChosenIds([]); setSelectedAnswerId(""); setAnswerChecked(false); setAnswerResolved(false); setSpeechScores([]); setSpeechComplete(false); setFlipped(false); setFinalResult(null); setPhase("answer"); setMessage(""); }
     const targetLanguage = data?.deck?.targetLanguage || (token.startsWith("starter-") ? token.slice(8) : ""); const backHref = gameMode === "challenge" ? `/${lang}/play/challenge?language=${targetLanguage}` : `/${lang}/play?language=${targetLanguage}`; const hintShade=gameMode==="challenge"?"rgba(3,38,35,.44)":answerTries>=2?"rgba(5,118,75,.18)":answerTries===1?"rgba(151,92,0,.28)":"rgba(3,38,35,.4)"; const cardStyle = { backgroundImage: `linear-gradient(${hintShade},${hintShade}),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: `${15 + ((daySeed + index * 17) % 70)}% center`, backgroundSize: "cover", textShadow: "0 3px 14px #001",transition:"background-image .35s" } as CSSProperties;
     return <main className="smart-game"><header><Link href={backHref}>← {gameMode === "challenge" ? (zh ? "挑战日历" : "Challenge calendar") : (zh ? "返回游戏" : "Back to games")}</Link><div className={`score ${scoreEffect ? (scoreEffect.amount > 0 ? "score-gain" : "score-loss") : ""}`}><span>{gameMode==="challenge"?(zh?"当前冠军成绩":"CURRENT WINNER"):(zh ? "课程积分" : "COURSE POINTS")}</span><strong>{gameMode==="challenge"?(currentLeader.score||"—"):points}</strong>{gameMode==="challenge"&&currentLeader.name?<small>{currentLeader.name}</small>:null}{gameMode!=="challenge"&&scoreEffect ? <i key={scoreEffect.id}>{scoreEffect.amount > 0 ? "+" : ""}{scoreEffect.amount}</i> : null}</div><p>{gameMode === "challenge" ? (zh ? "今日智慧卡挑战 · 每题一次机会" : "Today's challenge · one chance per question") : (data?.deck?.title || "SmartCard")}</p></header>
     {card && phase !== "complete" ? <section className="game-board"><div className="progress"><span style={{ width: `${((index + 1) / cards.length) * 100}%` }}/><b>{index + 1} / {cards.length}</b></div><button style={cardStyle} className={`word-card scene-${timeScene} ${flipped ? "flipped" : ""}`} onClick={() => {if(gameMode!=="challenge")setFlipped(value => !value);}}><small className="card-count">{index + 1} / {cards.length}</small>{gameMode==="challenge"?<small>⏱ {countdown}s</small>:null}<strong>{flipped ? (zh ? card.meaningZh : card.meaningEn) : card.form}</strong>{flipped && card.pronunciation ? <em>{card.pronunciation}</em> : null}<span>{gameMode==="challenge"?(zh?"10 秒内选择答案 · 不提供提示":"Choose within 10 seconds · no hints"):(flipped ? (zh ? "点一下返回单词" : "Tap to see the word") : (zh ? "点一下查看意思" : "Tap to see the meaning"))}</span></button>
-      {phase === "answer" ? <div className="answer-step"><h2>{gameMode==="challenge"?(zh?`只有一次机会 · ${countdown} 秒`:`One chance · ${countdown} seconds`):(zh ? "这个词是什么意思？" : "What does this word mean?")}</h2><div>{options.map(option => <button key={option.id} disabled={busy || chosenIds.includes(option.id) || (gameMode==="challenge"&&!challengeSessionId)} onClick={() => void choose(option.id)}>{zh ? option.meaningZh : option.meaningEn}</button>)}</div></div> : <div className="speech-step"><div className="coach" aria-hidden="true"><span>AI</span><i>●</i></div><div><h2>{zh ? <>请跟我说 <b>{card.form}</b></> : <>Repeat after me: <b>{card.form}</b></>}</h2><dl className="pronunciation-guides"><div><dt>{zh ? "目标语言音标" : "Target phonetic"}</dt><dd>{card.targetPhonetic || card.pronunciation}</dd></div><div><dt>{zh ? "当前语言助读（近似）" : "Approximate reading aid"}</dt><dd>{card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn) || card.pronunciation}</dd></div></dl><p aria-live="polite">{micState === "requesting" ? (zh ? "正在准备麦克风…" : "Preparing the microphone…") : micState === "analyzing" ? (zh ? "正在分析发音…" : "Analyzing pronunciation…") : listening ? (zh ? "正在听您说…" : "Listening…") : (zh ? "AI 读完后会自动听您跟读；最多练习 3 次。" : "After AI speaks, the microphone listens automatically. You have up to 3 tries.")}</p><nav>{micState === "denied" || micState === "error" ? <button onClick={() => { void startListening(); }}>🎙 {zh ? "重新检查麦克风" : "Check microphone again"}</button> : null}<button onClick={() => { speechCleanupRef.current(); setListening(false); setMessage(zh ? "已完成跟读，继续下一张。" : "Repeat complete. Moving on."); advanceTimer.current = window.setTimeout(nextCard, 500); }}>{zh ? "我已跟读" : "I said it"}</button></nav><small>{zh ? "首次使用请选择“允许”。语音只用于即时评分，不保存录音或文字。" : "Choose Allow the first time. Speech is scored transiently; audio and transcripts are not stored."}</small></div></div>}
-      {message ? <p className="feedback" role="status">{message}</p> : null}</section> : null}
+      {phase === "answer" ? <div className="answer-step"><h2>{gameMode==="challenge"?(zh?`只有一次机会 · ${countdown} 秒`:`One chance · ${countdown} seconds`):(zh ? "这个词是什么意思？" : "What does this word mean?")}</h2><div>{options.map(option => <button key={option.id} aria-pressed={gameMode==="practice" && selectedAnswerId===option.id} className={gameMode==="practice" && selectedAnswerId===option.id ? "selected" : ""} disabled={busy || chosenIds.includes(option.id) || answerChecked || (gameMode==="challenge"&&!challengeSessionId)} onClick={() => gameMode==="challenge" ? void choose(option.id) : setSelectedAnswerId(option.id)}>{zh ? option.meaningZh : option.meaningEn}</button>)}</div>{gameMode==="practice" ? <footer>{answerChecked ? <button type="button" onClick={continueAnswer}>{zh ? "继续" : "Continue"}</button> : <button type="button" disabled={!selectedAnswerId || busy} onClick={() => void choose(selectedAnswerId)}>{zh ? "检查" : "Check"}</button>}</footer> : null}</div> : <div className="speech-step"><div className="coach" aria-hidden="true"><span>AI</span><i>●</i></div><div><h2>{zh ? <>请跟我说 <b>{card.form}</b></> : <>Repeat after me: <b>{card.form}</b></>}</h2><dl className="pronunciation-guides"><div><dt>{zh ? "目标语言音标" : "Target phonetic"}</dt><dd>{card.targetPhonetic || card.pronunciation}</dd></div><div><dt>{zh ? "当前语言助读（近似）" : "Approximate reading aid"}</dt><dd>{card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn) || card.pronunciation}</dd></div></dl><nav className="speech-speed"><button type="button" onClick={() => speak(card.form,undefined,.84)}>🔊 {zh ? "正常语速" : "Normal"}</button><button type="button" onClick={() => speak(card.form,undefined,.58)}>🐢 {zh ? "慢速" : "Slow"}</button></nav><div className="speech-scores">{[1,2,3].map(turn => <b className={turn <= speechScores.length ? "scored" : ""} key={turn}>{speechScores[turn-1] ?? turn}</b>)}</div><p aria-live="polite">{micState === "requesting" ? (zh ? "正在准备麦克风…" : "Preparing the microphone…") : micState === "analyzing" ? (zh ? "正在分析发音…" : "Analyzing pronunciation…") : listening ? (zh ? "正在听您说…" : "Listening…") : message || (zh ? "AI 示范后会自动听您跟读，共 3 次。" : "After each model, the microphone listens for three attempts.")}</p><nav>{micState === "denied" || micState === "error" ? <button onClick={() => { void startListening(); }}>🎙 {zh ? "重新检查麦克风" : "Check microphone again"}</button> : null}{speechComplete ? <button onClick={nextCard}>{zh ? "继续" : "Continue"}</button> : null}</nav><small>{zh ? "首次使用请选择“允许”。语音只用于即时评分，不保存录音或文字。" : "Choose Allow the first time. Speech is scored transiently; audio and transcripts are not stored."}</small></div></div>}
+      {phase === "speech" && (micState === "denied" || micState === "error" || micState === "unsupported") && !speechComplete ? <button type="button" className="manual-speech" onClick={recordManualSpeech}>{zh ? "我已跟读" : "I said it"}</button> : null}
+      {message && phase === "answer" ? <p className="feedback" role="status">{message}</p> : null}</section> : null}
     {phase === "complete" ? <section className="finish"><span>★</span><h1>{gameMode==="challenge"?(zh?"挑战完成！":"Challenge complete!"):(zh ? "本轮完成！" : "Round complete!")}</h1><strong>{finalResult?.score ?? points}</strong><p>{gameMode==="challenge"?(finalResult?.claimRequired?(zh?"注册或登录后，成绩才会进入今日排行榜。":"Sign in or create an account to enter today's leaderboard."):finalResult?.bonusPercent?(zh?`您超过了当时冠军；若保持第一，次日结算奖励将加成 ${finalResult.bonusPercent}%。`:`You beat the current leader. Stay first and tomorrow's winner reward gets a ${finalResult.bonusPercent}% bonus.`):(zh?"成绩已进入排行榜。次日首次有人查看日历时，将结算并奖励冠军。":"Your score is on the leaderboard. The winner is rewarded when someone first checks the calendar tomorrow.")):(finalResult?.claimRequired ? (zh ? "注册或登录即可把本轮积分保存到课程积分账户。" : "Sign in or create an account to save these course points.") : finalResult?.replayOnly ? (zh ? "您已领取过本卡组版本的奖励；这次成绩作为练习记录。" : "You already claimed this deck version; this replay is practice only.") : (zh ? `${finalResult?.claimedPoints || 0} 分已存入您的课程积分账户。` : `${finalResult?.claimedPoints || 0} points were saved to your course-credit account.`))}</p>{finalResult?.claimRequired ? <Link href={`/${lang}/auth/sign-up?returnTo=${encodeURIComponent(`/${lang}/smartcards/${token}${gameMode==="challenge"?"?mode=challenge":""}`)}`}>{gameMode==="challenge"?(zh?"登录并进入排行榜":"Sign in and enter ranking"):(zh ? "免费注册并保留积分" : "Create a free account and keep points")} →</Link> : null}{gameMode==="challenge"?<Link href={backHref}>{zh?"查看挑战日历":"View challenge calendar"} →</Link>:<button onClick={replay}>{zh ? "再玩一轮" : "Play again"}</button>}{message ? <p className="feedback">{message}</p> : null}</section> : null}
     <style>{`.smart-game{min-height:100vh;padding:24px clamp(14px,4vw,52px) 70px;background:radial-gradient(circle at 85% 0,#bfffe6,transparent 30%),#f7f3ea;color:#153129}.smart-game>header,.game-board,.finish{width:min(940px,100%);margin:auto}.smart-game>header{min-height:115px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}.smart-game>header>a{color:#087d62;font-weight:850}.smart-game>header>p{grid-column:1;margin:0;color:#63766e}.score{grid-area:1/2/3;min-width:160px;padding:14px 22px;border-radius:22px;background:#123f35;color:#fff;text-align:center;box-shadow:0 13px 30px #123f3530}.score span{display:block;color:#8ff0cf;font-size:10px;font-weight:900;letter-spacing:.09em}.score strong{display:block;font-size:46px;line-height:1}.game-board,.finish{padding:clamp(18px,4vw,38px);border:1px solid #b8d2c8;border-radius:28px;background:#fff;box-shadow:0 20px 60px #163c3012}.progress{height:10px;position:relative;margin-bottom:18px;border-radius:99px;background:#e5eee9}.progress span{height:100%;display:block;border-radius:99px;background:#18b68e;transition:width .3s}.progress b{position:absolute;right:0;top:15px;color:#718078;font-size:11px}.word-card{width:100%;min-height:300px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:23px;background:linear-gradient(145deg,#123f35,#087d62);color:#fff;cursor:pointer}.word-card small{color:#90e7cb;text-transform:uppercase}.word-card strong{font-size:clamp(43px,8vw,76px);line-height:1}.word-card em{color:#c3eadd;font-size:19px}.word-card span{margin-top:25px;color:#a4e6d1;font-weight:800}.answer-step,.speech-step{margin-top:20px}.answer-step h2,.speech-step h2{font-size:22px}.answer-step>div{display:grid;grid-template-columns:1fr 1fr;gap:10px}.answer-step button,.speech-step button,.finish button,.finish a{min-height:55px;padding:12px 17px;border:1px solid #bfd3ca;border-radius:15px;background:#f0f8f4;color:#153129;font-weight:850;cursor:pointer}.answer-step button:hover{border-color:#087d62;background:#dffff2}.answer-step button:disabled{opacity:.4}.speech-step{padding:20px;display:grid;grid-template-columns:84px 1fr;gap:20px;border-radius:20px;background:#edfff7}.coach{width:76px;height:76px;display:grid;place-items:center;position:relative;border-radius:50%;background:#123f35;color:#fff;font-weight:950}.coach i{position:absolute;right:0;bottom:4px;color:#23dba9;font-size:12px}.speech-step h2{margin:0}.speech-step h2 b{color:#087d62}.pronunciation-guides{margin:12px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pronunciation-guides div{min-width:0;padding:9px 11px;border:1px solid #c5e5d9;border-radius:12px;background:#fff}.pronunciation-guides dt{color:#527067;font-size:11px;font-weight:850}.pronunciation-guides dd{margin:3px 0 0;overflow-wrap:anywhere;color:#123f35;font-size:17px;font-weight:850}.speech-step p{color:#5d7169}.speech-step nav{display:flex;gap:8px;flex-wrap:wrap}.speech-step button:first-child{background:#087d62;color:#fff}.speech-step small{display:block;margin-top:12px;color:#667b72}.feedback{margin:16px 0 0;padding:13px;border-radius:13px;background:#123f35;color:#fff;font-weight:850;text-align:center}.finish{text-align:center}.finish>span{font-size:70px;color:#ffc533}.finish h1{margin:0;font-size:clamp(40px,7vw,70px)}.finish>strong{display:block;color:#087d62;font-size:clamp(70px,13vw,130px);line-height:1}.finish>p{max-width:600px;margin:10px auto 24px;color:#5c7068;font-size:18px}.finish>a,.finish>button{display:inline-flex;margin:6px;align-items:center;text-decoration:none}.finish>a{background:#087d62;color:#fff}@media(max-width:600px){.smart-game>header{grid-template-columns:1fr auto}.score{min-width:112px;padding:12px}.score strong{font-size:38px}.answer-step>div,.pronunciation-guides{grid-template-columns:1fr}.speech-step{grid-template-columns:1fr}.coach{width:62px;height:62px}.word-card{min-height:245px}.speech-step nav button{width:100%}}`}</style></main>;
 }

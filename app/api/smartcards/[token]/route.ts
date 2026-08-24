@@ -105,8 +105,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const expected = session ? value.cards[session.currentIndex] : null;
     if (!session || session.completedAt || !expected || expected.id!==body.cardId) return withCookie(Response.json({ error:"This challenge question is no longer active" },{status:409}),guest);
     const timedOut=nowMs-session.questionStartedMs>POLICY.challengeSeconds*1000; const correct=!timedOut&&body.answerId===expected.id; const nextIndex=session.currentIndex+1; const complete=nextIndex>=value.cards.length;
-    await value.database.prepare(`UPDATE smartlingo_smartcard_timed_sessions SET current_index=?,correct_count=correct_count+?,question_started_ms=?,completed_at=?,updated_at=? WHERE id=? AND current_index=? AND completed_at IS NULL`).bind(nextIndex,correct?1:0,nowMs,complete?now:null,now,session.id,session.currentIndex).run();
-    return withCookie(Response.json({ correct,timedOut,nextIndex,complete,questionStartedMs:nowMs }),guest);
+    const nextQuestionStartedMs=nowMs+6000;
+    await value.database.prepare(`UPDATE smartlingo_smartcard_timed_sessions SET current_index=?,correct_count=correct_count+?,question_started_ms=?,completed_at=?,updated_at=? WHERE id=? AND current_index=? AND completed_at IS NULL`).bind(nextIndex,correct?1:0,nextQuestionStartedMs,complete?now:null,now,session.id,session.currentIndex).run();
+    return withCookie(Response.json({ correct,timedOut,nextIndex,complete,questionStartedMs:nextQuestionStartedMs,feedbackSeconds:6 }),guest);
   }
   if (body.action === "check-answer") return withCookie(card && typeof body.answerId === "string" ? Response.json({ correct: body.answerId === card.id }) : Response.json({ error: "Card answer is invalid" }, { status: 400 }), guest);
   if (body.action === "check-pronunciation") {

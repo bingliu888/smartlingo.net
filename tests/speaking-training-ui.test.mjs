@@ -51,15 +51,15 @@ test("the subscribed course dashboard opens each training skill without another 
   assert.match(workspace, /回答我/);
   assert.match(workspace, /startDialogueTraining\(task, "follow"\)/);
   assert.match(workspace, /startDialogueTraining\(task, "answer"\)/);
-  assert.match(workspace, /action: "submit_task", taskId: task\.taskId, skill: "dialogue", answer: transcript/);
+  assert.match(workspace, /submitTask\(task, false, transcript\)/);
 });
 
-test("the person-avatar pronunciation coach leads five scored follow-me turns", async () => {
+test("the person-avatar pronunciation coach leads three scored follow-me turns", async () => {
   const workspace = await readFile(new URL("../components/LearningWorkspace.tsx", import.meta.url), "utf8");
   assert.match(workspace, /sl-person-avatar/);
   assert.match(workspace, /🧑‍🏫/);
-  assert.match(workspace, /Follow me 5 times/);
-  assert.match(workspace, /round >= 5/);
+  assert.match(workspace, /Follow me 3 times/);
+  assert.match(workspace, /round >= 3/);
   assert.match(workspace, /runPronunciationCoachTurn\(item, round \+ 1\)/);
   assert.match(workspace, /pronunciationScores\.reduce/);
   assert.match(workspace, /speechSynthesis\.speak\(utterance\)/);
