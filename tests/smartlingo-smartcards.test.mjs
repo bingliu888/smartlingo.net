@@ -244,6 +244,7 @@ test("game navigation keeps target language, progress, local-time art, and score
   assert.match(game, /challengeDeadline/);
   assert.match(game, /currentLeader/);
   assert.match(game, /gameMode!=="challenge"/);
+  assert.match(game, /play\/challenge\?language=\$\{targetLanguage\}&level=\$\{challengeLevel\}/);
   assert.match(leaderboard, /deck\.target_language=\?/);
   assert.match(leaderboard, /isSmartLingoCommunityLanguage/);
   assert.match(leaderboard, /smartlingo_smartcard_daily_settlements/);

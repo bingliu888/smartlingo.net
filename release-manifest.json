@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-21-day-learning-rewards-rankings-2026-08-24-v20",
+  "releaseId": "smartlingo-21-day-learning-rewards-rankings-2026-08-24-v21",
   "site": "smartlingo.net",
   "title": {"en":"Launch 21-day learning paths, score rewards, and five-category rankings","zh":"发布 21 天学习路径、成绩奖励与五类排行榜"},
   "purpose": {"en":"Turn Today’s Sprint, SmartCard Practice, SmartCard Challenge, and subscribed courses into coherent day-based learning journeys with server-owned progress, configurable rewards, and transparent score history.","zh":"将今日速成、智慧卡练习、智慧卡挑战与已订阅课程统一为按天推进的学习旅程，并提供服务器持久进度、可配置奖励及透明成绩记录。"},
@@ -34,6 +34,7 @@
       "Separate motivational learning rewards from legacy course-credit commerce and protect admin changes with permanent bootstrap-administrator authorization.",
       "Record only server-computed signed-in completions in score history; no anonymous session, audio, or transcript is persisted by these changes.",
       "Use each challenger’s local calendar day from 00:00:00 through 23:59:59, generate a date-only question set only for that local today, and delay winner settlement until the latest global time zone has finished the date.",
+      "Preserve the selected Beginner, Intermediate, or Advanced challenge level when the learner returns from a timed challenge to its calendar.",
       "Preserve the established 7- and 14-day introductory course products; the 21-day selector applies to the core 30-day and higher-level course journeys without changing course prices or entitlements."
     ],
     "zh": [
@@ -42,6 +43,7 @@
       "将学习激励分与旧有课程抵扣积分商业账本严格分离，管理员修改仅允许永久初始管理员执行。",
       "成绩历史只记录服务器计算的登录用户完成结果；本次变化不会持久化匿名会话、录音或语音转写。",
       "智慧卡挑战按每位用户本地日期的 00:00:00 至 23:59:59 开放，只为本地今天生成纯日期题集，并等全球最晚时区结束该日期后再结算冠军。",
+      "学习者从限时挑战返回日历时，保留所选的初级、中级或高级挑战等级。",
       "保留既有 7 天和 14 天入门课程产品；21 天选择器应用于核心 30 天及更高等级课程旅程，不改变课程价格或权益。"
     ]
   },
