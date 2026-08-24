@@ -1,66 +1,52 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-21-day-learning-rewards-rankings-2026-08-24-v21",
+  "releaseId": "smartlingo-real-learning-qa-all-features-2026-08-24-v22",
   "site": "smartlingo.net",
-  "title": {"en":"Launch 21-day learning paths, score rewards, and five-category rankings","zh":"发布 21 天学习路径、成绩奖励与五类排行榜"},
-  "purpose": {"en":"Turn Today’s Sprint, SmartCard Practice, SmartCard Challenge, and subscribed courses into coherent day-based learning journeys with server-owned progress, configurable rewards, and transparent score history.","zh":"将今日速成、智慧卡练习、智慧卡挑战与已订阅课程统一为按天推进的学习旅程，并提供服务器持久进度、可配置奖励及透明成绩记录。"},
+  "title": {"en":"Expand the 3 AM real-learning QA across every learning feature","zh":"将凌晨 3 点真实学习验收扩展到全部学习功能"},
+  "purpose": {"en":"Make the signed-in production learner test exercise SmartLingo as one complete product rather than stopping after Course or requesting an unnecessary microphone.","zh":"让登录生产测试学习者把 SmartLingo 作为完整产品进行验收，不再只测试课程，也不请求不必要的麦克风权限。"},
   "features": {
     "en": [
-      "Add a 21-day easiest-to-capstone progression and Day 1/previous/next/Day 21 navigation to Today’s Sprint, SmartCard Practice, and the core course-learning journey.",
-      "Give signed-in learners automatic next-unfinished-day continuation while preserving explicit day skipping; anonymous Sprint and SmartCard state remains feature-local and cookie-bound.",
-      "Publish Beginner, Intermediate, and Advanced SmartCard entry points; each language-level challenge draws one persisted shared set of 20 daily questions from a difficulty-ascending, frequency-descending 500-item pool, keyed only by the learner’s local YYYY-MM-DD date.",
-      "Add permanent-admin batch editing for 36 score-reward rules covering four learning features, three levels, and three score bands.",
-      "Add the signed-in score-history dashboard and five ranking categories with language selection and server-derived top-25 lists.",
-      "Keep Everyday Speaking scene tiles Beginner-first with separate Intermediate and Advanced actions, real-person paired dialogue, ten motion assets per scene, optional user-language audio help, and repeat-after-me off by default.",
-      "Use an accessible generic concept illustration whenever a word has no dedicated visual, and make slow speech materially slower across Sprint, SmartCard, courses, and Everyday Speaking.",
-      "Fix feedback-action button contrast so Continue controls remain readable on correct and incorrect result panels."
+      "Add Dashboard, Today’s Sprint, SmartCard Practice, SmartCard Challenge, Everyday Speaking, Score History, and Rankings to the real Chrome learner plan alongside all five Course skills.",
+      "Assign every learner-language pair a reproducible rotating feature focus as well as its Course skill focus and active-learning duration.",
+      "Keep repeat-after-me off, verify the normal no-microphone learning path, and never request microphone permission in the unattended run.",
+      "Align the dormant shared repeat preference with the player contract so an unset value is off and only an explicit on enables microphone practice.",
+      "Verify the SmartCard Challenge local-date, date-only question set, selected level, and six-second automatic advance contracts in the scheduled real-user run."
     ],
     "zh": [
-      "为今日速成、智慧卡练习和核心课程学习加入从易到难的 21 天路径，以及第 1 天、前一天、后一天和第 21 天导航。",
-      "登录学习者自动继续下一个未完成学习日，同时可手动跳日；匿名今日速成与智慧卡状态继续按功能隔离并仅绑定 Cookie。",
-      "发布初、中、高三级智慧卡入口；每个语言等级的挑战从按难度升序、常用度降序排列的 500 题池中，按学习者本地 YYYY-MM-DD 日期持久生成当天全体用户共用的 20 题。",
-      "为永久管理员新增 36 条成绩奖励规则的批量编辑，覆盖四类学习功能、三级难度和三个成绩档位。",
-      "新增登录用户成绩记录页，以及带语言选择和服务器前 25 名的五类排行榜。",
-      "生活口语场景卡默认进入初级，并单列中级、高级；保留真人一问一答、每场景十个动态媒体、用户语言语音辅助及默认关闭跟读评分。",
-      "无专用词图时显示可访问的通用概念插画，并让今日速成、智慧卡、课程和生活口语的慢速播放真正明显变慢。",
-      "修复反馈操作区按钮对比度，使正确与错误结果页的继续按钮都清晰可读。"
+      "在课程五技能之外，将用户面板、今日速成、智慧卡练习、智慧卡挑战、生活口语、成绩记录和排行榜全部加入真实 Chrome 学习计划。",
+      "为每个学习者语言组合稳定生成轮换功能重点，并保留课程技能重点与有效学习时长。",
+      "保持跟读关闭，验证正常无麦克风学习路径，后台运行绝不请求麦克风权限。",
+      "统一遗留共享跟读偏好与播放器合同：未设置时关闭，只有明确开启才进入麦克风练习。",
+      "在定时真实用户任务中验证智慧卡挑战的当地日期、纯日期题集、等级保留及六秒自动推进合同。"
     ]
   },
-  "affected": {"en":["Today’s Sprint picker/player/API, SmartCard directory/practice/challenge/calendar/API, subscribed course workspace/API, Everyday Speaking levels and audio, member Dashboard, Admin Dashboard, SiteHeader, score history, rankings, vocabulary visuals, D1 schema, and release contracts."],"zh":["今日速成选择器、播放器与接口；智慧卡目录、练习、挑战、日历与接口；已订阅课程工作台与接口；生活口语等级和语音；用户面板、管理面板、全站导航、成绩记录、排行榜、词汇视觉、D1 架构及发布合同。"]},
+  "affected": {"en":["The fixed 21-day 3 AM Pacific QA plan, its route-only GitHub preflight, deterministic session planner, LaunchAgent-read recovery prompt, and QA contracts."],"zh":["固定 21 天凌晨 3 点太平洋时间 QA 计划、GitHub 只读路由预检、确定性会话规划器、LaunchAgent 读取的恢复提示及 QA 合同。"]},
   "changes": {
     "en": [
-      "Add tracked migration 0167 with additive day-state tables, reward rules, unified learning-score history, daily SmartCard question sets, and 24 new official Intermediate/Advanced deck identities.",
-      "Select learning words with the existing pedagogical order of difficulty ascending then frequency descending; allocate 20 words per selected day and keep cumulative adaptive sentences constrained to current and prior learned vocabulary.",
-      "Separate motivational learning rewards from legacy course-credit commerce and protect admin changes with permanent bootstrap-administrator authorization.",
-      "Record only server-computed signed-in completions in score history; no anonymous session, audio, or transcript is persisted by these changes.",
-      "Use each challenger’s local calendar day from 00:00:00 through 23:59:59, generate a date-only question set only for that local today, and delay winner settlement until the latest global time zone has finished the date.",
-      "Preserve the selected Beginner, Intermediate, or Advanced challenge level when the learner returns from a timed challenge to its calendar.",
-      "Preserve the established 7- and 14-day introductory course products; the 21-day selector applies to the core 30-day and higher-level course journeys without changing course prices or entitlements."
+      "Expand anonymous route preflight coverage from four to eight surface types for each of the four QA target languages.",
+      "Begin signed-in acceptance at Dashboard and verify its selected-language sections and independent add actions.",
+      "Allow only legitimate server-authored score, SmartCard credit, challenge, reward, or leaderboard records produced by visible tested UI; keep synthetic writes forbidden and payment, referral, and certificate ledgers unchanged.",
+      "Retain the existing reproduce, smallest-fix, full-gate, deploy, and production-retest loop for every product defect."
     ],
     "zh": [
-      "新增受跟踪迁移 0167：增量学习日状态表、奖励规则、统一学习成绩历史、智慧卡每日题集，以及 24 个新的正式中级/高级卡组标识。",
-      "按既有教学顺序选择单词：难度升序、常用度降序；每个所选学习日分配 20 个词，累积自适应句子只使用当前及此前已学词汇。",
-      "将学习激励分与旧有课程抵扣积分商业账本严格分离，管理员修改仅允许永久初始管理员执行。",
-      "成绩历史只记录服务器计算的登录用户完成结果；本次变化不会持久化匿名会话、录音或语音转写。",
-      "智慧卡挑战按每位用户本地日期的 00:00:00 至 23:59:59 开放，只为本地今天生成纯日期题集，并等全球最晚时区结束该日期后再结算冠军。",
-      "学习者从限时挑战返回日历时，保留所选的初级、中级或高级挑战等级。",
-      "保留既有 7 天和 14 天入门课程产品；21 天选择器应用于核心 30 天及更高等级课程旅程，不改变课程价格或权益。"
+      "将四种 QA 目标语言的匿名路由预检从四类页面扩展到八类页面。",
+      "登录验收从用户面板开始，并核对各已选语言区域及独立添加入口。",
+      "仅允许可见受测 UI 正常产生的服务器学习成绩、智慧卡积分、挑战、奖励或排行榜记录；继续禁止合成写入，并保持支付、推荐和证书账本不变。",
+      "所有产品缺陷继续执行复现、最小修复、完整门禁、发布与生产复测闭环。"
     ]
   },
   "validation": {
     "en": [
-      "Production-equivalent vinext build passed, including sensitive-data scan and Cloudflare Worker artifact validation.",
-      "TypeScript passed with no errors; all 63 tracked D1 migrations apply from a fresh database, no-op on rerun, and pass foreign-key and integrity checks.",
-      "The complete automated suite passes 356 tests, including new 21-day, reward, ranking, timezone, visual fallback, and slow-speech contracts.",
-      "Media audit confirms 12,000 Beginner lexemes, 11,434/11,434 imageable lexemes covered, 6,044 reusable media concepts, 120 conversation GIFs, and 12 scene images."
+      "The focused QA-plan contract suite passes all five tests, including the complete feature list, rotating feature focus, local-date Challenge, no-microphone flow, and auto-fix requirements.",
+      "The production-equivalent build, TypeScript check, D1 validation, sensitive-data scan, Worker-artifact validation, and complete automated suite are required before deployment.",
+      "The expanded route preflight runs in GitHub Actions where production network access is available; local sandbox network failure is not treated as route evidence."
     ],
     "zh": [
-      "等同生产的 vinext 构建通过，包括敏感数据扫描与 Cloudflare Worker 产物验证。",
-      "TypeScript 零错误；全部 63 个受跟踪 D1 迁移可在全新数据库执行、重复执行无变化，并通过外键与完整性检查。",
-      "完整自动化套件共 356 项全部通过，新增覆盖 21 天路径、奖励、排行榜、时区、视觉兜底与慢速语音合同。",
-      "媒体审计确认：12,000 个初级词条、11,434/11,434 个可图示词条全部覆盖、6,044 个可复用媒体概念、120 个对话 GIF 和 12 张场景图。"
+      "QA 计划定向合同 5 项全部通过，覆盖完整功能清单、轮换功能重点、当地日期挑战、无麦克风流程及自动修复要求。",
+      "发布前必须通过生产等价构建、TypeScript、D1、敏感信息扫描、Worker 产物与完整自动化套件。",
+      "扩展路由预检将在具备生产网络访问的 GitHub Actions 中执行；本地沙箱网络失败不作为路由证据。"
     ]
   },
-  "deferred": {"en":["Real human microphone scoring cannot be fully automated; browser acceptance verifies the controls and safe fallback, while a human learner should perform the final acoustic-quality check.","Unified score history begins with completions after this additive migration; legacy scores remain in their original auditable tables and are not rewritten or backfilled."],"zh":["真实人声麦克风评分无法完全自动化；浏览器验收会核对控件和安全兜底，最终声学质量仍需真人学习者确认。","统一成绩历史从本次增量迁移后的完成记录开始；旧成绩继续保存在原有可审计数据表中，不改写、不回填。"]},
-  "siteAdaptations": {"en":["Preserve SmartLingo’s 12 interface languages, 12 learning languages, Clerk identity, D1 ownership, Cloudflare deployment, AI gateway, original media assets, course pricing, college revenue split, and all payment/referral boundaries.","No other portfolio site, external account, credential, payment rail, college subscription, or cloud resource is modified."],"zh":["保持 SmartLingo 的 12 种界面语言、12 种学习语言、Clerk 身份、D1 数据归属、Cloudflare 发布、AI 网关、原创媒体、课程定价、学院分成及全部支付/推荐边界。","不修改任何其他站点、外部账户、凭据、支付通道、学院订阅或云资源。"]}
+  "deferred": {"en":["Acoustic speech-scoring acceptance remains a separate opt-in human test and is not part of the default repeat-off 3 AM run."],"zh":["声学语音评分验收属于另行选择开启的真人测试，不属于默认关闭跟读的凌晨 3 点任务。"]},
+  "siteAdaptations": {"en":["Preserve the existing 03:00 America/Los_Angeles LaunchAgent schedule, anonymized learner, Clerk/Gmail secret-handling boundary, Cloudflare deployment, and SmartLingo-only scope.","No other site, account, credential, payment rail, or cloud resource is modified."],"zh":["保持现有 America/Los_Angeles 凌晨 3 点 LaunchAgent 计划、匿名测试学习者、Clerk/Gmail 敏感信息边界、Cloudflare 发布及仅限 SmartLingo 的范围。","不修改其他站点、账户、凭据、支付通道或云资源。"]}
 }

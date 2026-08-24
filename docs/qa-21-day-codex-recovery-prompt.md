@@ -29,8 +29,11 @@ Required daily procedure:
    `requiredRealSessionPlan`; it assigns each target language a reproducible random minimum of
    1–5 active learning minutes plus a rotating deep-focus skill. A same-date retry must use the
    same plan so its results remain comparable.
-3. In Chrome, verify the visible QA account identity after login. Never write the test email, OTP,
-   or email body to repository files, logs, shell history, Project, screenshots, or the final report.
+3. In Chrome, verify the visible QA account identity after login. Begin at `/zh/dashboard` and verify
+   the selected-language sections for Today's Sprint, SmartCard Practice, SmartCard Challenge,
+   Everyday Speaking, and subscribed Courses, plus the independent add-language/add-course actions
+   and the Score History entry. Never write the test email, OTP, or email body to repository files,
+   logs, shell history, Project, screenshots, or the final report.
 4. For each target language, use the same selected language across all three acceptance groups:
    a. Course: open the joined Beginner course, then complete one real interaction in vocabulary,
       reading, writing, listening, and speaking. Verify the UI response and persisted signed-in progress.
@@ -62,18 +65,34 @@ Required daily procedure:
         reading, writing, listening, and speaking. Verify visible skill/question progress, checked
         feedback, the final server-graded score, and the persisted signed-in Sprint result. Merely
         opening the timer chooser or starting without finishing the round is not a pass.
-      - Return to Play, complete at least one SmartCard practice question, and verify answer feedback,
-        the pronunciation path, and the progress display.
-   c. Everyday Speaking: open one scenario, verify Repeat after me defaults on or preserves the
-      shared user choice, play a phrase, exercise the speaking path when microphone capability is
-      available, and verify navigation and target-language continuity.
-   d. Continue meaningful learning interactions until both the required feature coverage and that
+      - Open SmartCard Practice, complete at least one full answer-feedback-Continue cycle, verify
+        the difficulty/frequency display, picture or generic visual, normal/slow audio, optional
+        three-turn pronunciation control, and saved progress. Repeat-after-me must default off; leave
+        it off and do not request microphone permission during scheduled QA.
+      - Open SmartCard Challenge for Beginner and inspect Intermediate and Advanced entry points.
+        Verify the calendar is based on the learner's local date, only local today can create a
+        missing question set, the question set displays date-only YYYY-MM-DD, and returning from an
+        item preserves the selected level. Answer at least one timed item and verify feedback advances
+        automatically after six seconds without Check or Continue. Do not fabricate or directly
+        write a completed challenge score.
+      - Open Rankings, select the current target language in at least one category, and verify the
+        server-derived top-25 surface without changing scores.
+   c. Everyday Speaking: open one scenario at Beginner and inspect its Intermediate and Advanced
+      entries. Verify Repeat after me defaults off, the user-language-audio control defaults off,
+      normal and slow target-language playback are distinct, paired dialogue and scenario media are
+      present, and target-language continuity is preserved. Leave repeat-after-me off and do not
+      request microphone permission. Verify the normal no-microphone path instead of treating
+      acoustic scoring as a scheduled-QA requirement.
+   d. Open Score History after learning and verify the visible category/day/score evidence for
+      server-persisted completions. Continue meaningful learning interactions until both the required
+      feature coverage and that
       language's planned minimum active-learning duration are complete. Start the active timer at
       the first scored or feedback-producing learning action. Do not count sign-in, navigation,
       loading, microphone/device waits, idle time, diagnosis, code changes, deployment, or retest
       setup. Never use `sleep`, passive waiting, or repeated no-op clicks to satisfy the timer.
-      When the timer expires, finish the current atomic exercise. Use the plan's deep-focus skill
-      for additional questions so the run explores more than the shallow happy path.
+      When the timer expires, finish the current atomic exercise. Use both the plan's deep-focus
+      Course skill and rotating feature focus for additional questions so the run explores more than
+      the Course-only happy path.
    e. Produce at least one legitimate server-graded score and verify its persisted learning log for
       every language. Prefer the daily course quiz when available; additional vocabulary, reading,
       writing, listening, or speaking scores are welcome. Do not insert, edit, or simulate database
@@ -82,10 +101,12 @@ Required daily procedure:
    exact production URL, visible completion state, legitimate progress before/after, and browser
    console errors. For every language report planned active minutes, measured active minutes, the
    deep-focus skill, completed activities, displayed score, and persisted learning-log evidence.
-   Confirm that the QA account creates no payment, referral, certificate, course-credit,
-   challenge-reward, or leaderboard ledger entries. Never claim or round up unmeasured duration.
-6. A pass requires all 4 languages x (5 course skills + completed Today's Sprint + SmartCard
-   Practice + Everyday Speaking), the planned
+   Confirm that payment, referral, and certificate ledgers remain unchanged. Report any legitimate
+   learning-score, SmartCard credit, challenge, reward, or leaderboard record created by the tested
+   UI instead of treating normal product behavior as a failure. Never claim or round up unmeasured duration.
+6. A pass requires all 4 languages x (Dashboard language section + 5 Course skills + completed
+   Today's Sprint + SmartCard Practice + SmartCard Challenge interaction + Everyday Speaking +
+   Score History + Rankings), the planned
    1–5 minute minimum active-learning duration, and a legitimate persisted score per language to pass. Missing
    functionality, wrong language propagation, route errors, failed persistence, broken speech UI,
    incorrect localization, or console/runtime errors are product defects. Never weaken an assertion,
@@ -97,13 +118,14 @@ Required daily procedure:
    deployment, then repeat the failed real Chrome step. Repeat diagnosis, fix, deploy, and retest until
    every required step passes or a genuine external blocker cannot be resolved safely.
 8. Publish a bilingual administrator Project QA report only after real production UI evidence exists.
-   The report must label unavailable microphone/speech capability as blocked rather than passed and
-   must list each language's Course/Play/Everyday result, planned and measured active minutes,
+   The report must state that repeat-after-me remained off and no microphone permission was requested,
+   and must list each language's Course/Play/Everyday result, planned and measured active minutes,
    deep-focus skill, displayed learning score, and persisted score-log result. Include release commit and deployment run
    when a fix was deployed. Do not claim success without real signed-in production evidence.
 9. Close every QA-created Chrome tab when the run ends so the daily test cannot accumulate browser
    memory. Keep no OTP, email body, transcript, or private account data in logs.
 
-If Gmail, Chrome, Clerk, microphone permission, Cloudflare, or GitHub is genuinely unavailable,
-record the exact non-secret blocker in Project, do not synthesize a pass, and retry the same acceptance
-step when the dependency is restored.
+If Gmail, Chrome, Clerk, Cloudflare, or GitHub is genuinely unavailable, record the exact non-secret
+blocker in Project, do not synthesize a pass, and retry the same acceptance step when the dependency
+is restored. The default scheduled flow leaves repeat-after-me off, must not open the microphone, and
+must continue Course, Sprint, SmartCard, Challenge, Everyday, Score History, and Rankings normally.

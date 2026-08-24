@@ -6,11 +6,11 @@ export const SMARTLINGO_REPEAT_AFTER_ME_KEY = "smartlingo-repeat-after-me";
 const REPEAT_AFTER_ME_EVENT = "smartlingo:repeat-after-me";
 
 export function repeatAfterMeEnabled(value: string | null) {
-  return value !== "off";
+  return value === "on";
 }
 
 export function useRepeatAfterMePreference() {
-  const [enabled, setEnabledState] = useState(true);
+  const [enabled, setEnabledState] = useState(false);
 
   useEffect(() => {
     const read = () => setEnabledState(repeatAfterMeEnabled(window.localStorage.getItem(SMARTLINGO_REPEAT_AFTER_ME_KEY)));

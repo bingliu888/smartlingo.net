@@ -59,7 +59,7 @@ jobs:
         if: steps.date.outputs.run == 'true'
         run: node --test tests/qa-21-day-learning.test.mjs
 
-      - name: Check Course, Play, and Everyday Speaking production routes
+      - name: Check all learning-feature production routes
         if: steps.date.outputs.run == 'true'
         run: node scripts/run-qa-21-day-learning.mjs | tee smartlingo-qa-route-preflight.json
         env:
@@ -79,5 +79,5 @@ jobs:
         if: steps.date.outputs.run == 'true'
         run: |
           echo "This workflow proves anonymous production route availability only."
-          echo "The 03:00 Pacific local Codex task must use Gmail plus Chrome to sign in the real QA account and exercise Course, Play, and Everyday Speaking."
+          echo "The 03:00 Pacific local Codex task must use Gmail plus Chrome to sign in the real QA account and exercise Dashboard, Course, Today's Sprint, SmartCard Practice, SmartCard Challenge, Everyday Speaking, Score History, and Rankings."
           echo "Never publish a passed learning report from this preflight artifact."

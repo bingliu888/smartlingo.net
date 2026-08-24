@@ -6,8 +6,8 @@ import { repeatAfterMeEnabled } from "../components/useRepeatAfterMePreference.t
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
-test("repeat after me defaults on and only an explicit off disables it", () => {
-  assert.equal(repeatAfterMeEnabled(null), true);
+test("repeat after me defaults off and only an explicit on enables it", () => {
+  assert.equal(repeatAfterMeEnabled(null), false);
   assert.equal(repeatAfterMeEnabled("on"), true);
   assert.equal(repeatAfterMeEnabled("off"), false);
 });

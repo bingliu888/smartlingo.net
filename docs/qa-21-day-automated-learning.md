@@ -4,30 +4,36 @@ This fixed production QA campaign runs from 2026-08-21 through 2026-09-10 at
 03:00 America/Los_Angeles (10:00 UTC during the entire PDT campaign).
 
 - `qa_21d_zh`: Chinese interface; learns English, Japanese, Spanish, and Italian.
-- Each learner-language pair checks the production course, anonymous trial, and Play pages. Play
+- Each learner-language pair checks the production Dashboard, course, anonymous trial, and Play pages. Play
   acceptance activates both the shared-header and home Today-task entry points, verifies the
   interface-language default, all six activity tiles, the twelve-language picker, and propagation
   of the selected target language into every language-dependent activity link.
 - In every target language, Play acceptance verifies all four Today's Sprint duration choices and
   the default 10-minute selection, then selects 5 minutes and completes one entire five-skill round
   with a server-graded score and persisted signed-in Sprint result before SmartCard practice.
-- Each pair then completes vocabulary, speaking, listening, writing, and quiz interactions in the
-  real signed-in Chrome session.
+- Each pair then performs real signed-in Chrome interactions across the five Course skills,
+  Today's Sprint, SmartCard Practice, the local-date SmartCard Challenge, Everyday Speaking,
+  Score History, and Rankings. A rotating feature focus prevents Course from consuming every day's
+  deeper-learning time.
 - A stable daily hash assigns each language 1–5 minimum active-learning minutes and one rotating
   deep-focus skill. The value changes across dates and languages but remains identical on a same-day
   recovery retry. Login, navigation, page loading, device waits, repairs, deployments, and idle time
   never count toward it.
 - Each language must produce at least one legitimate server-graded score and persisted learning log.
-- A successful day contains 4 language runs, 20 direct course-skill log items, and 4 completed
-  five-skill Today's Sprint rounds in addition to SmartCard and Everyday Speaking evidence.
+- A successful day contains 4 language runs, 20 direct course-skill log items, 4 completed
+  five-skill Today's Sprint rounds, and real SmartCard Practice, SmartCard Challenge,
+  Everyday Speaking, Score History, and Rankings evidence.
 - Every run appends a bilingual pass/fail report to the administrator Project calendar.
 - Stable IDs make same-day retries idempotent.
 - The dedicated QA learner signs in through Clerk using the verification code from its real mailbox;
   its address and verification code are never stored in source, logs, screenshots, or reports.
-- QA activity enters the normal signed-in learner history through production UI actions, but never
-  enters reward, referral, credit, payment, leaderboard, or certificate ledgers.
-- Direct or synthetic learning/score database writes are forbidden. Unavailable microphone input is
-  reported as blocked rather than passed.
+- QA activity enters normal signed-in learning history through production UI actions. Legitimate
+  server-authored learning-score, SmartCard credit, challenge, reward, or leaderboard records are
+  permitted only when produced by the same visible learner flow being tested; direct or synthetic
+  writes remain forbidden. Payment, referral, and certificate ledgers must remain unchanged.
+- Direct or synthetic learning/score database writes are forbidden. Repeat-after-me defaults off in
+  scheduled QA, so the task must not request microphone permission; acoustic scoring is outside this
+  unattended run and does not block the remaining learning evidence.
 
 The GitHub Actions workflow supports an optional manual Pacific date for a failed-day rerun.
 Outside the fixed 21-day window it exits successfully without changing production data.

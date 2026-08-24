@@ -40,7 +40,11 @@ for (const target of targets) {
   checks.push(await checkRoute(target, "course", `/zh/programs/${target}`, ["免费游戏", "免费体验", "选择课程", "课程详情"]));
   checks.push(await checkRoute(target, "course_trial", `/zh/programs/${target}/trial`, ["五项", "词汇", "免费体验"]));
   checks.push(await checkRoute(target, "play", `/zh/play?language=${target}`, ["智慧卡", "边玩边学", "游戏"]));
+  checks.push(await checkRoute(target, "todays_sprint", `/zh/play/sprint`, ["今日速成", "选择语言", "学习日"]));
+  checks.push(await checkRoute(target, "smartcard_practice", `/zh/smartcards`, ["智慧卡", "初级", "中级"]));
+  checks.push(await checkRoute(target, "smartcard_challenge", `/zh/play/challenge?language=${target}&level=beginner`, ["智慧卡挑战", "当地", "题库"]));
   checks.push(await checkRoute(target, "everyday_speaking", `/zh/play/everyday?language=${target}`, ["生活口语", "机场", "酒店"]));
+  checks.push(await checkRoute(target, "rankings", `/zh/play/rankings`, ["排行榜", "今日速成", "前 25"]));
 }
 
 const report = {
@@ -59,7 +63,7 @@ const report = {
     account: "qa_test_learner_1",
     browser: "Chrome",
     authentication: "SmartLingo email verification code retrieved from Gmail",
-    surfaces: ["course_five_skills", "play", "everyday_speaking"],
+    surfaces: ["dashboard", "course_five_skills", "todays_sprint", "smartcard_practice", "smartcard_challenge", "everyday_speaking", "score_history", "rankings"],
     targetLanguages: targets,
     timing: "For each language, complete at least its planned 1-5 minutes of active learning. Navigation, loading, idle waiting, login, repair, and deployment time do not count.",
     scoreEvidence: "At least one legitimate server-graded score and its persisted learning log are required for every language; synthetic rows are forbidden.",

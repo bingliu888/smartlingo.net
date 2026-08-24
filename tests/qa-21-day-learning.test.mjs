@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { createDailySessionPlan, QA_TARGET_LANGUAGES } from "../scripts/qa-21-day-session-plan.mjs";
+import { createDailySessionPlan, QA_LEARNING_FEATURES, QA_TARGET_LANGUAGES } from "../scripts/qa-21-day-session-plan.mjs";
 
 const runner = readFileSync(new URL("../scripts/run-qa-21-day-learning.mjs", import.meta.url), "utf8");
 const sessionPlanner = readFileSync(new URL("../scripts/qa-21-day-session-plan.mjs", import.meta.url), "utf8");
@@ -11,7 +11,7 @@ const launchAgent = readFileSync(new URL("../ops/com.smartlingo.qa21.recovery.pl
 
 test("cloud runner is route-only preflight for all required languages and surfaces", () => {
   for (const target of ["en", "ja", "es", "it"]) assert.match(runner, new RegExp(`"${target}"`));
-  for (const surface of ["course", "course_trial", "play", "everyday_speaking"]) assert.match(runner, new RegExp(`"${surface}"`));
+  for (const surface of ["course", "course_trial", "play", "todays_sprint", "smartcard_practice", "smartcard_challenge", "everyday_speaking", "rankings"]) assert.match(runner, new RegExp(`"${surface}"`));
   assert.match(runner, /anonymous route preflight only/i);
   assert.match(runner, /not login, subscription, learning, speech, score, progress/i);
   assert.doesNotMatch(runner, /INSERT|UPDATE|DELETE|smartlingo_learning_activity_events|smartlingo-project-status/);
@@ -67,7 +67,17 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   assert.match(recoveryPrompt, /persisted signed-in Sprint result/);
   assert.match(recoveryPrompt, /starting without finishing the round is not a pass/);
   assert.match(recoveryPrompt, /Everyday Speaking/);
-  assert.match(recoveryPrompt, /4 languages x \(5 course skills \+ completed Today's Sprint \+ SmartCard\s+Practice \+ Everyday Speaking\)/);
+  assert.match(recoveryPrompt, /Beginner and inspect Intermediate and Advanced entry points/);
+  assert.match(recoveryPrompt, /only local today can create a\s+missing question set/);
+  assert.match(recoveryPrompt, /date-only YYYY-MM-DD/);
+  assert.match(recoveryPrompt, /automatically after six seconds/);
+  assert.match(recoveryPrompt, /Repeat after me defaults off/);
+  assert.match(recoveryPrompt, /user-language-audio control defaults off/);
+  assert.match(recoveryPrompt, /do not request microphone permission during scheduled QA/);
+  assert.match(recoveryPrompt, /normal no-microphone path/);
+  assert.match(recoveryPrompt, /Score History/);
+  assert.match(recoveryPrompt, /Rankings/);
+  assert.match(recoveryPrompt, /4 languages x \(Dashboard language section \+ 5 Course skills \+ completed\s+Today's Sprint \+ SmartCard Practice \+ SmartCard Challenge interaction \+ Everyday Speaking \+\s+Score History \+ Rankings\)/);
   assert.match(recoveryPrompt, /Close every QA-created Chrome tab/);
   assert.match(recoveryPrompt, /Never weaken an assertion/);
   assert.match(recoveryPrompt, /Repeat diagnosis, fix, deploy, and retest/);
@@ -92,21 +102,26 @@ test("daily active-learning plans are bounded, reproducible, and rotate across t
   for (const item of first) {
     assert.ok(item.minimumActiveMinutes >= 1 && item.minimumActiveMinutes <= 5);
     assert.ok(["vocabulary", "reading", "writing", "listening", "speaking"].includes(item.deepFocus));
+    assert.ok(QA_LEARNING_FEATURES.includes(item.featureFocus));
     assert.equal(new Set(item.rotationOrder).size, 5);
   }
 
   const campaignDurations = new Set();
+  const campaignFeatureFoci = new Set();
   for (let day = 21; day <= 31; day += 1) {
     for (const item of createDailySessionPlan(`2026-08-${String(day).padStart(2, "0")}`)) {
       campaignDurations.add(item.minimumActiveMinutes);
+      campaignFeatureFoci.add(item.featureFocus);
     }
   }
   for (let day = 1; day <= 10; day += 1) {
     for (const item of createDailySessionPlan(`2026-09-${String(day).padStart(2, "0")}`)) {
       campaignDurations.add(item.minimumActiveMinutes);
+      campaignFeatureFoci.add(item.featureFocus);
     }
   }
   assert.deepEqual([...campaignDurations].sort(), [1, 2, 3, 4, 5]);
+  assert.deepEqual([...campaignFeatureFoci].sort(), [...QA_LEARNING_FEATURES].sort());
 });
 
 test("route preflight exports the real-session plan without claiming score evidence", () => {
