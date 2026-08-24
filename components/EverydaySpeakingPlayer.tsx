@@ -36,13 +36,24 @@ type RecognitionLike = {
 
 type MicState = "idle" | "requesting" | "listening" | "analyzing" | "denied" | "error" | "unsupported";
 
-export function EverydaySpeakingPlayer({ lang, language, languageName, speechLocale, direction, scene, slides }: {
+function readProgressCookie(key: string) {
+  const value = document.cookie.split("; ").find(item => item.startsWith(`${key}=`))?.split("=").slice(1).join("=");
+  const parsed = Number(value ? decodeURIComponent(value) : 0);
+  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+}
+
+function writeProgressCookie(key: string, value: number) {
+  document.cookie = `${key}=${encodeURIComponent(String(value))}; Max-Age=2592000; Path=/; SameSite=Lax`;
+}
+
+export function EverydaySpeakingPlayer({ lang, language, languageName, speechLocale, direction, scene, level, slides }: {
   lang: "zh" | "en";
   language: string;
   languageName: string;
   speechLocale: string;
   direction: "ltr" | "rtl";
   scene: { id: string; nameZh: string; nameEn: string; goalZh: string; goalEn: string; image: string; motionMedia?: readonly string[] };
+  level: "beginner" | "intermediate" | "advanced";
   slides: readonly Slide[];
 }) {
   const zh = lang === "zh";
@@ -66,6 +77,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   const microphoneApproved = useRef(false);
   const listenRef = useRef<() => void>(() => undefined);
   const slide = slides[index];
+  const progressCookie = `smartlingo_everyday_${language}_${scene.id}_${level}`;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
@@ -82,10 +94,27 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setAttemptScores([]);
     setReadyToContinue(false);
     setMessage("");
-    if (next >= slides.length) { setComplete(true); return; }
+    if (next >= slides.length) { writeProgressCookie(progressCookie, slides.length); setComplete(true); return; }
     setComplete(false);
-    setIndex(Math.max(0, next));
-  }, [clearTimer, slides.length]);
+    const safeNext = Math.max(0, next);
+    writeProgressCookie(progressCookie, safeNext);
+    setIndex(safeNext);
+  }, [clearTimer, progressCookie, slides.length]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = readProgressCookie(progressCookie);
+      if (!saved || !slides.length) return;
+      setStarted(true);
+      if (saved >= slides.length) {
+        setIndex(slides.length - 1);
+        setComplete(true);
+        return;
+      }
+      setIndex(saved);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [progressCookie, slides.length]);
 
   useEffect(() => {
     if (!started || paused || complete || !slide) return;
@@ -331,6 +360,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     setReadyToContinue(false);
     setMicState("idle");
     attemptsRef.current = 0;
+    writeProgressCookie(progressCookie, 0);
   }
 
   function manualAttempt() {

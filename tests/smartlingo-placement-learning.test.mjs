@@ -70,7 +70,7 @@ test("course dashboard starts a focused tabbed session with a compact bottom-rig
   assert.match(workspace, /position:fixed;right:max\(18px,env\(safe-area-inset-right\)\)/);
 });
 
-test("anonymous Beginner trial is public, reads the published catalog, and never persists learner data", async () => {
+test("anonymous Beginner trial is public, reads the published catalog, and keeps only feature-scoped cookie progress", async () => {
   const [coursePage, trialPage, trial, catalogRoute] = await Promise.all([
     read("../app/[lang]/programs/[language]/page.tsx"),
     read("../app/[lang]/programs/[language]/trial/page.tsx"),
@@ -84,7 +84,12 @@ test("anonymous Beginner trial is public, reads the published catalog, and never
   assert.match(trialPage, /getBeginnerSessionVocabularyDeck/);
   assert.match(trialPage, /buildDailyPracticeItem/);
   assert.doesNotMatch(trialPage, /requestUser|redirect\(|getDatabase|smartlingo_course_enrollments/);
-  assert.match(trial, /progress stays in this page/);
+  assert.match(trial, /feature-specific cookie keeps your place/);
+  assert.match(trial, /document\.cookie/);
+  assert.match(trial, /smartlingo_trial_/);
+  assert.match(trial, /phase === "feedback"/);
+  assert.match(trial, /useRepeatAfterMePreference/);
+  assert.match(trial, /默认关闭/);
   assert.match(trial, /useState<Skill>/);
   assert.match(trial, /fetch\(`\/api\/vocabulary\/trial\?language=/);
   assert.match(trial, /method: "GET"/);

@@ -67,6 +67,10 @@ test("course and anonymous Play expose six isolated learning activities", () => 
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
   assert.match(play, /href=\{`\/\$\{lang\}\/smartcards`\}/);
   assert.match(play, /href=\{`\/\$\{lang\}\/play\/redeem`\}/);
+  const redeem = readFileSync(new URL("../app/[lang]/play/redeem/page.tsx", import.meta.url), "utf8");
+  assert.match(redeem, /GameLanguagePicker/);
+  assert.match(redeem, /searchParams/);
+  assert.match(redeem, /isSmartLingoCommunityLanguage/);
   assert.doesNotMatch(play, /searchParams|query\.language|initialLanguage=/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);

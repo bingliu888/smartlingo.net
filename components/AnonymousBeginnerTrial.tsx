@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
+import { useRepeatAfterMePreference } from "./useRepeatAfterMePreference";
 
 type Lang = "zh" | "en";
 type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
@@ -49,6 +50,16 @@ function seedDeck(cards: readonly Card[]) {
   });
 }
 
+function readTrialProgress(key: string) {
+  const value = document.cookie.split("; ").find(item => item.startsWith(`${key}=`))?.split("=").slice(1).join("=");
+  const parsed = Number(value ? decodeURIComponent(value) : 0);
+  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+}
+
+function writeTrialProgress(key: string, value: number) {
+  document.cookie = `${key}=${encodeURIComponent(String(value))}; Max-Age=2592000; Path=/; SameSite=Lax`;
+}
+
 export function AnonymousBeginnerTrial({ lang, language, languageName, speechLocale, direction, cards: seedCards, tasks, initialSkill = "vocabulary", lockedSkill = false, classId }: {
   lang: Lang; language: string; languageName: string; speechLocale: string; direction: "ltr" | "rtl"; cards: readonly Card[]; tasks: readonly Task[];
   initialSkill?: Skill; lockedSkill?: boolean; classId?: string;
@@ -62,7 +73,7 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   const [localDate, setLocalDate] = useState("");
   const [loadingWords, setLoadingWords] = useState(true);
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<"study" | "answer" | "speak" | "sentence" | "done">("study");
+  const [phase, setPhase] = useState<"study" | "answer" | "feedback" | "speak" | "sentence" | "done">("study");
   const [revealed, setRevealed] = useState(false);
   const [tries, setTries] = useState(0);
   const [wrongIds, setWrongIds] = useState<string[]>([]);
@@ -75,6 +86,8 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   const [answerPoints, setAnswerPoints] = useState(0);
   const [cardScores, setCardScores] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [repeatAfterMe, setRepeatAfterMe] = useRepeatAfterMePreference();
+  const progressCookie = `smartlingo_trial_${classId || language}_${initialSkill}`;
   const task = useMemo(() => tasks.find(item => item.skill === active), [active, tasks]);
   const vocabularySentences = useMemo(() => tasks.find(item => item.skill === "writing")?.sentenceExercises || [], [tasks]);
   const vocabularySentence = vocabularySentences[index % Math.max(1, vocabularySentences.length)];
@@ -100,6 +113,14 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     return () => controller.abort();
   }, [language]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = readTrialProgress(progressCookie);
+      if (saved > 0) setIndex(Math.min(saved, Math.max(0, cards.length - 1)));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [cards.length, progressCookie]);
+
   const labels: Record<Skill, [string, string, string]> = {
     vocabulary: ["词汇", "Vocabulary", "智慧卡与实用表达"], reading: ["阅读", "Reading", "理解真实语境"], writing: ["写作", "Writing", "组织简短表达"], listening: ["听力", "Listening", "听辨语音与含义"], dialogue: ["口语", "Speaking", "自然开口回应"],
   };
@@ -112,9 +133,8 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   }
   function finishAnswer(correct: boolean) {
     const points = correct ? Math.max(40, 70 - tries * 15) : 20;
-    setAnswerPoints(points); setPhase("speak"); setSpeechRound(1);
-    setSpeechMessage(correct ? (zh ? `答对了！答题 ${points} 分。现在自动跟 AI 读 3 次。` : `Correct! ${points} answer points. Now repeat after AI three times.`) : (zh ? `正确答案是：${meaning}。现在自动跟 AI 读 3 次。` : `The answer is: ${meaning}. Now repeat after AI three times.`));
-    window.setTimeout(() => startSpeech(1), 250);
+    setAnswerPoints(points); setPhase("feedback");
+    setSpeechMessage(correct ? (zh ? `回答正确！答题 ${points} 分。` : `Correct! ${points} answer points.`) : (zh ? `正确答案是：${meaning}。` : `The answer is: ${meaning}.`));
   }
   function choose(optionId: string) {
     if (!card || phase !== "answer" || wrongIds.includes(optionId)) return;
@@ -126,8 +146,19 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   function nextCard(speech = 0) {
     if (cardId) setStatuses(current => ({ ...current, [cardId]: "learning" }));
     setCardScores(current => [...current, Math.round(answerPoints * .7 + speech * .3)]);
-    if (index + 1 >= cards.length) { setPhase("done"); markComplete("vocabulary"); return; }
+    if (index + 1 >= cards.length) { writeTrialProgress(progressCookie, cards.length); setPhase("done"); markComplete("vocabulary"); return; }
+    writeTrialProgress(progressCookie, index + 1);
     setIndex(current => current + 1); setPhase("study"); setRevealed(false); setTries(0); setWrongIds([]); setSpeechRound(0); setSpeechMessage(""); setAnswerPoints(0);
+  }
+  function continueAnswer() {
+    if (repeatAfterMe) {
+      setPhase("speak"); setSpeechRound(1);
+      setSpeechMessage(zh ? "第 1/3 次：先听 AI，再开口。" : "Round 1/3: listen to AI, then speak.");
+      window.setTimeout(() => startSpeech(1), 250);
+      return;
+    }
+    if (vocabularySentence) setPhase("sentence");
+    else nextCard(0);
   }
   function startSpeech(round = speechRound) {
     if (!card || listening) return;
@@ -156,6 +187,7 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     if (!response.ok || !payload.dailyDeck?.length) return;
     setCards(payload.dailyDeck); setCatalog(payload.items); setTotal(payload.summary.total); setLocalDate(payload.localDate);
     setIndex(0); setPhase("study"); setRevealed(false); setTries(0); setWrongIds([]); setSpeechRound(0); setSpeechMessage(""); setAnswerPoints(0);
+    writeTrialProgress(progressCookie, 0);
     document.querySelector(".trial-activity")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function continueTrialWords() {
@@ -167,15 +199,17 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
 
   const answer = task ? answers[task.taskId] || "" : "";
   return <section className="trial-shell" data-layout-fill="anonymous-trial" data-layout-ready="true" data-layout-overlap-check="anonymous-trial">
-    <header className="trial-hero" data-layout-fill="anonymous-trial-hero"><div data-readable-copy="anonymous-trial-intro"><p>FREE TRIAL · BEGINNER</p><h1 data-layout-text-fit="anonymous-trial-title">{languageName} · {zh ? "初级课程试学" : "Beginner course trial"}</h1><span>{zh ? "无需登录即可体验。正式 Beginner 词库只读加载；本次状态仅保存在当前页面，刷新后重置，不会写入账户或数据库。" : "Try without signing in. The published Beginner catalog is read-only; progress stays in this page, resets on refresh, and is never written to an account or database."}</span></div><aside><strong>{score}</strong><span>{zh ? "今日进度分 · 最高 100" : "Daily progress score · 100 max"}</span></aside></header>
+    <header className="trial-hero" data-layout-fill="anonymous-trial-hero"><div data-readable-copy="anonymous-trial-intro"><p>FREE TRIAL · BEGINNER</p><h1 data-layout-text-fit="anonymous-trial-title">{languageName} · {zh ? "初级课程试学" : "Beginner course trial"}</h1><span>{zh ? "无需登录即可体验。正式 Beginner 词库只读加载；本功能用独立 Cookie 保存当前学习位置，不会写入账户或其他学习功能。" : "Try without signing in. The published Beginner catalog is read-only; a feature-specific cookie keeps your place without writing to an account or another activity."}</span></div><aside><strong>{score}</strong><span>{zh ? "今日进度分 · 最高 100" : "Daily progress score · 100 max"}</span></aside></header>
+    <label className="trial-repeat-check"><input type="checkbox" checked={repeatAfterMe} onChange={event => setRepeatAfterMe(event.target.checked)}/><span><b>{zh ? "开启三次跟读与评分" : "Repeat after me three times with scoring"}</b><small>{zh ? "默认关闭；需要口语训练时再开启麦克风。" : "Off by default. Enable it only when you want microphone practice."}</small></span></label>
     {!lockedSkill ? <nav className="trial-tabs" data-layout-fill="anonymous-trial-tabs" aria-label={zh ? "试学训练项目" : "Trial activities"}>{SKILLS.map(skill => <button className={active === skill ? "active" : ""} onClick={() => setActive(skill)} key={skill}><i>{completed.includes(skill) ? "✓" : String(SKILLS.indexOf(skill) + 1).padStart(2, "0")}</i><span><strong>{zh ? labels[skill][0] : labels[skill][1]}</strong><small>{labels[skill][2]}</small></span></button>)}</nav> : null}
     <article className="trial-activity" style={{ "--trial-accent": ACCENTS[active] } as CSSProperties}><header><div><span>{String(SKILLS.indexOf(active) + 1).padStart(2, "0")}</span><h2>{zh ? labels[active][0] : labels[active][1]}</h2></div>{active === "vocabulary" ? <a href="#trial-vocabulary-report">{zh ? "查看词汇报告" : "View vocabulary report"} ↓</a> : null}</header>
       {active === "vocabulary" && card ? <div className={`trial-card tries-${tries}`} dir={card.direction || direction}><div className="trial-progress"><span style={{ width: `${Math.round((index + 1) * 100 / Math.max(1, cards.length))}%` }}/></div><p>{index + 1} / {cards.length} · {zh ? `Beginner 共 ${total.toLocaleString()} 词` : `${total.toLocaleString()} Beginner words`}</p>
         <button className="trial-flip" type="button" onClick={phase === "study" ? () => { setRevealed(true); setPhase("answer"); } : undefined}><span>{SCENES[card.sceneKey || ""] || "✨"}</span><strong>{revealed ? meaning : card.form}</strong>{!revealed ? <em>{card.targetPhonetic || card.pronunciation}</em> : <em>{zh ? `难度 ${card.difficulty || 1}/5 · 常用度 ${card.frequencyDegree || 10}/10` : `Difficulty ${card.difficulty || 1}/5 · Frequency ${card.frequencyDegree || 10}/10`}</em>}<small>{revealed ? (zh ? "已查看释义，请回答下面的问题" : "Meaning revealed. Answer below.") : (zh ? "点一下查看意思" : "Tap to see the meaning")}</small></button>
         {phase === "answer" ? <section className="trial-quiz"><h3>{zh ? "这个词是什么意思？" : "What does this word mean?"}</h3><div>{(card.options || []).map(option => <button disabled={wrongIds.includes(option.id)} onClick={() => choose(option.id)} key={option.id}>{zh ? option.meaningZh : option.meaningEn}</button>)}</div>{speechMessage ? <p>{speechMessage}</p> : null}</section> : null}
+        {phase === "feedback" ? <section className="trial-feedback" role="status"><strong>{speechMessage}</strong><button type="button" onClick={continueAnswer}>{zh ? "继续" : "Continue"} →</button></section> : null}
         {phase === "speak" ? <section className="trial-speech"><div className="trial-avatar">AI</div><div><h3>{zh ? `请跟我说：${card.form}` : `Repeat after me: ${card.form}`}</h3><b>{card.targetPhonetic || card.pronunciation}</b><span>{card.pronunciationGuides?.[lang] || (zh ? card.pronunciationZh : card.pronunciationEn)}</span><p>{speechMessage}</p><strong>{speechRound} / 3</strong><small>{listening ? (zh ? "请开始说…" : "Speak now…") : (zh ? "AI 将自动播放、聆听并评分" : "AI plays, listens, and scores automatically")}</small></div></section> : null}
-        {phase === "sentence" && vocabularySentence ? <SentenceBuilderRound autoAdvance lang={lang} mode="writing" speechLocale={speechLocale} exercises={[vocabularySentence]} onComplete={() => nextCard(60)}/> : null}
-        {phase === "done" ? <section className="trial-complete-card" role="dialog" aria-modal="true"><strong>★ {score}</strong><h3>{zh ? "本轮 20 个词已完成！" : "This 20-word round is complete!"}</h3><p>{zh ? "已完成答题、三次自动跟读和句子组句。要继续下一组 20 个词吗？" : "You completed answers, three automatic repeats, and sentence building. Continue with the next 20 words?"}</p><nav><button type="button" onClick={continueTrialWords}>{zh ? "继续下一组" : "Continue"} →</button><Link href={`/${lang}/play?language=${language}`}>{zh ? "暂不继续" : "Not now"}</Link></nav></section> : null}
+        {phase === "sentence" && vocabularySentence ? <SentenceBuilderRound lang={lang} mode="writing" speechLocale={speechLocale} exercises={[vocabularySentence]} onComplete={() => nextCard(60)}/> : null}
+        {phase === "done" ? <section className="trial-complete-card" role="dialog" aria-modal="true"><strong>★ {score}</strong><h3>{zh ? "本轮 20 个词已完成！" : "This 20-word round is complete!"}</h3><p>{repeatAfterMe ? (zh ? "已完成答题、三次跟读和句子组句。要继续下一组 20 个词吗？" : "You completed answers, three repeats, and sentence building. Continue with the next 20 words?") : (zh ? "已完成答题和句子组句。要继续下一组 20 个词吗？" : "You completed answers and sentence building. Continue with the next 20 words?")}</p><nav><button type="button" onClick={continueTrialWords}>{zh ? "继续下一组" : "Continue"} →</button><Link href={`/${lang}/play?language=${language}`}>{zh ? "暂不继续" : "Not now"}</Link></nav></section> : null}
       </div> : null}
       {active !== "vocabulary" && task ? <div className="trial-task" dir={task.direction || direction}><p>{zh ? "今日练习" : "TODAY'S PRACTICE"}</p><h3>{task.prompt}</h3>{task.context ? <blockquote>{task.context}</blockquote> : null}{task.audioText && !task.sentenceExercises?.length ? <button className="trial-audio" onClick={() => play(task.audioText || "")}>▶ {zh ? "播放练习音频" : "Play practice audio"}</button> : null}{(active === "listening" || active === "writing") && task.sentenceExercises?.length ? <SentenceBuilderRound lang={lang} mode={active} speechLocale={speechLocale} exercises={task.sentenceExercises} onComplete={serialized => setAnswers(current => ({ ...current, [task.taskId]: serialized }))}/> : task.options?.length ? <div className="trial-options">{task.options.map(option => <button className={answer === option.id ? "selected" : ""} onClick={() => setAnswers(current => ({ ...current, [task.taskId]: option.id }))} key={option.id}>{option.label}</button>)}</div> : <label><span>{zh ? "您的回答" : "Your response"}</span><textarea value={answer} onChange={event => setAnswers(current => ({ ...current, [task.taskId]: event.target.value }))}/></label>}<button className="trial-complete" disabled={!answer.trim()} onClick={() => markComplete(active)}>{completed.includes(active) ? (zh ? "✓ 已完成" : "✓ Completed") : (zh ? "完成本项练习" : "Complete activity")}</button></div> : null}
     </article>
@@ -183,6 +217,7 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     <section className="trial-cta"><div><p>{zh ? "喜欢这个学习方式？" : "Like this way of learning?"}</p><h2>{zh ? "免费注册，开启完整首月课程。" : "Create an account and start your full free month."}</h2><span>{zh ? "登录后才会保存进度、分数、21 天词汇记忆和证书记录。" : "Progress, scores, 21-day memory, and certificates are saved only after sign-in."}</span></div><nav><Link href={`/${lang}/auth/sign-up?returnTo=${encodeURIComponent(`/${lang}/classes/${classId || `course_${language}_basic`}`)}`}>{zh ? "免费注册" : "Create free account"} →</Link><Link href={`/${lang}/play?language=${language}`}>{zh ? "返回边玩边学" : "Back to Play"}</Link></nav></section>
     <style>{`.trial-word-grid>button{min-width:0;padding:15px;display:flex;gap:12px;border:1px solid #d8e1dd;border-radius:15px;background:#fff;color:inherit;text-align:left;font:inherit;cursor:pointer}.trial-word-grid>button:hover,.trial-word-grid>button:focus-visible{border-color:#087d62;background:#effaf5}.trial-word-grid>button>span{font-size:28px}.trial-word-grid>button>div{min-width:0}.trial-word-grid em{color:#087d62;font-size:12px;font-style:normal;font-weight:850}.trial-complete-card{position:fixed;z-index:1000;inset:0;margin:0!important;padding:clamp(28px,7vw,70px)!important;display:grid;place-content:center;background:#f7f3ea!important}.trial-complete-card nav{margin-top:22px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.trial-complete-card nav button,.trial-complete-card nav a{min-height:48px;padding:11px 18px;display:grid;place-items:center;border:1px solid #8db8a9;border-radius:999px;background:#087d62;color:#fff;font-weight:900;text-decoration:none}.trial-complete-card nav a{background:#fff;color:#087d62}`}</style>
     <style>{STYLE}</style>
+    <style>{`.trial-repeat-check{padding:14px 17px;display:flex;align-items:center;gap:12px;border:1px solid #bad5ca;border-radius:15px;background:#fff}.trial-repeat-check input{width:22px;height:22px;accent-color:#087d62}.trial-repeat-check span,.trial-repeat-check small{display:block}.trial-repeat-check small{margin-top:3px;color:#61756d}.trial-feedback{margin-top:18px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-radius:15px;background:#ddf7ed;color:#076650}.trial-feedback button{min-height:46px;padding:0 20px;border:0;border-radius:12px;background:#087d62;color:#fff;font-weight:900}`}</style>
   </section>;
 }
 

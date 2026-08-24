@@ -51,6 +51,9 @@ test("the player includes three scored attempts, two speeds, explicit continuati
   assert.match(player, /开启三次跟读与评分/);
   assert.match(player, /attemptScores/);
   assert.match(player, /readyToContinue/);
+  assert.match(player, /smartlingo_everyday_/);
+  assert.match(player, /document\.cookie/);
+  assert.match(player, /level: "beginner" \| "intermediate" \| "advanced"/);
   assert.match(player, /\/api\/everyday-speaking\/speech/);
   assert.match(player, /watchdog = window\.setTimeout/);
   assert.doesNotMatch(player, />🎙 \{listening \?/);
