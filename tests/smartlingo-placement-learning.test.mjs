@@ -88,6 +88,9 @@ test("anonymous Beginner trial is public, reads the published catalog, and keeps
   assert.match(trial, /document\.cookie/);
   assert.match(trial, /smartlingo_trial_/);
   assert.match(trial, /phase === "feedback"/);
+  assert.match(trial, /phase: "sentence"/);
+  assert.match(trial, /JSON\.stringify\(value\)/);
+  assert.match(trial, /setPhase\("sentence"\)/);
   assert.match(trial, /useRepeatAfterMePreference/);
   assert.match(trial, /默认关闭/);
   assert.match(trial, /useState<Skill>/);

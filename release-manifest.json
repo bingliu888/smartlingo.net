@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-anonymous-learning-continuity-2026-08-24-v24",
+  "releaseId": "smartlingo-anonymous-trial-phase-resume-2026-08-24-v25",
   "site": "smartlingo.net",
-  "title": {"en":"Keep anonymous learning progress and restore opt-in speaking","zh":"保存匿名学习进度并恢复自愿开启跟读"},
-  "purpose": {"en":"Fix defects reproduced by the August 24 real Chrome acceptance: preserve feature-scoped anonymous progress, keep Beginner course speaking off until explicitly enabled, show feedback with Continue, and require an independent language choice before Redeem.","zh":"修复 8 月 24 日真实 Chrome 验收复现的问题：保存各功能独立的匿名进度、初级课程跟读保持默认关闭、答题后显示反馈与继续按钮，并在兑换前独立选择语言。"},
+  "title": {"en":"Resume the exact anonymous Beginner learning phase","zh":"准确恢复匿名初级课程学习阶段"},
+  "purpose": {"en":"Fix the production Chrome defect where an anonymous Beginner learner entered the sentence builder after feedback but refresh returned to the first vocabulary card. Preserve the feature-scoped phase and non-sensitive score state while keeping speaking opt-in and activity languages isolated.","zh":"修复生产 Chrome 验收发现的问题：匿名初级学员从反馈页进入组句后刷新会回到第一张词汇卡。现在保存本功能独立的学习阶段与非敏感分数状态，同时保持跟读自愿开启和各活动语言隔离。"},
   "features": {
     "en": [
       "Replace the duplicate Everyday Speaking discovery tile with a bilingual Redeem tile that opens the existing locale-preserving reward store.",
@@ -15,6 +15,7 @@
       ,"Persist Everyday Speaking and anonymous Beginner Course positions in separate, non-account cookies so refresh resumes only the same language, scene, level, or skill."
       ,"Route Beginner vocabulary answers through a visible feedback-and-Continue step; enter three-attempt microphone practice only after the learner explicitly enables Repeat After Me."
       ,"Ask for a fresh activity language before opening Redeem, matching the six-tile anonymous Play isolation contract."
+      ,"Persist the Beginner trial's study, feedback, sentence-builder, and completion phases in a backward-compatible feature cookie so refresh resumes the exact learning step."
     ],
     "zh": [
       "将重复的生活口语发现卡替换为双语兑换卡，并打开保持界面语言的现有奖励商店。",
@@ -26,6 +27,7 @@
       ,"使用互相独立且不关联账户的 Cookie 保存生活口语与匿名初级课程位置，刷新时只恢复相同语言、场景、等级或技能。"
       ,"初级词汇答题后进入清晰的反馈与继续步骤；只有学习者明确开启跟读后才进入三次麦克风练习。"
       ,"进入兑换前重新选择本活动语言，与匿名 Play 六入口隔离合同一致。"
+      ,"以向后兼容的独立功能 Cookie 保存初级试学的学习、反馈、组句与完成阶段，使刷新准确恢复当前步骤。"
     ]
   },
   "affected": {"en":["Anonymous Everyday Speaking player, Beginner Course trial, Redeem route, their contract tests, and no other SmartLingo or sibling-site surface."],"zh":["匿名生活口语播放器、初级课程试学、兑换路由及其合同测试；不影响 SmartLingo 其他范围或任何兄弟站点。"]},
@@ -38,6 +40,7 @@
       "Retain the existing reproduce, smallest-fix, full-gate, deploy, and production-retest loop for every product defect."
       ,"Use SameSite=Lax, path-scoped non-secret progress cookies with a 30-day lifetime; do not write anonymous progress to an account or database."
       ,"Keep SmartCard Challenge unchanged after a deterministic production retest proved one correct answer advances exactly one question after six seconds."
+      ,"Store only non-sensitive trial position, phase, answer points, and completed-card scores; never store identity, microphone, authentication, or account data in the anonymous cookie."
     ],
     "zh": [
       "发现大厅保持恰好六张卡：今日速成、智慧卡练习、智慧卡挑战、兑换、排行榜和免费试学；生活口语仍可从共享导航及独立路由进入。",
@@ -47,6 +50,7 @@
       "所有产品缺陷继续执行复现、最小修复、完整门禁、发布与生产复测闭环。"
       ,"匿名进度使用 SameSite=Lax、Path=/、30 天有效期的非敏感 Cookie，不写入账户或数据库。"
       ,"确定性生产复测证明智慧卡挑战答对后六秒只前进一题，因此保持其正常逻辑不变。"
+      ,"匿名 Cookie 只保存非敏感的试学位置、阶段、答题分与已完成卡片分数，不保存身份、麦克风、认证或账户数据。"
     ]
   },
   "validation": {

@@ -19,6 +19,13 @@ type LibraryItem = { id: string; form: string; targetPhonetic: string; meaningEn
 type TrialPayload = { localDate: string; summary: { total: number }; dailyDeck: Card[]; items: LibraryItem[]; error?: string };
 type Task = { taskId: string; skill: Skill; prompt: string; context?: string; audioText?: string; options?: readonly { id: string; label: string }[]; sentenceExercises?: readonly { id: string; scenario: string; prompt: string; audioText?: string; answerTokens: readonly string[]; sourceLanguage?: string; answerLanguage?: string }[]; direction?: "ltr" | "rtl" };
 type RecognitionLike = { lang: string; interimResults: boolean; continuous: boolean; start(): void; onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null; onerror: (() => void) | null };
+type TrialProgress = {
+  index: number;
+  phase: "study" | "feedback" | "sentence" | "done";
+  answerPoints?: number;
+  correct?: boolean;
+  scores?: number[];
+};
 
 const SKILLS: Skill[] = ["vocabulary", "reading", "writing", "listening", "dialogue"];
 const ACCENTS: Record<Skill, string> = { vocabulary: "#0a8e6f", reading: "#2f6fbb", writing: "#ad642d", listening: "#7a5aad", dialogue: "#c74455" };
@@ -52,12 +59,27 @@ function seedDeck(cards: readonly Card[]) {
 
 function readTrialProgress(key: string) {
   const value = document.cookie.split("; ").find(item => item.startsWith(`${key}=`))?.split("=").slice(1).join("=");
-  const parsed = Number(value ? decodeURIComponent(value) : 0);
-  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+  if (!value) return { index: 0, phase: "study" } satisfies TrialProgress;
+  const decoded = decodeURIComponent(value);
+  const legacyIndex = Number(decoded);
+  if (Number.isFinite(legacyIndex)) return { index: Math.max(0, Math.floor(legacyIndex)), phase: "study" } satisfies TrialProgress;
+  try {
+    const parsed = JSON.parse(decoded) as Partial<TrialProgress>;
+    const phase = parsed.phase === "feedback" || parsed.phase === "sentence" || parsed.phase === "done" ? parsed.phase : "study";
+    return {
+      index: Number.isFinite(parsed.index) ? Math.max(0, Math.floor(parsed.index || 0)) : 0,
+      phase,
+      answerPoints: Number.isFinite(parsed.answerPoints) ? Math.max(0, Math.floor(parsed.answerPoints || 0)) : undefined,
+      correct: typeof parsed.correct === "boolean" ? parsed.correct : undefined,
+      scores: Array.isArray(parsed.scores) ? parsed.scores.filter(value => Number.isFinite(value)).map(value => Math.max(0, Math.floor(value))).slice(0, 20) : undefined,
+    } satisfies TrialProgress;
+  } catch {
+    return { index: 0, phase: "study" } satisfies TrialProgress;
+  }
 }
 
-function writeTrialProgress(key: string, value: number) {
-  document.cookie = `${key}=${encodeURIComponent(String(value))}; Max-Age=2592000; Path=/; SameSite=Lax`;
+function writeTrialProgress(key: string, value: TrialProgress) {
+  document.cookie = `${key}=${encodeURIComponent(JSON.stringify(value))}; Max-Age=2592000; Path=/; SameSite=Lax`;
 }
 
 export function AnonymousBeginnerTrial({ lang, language, languageName, speechLocale, direction, cards: seedCards, tasks, initialSkill = "vocabulary", lockedSkill = false, classId }: {
@@ -116,10 +138,26 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const saved = readTrialProgress(progressCookie);
-      if (saved > 0) setIndex(Math.min(saved, Math.max(0, cards.length - 1)));
+      if (!cards.length || (!saved.index && saved.phase === "study")) return;
+      setIndex(Math.min(saved.index, Math.max(0, cards.length - 1)));
+      setCardScores(saved.scores || []);
+      setAnswerPoints(saved.answerPoints || 0);
+      if (saved.phase === "feedback") {
+        setRevealed(true);
+        setPhase("feedback");
+        setSpeechMessage(saved.correct
+          ? (zh ? `回答正确！答题 ${saved.answerPoints || 0} 分。` : `Correct! ${saved.answerPoints || 0} answer points.`)
+          : (zh ? `正确答案是：${meaning}。` : `The answer is: ${meaning}.`));
+      } else if (saved.phase === "sentence") {
+        setRevealed(true);
+        setPhase("sentence");
+      } else if (saved.phase === "done") {
+        setRevealed(true);
+        setPhase("done");
+      }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [cards.length, progressCookie]);
+  }, [cards.length, meaning, progressCookie, zh]);
 
   const labels: Record<Skill, [string, string, string]> = {
     vocabulary: ["词汇", "Vocabulary", "智慧卡与实用表达"], reading: ["阅读", "Reading", "理解真实语境"], writing: ["写作", "Writing", "组织简短表达"], listening: ["听力", "Listening", "听辨语音与含义"], dialogue: ["口语", "Speaking", "自然开口回应"],
@@ -135,6 +173,7 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     const points = correct ? Math.max(40, 70 - tries * 15) : 20;
     setAnswerPoints(points); setPhase("feedback");
     setSpeechMessage(correct ? (zh ? `回答正确！答题 ${points} 分。` : `Correct! ${points} answer points.`) : (zh ? `正确答案是：${meaning}。` : `The answer is: ${meaning}.`));
+    writeTrialProgress(progressCookie, { index, phase: "feedback", answerPoints: points, correct, scores: cardScores });
   }
   function choose(optionId: string) {
     if (!card || phase !== "answer" || wrongIds.includes(optionId)) return;
@@ -145,9 +184,10 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
   }
   function nextCard(speech = 0) {
     if (cardId) setStatuses(current => ({ ...current, [cardId]: "learning" }));
-    setCardScores(current => [...current, Math.round(answerPoints * .7 + speech * .3)]);
-    if (index + 1 >= cards.length) { writeTrialProgress(progressCookie, cards.length); setPhase("done"); markComplete("vocabulary"); return; }
-    writeTrialProgress(progressCookie, index + 1);
+    const nextScores = [...cardScores, Math.round(answerPoints * .7 + speech * .3)];
+    setCardScores(nextScores);
+    if (index + 1 >= cards.length) { writeTrialProgress(progressCookie, { index, phase: "done", scores: nextScores }); setPhase("done"); markComplete("vocabulary"); return; }
+    writeTrialProgress(progressCookie, { index: index + 1, phase: "study", scores: nextScores });
     setIndex(current => current + 1); setPhase("study"); setRevealed(false); setTries(0); setWrongIds([]); setSpeechRound(0); setSpeechMessage(""); setAnswerPoints(0);
   }
   function continueAnswer() {
@@ -157,7 +197,10 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
       window.setTimeout(() => startSpeech(1), 250);
       return;
     }
-    if (vocabularySentence) setPhase("sentence");
+    if (vocabularySentence) {
+      writeTrialProgress(progressCookie, { index, phase: "sentence", answerPoints, scores: cardScores });
+      setPhase("sentence");
+    }
     else nextCard(0);
   }
   function startSpeech(round = speechRound) {
@@ -187,7 +230,7 @@ export function AnonymousBeginnerTrial({ lang, language, languageName, speechLoc
     if (!response.ok || !payload.dailyDeck?.length) return;
     setCards(payload.dailyDeck); setCatalog(payload.items); setTotal(payload.summary.total); setLocalDate(payload.localDate);
     setIndex(0); setPhase("study"); setRevealed(false); setTries(0); setWrongIds([]); setSpeechRound(0); setSpeechMessage(""); setAnswerPoints(0);
-    writeTrialProgress(progressCookie, 0);
+    writeTrialProgress(progressCookie, { index: 0, phase: "study" });
     document.querySelector(".trial-activity")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function continueTrialWords() {
