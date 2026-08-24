@@ -1,55 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-sprint-reading-choice-2026-08-24-v30",
+  "releaseId": "smartlingo-course-reading-entry-2026-08-24-v31",
   "site": "smartlingo.net",
   "title": {
-    "en": "Remove ambiguous duplicate Sprint reading choices",
-    "zh": "消除今日速成阅读题的重复歧义选项"
+    "en": "Restore the separate subscribed-course Reading entry",
+    "zh": "恢复订阅课程的独立阅读入口"
   },
   "purpose": {
-    "en": "Close the production reading defect found after v29: two choices could expose the same accessible label while only one hidden identifier was accepted.",
-    "zh": "修复 v29 后生产验收发现的阅读缺陷：两个选项可能显示相同的可访问文本，但只有一个隐藏标识会被判为正确。"
+    "en": "Close the production navigation defect found during the four-language matrix: the Reading URL loaded the default five-skill view because the course menu and route mapping omitted Reading.",
+    "zh": "修复四语生产矩阵发现的导航缺陷：课程菜单及路由映射漏掉阅读，导致阅读 URL 打开默认五技能视图。"
   },
   "features": {
     "en": [
-      "Guarantee distinct visible and accessible labels for every Sprint reading choice.",
-      "Keep the correct option when repairing an older in-progress plan that already contains duplicate labels.",
-      "Prefer distractors generated from the current round's learned vocabulary before using same-level catalog fallback sentences."
+      "Expose Reading as its own course training tile alongside vocabulary, speaking, listening, writing, and quiz.",
+      "Map training=reading to the existing Reading tab in the server-rendered learning session.",
+      "Preserve the same database-authoritative daily task, grading, checkpoint, and Continue flow."
     ],
     "zh": [
-      "保证每道今日速成阅读题的可见文本和可访问名称均不重复。",
-      "修复已有重复选项的进行中计划时保留真正的正确选项。",
-      "优先使用本轮已学词生成的句子作为干扰项，必要时才使用同级目录回退句。"
+      "在词汇、口语、听力、写作和测验旁新增独立的课程阅读训练 tile。",
+      "将 training=reading 映射到服务器渲染学习会话中已有的阅读标签。",
+      "保持同一数据库权威的每日任务、判分、断点及继续流程。"
     ]
   },
   "affected": {
     "en": [
-      "Signed-in and anonymous Today's Sprint reading choices, including resumed signed-in plans; no Clerk, payment, administrator, sibling-site, or unrelated learning behavior."
+      "Signed-in subscribed-course training navigation for all course languages; no Clerk, payment, administrator, sibling-site, or anonymous learning behavior."
     ],
     "zh": [
-      "登录及匿名今日速成的阅读选项（包括恢复的登录计划）；不影响 Clerk、支付、管理员、兄弟站点或无关学习行为。"
+      "所有课程语言的登录订阅课程训练导航；不影响 Clerk、支付、管理员、兄弟站点或匿名学习行为。"
     ]
   },
   "changes": {
     "en": [
-      "Normalize reading labels and deterministically collapse duplicates while preserving the answer identifier.",
-      "Build three unique choices from all current adaptive round sentences before consulting graded same-level fallback content.",
-      "Sanitize stored in-progress Sprint plans when they are resumed, so existing affected runs become usable without deleting progress."
+      "Add a bilingual Reading tile to the course training menu.",
+      "Recognize the Reading query in the signed-in session page's initial-skill mapping.",
+      "Add regression coverage for both the visible entry and route-to-tab contract."
     ],
     "zh": [
-      "规范化阅读选项文本，并在保留正确答案标识的前提下确定性合并重复项。",
-      "先从当前自适应学习轮次的全部句子构建三个唯一选项，再查询同级分级回退内容。",
-      "恢复进行中的今日速成计划时清理已保存的重复选项，无需删除学员进度。"
+      "在课程训练菜单新增双语阅读 tile。",
+      "在登录学习会话页的初始技能映射中识别阅读查询参数。",
+      "为可见入口及路由到标签合同增加回归覆盖。"
     ]
   },
   "validation": {
     "en": [
-      "Run the duplicate-choice regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
-      "Deploy only through GitHub Actions to Cloudflare, resume the affected ordinary test learner Sprint, and verify all visible reading choices are unique and the visible matching answer grades correctly."
+      "Run the course-entry regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
+      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner to enter Spanish and Italian Reading directly and complete a real graded item."
     ],
     "zh": [
-      "执行重复选项回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
-      "仅通过 GitHub Actions 发布到 Cloudflare，恢复受影响普通测试学员的今日速成，并验证所有阅读选项文本唯一且匹配答案能正确判分。"
+      "执行课程入口回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
+      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员直接进入西语、意语阅读并完成真实判分。"
     ]
   },
   "deferred": {

@@ -60,6 +60,7 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /data\.summary\.percent/);
   assert.match(page, /VocabularyMemoryWorkspace/);
   assert.match(menu, /\/vocabulary/);
+  assert.match(menu, /training=reading/);
   assert.match(migration, /successful_dates/);
   assert.match(migration, /first_learned_at/);
   assert.match(migration, /mastered_at/);

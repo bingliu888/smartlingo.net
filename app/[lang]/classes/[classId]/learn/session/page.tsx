@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { LearningWorkspace } from "../../../../../../components/LearningWorkspace";
 import { SiteFooter } from "../../../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../../../components/SiteHeader";
+import type { InterfaceLanguage } from "../../../../../../lib/interface-locale";
 import { requestUser } from "../../../../../../lib/request-user";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -20,20 +21,22 @@ export default async function LearningSessionPage({
   const { lang, classId } = await params;
   const query = await searchParams;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
+  const interfaceLang = lang as InterfaceLanguage;
+  const learningLang = lang === "zh" ? "zh" : "en";
   if (!await requestUser()) {
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
     <main className="learning-page" data-layout-page="learning-session">
-      <SiteHeader lang={lang as any} />
+      <SiteHeader lang={interfaceLang} />
       <LearningWorkspace
-        lang={lang as any}
+        lang={learningLang}
         classId={classId}
         view="session"
-        initialSkill={query.training === "quiz" ? "exam" : query.training === "dialogue" ? "dialogue" : query.training === "vocabulary" ? "vocabulary" : query.training === "writing" ? "writing" : query.training === "listening" ? "listening" : undefined}
+        initialSkill={query.training === "quiz" ? "exam" : query.training === "dialogue" ? "dialogue" : query.training === "vocabulary" ? "vocabulary" : query.training === "reading" ? "reading" : query.training === "writing" ? "writing" : query.training === "listening" ? "listening" : undefined}
       />
-      <SiteFooter lang={lang as any} />
+      <SiteFooter lang={interfaceLang} />
     </main>
   );
 }

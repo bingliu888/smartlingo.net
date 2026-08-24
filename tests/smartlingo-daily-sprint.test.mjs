@@ -209,6 +209,14 @@ test("sentence building always crosses from one language to another", () => {
   assert.match(sentenceBuilder, /Read in \$\{sourceName\}; build the sentence in \$\{answerName\}/);
 });
 
+test("subscribed Course exposes and opens Reading as a separate skill", () => {
+  const menu = readFileSync(new URL("../components/CourseTrainingMenu.tsx", import.meta.url), "utf8");
+  const sessionPage = readFileSync(new URL("../app/[lang]/classes/[classId]/learn/session/page.tsx", import.meta.url), "utf8");
+  assert.match(menu, /key: "reading"/);
+  assert.match(menu, /training=reading/);
+  assert.match(sessionPage, /query\.training === "reading" \? "reading"/);
+});
+
 test("migration adds idempotent rank and redemption ownership boundaries", () => {
   const migration = readFileSync(new URL("../drizzle/0152_daily_sprint_rewards.sql", import.meta.url), "utf8");
   assert.match(migration, /CREATE TABLE smartlingo_daily_sprint_runs/);

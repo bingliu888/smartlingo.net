@@ -18,6 +18,7 @@ export function CourseTrainingMenu({ lang, classId }: { lang: "zh" | "en"; class
   const base = `/${lang}/classes/${encodeURIComponent(classId)}/learn/session`;
   const items = [
     { key: "vocab", icon: "Aa", title: zh ? "每日词汇" : "Daily vocabulary", copy: zh ? "智慧卡 · 21 天记忆 · 掌握报告" : "SmartCards · 21-day memory · reports", href: `/${lang}/classes/${encodeURIComponent(classId)}/vocabulary` },
+    { key: "reading", icon: "▤", title: zh ? "阅读" : "Reading", copy: zh ? "理解句子 · 选择与反馈" : "Sentence meaning · choices · feedback", href: `${base}?training=reading` },
     { key: "speaking", icon: "◉", title: zh ? "口语" : "Speaking", copy: zh ? "跟我说 · 回答我 · 即时纠正" : "Repeat · answer · instant correction", href: `${base}?training=dialogue` },
     { key: "listening", icon: "◒", title: zh ? "听力" : "Listening", copy: zh ? "听辨语音 · 理解语境" : "Sound recognition · context", href: `${base}?training=listening` },
     { key: "writing", icon: "✎", title: zh ? "写作" : "Writing", copy: zh ? "组织表达 · 修改建议" : "Structured writing · guided revision", href: `${base}?training=writing` },
