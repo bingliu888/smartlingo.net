@@ -115,8 +115,8 @@ test("anonymous Play renders six activities without reusing a target language", 
   const { default: worker } = await import(workerUrl.href);
 
   for (const [pathname, language, labels] of [
-    ["/zh/play", "zh", ["今日速成", "智慧卡练习", "智慧卡挑战", "生活口语", "免费试学", "排行榜"]],
-    ["/en/play", "en", ["Today’s Sprint", "Smart Card Practice", "Smart Card Challenge", "Everyday Speaking", "Free Trial", "Rankings"]],
+    ["/zh/play", "zh", ["今日速成", "智慧卡练习", "智慧卡挑战", "兑换", "免费试学", "排行榜"]],
+    ["/en/play", "en", ["Today’s Sprint", "Smart Card Practice", "Smart Card Challenge", "Redeem", "Free Trial", "Rankings"]],
   ]) {
     const response = await worker.fetch(
       new Request(`http://localhost${pathname}`, { headers: { accept: "*/*" } }),
@@ -127,7 +127,7 @@ test("anonymous Play renders six activities without reusing a target language", 
     const html = await response.text();
     for (const label of labels) assert.match(html, new RegExp(label), `${pathname}: ${label}`);
     assert.match(html, new RegExp(`href="\\/${language}\\/smartcards"`));
-    assert.match(html, new RegExp(`href="\\/${language}\\/play\\/everyday"`));
+    assert.match(html, new RegExp(`href="\\/${language}\\/play\\/redeem"`));
     assert.match(html, /class="game-tile free-trial-tile"/);
     assert.doesNotMatch(html, new RegExp(`href="\\/${language}\\/programs\\/${language}\\/trial"`));
   }

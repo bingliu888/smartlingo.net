@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-real-learning-qa-all-features-2026-08-24-v22",
+  "releaseId": "smartlingo-play-redeem-tile-2026-08-24-v23",
   "site": "smartlingo.net",
-  "title": {"en":"Expand the 3 AM real-learning QA across every learning feature","zh":"将凌晨 3 点真实学习验收扩展到全部学习功能"},
-  "purpose": {"en":"Make the signed-in production learner test exercise SmartLingo as one complete product rather than stopping after Course or requesting an unnecessary microphone.","zh":"让登录生产测试学习者把 SmartLingo 作为完整产品进行验收，不再只测试课程，也不请求不必要的麦克风权限。"},
+  "title": {"en":"Restore the Redeem activity in the Play discovery hub","zh":"恢复边玩边学大厅的兑换活动入口"},
+  "purpose": {"en":"Fix the production Play hub discovered by the day-4 real Chrome acceptance so its six contracted activity tiles include Redeem and link to the existing reward store.","zh":"修复第 4 天真实 Chrome 验收发现的生产 Play 大厅缺陷，使约定的六张活动卡包含兑换并链接到现有奖励商店。"},
   "features": {
     "en": [
+      "Replace the duplicate Everyday Speaking discovery tile with a bilingual Redeem tile that opens the existing locale-preserving reward store.",
       "Add Dashboard, Today’s Sprint, SmartCard Practice, SmartCard Challenge, Everyday Speaking, Score History, and Rankings to the real Chrome learner plan alongside all five Course skills.",
       "Assign every learner-language pair a reproducible rotating feature focus as well as its Course skill focus and active-learning duration.",
       "Keep repeat-after-me off, verify the normal no-microphone learning path, and never request microphone permission in the unattended run.",
@@ -13,6 +14,7 @@
       "Verify the SmartCard Challenge local-date, date-only question set, selected level, and six-second automatic advance contracts in the scheduled real-user run."
     ],
     "zh": [
+      "将重复的生活口语发现卡替换为双语兑换卡，并打开保持界面语言的现有奖励商店。",
       "在课程五技能之外，将用户面板、今日速成、智慧卡练习、智慧卡挑战、生活口语、成绩记录和排行榜全部加入真实 Chrome 学习计划。",
       "为每个学习者语言组合稳定生成轮换功能重点，并保留课程技能重点与有效学习时长。",
       "保持跟读关闭，验证正常无麦克风学习路径，后台运行绝不请求麦克风权限。",
@@ -20,15 +22,17 @@
       "在定时真实用户任务中验证智慧卡挑战的当地日期、纯日期题集、等级保留及六秒自动推进合同。"
     ]
   },
-  "affected": {"en":["The fixed 21-day 3 AM Pacific QA plan, its route-only GitHub preflight, deterministic session planner, LaunchAgent-read recovery prompt, and QA contracts."],"zh":["固定 21 天凌晨 3 点太平洋时间 QA 计划、GitHub 只读路由预检、确定性会话规划器、LaunchAgent 读取的恢复提示及 QA 合同。"]},
+  "affected": {"en":["The Chinese and English Play discovery route at /{locale}/play and its rendered-HTML behavior contract."],"zh":["中文与英文的 /{locale}/play 边玩边学发现页及其渲染 HTML 行为合同。"]},
   "changes": {
     "en": [
+      "Keep exactly six discovery tiles: Today’s Sprint, SmartCard Practice, SmartCard Challenge, Redeem, Rankings, and Free Trial; Everyday Speaking remains available from the shared header and its dedicated route.",
       "Expand anonymous route preflight coverage from four to eight surface types for each of the four QA target languages.",
       "Begin signed-in acceptance at Dashboard and verify its selected-language sections and independent add actions.",
       "Allow only legitimate server-authored score, SmartCard credit, challenge, reward, or leaderboard records produced by visible tested UI; keep synthetic writes forbidden and payment, referral, and certificate ledgers unchanged.",
       "Retain the existing reproduce, smallest-fix, full-gate, deploy, and production-retest loop for every product defect."
     ],
     "zh": [
+      "发现大厅保持恰好六张卡：今日速成、智慧卡练习、智慧卡挑战、兑换、排行榜和免费试学；生活口语仍可从共享导航及独立路由进入。",
       "将四种 QA 目标语言的匿名路由预检从四类页面扩展到八类页面。",
       "登录验收从用户面板开始，并核对各已选语言区域及独立添加入口。",
       "仅允许可见受测 UI 正常产生的服务器学习成绩、智慧卡积分、挑战、奖励或排行榜记录；继续禁止合成写入，并保持支付、推荐和证书账本不变。",
@@ -37,11 +41,15 @@
   },
   "validation": {
     "en": [
+      "The rendered Worker response for both /zh/play and /en/play must expose the six contracted labels and the locale-preserving /play/redeem link.",
+      "Keep the complete 12,000-item beginner-media coverage assertions unchanged while allowing the audit up to 120 seconds under full-suite contention.",
       "The focused QA-plan contract suite passes all five tests, including the complete feature list, rotating feature focus, local-date Challenge, no-microphone flow, and auto-fix requirements.",
       "The production-equivalent build, TypeScript check, D1 validation, sensitive-data scan, Worker-artifact validation, and complete automated suite are required before deployment.",
       "The expanded route preflight runs in GitHub Actions where production network access is available; local sandbox network failure is not treated as route evidence."
     ],
     "zh": [
+      "渲染 Worker 对 /zh/play 与 /en/play 的响应必须显示六个约定标签及保持界面语言的 /play/redeem 链接。",
+      "完整保留 12,000 个初级词条媒体覆盖断言，仅允许审计在全量套件资源竞争下运行最多 120 秒。",
       "QA 计划定向合同 5 项全部通过，覆盖完整功能清单、轮换功能重点、当地日期挑战、无麦克风流程及自动修复要求。",
       "发布前必须通过生产等价构建、TypeScript、D1、敏感信息扫描、Worker 产物与完整自动化套件。",
       "扩展路由预检将在具备生产网络访问的 GitHub Actions 中执行；本地沙箱网络失败不作为路由证据。"

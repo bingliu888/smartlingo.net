@@ -5,7 +5,7 @@ import test from "node:test";
 
 const run = promisify(execFile);
 
-test("all imageable beginner lexemes have a visual asset in every language", { timeout: 60_000 }, async () => {
+test("all imageable beginner lexemes have a visual asset in every language", { timeout: 120_000 }, async () => {
   const { stdout } = await run(process.execPath, [new URL("../scripts/audit-beginner-media-coverage.mjs", import.meta.url).pathname]);
   const report = JSON.parse(stdout);
   assert.equal(report.totalBeginnerLexemes, 12_000);

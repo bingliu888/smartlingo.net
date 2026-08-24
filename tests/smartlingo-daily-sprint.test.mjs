@@ -60,13 +60,13 @@ test("course and anonymous Play expose six isolated learning activities", () => 
   assert.match(menu, /今日速成/);
   assert.match(menu, /\[5,10,15,20\]/);
   assert.match(play, /PlayDailySprintPicker/);
-  for (const tile of ["智慧卡练习", "智慧卡挑战", "生活口语", "排行榜"]) assert.match(play, new RegExp(tile));
+  for (const tile of ["智慧卡练习", "智慧卡挑战", "兑换", "排行榜"]) assert.match(play, new RegExp(tile));
   assert.match(freeTrialPicker, /免费试学/);
   assert.match(play, /PlayFreeTrialPicker/);
   assert.match(freeTrialPicker, /免费试学/);
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
   assert.match(play, /href=\{`\/\$\{lang\}\/smartcards`\}/);
-  assert.match(play, /href=\{`\/\$\{lang\}\/play\/everyday`\}/);
+  assert.match(play, /href=\{`\/\$\{lang\}\/play\/redeem`\}/);
   assert.doesNotMatch(play, /searchParams|query\.language|initialLanguage=/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
