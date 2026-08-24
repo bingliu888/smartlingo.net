@@ -8,6 +8,7 @@ const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronun
 type Deck = { id: string; ownerUserId: string; ownerName: string; classId: string | null; targetLanguage: string; level: string; title: string; version: number };
 type Card = { id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string; pronunciationZh: string; pronunciationGuides: string | Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number };
 type Evidence = { cardId?: unknown; choices?: unknown; transcripts?: unknown };
+type SavedPracticeEvidence = { cardId: string; choices: string[]; transcripts: string[] };
 type TimedSession = { id:string; localDate:string; currentIndex:number; correctCount:number; questionStartedMs:number; completedAt:number|null };
 type Leader = { score:number; displayName:string };
 
@@ -29,6 +30,27 @@ function withCookie(response: Response, guest: { value: string; fresh: boolean }
 function dateFor(timeZone: unknown) {
   try { const zone = typeof timeZone === "string" && timeZone.length <= 64 ? timeZone : "UTC"; return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).replaceAll("/", "-"); }
   catch { return new Date().toISOString().slice(0, 10); }
+}
+function practiceSubject(userId: string | null, guestHash: string) {
+  return userId ? `user:${userId}` : `guest:${guestHash}`;
+}
+function parseSavedPracticeEvidence(value: unknown, cards: readonly Card[]) {
+  if (!Array.isArray(value) || value.length > cards.length) return [];
+  const safe: SavedPracticeEvidence[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const submitted = value[index] as Evidence;
+    const choices = Array.isArray(submitted?.choices) ? submitted.choices : [];
+    if (submitted?.cardId !== cards[index]?.id || choices.length < 1 || choices.length > POLICY.maxAttempts || choices.some(choice => typeof choice !== "string" || !cards.some(card => card.id === choice))) return [];
+    safe.push({ cardId: cards[index].id, choices: choices as string[], transcripts: [] });
+  }
+  return safe;
+}
+function practicePoints(cards: readonly Card[], evidence: readonly SavedPracticeEvidence[]) {
+  return evidence.reduce<number>((points, item, index) => {
+    const correctAt = item.choices.indexOf(cards[index]?.id || "");
+    const penalties = correctAt >= 0 ? correctAt : item.choices.length;
+    return Math.max(0, Math.min(850, points + (correctAt >= 0 ? POLICY.correctPoints : 0) - penalties * POLICY.wrongPenalty));
+  }, POLICY.startingPoints);
 }
 async function readDeck(token: string) {
   if (!/^[a-zA-Z0-9-]{8,64}$/.test(token)) return null;
@@ -84,15 +106,31 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   const value = await readDeck((await params).token); if (!value) return Response.json({ error: "SmartCard deck not found" }, { status: 404 });
   const guest = guestKey(request); const guestHash = await sha256(guest.value); const user = await getSessionUser(request);
   const pending = await value.database.prepare(`SELECT COALESCE(SUM(score),0) AS points FROM smartlingo_smartcard_game_runs WHERE guest_key_hash=? AND game_mode='practice' AND claim_status='pending'`).bind(guestHash).first<{ points: number }>();
-  return withCookie(Response.json({ deck: { ...value.deck, cards: value.cards }, signedIn: Boolean(user), provisionalPoints: Number(pending?.points || 0), policy: POLICY }), guest);
+  const saved = await value.database.prepare(`SELECT current_index AS currentIndex,points,evidence_json AS evidenceJson FROM smartlingo_smartcard_practice_sessions WHERE subject_key=? AND deck_id=? AND deck_version=? AND completed_at IS NULL LIMIT 1`).bind(practiceSubject(user?.id || null,guestHash),value.deck.id,value.deck.version).first<{ currentIndex:number; points:number; evidenceJson:string }>();
+  let practiceProgress: { currentIndex:number; points:number; cards:SavedPracticeEvidence[] } | null = null;
+  if (saved && saved.currentIndex > 0 && saved.currentIndex < value.cards.length) {
+    try {
+      const cards = parseSavedPracticeEvidence(JSON.parse(saved.evidenceJson),value.cards);
+      if (cards.length === saved.currentIndex) practiceProgress = { currentIndex:saved.currentIndex,points:practicePoints(value.cards,cards),cards };
+    } catch { /* Corrupt resumable state is ignored instead of blocking the deck. */ }
+  }
+  return withCookie(Response.json({ deck: { ...value.deck, cards: value.cards }, signedIn: Boolean(user), provisionalPoints: Number(pending?.points || 0), practiceProgress, policy: POLICY }), guest);
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const value = await readDeck((await params).token); if (!value) return Response.json({ error: "SmartCard deck not found" }, { status: 404 });
-  const body = await request.json().catch(() => null) as { action?: string; cardId?: string; answerId?: string; transcript?: string; transcripts?: string[]; cards?: Evidence[]; timeZone?: string; gameMode?: string; sessionId?: string } | null;
+  const body = await request.json().catch(() => null) as { action?: string; cardId?: string; answerId?: string; transcript?: string; transcripts?: string[]; cards?: Evidence[]; currentIndex?: number; timeZone?: string; gameMode?: string; sessionId?: string } | null;
   if (!body) return Response.json({ error: "Valid JSON is required" }, { status: 400 });
   const guest = guestKey(request); const guestHash = await sha256(guest.value); const user = await getSessionUser(request); const nowMs = Date.now(); const now = Math.floor(nowMs / 1000);
   const card = value.cards.find(item => item.id === body.cardId);
+  if (body.action === "practice-progress") {
+    const currentIndex = Number(body.currentIndex);
+    const evidence = parseSavedPracticeEvidence(body.cards,value.cards);
+    if (!Number.isInteger(currentIndex) || currentIndex < 1 || currentIndex >= value.cards.length || evidence.length !== currentIndex) return withCookie(Response.json({ error:"Practice progress is invalid" },{status:400}),guest);
+    const points = practicePoints(value.cards,evidence);
+    await value.database.prepare(`INSERT INTO smartlingo_smartcard_practice_sessions(id,subject_key,deck_id,deck_version,current_index,points,evidence_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(subject_key,deck_id,deck_version) DO UPDATE SET current_index=excluded.current_index,points=excluded.points,evidence_json=excluded.evidence_json,completed_at=NULL,updated_at=excluded.updated_at`).bind(createId(),practiceSubject(user?.id || null,guestHash),value.deck.id,value.deck.version,currentIndex,points,JSON.stringify(evidence),now,now).run();
+    return withCookie(Response.json({ currentIndex,points }),guest);
+  }
   if (body.action === "challenge-start") {
     const localDate = new Date(nowMs).toISOString().slice(0,10); let session = await value.database.prepare(`SELECT id,local_date AS localDate,current_index AS currentIndex,correct_count AS correctCount,question_started_ms AS questionStartedMs,completed_at AS completedAt FROM smartlingo_smartcard_timed_sessions WHERE guest_key_hash=? AND deck_id=? AND deck_version=? AND local_date=? LIMIT 1`).bind(guestHash,value.deck.id,value.deck.version,localDate).first<TimedSession>();
     if (!session) { const id=createId(); await value.database.prepare(`INSERT INTO smartlingo_smartcard_timed_sessions(id,guest_key_hash,deck_id,deck_version,local_date,current_index,correct_count,question_started_ms,created_at,updated_at) VALUES(?,?,?,?,?,0,0,?,?,?)`).bind(id,guestHash,value.deck.id,value.deck.version,localDate,nowMs,now,now).run(); session={id,localDate,currentIndex:0,correctCount:0,questionStartedMs:nowMs,completedAt:null}; }
@@ -147,6 +185,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const score = Math.max(0,Math.min(850,POLICY.startingPoints + correctCount * POLICY.correctPoints - wrongCount * POLICY.wrongPenalty + pronunciationPasses * POLICY.pronunciationPoints));
     const fingerprint = await sha256(JSON.stringify(safeEvidence)); const localDate = dateFor(body.timeZone); const id = createId(); const gameMode=body.gameMode==="challenge"?"challenge":"practice";
     await value.database.prepare(`INSERT INTO smartlingo_smartcard_game_runs (id,guest_key_hash,deck_id,deck_version,game_mode,score,correct_count,question_count,pronunciation_passes,answer_fingerprint,local_date,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(guest_key_hash,deck_id,deck_version,game_mode,local_date) DO UPDATE SET score=MAX(score,excluded.score),correct_count=CASE WHEN excluded.score>score THEN excluded.correct_count ELSE correct_count END,pronunciation_passes=CASE WHEN excluded.score>score THEN excluded.pronunciation_passes ELSE pronunciation_passes END,answer_fingerprint=CASE WHEN excluded.score>score THEN excluded.answer_fingerprint ELSE answer_fingerprint END,updated_at=excluded.updated_at`).bind(id,guestHash,value.deck.id,value.deck.version,gameMode,score,correctCount,value.cards.length,pronunciationPasses,fingerprint,localDate,now,now).run();
+    await value.database.prepare(`UPDATE smartlingo_smartcard_practice_sessions SET completed_at=?,updated_at=? WHERE subject_key=? AND deck_id=? AND deck_version=? AND completed_at IS NULL`).bind(now,now,practiceSubject(user?.id || null,guestHash),value.deck.id,value.deck.version).run();
     const claimedPoints = user ? await claimGameRewards(value,guestHash,user.id,now) : 0;
     return withCookie(Response.json({ score,correctCount,pronunciationPasses,claimedPoints,claimRequired:!user,replayOnly:Boolean(user&&claimedPoints===0) }), guest);
   }

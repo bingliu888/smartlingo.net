@@ -176,6 +176,23 @@ test("SmartCard practice auto-scores then continues while the timed challenge ho
   assert.doesNotMatch(source, /<small>\{card\.sceneKey\}<\/small>/);
 });
 
+test("SmartCard practice resumes by signed-in user or anonymous cookie without storing speech", () => {
+  const component = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
+  const route = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
+  const migration = readFileSync(new URL("../drizzle/0166_smartcard_practice_resume.sql", import.meta.url), "utf8");
+  assert.match(component, /payload\.practiceProgress/);
+  assert.match(component, /payload\.deck\?\.cards\|\|\[\]\)\.map/);
+  assert.match(component, /action:"practice-progress"/);
+  assert.match(component, /currentIndex:index\+1/);
+  assert.match(route, /practiceSubject\(user\?\.id \|\| null,guestHash\)/);
+  assert.match(route, /guest:\$\{guestHash\}/);
+  assert.match(route, /user:\$\{userId\}/);
+  assert.match(route, /transcripts: \[\]/);
+  assert.match(route, /completed_at IS NULL/);
+  assert.match(migration, /UNIQUE\(subject_key, deck_id, deck_version\)/);
+  assert.match(migration, /CHECK\(json_valid\(evidence_json\)\)/);
+});
+
 test("follow-me practice shows target phonetics and the current interface language sound guide", () => {
   const component = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   const route = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");

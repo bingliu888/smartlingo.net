@@ -428,6 +428,13 @@
       "when": 1787529600000,
       "tag": "0165_beginner_semantic_media",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1787533200000,
+      "tag": "0166_smartcard_practice_resume",
+      "breakpoints": true
     }
   ]
 }
