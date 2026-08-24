@@ -33,7 +33,7 @@ function normalized(value: string) {
 }
 
 export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onComplete, autoAdvance = false }: {
-  lang: "zh" | "en";
+  lang: string;
   mode: "listening" | "writing";
   speechLocale: string;
   exercises: readonly Exercise[];
@@ -41,6 +41,7 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   autoAdvance?: boolean;
 }) {
   const zh = lang === "zh";
+  const interfaceLang = zh ? "zh" : "en";
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -53,10 +54,12 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   const built = selectedTiles.map(tile => tile.label).join(" ");
   const expected = exercise?.answerTokens.join(" ") || "";
   const complete = index >= exercises.length;
-  const sourceName = exercise?.sourceLanguage ? LANGUAGE_NAMES[exercise.sourceLanguage]?.[lang] || exercise.sourceLanguage : "";
-  const answerName = exercise?.answerLanguage ? LANGUAGE_NAMES[exercise.answerLanguage]?.[lang] || exercise.answerLanguage : "";
+  const sourceName = exercise?.sourceLanguage ? LANGUAGE_NAMES[exercise.sourceLanguage]?.[interfaceLang] || exercise.sourceLanguage : "";
+  const answerName = exercise?.answerLanguage ? LANGUAGE_NAMES[exercise.answerLanguage]?.[interfaceLang] || exercise.answerLanguage : "";
 
   useEffect(() => {
+    // Reset is keyed to a new server exercise set, not to local render state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndex(0); setSelected([]); setAnswers([]); setFeedback("idle");
     window.clearTimeout(advanceTimer.current);
     return () => window.clearTimeout(advanceTimer.current);

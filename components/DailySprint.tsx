@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
-import { gradeSprintPlan, type SprintAnswer, type SprintPlan } from "../lib/smartlingo-sprint";
+import { type SprintAnswer, type SprintPlan } from "../lib/smartlingo-sprint";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type Stage = "vocabulary" | "reading" | "listening" | "writing" | "dialogue" | "complete";
 type SpeechKind = "vocabulary" | "reading" | "dialogue";
@@ -19,7 +20,7 @@ function vocabularyOptions(round: SprintPlan["rounds"][number], wordIndex: numbe
   return [...options].sort((left, right) => left.id.localeCompare(right.id));
 }
 
-export function DailySprint({ lang, classId, durationMinutes, publicPlay = false }: { lang: "zh" | "en"; classId: string; durationMinutes: 5 | 10 | 15 | 20; publicPlay?: boolean }) {
+export function DailySprint({ lang, classId, durationMinutes, publicPlay = false, freshAnonymous = false }: { lang: InterfaceLanguage; classId: string; durationMinutes: 5 | 10 | 15 | 20; publicPlay?: boolean; freshAnonymous?: boolean }) {
   const zh = lang === "zh";
   const [runId, setRunId] = useState(""), [plan, setPlan] = useState<SprintPlan | null>(null), [courseTitle, setCourseTitle] = useState(""), [anonymous, setAnonymous] = useState(false);
   const [roundIndex, setRoundIndex] = useState(0), [stage, setStage] = useState<Stage>("vocabulary"), [wordIndex, setWordIndex] = useState(0), [responses, setResponses] = useState<SprintAnswer[]>([]);
@@ -35,11 +36,12 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
 
   useEffect(() => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    fetch(`/api/classes/${encodeURIComponent(classId)}/sprint`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "start", durationMinutes, lang, timeZone, source: publicPlay ? "play" : undefined }) })
+    fetch(`/api/classes/${encodeURIComponent(classId)}/sprint`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "start", durationMinutes, lang, timeZone, source: publicPlay ? "play" : undefined, fresh: freshAnonymous }) })
       .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error || (zh ? "无法开始今日速成" : "Unable to start Today’s Sprint")); return data; })
+      .then(data => { if (freshAnonymous) { const url = new URL(window.location.href); url.searchParams.delete("fresh"); window.history.replaceState(null, "", url); } return data; })
       .then(data => { const saved = data.progress as { roundIndex?: number; stage?: Stage; wordIndex?: number; responses?: SprintAnswer[]; remainingSeconds?: number } | undefined; const initial: SprintAnswer[] = Array.isArray(saved?.responses) && saved.responses.length === data.plan.rounds.length ? saved.responses : Array.from({ length: data.plan.rounds.length }, () => ({} as SprintAnswer)); const savedRound = Math.min(saved?.roundIndex || 0, data.plan.rounds.length - 1), savedWord = Math.min(saved?.wordIndex || 0, 4); const savedStage: Stage = saved?.stage && saved.stage !== "complete" ? saved.stage : "vocabulary"; const savedAnswer = initial[savedRound] || {}; const savedWordId = data.plan.rounds[savedRound]?.vocabulary[savedWord]?.id; const savedVocabChoice = savedWordId ? savedAnswer.vocabularyAnswers?.[savedWordId] || "" : ""; setRunId(data.runId); setPlan(data.plan); setCourseTitle(data.courseTitle); setAnonymous(data.anonymous === true); setResponses(initial); responsesRef.current = initial; setRoundIndex(savedRound); setStage(savedStage); setWordIndex(savedWord); setVocabChoice(savedVocabChoice); setVocabChecked(Boolean(savedVocabChoice)); setReadingChoice(savedAnswer.reading || ""); setReadingChecked(Boolean(savedAnswer.reading)); setRemainingSeconds(Math.max(0, saved?.remainingSeconds ?? durationMinutes * 60)); })
       .catch(cause => setError(cause.message));
-  }, [classId, durationMinutes, lang, publicPlay, zh]);
+  }, [classId, durationMinutes, freshAnonymous, lang, publicPlay, zh]);
 
 
   useEffect(() => {
@@ -53,9 +55,9 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
 
   const checkpointBucket = Math.floor(remainingSeconds / 5);
   useEffect(() => {
-    if (!plan || anonymous || !runId || stage === "complete") return;
+    if (!plan || !runId || stage === "complete") return;
     const timer = window.setTimeout(() => {
-      void fetch(`/api/classes/${encodeURIComponent(classId)}/sprint`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "checkpoint", runId, source: publicPlay ? "play" : undefined, progress: { roundIndex, stage, wordIndex, responses: responsesRef.current, remainingSeconds } }) });
+      void fetch(`/api/classes/${encodeURIComponent(classId)}/sprint`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "checkpoint", runId, source: publicPlay ? "play" : undefined, progress: { roundIndex, stage, wordIndex, responses: responsesRef.current, remainingSeconds: checkpointBucket * 5 } }) });
     }, 600);
     return () => window.clearTimeout(timer);
   }, [anonymous, checkpointBucket, classId, plan, publicPlay, responses, roundIndex, runId, stage, wordIndex]);
@@ -65,6 +67,12 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
     try { recognitionRef.current?.abort?.(); } catch { try { recognitionRef.current?.stop(); } catch {} }
     window.speechSynthesis?.cancel();
   }, []);
+
+  useEffect(() => {
+    if (stage !== "complete" || !anonymous) return;
+    const copy = document.querySelector<HTMLElement>(".sprint-signup p");
+    if (copy) copy.textContent = zh ? "本次匿名进度由安全 Cookie 继续保留；注册或登录后，还可将进度与成绩保存到账户、参加排行榜。" : "A secure cookie keeps this anonymous learning status. Create an account or sign in to save progress and scores to your account and join rankings.";
+  }, [anonymous, stage, zh]);
 
   const round = plan?.rounds[roundIndex], word = round?.vocabulary[wordIndex];
   const choices = useMemo(() => round ? vocabularyOptions(round, wordIndex) : [], [round, wordIndex]);
@@ -151,7 +159,6 @@ export function DailySprint({ lang, classId, durationMinutes, publicPlay = false
   async function nextRound() {
     if (!plan) return;
     if (roundIndex + 1 < plan.rounds.length) { setRoundIndex(index => index + 1); setStage("vocabulary"); setWordIndex(0); setVocabFlipped(false); setVocabChoice(""); setVocabChecked(false); setReadingChoice(""); setReadingChecked(false); resetSpeech(); return; }
-    if(anonymous){setResult(gradeSprintPlan(plan,responsesRef.current));setStage("complete");return;}
     const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/sprint`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "complete", runId, responses: responsesRef.current, source: publicPlay ? "play" : undefined }) });
     const data = await response.json().catch(() => ({})); if (!response.ok) { setError(data.error || (zh ? "无法保存成绩" : "Unable to save score")); return; } setResult(data); setStage("complete");
   }

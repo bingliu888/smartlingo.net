@@ -6,7 +6,7 @@ const COOKIE = "sl_guest_cards";
 const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100, challengeSeconds: 10, winnerBonusBasisPoints: 1000 } as const;
 
 type Deck = { id: string; ownerUserId: string; ownerName: string; classId: string | null; targetLanguage: string; level: string; title: string; version: number };
-type Card = { id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string; pronunciationZh: string; pronunciationGuides: string | Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number };
+type Card = { id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string; pronunciationZh: string; pronunciationGuides: string | Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number; frequencyDegree: number };
 type Evidence = { cardId?: unknown; choices?: unknown; transcripts?: unknown };
 type TimedSession = { id:string; localDate:string; currentIndex:number; correctCount:number; questionStartedMs:number; completedAt:number|null };
 type Leader = { score:number; displayName:string };
@@ -35,7 +35,7 @@ async function readDeck(token: string) {
   const database = getDatabase();
   const deck = await database.prepare(`SELECT deck.id,deck.owner_user_id AS ownerUserId,owner.display_name AS ownerName,deck.class_id AS classId,deck.target_language AS targetLanguage,deck.level,deck.title,deck.version FROM smartlingo_smartcard_decks deck JOIN users owner ON owner.id=deck.owner_user_id WHERE deck.share_token=? AND deck.visibility IN ('public','unlisted') AND deck.status='active' LIMIT 1`).bind(token).first<Deck>();
   if (!deck) return null;
-  const items = await database.prepare(`SELECT item.id,item.form,item.pronunciation,item.target_phonetic AS targetPhonetic,item.pronunciation_en AS pronunciationEn,item.pronunciation_zh AS pronunciationZh,item.pronunciation_guides AS pronunciationGuides,item.meaning_en AS meaningEn,item.meaning_zh AS meaningZh,item.scene_key AS sceneKey,item.difficulty FROM smartlingo_smartcard_items deck_item JOIN smartlingo_vocabulary_items item ON item.id=deck_item.vocabulary_item_id WHERE deck_item.deck_id=? AND item.review_status='published' ORDER BY deck_item.position`).bind(deck.id).run<Card>();
+  const items = await database.prepare(`SELECT item.id,item.form,item.pronunciation,item.target_phonetic AS targetPhonetic,item.pronunciation_en AS pronunciationEn,item.pronunciation_zh AS pronunciationZh,item.pronunciation_guides AS pronunciationGuides,item.meaning_en AS meaningEn,item.meaning_zh AS meaningZh,item.scene_key AS sceneKey,item.difficulty,item.frequency_degree AS frequencyDegree FROM smartlingo_smartcard_items deck_item JOIN smartlingo_vocabulary_items item ON item.id=deck_item.vocabulary_item_id WHERE deck_item.deck_id=? AND item.review_status='published' ORDER BY item.difficulty ASC,item.frequency_degree DESC,deck_item.position,item.id`).bind(deck.id).run<Card>();
   const cards = (items.results || []).map(item => {
     try { return { ...item, pronunciationGuides: JSON.parse(String(item.pronunciationGuides)) as Record<string, string> }; }
     catch { return { ...item, pronunciationGuides: { en: item.pronunciationEn, zh: item.pronunciationZh } }; }

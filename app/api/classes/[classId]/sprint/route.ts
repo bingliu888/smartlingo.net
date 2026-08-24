@@ -4,7 +4,26 @@ import { SMARTLINGO_LEARNING_LANGUAGE_CODES, type SmartLingoInterfaceLanguage, t
 import { buildSprintPlan, gradeSprintPlan, SPRINT_DURATIONS, type SprintAnswer, type SprintDuration, type SprintPlan, type SprintVocabulary } from "@/lib/smartlingo-sprint";
 
 type Params = { params: Promise<{ classId: string }> };
-type Body = { action?: string; durationMinutes?: number; lang?: string; timeZone?: string; runId?: string; responses?: SprintAnswer[]; source?: string; progress?: { roundIndex?: number; stage?: string; wordIndex?: number; responses?: SprintAnswer[]; remainingSeconds?: number } };
+type Body = { action?: string; durationMinutes?: number; lang?: string; timeZone?: string; runId?: string; responses?: SprintAnswer[]; source?: string; fresh?: boolean; progress?: { roundIndex?: number; stage?: string; wordIndex?: number; responses?: SprintAnswer[]; remainingSeconds?: number } };
+
+const GUEST_COOKIE = "sl_guest_sprint";
+function cookieValue(request: Request) {
+  const value = request.headers.get("cookie")?.split(";").map(item => item.trim()).find(item => item.startsWith(`${GUEST_COOKIE}=`))?.slice(GUEST_COOKIE.length + 1) || "";
+  return /^[a-f0-9]{64}$/.test(value) ? value : "";
+}
+function guestKey(request: Request) {
+  const existing = cookieValue(request); if (existing) return { value: existing, fresh: false };
+  const bytes = new Uint8Array(32); crypto.getRandomValues(bytes);
+  return { value: [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join(""), fresh: true };
+}
+async function sha256(value: string) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+function withGuestCookie(response: Response, guest: { value: string; fresh: boolean } | null) {
+  if (guest?.fresh) response.headers.append("set-cookie", `${GUEST_COOKIE}=${guest.value}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax`);
+  return response;
+}
 
 function level(value: string): SmartLingoLevel { return value === "advanced" || value === "intermediate" ? value : "beginner"; }
 function uiLang(value: string | undefined): SmartLingoInterfaceLanguage { return value === "en" ? "en" : "zh"; }
@@ -29,6 +48,8 @@ export async function POST(request: Request, { params }: Params) {
   const body = await request.json().catch(() => null) as Body | null;
   if (!body) return Response.json({ error: "Invalid request" }, { status: 400 });
   const value = await access(request, classId, body.source === "play"); if ("error" in value) return value.error;
+  const guest = value.anonymous ? guestKey(request) : null;
+  const guestHash = guest ? await sha256(guest.value) : "";
   if (body.action === "start") {
     const selectedDuration = duration(body.durationMinutes); if (!selectedDuration) return Response.json({ error: "Choose 5, 10, 15, or 20 minutes" }, { status: 400 });
     const zone = safeTimeZone(body.timeZone || "UTC"); const now = Math.floor(Date.now() / 1000);
@@ -37,6 +58,12 @@ export async function POST(request: Request, { params }: Params) {
         WHERE user_id=? AND class_id=? AND duration_minutes=? AND status='in_progress' ORDER BY started_at DESC LIMIT 1`)
         .bind(value.user.id,classId,selectedDuration).first<{ id: string; planJson: string; progressJson: string }>();
       if (saved) return Response.json({ runId: saved.id, plan: JSON.parse(saved.planJson), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: false, resumed: true });
+    }
+    if (value.anonymous && !body.fresh) {
+      const saved = await value.database.prepare(`SELECT id,plan_json AS planJson,progress_json AS progressJson FROM smartlingo_guest_sprint_runs
+        WHERE guest_key_hash=? AND class_id=? AND duration_minutes=? AND status='in_progress' ORDER BY started_at DESC LIMIT 1`)
+        .bind(guestHash,classId,selectedDuration).first<{ id: string; planJson: string; progressJson: string }>();
+      if (saved) return withGuestCookie(Response.json({ runId: saved.id, plan: JSON.parse(saved.planJson), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: true, resumed: true }), guest);
     }
     const runId = createId();
     const language = value.course.targetLanguage as SmartLingoLearningLanguage; const courseLevel = level(value.course.level);
@@ -52,21 +79,42 @@ export async function POST(request: Request, { params }: Params) {
       (id,user_id,class_id,target_language,level,duration_minutes,round_count,local_date,time_zone,plan_json,status,started_at)
       VALUES(?,?,?,?,?,?,?,?,?,?,'in_progress',?)`)
       .bind(runId,value.user.id,classId,language,courseLevel,selectedDuration,plan.rounds.length,localDateKey(now,zone),zone,JSON.stringify(plan),now).run();
-    return Response.json({ runId, plan, courseTitle: value.course.title, anonymous: value.anonymous });
+    if (value.anonymous) {
+      if (body.fresh) await value.database.prepare(`UPDATE smartlingo_guest_sprint_runs SET status='abandoned',completed_at=? WHERE guest_key_hash=? AND class_id=? AND status='in_progress'`).bind(now,guestHash,classId).run();
+      await value.database.prepare(`INSERT INTO smartlingo_guest_sprint_runs
+        (id,guest_key_hash,class_id,target_language,level,duration_minutes,round_count,plan_json,status,started_at)
+        VALUES(?,?,?,?,?,?,?,?, 'in_progress',?)`)
+        .bind(runId,guestHash,classId,language,courseLevel,selectedDuration,plan.rounds.length,JSON.stringify(plan),now).run();
+    }
+    return withGuestCookie(Response.json({ runId, plan, courseTitle: value.course.title, anonymous: value.anonymous }), guest);
   }
   if (body.action === "checkpoint") {
-    if (value.anonymous || !value.user) return Response.json({ saved: false, anonymous: true });
     const progress = body.progress;
     const stages = ["vocabulary","reading","listening","writing","dialogue"];
     if (!body.runId || !progress || !stages.includes(String(progress.stage)) || !Array.isArray(progress.responses)) return Response.json({ error: "Valid Sprint progress is required" }, { status: 400 });
     const safeProgress = { roundIndex: Math.max(0, Math.min(3, Number(progress.roundIndex || 0))), stage: String(progress.stage), wordIndex: Math.max(0, Math.min(4, Number(progress.wordIndex || 0))), responses: progress.responses.slice(0, 4), remainingSeconds: Math.max(0, Math.min(2400, Number(progress.remainingSeconds || 0))) };
+    if (value.anonymous) {
+      const saved = await value.database.prepare(`UPDATE smartlingo_guest_sprint_runs SET progress_json=?,checkpointed_at=? WHERE id=? AND guest_key_hash=? AND class_id=? AND status='in_progress'`)
+        .bind(JSON.stringify(safeProgress),Math.floor(Date.now()/1000),body.runId,guestHash,classId).run();
+      return withGuestCookie(Response.json({ saved: saved.success, anonymous: true }), guest);
+    }
+    if (!value.user) return Response.json({ saved: false });
     const saved = await value.database.prepare(`UPDATE smartlingo_daily_sprint_runs SET progress_json=?,checkpointed_at=? WHERE id=? AND user_id=? AND class_id=? AND status='in_progress'`)
       .bind(JSON.stringify(safeProgress),Math.floor(Date.now()/1000),body.runId,value.user.id,classId).run();
     return Response.json({ saved: saved.success });
   }
   if (body.action === "complete") {
-    if (value.anonymous || !value.user) return Response.json({ error: "Sign in to save a Sprint score" }, { status: 401 });
     const runId = typeof body.runId === "string" ? body.runId : "";
+    if (value.anonymous) {
+      const row = await value.database.prepare(`SELECT plan_json AS planJson,status FROM smartlingo_guest_sprint_runs WHERE id=? AND guest_key_hash=? AND class_id=? LIMIT 1`).bind(runId,guestHash,classId).first<{ planJson: string; status: string }>();
+      if (!row) return withGuestCookie(Response.json({ error: "Sprint not found" }, { status: 404 }), guest);
+      const plan = JSON.parse(row.planJson) as SprintPlan; const responses = Array.isArray(body.responses) ? body.responses.slice(0, plan.rounds.length) : [];
+      if (responses.length !== plan.rounds.length) return withGuestCookie(Response.json({ error: "Complete every round before submitting" }, { status: 400 }), guest);
+      const result = gradeSprintPlan(plan,responses); const now = Math.floor(Date.now()/1000);
+      await value.database.prepare(`UPDATE smartlingo_guest_sprint_runs SET status='completed',progress_json='{}',completed_at=? WHERE id=? AND guest_key_hash=? AND status='in_progress'`).bind(now,runId,guestHash).run();
+      return withGuestCookie(Response.json({ completed: true, anonymous: true, ...result }), guest);
+    }
+    if (!value.user) return Response.json({ error: "Sign in required" }, { status: 401 });
     const row = await value.database.prepare(`SELECT plan_json AS planJson,status FROM smartlingo_daily_sprint_runs
       WHERE id=? AND user_id=? AND class_id=? LIMIT 1`).bind(runId,value.user.id,classId).first<{ planJson: string; status: string }>();
     if (!row) return Response.json({ error: "Sprint not found" }, { status: 404 });
