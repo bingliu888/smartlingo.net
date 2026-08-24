@@ -87,3 +87,11 @@ test("sentence-builder UI supports both heard-sentence and translated-prompt wor
   assert.doesNotMatch(source, />\{zh \? "检查" : "Check"\}<\/button>/);
   assert.match(source, /Correct answer:/);
 });
+
+test("Italian destinations use standard preposition and article contractions", () => {
+  const beginner = buildCourseSentenceBank("it", "beginner");
+  assert.ok(beginner.some(item => item.targetSentence === "Devo andare al supermercato."));
+  assert.ok(beginner.some(item => item.targetSentence === "Per favore, mi mostri come arrivare all’aeroporto."));
+  assert.ok(beginner.some(item => item.targetSentence === "Possiamo incontrarci alla biblioteca?"));
+  assert.equal(beginner.some(item => /\ba (?:il|lo|la)\b|\ba l[’']/u.test(item.targetSentence)), false);
+});

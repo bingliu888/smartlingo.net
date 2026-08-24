@@ -35,6 +35,15 @@ type TargetBuilder = (place: string) => readonly string[];
 
 type LevelExtension = { intermediate: readonly string[]; advanced: readonly string[] };
 
+function italianDestination(place: string) {
+  const contractions: readonly [string, string][] = [
+    ["l’", "all’"], ["l'", "all'"], ["lo ", "allo "], ["la ", "alla "],
+    ["il ", "al "], ["gli ", "agli "], ["le ", "alle "], ["i ", "ai "],
+  ];
+  const match = contractions.find(([article]) => place.startsWith(article));
+  return match ? `${match[1]}${place.slice(match[0].length)}` : `a ${place}`;
+}
+
 const TARGET_BUILDERS: Record<SmartLingoLearningLanguage, TargetBuilder> = {
   zh: p => [`${p}在哪里？`, `我在找${p}。`, `请告诉我怎么去${p}。`, `${p}离这里远吗？`, `${p}现在开门吗？`, `我需要去${p}。`, `请带我去${p}。`, `我们可以在${p}见面吗？`, `去${p}要多长时间？`, `谢谢你帮我找到${p}。`],
   en: p => [`Where is ${p}?`, `I am looking for ${p}.`, `Please show me how to get to ${p}.`, `Is ${p} far from here?`, `Is ${p} open now?`, `I need to go to ${p}.`, `Please take me to ${p}.`, `Can we meet at ${p}?`, `How long does it take to reach ${p}?`, `Thank you for helping me find ${p}.`],
@@ -44,7 +53,7 @@ const TARGET_BUILDERS: Record<SmartLingoLearningLanguage, TargetBuilder> = {
   fr: p => [`Où se trouve ${p} ?`, `Je cherche ${p}.`, `Montrez-moi comment aller à ${p}, s’il vous plaît.`, `${p} est loin d’ici ?`, `${p} est ouvert maintenant ?`, `Je dois aller à ${p}.`, `Emmenez-moi à ${p}, s’il vous plaît.`, `Pouvons-nous nous retrouver à ${p} ?`, `Combien de temps faut-il pour aller à ${p} ?`, `Merci de m’aider à trouver ${p}.`],
   de: p => [`Wo ist ${p}?`, `Ich suche ${p}.`, `Bitte zeigen Sie mir den Weg zu ${p}.`, `Ist ${p} weit von hier?`, `Ist ${p} jetzt geöffnet?`, `Ich muss zu ${p}.`, `Bitte bringen Sie mich zu ${p}.`, `Können wir uns bei ${p} treffen?`, `Wie lange dauert es bis zu ${p}?`, `Danke, dass Sie mir helfen, ${p} zu finden.`],
   ru: p => [`Где находится ${p}?`, `Я ищу ${p}.`, `Пожалуйста, покажите, как пройти в ${p}.`, `${p} далеко отсюда?`, `${p} сейчас открыт?`, `Мне нужно в ${p}.`, `Пожалуйста, отвезите меня в ${p}.`, `Мы можем встретиться у места «${p}»?`, `Сколько времени идти до места «${p}»?`, `Спасибо, что помогли мне найти ${p}.`],
-  it: p => [`Dov’è ${p}?`, `Sto cercando ${p}.`, `Per favore, mi mostri come arrivare a ${p}.`, `${p} è lontano da qui?`, `${p} è aperto adesso?`, `Devo andare a ${p}.`, `Per favore, mi porti a ${p}.`, `Possiamo incontrarci a ${p}?`, `Quanto tempo ci vuole per arrivare a ${p}?`, `Grazie per avermi aiutato a trovare ${p}.`],
+  it: p => { const destination = italianDestination(p); return [`Dov’è ${p}?`, `Sto cercando ${p}.`, `Per favore, mi mostri come arrivare ${destination}.`, `${p} è lontano da qui?`, `${p} è aperto adesso?`, `Devo andare ${destination}.`, `Per favore, mi porti ${destination}.`, `Possiamo incontrarci ${destination}?`, `Quanto tempo ci vuole per arrivare ${destination}?`, `Grazie per avermi aiutato a trovare ${p}.`]; },
   pt: p => [`Onde fica ${p}?`, `Estou procurando ${p}.`, `Por favor, mostre-me como chegar a ${p}.`, `${p} fica longe daqui?`, `${p} está aberto agora?`, `Preciso ir a ${p}.`, `Por favor, leve-me a ${p}.`, `Podemos nos encontrar em ${p}?`, `Quanto tempo leva para chegar a ${p}?`, `Obrigado por me ajudar a encontrar ${p}.`],
   ar: p => [`أين ${p}؟`, `أنا أبحث عن ${p}.`, `من فضلك، أخبرني كيف أصل إلى ${p}.`, `هل ${p} بعيد من هنا؟`, `هل ${p} مفتوح الآن؟`, `أحتاج إلى الذهاب إلى ${p}.`, `من فضلك، خذني إلى ${p}.`, `هل يمكننا أن نلتقي عند ${p}؟`, `كم يستغرق الوصول إلى ${p}؟`, `شكرًا لمساعدتي في العثور على ${p}.`],
   hi: p => [`${p} कहाँ है?`, `मैं ${p} ढूँढ रहा हूँ।`, `कृपया मुझे ${p} जाने का रास्ता बताइए।`, `क्या ${p} यहाँ से दूर है?`, `क्या ${p} अभी खुला है?`, `मुझे ${p} जाना है।`, `कृपया मुझे ${p} ले चलिए।`, `क्या हम ${p} पर मिल सकते हैं?`, `${p} पहुँचने में कितना समय लगता है?`, `${p} ढूँढने में मेरी मदद करने के लिए धन्यवाद।`],
