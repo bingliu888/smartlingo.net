@@ -1,76 +1,73 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-anonymous-trial-phase-resume-2026-08-24-v25",
+  "releaseId": "smartlingo-net-disclaimer-subscription-20260824",
   "site": "smartlingo.net",
-  "title": {"en":"Resume the exact anonymous Beginner learning phase","zh":"准确恢复匿名初级课程学习阶段"},
-  "purpose": {"en":"Fix the production Chrome defect where an anonymous Beginner learner entered the sentence builder after feedback but refresh returned to the first vocabulary card. Preserve the feature-scoped phase and non-sensitive score state while keeping speaking opt-in and activity languages isolated.","zh":"修复生产 Chrome 验收发现的问题：匿名初级学员从反馈页进入组句后刷新会回到第一张词汇卡。现在保存本功能独立的学习阶段与非敏感分数状态，同时保持跟读自愿开启和各活动语言隔离。"},
+  "title": {
+    "en": "Publish localized Disclaimer and public Subscription footer access",
+    "zh": "发布本地化免责声明与公开订阅页脚入口"
+  },
+  "purpose": {
+    "en": "Give every supported interface language a reviewed Disclaimer and a public footer path to subscription or plan information while requiring sign-in only when a user starts payment.",
+    "zh": "为每种受支持的界面语言提供经审阅的免责声明，并从公共页脚开放订阅或套餐信息；仅在用户开始付款时要求登录。"
+  },
   "features": {
     "en": [
-      "Replace the duplicate Everyday Speaking discovery tile with a bilingual Redeem tile that opens the existing locale-preserving reward store.",
-      "Add Dashboard, Today’s Sprint, SmartCard Practice, SmartCard Challenge, Everyday Speaking, Score History, and Rankings to the real Chrome learner plan alongside all five Course skills.",
-      "Assign every learner-language pair a reproducible rotating feature focus as well as its Course skill focus and active-learning duration.",
-      "Keep repeat-after-me off, verify the normal no-microphone learning path, and never request microphone permission in the unattended run.",
-      "Align the dormant shared repeat preference with the player contract so an unset value is off and only an explicit on enables microphone practice.",
-      "Verify the SmartCard Challenge local-date, date-only question set, selected level, and six-second automatic advance contracts in the scheduled real-user run."
-      ,"Persist Everyday Speaking and anonymous Beginner Course positions in separate, non-account cookies so refresh resumes only the same language, scene, level, or skill."
-      ,"Route Beginner vocabulary answers through a visible feedback-and-Continue step; enter three-attempt microphone practice only after the learner explicitly enables Repeat After Me."
-      ,"Ask for a fresh activity language before opening Redeem, matching the six-tile anonymous Play isolation contract."
-      ,"Persist the Beginner trial's study, feedback, sentence-builder, and completion phases in a backward-compatible feature cookie so refresh resumes the exact learning step."
+      "Expose six localized footer links in the required About, Privacy, Terms, Disclaimer, Subscription, Project order.",
+      "Keep the subscription, pricing, membership, plan, or course catalog readable without sign-in and preserve sign-in enforcement on payment actions.",
+      "Publish the generic localized Disclaimer covering AI-assisted inaccuracies, pricing errors, third-party platforms, crypto risk, and final non-refundable payments."
     ],
     "zh": [
-      "将重复的生活口语发现卡替换为双语兑换卡，并打开保持界面语言的现有奖励商店。",
-      "在课程五技能之外，将用户面板、今日速成、智慧卡练习、智慧卡挑战、生活口语、成绩记录和排行榜全部加入真实 Chrome 学习计划。",
-      "为每个学习者语言组合稳定生成轮换功能重点，并保留课程技能重点与有效学习时长。",
-      "保持跟读关闭，验证正常无麦克风学习路径，后台运行绝不请求麦克风权限。",
-      "统一遗留共享跟读偏好与播放器合同：未设置时关闭，只有明确开启才进入麦克风练习。",
-      "在定时真实用户任务中验证智慧卡挑战的当地日期、纯日期题集、等级保留及六秒自动推进合同。"
-      ,"使用互相独立且不关联账户的 Cookie 保存生活口语与匿名初级课程位置，刷新时只恢复相同语言、场景、等级或技能。"
-      ,"初级词汇答题后进入清晰的反馈与继续步骤；只有学习者明确开启跟读后才进入三次麦克风练习。"
-      ,"进入兑换前重新选择本活动语言，与匿名 Play 六入口隔离合同一致。"
-      ,"以向后兼容的独立功能 Cookie 保存初级试学的学习、反馈、组句与完成阶段，使刷新准确恢复当前步骤。"
+      "按关于、隐私、条款、免责声明、订阅、项目的规定顺序公开六个本地化页脚链接。",
+      "订阅、定价、会员、套餐或课程目录无需登录即可阅读，并保留付款动作的登录要求。",
+      "发布通用本地化免责声明，涵盖 AI 辅助内容不准确、定价错误、第三方平台、加密资产风险以及最终且不可退款的付款。"
     ]
   },
-  "affected": {"en":["Anonymous Everyday Speaking player, Beginner Course trial, Redeem route, their contract tests, and no other SmartLingo or sibling-site surface."],"zh":["匿名生活口语播放器、初级课程试学、兑换路由及其合同测试；不影响 SmartLingo 其他范围或任何兄弟站点。"]},
-  "changes": {
+  "affected": {
     "en": [
-      "Keep exactly six discovery tiles: Today’s Sprint, SmartCard Practice, SmartCard Challenge, Redeem, Rankings, and Free Trial; Everyday Speaking remains available from the shared header and its dedicated route.",
-      "Expand anonymous route preflight coverage from four to eight surface types for each of the four QA target languages.",
-      "Begin signed-in acceptance at Dashboard and verify its selected-language sections and independent add actions.",
-      "Allow only legitimate server-authored score, SmartCard credit, challenge, reward, or leaderboard records produced by visible tested UI; keep synthetic writes forbidden and payment, referral, and certificate ledgers unchanged.",
-      "Retain the existing reproduce, smallest-fix, full-gate, deploy, and production-retest loop for every product defect."
-      ,"Use SameSite=Lax, path-scoped non-secret progress cookies with a 30-day lifetime; do not write anonymous progress to an account or database."
-      ,"Keep SmartCard Challenge unchanged after a deterministic production retest proved one correct answer advances exactly one question after six seconds."
-      ,"Store only non-sensitive trial position, phase, answer points, and completed-card scores; never store identity, microphone, authentication, or account data in the anonymous cookie."
+      "Public footer, Disclaimer route, public subscription catalog, deployment verification, and Project release history"
     ],
     "zh": [
-      "发现大厅保持恰好六张卡：今日速成、智慧卡练习、智慧卡挑战、兑换、排行榜和免费试学；生活口语仍可从共享导航及独立路由进入。",
-      "将四种 QA 目标语言的匿名路由预检从四类页面扩展到八类页面。",
-      "登录验收从用户面板开始，并核对各已选语言区域及独立添加入口。",
-      "仅允许可见受测 UI 正常产生的服务器学习成绩、智慧卡积分、挑战、奖励或排行榜记录；继续禁止合成写入，并保持支付、推荐和证书账本不变。",
-      "所有产品缺陷继续执行复现、最小修复、完整门禁、发布与生产复测闭环。"
-      ,"匿名进度使用 SameSite=Lax、Path=/、30 天有效期的非敏感 Cookie，不写入账户或数据库。"
-      ,"确定性生产复测证明智慧卡挑战答对后六秒只前进一题，因此保持其正常逻辑不变。"
-      ,"匿名 Cookie 只保存非敏感的试学位置、阶段、答题分与已完成卡片分数，不保存身份、麦克风、认证或账户数据。"
+      "公共页脚、免责声明路由、公开订阅目录、部署验证与 Project 发布历史"
+    ]
+  },
+  "changes": {
+    "en": [
+      "Add localized Subscription labels for all 21 shared locales and route each site to its existing public catalog.",
+      "Cover X, Facebook, TikTok, wallet applications, and crypto exchanges in the localized Disclaimer.",
+      "State that all payments are final and non-refundable except where applicable law requires otherwise."
+    ],
+    "zh": [
+      "为共享的 21 种语言新增本地化订阅标签，并将每个站点链接到其现有公开目录。",
+      "在本地化免责声明中覆盖 X、Facebook、TikTok、钱包应用及加密货币交易所。",
+      "明确除适用法律另有强制要求外，所有付款均为最终付款且不可退款。"
     ]
   },
   "validation": {
     "en": [
-      "The rendered Worker response for both /zh/play and /en/play must expose the six contracted labels and the locale-preserving /play/redeem link.",
-      "Keep the complete 12,000-item beginner-media coverage assertions unchanged while allowing the audit up to 120 seconds under full-suite contention.",
-      "The focused QA-plan contract suite passes all five tests, including the complete feature list, rotating feature focus, local-date Challenge, no-microphone flow, and auto-fix requirements.",
-      "The production-equivalent build, TypeScript check, D1 validation, sensitive-data scan, Worker-artifact validation, and complete automated suite are required before deployment.",
-      "The expanded route preflight runs in GitHub Actions where production network access is available; local sandbox network failure is not treated as route evidence."
-      ,"Focused Everyday Speaking, Beginner Course, Play/Reward, TypeScript, and full release gates must pass before production retest."
+      "Run shared footer, Disclaimer, public-catalog, and payment-boundary contract tests plus the production build.",
+      "Deploy through GitHub Actions and Cloudflare, verify production Disclaimer and Subscription access, and confirm the exact Project record."
     ],
     "zh": [
-      "渲染 Worker 对 /zh/play 与 /en/play 的响应必须显示六个约定标签及保持界面语言的 /play/redeem 链接。",
-      "完整保留 12,000 个初级词条媒体覆盖断言，仅允许审计在全量套件资源竞争下运行最多 120 秒。",
-      "QA 计划定向合同 5 项全部通过，覆盖完整功能清单、轮换功能重点、当地日期挑战、无麦克风流程及自动修复要求。",
-      "发布前必须通过生产等价构建、TypeScript、D1、敏感信息扫描、Worker 产物与完整自动化套件。",
-      "扩展路由预检将在具备生产网络访问的 GitHub Actions 中执行；本地沙箱网络失败不作为路由证据。"
-      ,"生产复测前必须通过生活口语、初级课程、Play/兑换、TypeScript 及完整发布门禁。"
+      "执行共享页脚、免责声明、公开目录与付款边界契约测试及生产构建。",
+      "通过 GitHub Actions 与 Cloudflare 发布，验证生产免责声明和订阅访问，并确认精确的 Project 记录。"
     ]
   },
-  "deferred": {"en":["Acoustic speech-scoring acceptance remains a separate opt-in human test and is not part of the default repeat-off 3 AM run."],"zh":["声学语音评分验收属于另行选择开启的真人测试，不属于默认关闭跟读的凌晨 3 点任务。"]},
-  "siteAdaptations": {"en":["Preserve the existing 03:00 America/Los_Angeles LaunchAgent schedule, anonymized learner, Clerk/Gmail secret-handling boundary, Cloudflare deployment, and SmartLingo-only scope.","No other site, account, credential, payment rail, or cloud resource is modified."],"zh":["保持现有 America/Los_Angeles 凌晨 3 点 LaunchAgent 计划、匿名测试学习者、Clerk/Gmail 敏感信息边界、Cloudflare 发布及仅限 SmartLingo 的范围。","不修改其他站点、账户、凭据、支付通道或云资源。"]}
+  "deferred": {
+    "en": [
+      "Acoustic speech-scoring acceptance remains a separate opt-in human test and is not part of the default repeat-off 3 AM run."
+    ],
+    "zh": [
+      "声学语音评分验收属于另行选择开启的真人测试，不属于默认关闭跟读的凌晨 3 点任务。"
+    ]
+  },
+  "siteAdaptations": {
+    "en": [
+      "Preserve the existing 03:00 America/Los_Angeles LaunchAgent schedule, anonymized learner, Clerk/Gmail secret-handling boundary, Cloudflare deployment, and SmartLingo-only scope.",
+      "No other site, account, credential, payment rail, or cloud resource is modified."
+    ],
+    "zh": [
+      "保持现有 America/Los_Angeles 凌晨 3 点 LaunchAgent 计划、匿名测试学习者、Clerk/Gmail 敏感信息边界、Cloudflare 发布及仅限 SmartLingo 的范围。",
+      "不修改其他站点、账户、凭据、支付通道或云资源。"
+    ]
+  }
 }

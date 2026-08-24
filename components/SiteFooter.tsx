@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { interfaceCopyFor, type InterfaceLanguage } from "../lib/interface-locale";
+import { disclaimerFor } from "../lib/disclaimer-copy";
+import { subscriptionLabelFor } from "../lib/subscription-copy";
 import { SmartLingoWordmark } from "./SmartLingoWordmark";
 
 export function SiteFooter({ lang }: { lang: InterfaceLanguage }) {
@@ -15,6 +17,8 @@ export function SiteFooter({ lang }: { lang: InterfaceLanguage }) {
         <Link href={`/${lang}/about`}>{t.about}</Link>
         <Link href={`/${lang}/privacy`}>{t.privacy}</Link>
         <Link href={`/${lang}/terms`}>{t.terms}</Link>
+        <Link href={`/${lang}/disclaimer`}>{disclaimerFor(lang).label}</Link>
+        <Link href={`/${lang}/programs`}>{subscriptionLabelFor(lang)}</Link>
         <Link href={`/${lang}/project`}>{t.project}</Link>
       </nav>
     </footer>

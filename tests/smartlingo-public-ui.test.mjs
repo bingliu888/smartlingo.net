@@ -26,7 +26,8 @@ test("SmartLingo branding exposes the four primary learning choices", async () =
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["about", "privacy", "terms", "project"]) assert.match(footer, new RegExp(`/${path}`));
   assert.ok(footer.indexOf("/about") < footer.indexOf("/privacy") && footer.indexOf("/privacy") < footer.indexOf("/terms") && footer.indexOf("/terms") < footer.indexOf("/project"));
-  assert.doesNotMatch(footer, /\/programs|\/assistant/);
+  assert.match(footer, /\/programs/);
+  assert.doesNotMatch(footer, /\/assistant/);
   assert.doesNotMatch(footer, /\/pricing/);
   assert.doesNotMatch(footer, /\/community/);
   assert.doesNotMatch(footer, /LanguageLink|interface-language|language-menu/);

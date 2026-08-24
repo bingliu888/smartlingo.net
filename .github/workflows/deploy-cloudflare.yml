@@ -100,7 +100,12 @@ jobs:
         shell: bash
         run: |
           home="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en)"
+          disclaimer="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/disclaimer)"
+          programs="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/programs)"
           grep -F 'Beginner' <<<"$home"
+          grep -F 'All payments are final and non-refundable' <<<"$disclaimer"
+          grep -F '/en/programs' <<<"$disclaimer"
+          grep -F 'Build usable vocabulary, reading, writing, listening, and dialogue.' <<<"$programs"
           if grep -F '/en/pricing' <<<"$home"; then exit 1; fi
           pricing_code="$(curl -sS -o /tmp/pricing-redirect.html -w '%{http_code}' https://smartlingo.net/en/pricing)"
           test "$pricing_code" = "307"
