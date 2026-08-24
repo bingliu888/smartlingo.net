@@ -137,13 +137,15 @@ export async function adaptiveSentenceRounds(input: {
     instructions: `Create strictly graded language-learning sentences. Return JSON only: an array with one object per supplied round, each object exactly {"sentences":[six objects]}; every sentence object is {"target":"...","translationZh":"...","translationEn":"...","usedWordIds":["..."]}. The target sentence MUST use only content words from that round's allowedWords, although minimal A1 grammar words, particles, articles, pronouns, and inflections are allowed. Every sentence must contain at least one supplied word verbatim and list its exact id. Prefer words added in the current round, then reuse earlier-round words. Never introduce unsupplied names, places, idioms, advanced vocabulary, facts, or cultural assumptions. Beginner sentences are 2-7 words; intermediate 4-11; advanced 6-15. Keep translations literal.`,
     content: JSON.stringify({ targetLanguage: input.language, level: input.level, rounds: compactVocabulary }),
     preserveOnFailure: "",
+    deps: { policyOverrides: { content_help: { timeoutMs: 6_000 } } },
   }).catch(() => ({ value: "" }));
   const generated = response.value ? parseGenerated(response.value, cumulative, input.language, input.level) : null;
   const rounds = generated || fallbackRounds;
   const sourceType: AdaptiveSentenceSet["sourceType"] = generated ? "gpt-5.6-luna" : "safe-fallback";
   await input.database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets(cache_key,release_id,target_language,level,ui_language,vocabulary_ids_json,payload_json,source_type,created_at)
     VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload_json=excluded.payload_json,source_type=excluded.source_type,created_at=excluded.created_at`)
-    .bind(cacheKey,releaseId,input.language,input.level,input.uiLang,JSON.stringify(vocabularyIds),JSON.stringify(rounds),sourceType,Math.floor(Date.now()/1000)).run();
+    .bind(cacheKey,releaseId,input.language,input.level,input.uiLang,JSON.stringify(vocabularyIds),JSON.stringify(rounds),sourceType,Math.floor(Date.now()/1000)).run()
+    .catch(() => ({ success: false }));
   return { releaseId, sourceType, rounds };
 }
 

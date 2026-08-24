@@ -212,7 +212,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     level: level as SmartLingoLevel,
     uiLang,
     roundVocabulary: Array.from({ length: Math.ceil(selected.length / 5) }, (_, roundIndex) => selected.slice(roundIndex * 5, roundIndex * 5 + 5).map(item => ({ id: item.id, form: item.form, pronunciation: item.pronunciation, meaning: uiLang === "zh" ? item.meaningZh : item.meaningEn, difficulty: item.difficulty, frequencyDegree: item.frequencyDegree }))),
-  }) : null;
+  }).catch(() => null) : null;
   const items = catalog.map(item => libraryPayload(item, progress, now));
   const reportResult = await database.prepare(`SELECT local_date AS localDate,total_count AS total,mastered_count AS mastered,
     learning_count AS learning,unlearned_count AS unlearned,mastery_percent AS percent,stars

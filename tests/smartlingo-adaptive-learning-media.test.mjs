@@ -35,6 +35,8 @@ test("adaptive sentences are Luna-governed, cumulative, cached in D1, and releas
   assert.match(service, /input\.roundVocabulary\.slice\(0, index \+ 1\)\.flat\(\)/);
   assert.match(service, /only content words from that round's allowedWords/);
   assert.match(service, /safe-fallback/);
+  assert.match(service, /timeoutMs: 6_000/);
+  assert.match(vocabularyRoute, /adaptiveSentenceRounds[\s\S]*\.catch\(\(\) => null\)/);
   assert.match(migration, /smartlingo_learning_content_releases/);
   assert.match(migration, /smartlingo_adaptive_sentence_sets/);
   assert.match(migration, /smartlingo_learning_media_assets/);
