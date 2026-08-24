@@ -49,17 +49,43 @@ CREATE TABLE smartlingo_learning_reward_rules (
   UNIQUE(feature,level,minimum_score)
 );
 INSERT INTO smartlingo_learning_reward_rules(id,feature,level,minimum_score,reward_points,status,created_at,updated_at)
-SELECT 'learning-reward-'||feature||'-'||level||'-'||minimum_score,feature,level,minimum_score,
-  CASE minimum_score WHEN 95 THEN CASE level WHEN 'beginner' THEN 40 WHEN 'intermediate' THEN 55 ELSE 70 END
-    WHEN 80 THEN CASE level WHEN 'beginner' THEN 25 WHEN 'intermediate' THEN 35 ELSE 45 END
-    ELSE CASE level WHEN 'beginner' THEN 12 WHEN 'intermediate' THEN 18 ELSE 24 END END,
-  'active',unixepoch(),unixepoch()
-FROM (
-  SELECT 'sprint' AS feature UNION ALL SELECT 'smartcard_practice' UNION ALL
-  SELECT 'smartcard_challenge' UNION ALL SELECT 'course'
-) features
-CROSS JOIN (SELECT 'beginner' AS level UNION ALL SELECT 'intermediate' UNION ALL SELECT 'advanced') levels
-CROSS JOIN (SELECT 60 AS minimum_score UNION ALL SELECT 80 UNION ALL SELECT 95) bands;
+VALUES
+('learning-reward-sprint-beginner-60','sprint','beginner',60,12,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-beginner-80','sprint','beginner',80,25,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-beginner-95','sprint','beginner',95,40,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-intermediate-60','sprint','intermediate',60,18,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-intermediate-80','sprint','intermediate',80,35,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-intermediate-95','sprint','intermediate',95,55,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-advanced-60','sprint','advanced',60,24,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-advanced-80','sprint','advanced',80,45,'active',unixepoch(),unixepoch()),
+('learning-reward-sprint-advanced-95','sprint','advanced',95,70,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-beginner-60','smartcard_practice','beginner',60,12,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-beginner-80','smartcard_practice','beginner',80,25,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-beginner-95','smartcard_practice','beginner',95,40,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-intermediate-60','smartcard_practice','intermediate',60,18,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-intermediate-80','smartcard_practice','intermediate',80,35,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-intermediate-95','smartcard_practice','intermediate',95,55,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-advanced-60','smartcard_practice','advanced',60,24,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-advanced-80','smartcard_practice','advanced',80,45,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_practice-advanced-95','smartcard_practice','advanced',95,70,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-beginner-60','smartcard_challenge','beginner',60,12,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-beginner-80','smartcard_challenge','beginner',80,25,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-beginner-95','smartcard_challenge','beginner',95,40,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-intermediate-60','smartcard_challenge','intermediate',60,18,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-intermediate-80','smartcard_challenge','intermediate',80,35,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-intermediate-95','smartcard_challenge','intermediate',95,55,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-advanced-60','smartcard_challenge','advanced',60,24,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-advanced-80','smartcard_challenge','advanced',80,45,'active',unixepoch(),unixepoch()),
+('learning-reward-smartcard_challenge-advanced-95','smartcard_challenge','advanced',95,70,'active',unixepoch(),unixepoch()),
+('learning-reward-course-beginner-60','course','beginner',60,12,'active',unixepoch(),unixepoch()),
+('learning-reward-course-beginner-80','course','beginner',80,25,'active',unixepoch(),unixepoch()),
+('learning-reward-course-beginner-95','course','beginner',95,40,'active',unixepoch(),unixepoch()),
+('learning-reward-course-intermediate-60','course','intermediate',60,18,'active',unixepoch(),unixepoch()),
+('learning-reward-course-intermediate-80','course','intermediate',80,35,'active',unixepoch(),unixepoch()),
+('learning-reward-course-intermediate-95','course','intermediate',95,55,'active',unixepoch(),unixepoch()),
+('learning-reward-course-advanced-60','course','advanced',60,24,'active',unixepoch(),unixepoch()),
+('learning-reward-course-advanced-80','course','advanced',80,45,'active',unixepoch(),unixepoch()),
+('learning-reward-course-advanced-95','course','advanced',95,70,'active',unixepoch(),unixepoch());
 --> statement-breakpoint
 CREATE TABLE smartlingo_learning_score_history (
   id TEXT PRIMARY KEY NOT NULL,
@@ -96,14 +122,30 @@ CREATE TABLE smartlingo_smartcard_daily_question_sets (
 CREATE INDEX smartlingo_smartcard_daily_set_idx ON smartlingo_smartcard_daily_question_sets(deck_id,local_date DESC);
 --> statement-breakpoint
 INSERT INTO smartlingo_smartcard_decks(id,owner_user_id,class_id,target_language,level,title,version,visibility,share_token,status,created_at,updated_at)
-SELECT 'starter_'||language||'_'||level,'smartlingo-language-admin',NULL,language,level,
-  upper(substr(language,1,1))||substr(language,2)||' '||upper(substr(level,1,1))||substr(level,2)||' 21-Day SmartCard',2,
-  'public','starter-'||language||'-'||level,'active',unixepoch(),unixepoch()
-FROM (
-  SELECT 'zh' AS language UNION ALL SELECT 'en' UNION ALL SELECT 'es' UNION ALL SELECT 'ja' UNION ALL
-  SELECT 'ko' UNION ALL SELECT 'fr' UNION ALL SELECT 'de' UNION ALL SELECT 'ru' UNION ALL
-  SELECT 'it' UNION ALL SELECT 'pt' UNION ALL SELECT 'ar' UNION ALL SELECT 'hi'
-) languages
-CROSS JOIN (SELECT 'intermediate' AS level UNION ALL SELECT 'advanced') levels;
+VALUES
+('starter_zh_intermediate','smartlingo-language-admin',NULL,'zh','intermediate','Zh Intermediate 21-Day SmartCard',2,'public','starter-zh-intermediate','active',unixepoch(),unixepoch()),
+('starter_zh_advanced','smartlingo-language-admin',NULL,'zh','advanced','Zh Advanced 21-Day SmartCard',2,'public','starter-zh-advanced','active',unixepoch(),unixepoch()),
+('starter_en_intermediate','smartlingo-language-admin',NULL,'en','intermediate','En Intermediate 21-Day SmartCard',2,'public','starter-en-intermediate','active',unixepoch(),unixepoch()),
+('starter_en_advanced','smartlingo-language-admin',NULL,'en','advanced','En Advanced 21-Day SmartCard',2,'public','starter-en-advanced','active',unixepoch(),unixepoch()),
+('starter_es_intermediate','smartlingo-language-admin',NULL,'es','intermediate','Es Intermediate 21-Day SmartCard',2,'public','starter-es-intermediate','active',unixepoch(),unixepoch()),
+('starter_es_advanced','smartlingo-language-admin',NULL,'es','advanced','Es Advanced 21-Day SmartCard',2,'public','starter-es-advanced','active',unixepoch(),unixepoch()),
+('starter_ja_intermediate','smartlingo-language-admin',NULL,'ja','intermediate','Ja Intermediate 21-Day SmartCard',2,'public','starter-ja-intermediate','active',unixepoch(),unixepoch()),
+('starter_ja_advanced','smartlingo-language-admin',NULL,'ja','advanced','Ja Advanced 21-Day SmartCard',2,'public','starter-ja-advanced','active',unixepoch(),unixepoch()),
+('starter_ko_intermediate','smartlingo-language-admin',NULL,'ko','intermediate','Ko Intermediate 21-Day SmartCard',2,'public','starter-ko-intermediate','active',unixepoch(),unixepoch()),
+('starter_ko_advanced','smartlingo-language-admin',NULL,'ko','advanced','Ko Advanced 21-Day SmartCard',2,'public','starter-ko-advanced','active',unixepoch(),unixepoch()),
+('starter_fr_intermediate','smartlingo-language-admin',NULL,'fr','intermediate','Fr Intermediate 21-Day SmartCard',2,'public','starter-fr-intermediate','active',unixepoch(),unixepoch()),
+('starter_fr_advanced','smartlingo-language-admin',NULL,'fr','advanced','Fr Advanced 21-Day SmartCard',2,'public','starter-fr-advanced','active',unixepoch(),unixepoch()),
+('starter_de_intermediate','smartlingo-language-admin',NULL,'de','intermediate','De Intermediate 21-Day SmartCard',2,'public','starter-de-intermediate','active',unixepoch(),unixepoch()),
+('starter_de_advanced','smartlingo-language-admin',NULL,'de','advanced','De Advanced 21-Day SmartCard',2,'public','starter-de-advanced','active',unixepoch(),unixepoch()),
+('starter_ru_intermediate','smartlingo-language-admin',NULL,'ru','intermediate','Ru Intermediate 21-Day SmartCard',2,'public','starter-ru-intermediate','active',unixepoch(),unixepoch()),
+('starter_ru_advanced','smartlingo-language-admin',NULL,'ru','advanced','Ru Advanced 21-Day SmartCard',2,'public','starter-ru-advanced','active',unixepoch(),unixepoch()),
+('starter_it_intermediate','smartlingo-language-admin',NULL,'it','intermediate','It Intermediate 21-Day SmartCard',2,'public','starter-it-intermediate','active',unixepoch(),unixepoch()),
+('starter_it_advanced','smartlingo-language-admin',NULL,'it','advanced','It Advanced 21-Day SmartCard',2,'public','starter-it-advanced','active',unixepoch(),unixepoch()),
+('starter_pt_intermediate','smartlingo-language-admin',NULL,'pt','intermediate','Pt Intermediate 21-Day SmartCard',2,'public','starter-pt-intermediate','active',unixepoch(),unixepoch()),
+('starter_pt_advanced','smartlingo-language-admin',NULL,'pt','advanced','Pt Advanced 21-Day SmartCard',2,'public','starter-pt-advanced','active',unixepoch(),unixepoch()),
+('starter_ar_intermediate','smartlingo-language-admin',NULL,'ar','intermediate','Ar Intermediate 21-Day SmartCard',2,'public','starter-ar-intermediate','active',unixepoch(),unixepoch()),
+('starter_ar_advanced','smartlingo-language-admin',NULL,'ar','advanced','Ar Advanced 21-Day SmartCard',2,'public','starter-ar-advanced','active',unixepoch(),unixepoch()),
+('starter_hi_intermediate','smartlingo-language-admin',NULL,'hi','intermediate','Hi Intermediate 21-Day SmartCard',2,'public','starter-hi-intermediate','active',unixepoch(),unixepoch()),
+('starter_hi_advanced','smartlingo-language-admin',NULL,'hi','advanced','Hi Advanced 21-Day SmartCard',2,'public','starter-hi-advanced','active',unixepoch(),unixepoch());
 --> statement-breakpoint
 PRAGMA optimize;
