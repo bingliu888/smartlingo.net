@@ -817,10 +817,10 @@ export function buildDailyPracticeItem(
         : exercise.translation[uiLang],
       audioText: skill === "listening" ? exercise.targetSentence : undefined,
       answerTokens: skill === "listening"
-        ? tokenizeSentence(exercise.translation[bridgeLanguage], bridgeLanguage)
+        ? tokenizeSentence(exercise.targetSentence, language)
         : tokenizeSentence(exercise.targetSentence, language),
       sourceLanguage: skill === "listening" ? language : bridgeLanguage,
-      answerLanguage: skill === "listening" ? bridgeLanguage : language,
+      answerLanguage: language,
     }))
     : undefined;
   return {

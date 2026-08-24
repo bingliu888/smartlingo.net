@@ -28,6 +28,7 @@ import {
   buildCourseSentenceBank,
   buildDailySentenceRound,
   gradeSentenceRound,
+  tokenizeSentence,
 } from "../lib/smartlingo-sentence-exercises.ts";
 
 test("daily session plans fill exactly 15, 30, 45, or 60 minutes", () => {
@@ -284,7 +285,7 @@ test("every language and course level has 120 stable sentence exercises and a te
       const round = buildDailySentenceRound(language, level, "2026-08-21", "listening");
       assert.equal(round.length, SMARTLINGO_SENTENCES_PER_ROUND);
       assert.equal(new Set(round.map(item => item.id)).size, SMARTLINGO_SENTENCES_PER_ROUND);
-      const perfect = gradeSentenceRound(round, JSON.stringify(round.map(item => item.translation[item.language === "zh" ? "en" : "zh"])), "listening", "zh");
+      const perfect = gradeSentenceRound(round, JSON.stringify(round.map(item => item.targetSentence)), "listening", "zh");
       assert.deepEqual({ score: perfect.score, correct: perfect.correctCount }, { score: 100, correct: 10 });
     }
   }
@@ -297,6 +298,11 @@ test("listening and writing daily tasks expose ten word-builder exercises withou
     assert.ok(task.sentenceExercises.every(item => item.answerTokens.length >= 2));
     assert.equal("correctAnswer" in task.sentenceExercises[0], false);
     assert.equal(skill === "listening" ? Boolean(task.sentenceExercises[0].audioText) : !task.sentenceExercises[0].audioText, true);
+    if (skill === "listening") {
+      assert.equal(task.sentenceExercises[0].sourceLanguage, "ja");
+      assert.equal(task.sentenceExercises[0].answerLanguage, "ja");
+      assert.deepEqual(task.sentenceExercises[0].answerTokens, tokenizeSentence(task.sentenceExercises[0].audioText, "ja"));
+    }
   }
 });
 

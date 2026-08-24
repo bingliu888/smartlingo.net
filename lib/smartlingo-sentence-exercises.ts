@@ -205,8 +205,7 @@ export function gradeSentenceRound(expected: readonly SmartLingoSentenceExercise
   try { responses = JSON.parse(answer || "[]"); } catch { responses = []; }
   const answers = Array.isArray(responses) ? responses.map(value => String(value)) : [];
   const scores = expected.map((exercise, index) => {
-    const bridgeLanguage: SmartLingoInterfaceLanguage = exercise.language === uiLang ? (uiLang === "zh" ? "en" : "zh") : uiLang;
-    const expectedAnswer = skill === "listening" ? exercise.translation[bridgeLanguage] : exercise.targetSentence;
+    const expectedAnswer = exercise.targetSentence;
     return normalizeSentenceAnswer(answers[index] || "") === normalizeSentenceAnswer(expectedAnswer) ? 100 : 0;
   });
   return {

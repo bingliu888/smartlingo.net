@@ -55,6 +55,11 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   const complete = index >= exercises.length;
   const sourceName = exercise?.sourceLanguage ? LANGUAGE_NAMES[exercise.sourceLanguage]?.[lang] || exercise.sourceLanguage : "";
   const answerName = exercise?.answerLanguage ? LANGUAGE_NAMES[exercise.answerLanguage]?.[lang] || exercise.answerLanguage : "";
+  const listeningPrompt = sourceName && answerName
+    ? sourceName === answerName
+      ? (zh ? `听${sourceName}，用${answerName}按原句组句` : `Listen in ${sourceName}; rebuild what you hear in ${answerName}`)
+      : (zh ? `听${sourceName}，用${answerName}组成意思` : `Listen in ${sourceName}; build the meaning in ${answerName}`)
+    : (zh ? "选择听到的内容" : "Build what you hear");
 
   useEffect(() => {
     setIndex(0); setSelected([]); setAnswers([]); setFeedback("idle");
@@ -97,7 +102,7 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   return <section className={`sentence-builder ${feedback}`} aria-label={mode === "listening" ? (zh ? "听力组句练习" : "Listening sentence builder") : (zh ? "写作组句练习" : "Writing sentence builder")}>
     <header><button type="button" className="sentence-close" aria-label={zh ? "清空本题" : "Clear this answer"} onClick={() => { setSelected([]); setFeedback("idle"); }}>×</button><div className="sentence-progress"><span style={{ width: `${(index + 1) * 100 / exercises.length}%` }}/></div><strong>{index + 1} / {exercises.length}</strong></header>
     <div className="sentence-prompt">
-      <p>{sourceName && answerName ? (mode === "listening" ? (zh ? `听${sourceName}，用${answerName}组成意思` : `Listen in ${sourceName}; build the meaning in ${answerName}`) : (zh ? `阅读${sourceName}，用${answerName}组句` : `Read in ${sourceName}; build the sentence in ${answerName}`)) : mode === "listening" ? (zh ? "选择听到的内容" : "Build what you hear") : (zh ? "用所学语言写出这句话" : "Build this sentence in the language you are learning")}</p>
+      <p>{mode === "listening" ? listeningPrompt : sourceName && answerName ? (zh ? `阅读${sourceName}，用${answerName}组句` : `Read in ${sourceName}; build the sentence in ${answerName}`) : (zh ? "用所学语言写出这句话" : "Build this sentence in the language you are learning")}</p>
       {mode === "listening" ? <nav><button type="button" onClick={() => play(.86)} aria-label={zh ? "正常速度播放" : "Play at normal speed"}>🔊</button><button type="button" onClick={() => play(.58)} aria-label={zh ? "慢速播放" : "Play slowly"}>🐢</button></nav> : <blockquote>{exercise.prompt}</blockquote>}
     </div>
     <div className="sentence-answer" aria-label={zh ? `${exercise.answerTokens.length} 个组句空位` : `${exercise.answerTokens.length} sentence slots`}>{exercise.answerTokens.map((_, slot) => { const tile = selectedTiles[slot]; return tile ? <button type="button" onClick={() => feedback === "idle" && setSelected(current => current.filter(id => id !== tile.id))} key={tile.id}>{tile.label}</button> : <span className="sentence-slot" aria-label={zh ? `空位 ${slot + 1}` : `Empty slot ${slot + 1}`} key={`slot-${slot}`}>{slot + 1}</span>; })}</div>
