@@ -5,7 +5,7 @@ import { ClerkSessionBridge } from "../../../../components/ClerkSessionBridge";
 import { LanguageLink } from "../../../../components/LanguageMemory";
 import { SmartLingoWordmark } from "../../../../components/SmartLingoWordmark";
 
-const safeReturnTo = (value: string | undefined, lang: "en" | "zh") =>
+const safeReturnTo = (value: string | undefined, lang: string) =>
   value && /^\/(?!\/)[A-Za-z0-9/_?&=.%#-]*$/.test(value)
     ? value
     : `/${lang}/dashboard`;
@@ -25,7 +25,7 @@ export default async function AuthCompletePage({
   const { lang } = await params;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
-  const returnTo = safeReturnTo(query.returnTo, lang === "zh" ? "zh" : "en");
+  const returnTo = safeReturnTo(query.returnTo, lang);
 
   return <main className="auth-page">
     <aside className="auth-art gc-auth-art smartlingo-auth-art">
@@ -37,7 +37,7 @@ export default async function AuthCompletePage({
         <Link href={`/${lang}`}>← {lang === "zh" ? "返回首页" : "Back to home"}</Link>
         <LanguageLink lang={lang as any}/>
       </div>
-      <ClerkSessionBridge lang={lang as any} returnTo={returnTo}/>
+      <ClerkSessionBridge lang={lang} returnTo={returnTo}/>
     </section>
   </main>;
 }

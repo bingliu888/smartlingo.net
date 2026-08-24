@@ -42,6 +42,12 @@ test("home and dashboard use canonical feature routes without duplicate home pan
   assert.match(dashboard, /DashboardLearningHub/);
   assert.match(dashboard, /smartlingo_language_class_members/);
   for (const path of ["play/everyday", "play/challenge", "classes", "assistant"]) assert.match(dashboardHub, new RegExp(path));
+  for (const label of ["Smart Card Practice", "Smart Card Challenge", "Everyday speaking", "My courses"]) assert.match(dashboardHub, new RegExp(label));
+  assert.match(dashboardHub, /type Area = "everyday" \| "smartcards" \| "challenge" \| "courses" \| "ai"/);
+  assert.match(dashboardHub, /smartcards\/starter-\$\{language\.code\}/);
+  assert.match(dashboardHub, /play\/challenge\?language=\$\{language\.code\}/);
+  assert.match(dashboardHub, /Selected: \$\{language\.nameEn\}/);
+  assert.match(dashboardHub, /Choose another language or subscribe/);
   assert.match(dashboardHub, /href=\{`\/\$\{lang\}\/programs`\}/);
   assert.match(assistant, /targetLanguage/);
   assert.match(assistantRoute, /targetInstruction/);
