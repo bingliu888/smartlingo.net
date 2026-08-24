@@ -1621,7 +1621,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0166_smartcard_practice_resume");
+  assert.equal(migrations.at(-1)?.tag, "0167_learning_days_rewards_rankings");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1739,12 +1739,16 @@ export function validateD1Migrations() {
       "smartlingo_course_credit_policy",
       "smartlingo_course_credit_ledger",
       "smartlingo_course_credit_redemptions",
+      "smartlingo_learning_reward_rules",
+      "smartlingo_learning_score_history",
+      "smartlingo_smartcard_daily_question_sets",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_curriculum_levels").get().count, 3);
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items WHERE review_status='published'").get().count, 336);
-    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_decks WHERE owner_user_id='smartlingo-language-admin'").get().count, 12);
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_decks WHERE owner_user_id='smartlingo-language-admin'").get().count, 36);
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_items WHERE deck_id LIKE 'starter_%'").get().count, 144);
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_learning_reward_rules WHERE status='active'").get().count, 36);
 
     const smoke = runD1Smoke(database);
     return {

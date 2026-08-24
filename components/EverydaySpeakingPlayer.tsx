@@ -98,7 +98,9 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     speech.cancel();
     const utterance = new SpeechSynthesisUtterance(slide.form);
     utterance.lang = speechLocale;
-    utterance.rate = modelRate;
+    const slow = modelRate <= .6;
+    utterance.rate = slow ? .42 : .84;
+    utterance.pitch = slow ? .88 : 1;
     const schedule = () => {
       if (!repeatAfterMe) {
         setReadyToContinue(true);

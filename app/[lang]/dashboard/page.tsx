@@ -79,7 +79,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
       <SiteHeader lang={locale} />
       <span data-layout-overlap-check="dashboard-start" style={{ display: "block", height: 1 }} />
       <div className="dashboard-wrap">
-        <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p></div>
+        <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p><a className="primary-button" href={`/${lang}/score-history`}>{locale === "zh" ? "查看成绩记录" : "View score history"} →</a></div>
         <DashboardDailySprint lang={locale} courses={joinedCourses}/>
         <DashboardLearningHub lang={locale} courses={joinedCourses}/>
         <MembershipPanel lang={locale} />

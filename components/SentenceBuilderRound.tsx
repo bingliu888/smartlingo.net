@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { speakLearningText } from "../lib/smartlingo-speech";
 
 type Exercise = {
   id: string;
@@ -68,11 +69,8 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   }, [exerciseKey]);
 
   function play(rate: number) {
-    if (!exercise?.audioText || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(exercise.audioText);
-    utterance.lang = speechLocale; utterance.rate = rate;
-    window.speechSynthesis.speak(utterance);
+    if (!exercise?.audioText) return;
+    speakLearningText(exercise.audioText,speechLocale,rate);
   }
 
   function selectTile(tileId: string) {

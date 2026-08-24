@@ -12,6 +12,7 @@ function GlobalLinks({ lang }: { lang: InterfaceLanguage }) {
   return <>
     <Link href={`/${lang}/play/everyday`}>{t.everyday}</Link>
     <Link href={`/${lang}/play?language=${lang}`}>{t.play}</Link>
+    <Link href={`/${lang}/play/rankings`}>{lang === "zh" ? "排行榜" : lang === "ja" ? "ランキング" : lang === "ko" ? "순위" : "Ranking"}</Link>
     <Link href={`/${lang}/programs`}>{t.courses}</Link>
     <Link href={`/${lang}/colleges`}>{t.colleges}</Link>
     <Link href={`/${lang}/assistant`}>{t.askAi}</Link>

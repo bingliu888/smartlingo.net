@@ -67,7 +67,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
         {SMARTLINGO_EVERYDAY_SCENARIOS.map((item, index) => <article className="everyday-scene-choice" key={item.id}><Link href={`/${lang}/play/everyday?language=${language}&scene=${item.id}&level=beginner`}>
           <img src={item.image} alt=""/>
           <div><small>{String(index + 1).padStart(2, "0")} · {zh ? "真实人物对话" : "REAL CONVERSATION"}</small><span>{item.icon}</span><strong>{zh ? item.nameZh : item.nameEn}</strong><p>{zh ? item.goalZh : item.goalEn}</p><b>{zh ? "进入初级场景" : "Enter beginner scene"} →</b></div>
-        </Link><nav aria-label={zh ? `${item.nameZh}学习等级` : `${item.nameEn} learning levels`}><Link href={`/${lang}/play/everyday?language=${language}&scene=${item.id}&level=beginner`}>{zh ? "初级" : "Beginner"}</Link><Link href={`/${lang}/play/everyday?language=${language}&scene=${item.id}&level=intermediate`}>{zh ? "中级" : "Intermediate"}</Link><Link href={`/${lang}/play/everyday?language=${language}&scene=${item.id}&level=advanced`}>{zh ? "高级" : "Advanced"}</Link></nav></article>)}
+        </Link><nav aria-label={zh ? `${item.nameZh}其他学习等级` : `Other ${item.nameEn} learning levels`}><Link href={`/${lang}/play/everyday?language=${language}&scene=${item.id}&level=intermediate`}>{zh ? "中级" : "Intermediate"}</Link><Link href={`/${lang}/play/everyday?language=${language}&scene=${item.id}&level=advanced`}>{zh ? "高级" : "Advanced"}</Link></nav></article>)}
       </section>
       <nav className="everyday-back"><Link href={`/${lang}/play?language=${language}`}>← {zh ? "返回游戏" : "Back to Play"}</Link></nav>
     </>}

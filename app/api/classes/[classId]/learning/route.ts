@@ -26,6 +26,7 @@ import {
   type VocabularyReviewMode,
   type VocabularyReviewState,
 } from "../../../../../lib/smartlingo-learning";
+import { learningReward, safeLearningDay, safeLearningLevel } from "../../../../../lib/smartlingo-learning-days";
 import {
   localDateKey,
   requireOfficialClassMembership,
@@ -920,6 +921,13 @@ async function refreshQuickCourseProgress(
         date, dailyComplete ? 1 : 0, dailyComplete ? now : null, now, enrollment.id, courseDay,
       ).run();
   }
+  if (dailyComplete && daily.score !== null && !existingDay?.isComplete && courseDay <= 21) {
+    const rewardPoints = await learningReward(database,"course",safeLearningLevel(enrollment.level),daily.score);
+    await database.prepare(`INSERT INTO smartlingo_learning_score_history
+      (id,user_id,feature,level,target_language,class_id,day_number,score,reward_points,local_date,source_id,detail_json,created_at,updated_at)
+      VALUES(?,?,'course',?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,feature,source_id) DO NOTHING`)
+      .bind(createId(),userId,safeLearningLevel(enrollment.level),access.targetLanguage,access.classId,safeLearningDay(courseDay),daily.score,rewardPoints,date,`${enrollment.id}:day:${courseDay}`,JSON.stringify({ skillScores, quizScore: quiz?.score ?? null, enrollmentId: enrollment.id }),now,now).run();
+  }
 
   const completedRows = await database.prepare(`SELECT course_day AS courseDay,
     last_activity_date AS localDate, score, is_complete AS isComplete
@@ -1437,6 +1445,25 @@ export async function POST(
 
   if (action === "set_session_minutes") {
     return Response.json({ error: "Course-day sessions are fixed at 60 minutes." }, { status: 409 });
+  }
+
+  if (action === "select_course_day") {
+    const requestedDay = Number(body.courseDay);
+    const enrollment = await auth.database.prepare(`SELECT e.id,offering.duration_days AS durationDays,e.status
+      FROM smartlingo_course_enrollments_v3 e JOIN smartlingo_course_offerings_v3 offering ON offering.id=e.offering_id
+      WHERE e.user_id=? AND e.class_id=? AND e.status='active' ORDER BY e.updated_at DESC LIMIT 1`)
+      .bind(auth.user.id,auth.classId).first<{ id:string; durationDays:number; status:string }>();
+    const maxDay = Math.min(21,Number(enrollment?.durationDays || 0));
+    if (!enrollment || !Number.isInteger(requestedDay) || requestedDay < 1 || requestedDay > maxDay) {
+      return Response.json({ error: "Choose a valid day in this course's 21-day learning path." }, { status: 400 });
+    }
+    const now=Math.floor(Date.now()/1000);
+    await auth.database.batch([
+      auth.database.prepare(`UPDATE smartlingo_course_enrollments_v3 SET current_day=?,updated_at=? WHERE id=? AND user_id=? AND status='active'`).bind(requestedDay,now,enrollment.id,auth.user.id),
+      auth.database.prepare(`INSERT INTO smartlingo_course_session_state(enrollment_id,course_day,duration_seconds,remaining_seconds,status,last_started_at,updated_at)
+        VALUES(?,?,3600,3600,'ready',NULL,?) ON CONFLICT(enrollment_id) DO UPDATE SET course_day=excluded.course_day,remaining_seconds=3600,status='ready',last_started_at=NULL,updated_at=excluded.updated_at`).bind(enrollment.id,requestedDay,now),
+    ]);
+    return Response.json(await learningState(auth.database,auth.user.id,auth.access,auth.placement,today,uiLanguage));
   }
 
   if (action === "save_checkpoint") {

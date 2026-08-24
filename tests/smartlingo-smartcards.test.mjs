@@ -248,6 +248,10 @@ test("game navigation keeps target language, progress, local-time art, and score
   assert.match(leaderboard, /isSmartLingoCommunityLanguage/);
   assert.match(leaderboard, /smartlingo_smartcard_daily_settlements/);
   assert.match(leaderboard, /smartcard_winner_earn/);
+  assert.match(leaderboard, /challengeDateClosedGlobally/);
+  assert.match(leaderboard, /settlement\.level=\?/);
+  assert.match(calendar, /localCalendarDate/);
+  assert.match(game, /date=\$\{challengeClock\.current\.date\}/);
 });
 
 test("0041 separates practice from daily challenge and guards game rewards", () => {
@@ -265,7 +269,8 @@ test("0042 makes daily challenges timed, single-chance, and settle winners once"
   assert.match(sql, /smartlingo_smartcard_daily_settlement_uq/);
   assert.match(sql, /smartlingo_course_credit_winner_insert_trg/);
   assert.match(route, /challengeSeconds: 10/);
-  assert.match(route, /new Date\(nowMs\)\.toISOString\(\)\.slice\(0,10\)/);
+  assert.match(route, /const localDate = dateFor\(body\.timeZone\)/);
+  assert.match(route, /requestedDate !== localDate/);
   assert.match(route, /nowMs-session\.questionStartedMs>POLICY\.challengeSeconds\*1000/);
   assert.match(route, /current_index=\?/);
   assert.match(route, /leader&&leader\.score<100&&score>leader\.score/);
@@ -276,6 +281,10 @@ test("database permits learning retries but awards one capped credit per deck ve
   try {
     database.exec("PRAGMA foreign_keys=ON");
     applyTrackedMigrations(database, readMigrationManifest());
+    const settlementColumns = database.prepare("PRAGMA table_info(smartlingo_smartcard_daily_settlements)").all().map(item => item.name);
+    const settlementUniqueColumns = database.prepare("PRAGMA index_info(smartlingo_smartcard_daily_settlement_uq)").all().map(item => item.name);
+    assert.ok(settlementColumns.includes("level"));
+    assert.deepEqual(settlementUniqueColumns,["target_language","level","local_date"]);
     database.prepare(`INSERT INTO users(id,email,display_name,password_hash,preferred_language,role,created_at)
       VALUES('card-learner','card-learner@example.invalid','Card Learner','disabled','en','member',1)`).run();
     const insertAttempt = database.prepare(`INSERT INTO smartlingo_smartcard_challenge_attempts

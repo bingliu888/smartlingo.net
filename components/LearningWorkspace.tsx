@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { currentDailyQuizAnswers, reconcileCheckpointQueue } from "../lib/smartlingo-daily-loop";
+import { speakLearningText } from "../lib/smartlingo-speech";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
 import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar";
+import { LearningDayPicker } from "./LearningDayPicker";
 import { SmartCardStudio } from "./SmartCardStudio";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
 
@@ -152,6 +154,7 @@ type LearningPayload = {
     title: { zh: string; en: string };
     durationDays: number;
     currentDay: number;
+    level: "beginner" | "intermediate" | "advanced";
     scene: { zh: string; en: string };
     skills: Skill[];
     estimatedMinutes: number;
@@ -1204,13 +1207,14 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     }
   }
 
+  async function selectCourseDay(day: number) {
+    if (day === learning?.quickCourse?.currentDay) return;
+    await postLearning({ action: "select_course_day", courseDay: day }, "select-course-day");
+  }
+
   function playText(text: string, locale?: string, rate = .82) {
-    if (!text || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = locale || classInfo?.targetLanguage || "en-US";
-    utterance.rate = rate;
-    window.speechSynthesis.speak(utterance);
+    if (!text) return;
+    speakLearningText(text, locale || classInfo?.targetLanguage || "en-US", rate);
   }
 
   function startDictation(skill: "writing" | "dialogue", locale?: string) {
@@ -1535,6 +1539,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
     {!calendarOnly && classId && placementComplete ? <section className="sl-daily-workspace" data-layout-fill="five-skill-workspace" data-layout-ready={learning ? "true" : undefined}>
       {learning?.quickCourse ? <aside className="sl-course-day" data-layout-fill="quick-course-day">
         <div><p className="sl-eyebrow">{t.quickCourse}</p><h2>{learning.quickCourse.title[lang]}</h2><p>{t.courseDay} {learning.quickCourse.currentDay} / {learning.quickCourse.durationDays} · {learning.quickCourse.estimatedMinutes} {t.minutes}</p></div>
+        <LearningDayPicker lang={lang} level={learning.quickCourse.level} day={learning.quickCourse.currentDay} maxDay={Math.min(21,learning.quickCourse.durationDays)} compact onChange={day=>void selectCourseDay(day)}/>
         <div><strong>{learning.quickCourse.scene[lang]}</strong><ul>{learning.quickCourse.skills.map(skill => <li key={skill}>{t[skill]}</li>)}</ul></div>
         {learning.courseProgress ? <div className="sl-course-score" aria-live="polite">
           <div><span>{t.courseScore}</span><strong>{learning.courseProgress.currentScore ?? "—"}<small> / 100</small></strong></div>
