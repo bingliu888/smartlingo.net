@@ -27,6 +27,6 @@ test("Ask AI composer attributes use the active twelve-language interface catalo
   for (const phrase of ["AI講師にメッセージ…", "AI 강사에게 메시지…", "Escribe al tutor de IA…", "Écrire au tuteur IA…", "Dem KI-Tutor schreiben…", "Написать ИИ-наставнику…", "Scrivi al tutor IA…", "Escreva ao tutor de IA…", "اكتب إلى معلّم الذكاء الاصطناعي…", "AI शिक्षक को संदेश लिखें…"]) {
     assert.match(locale, new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
-  assert.match(assistant, /composer\.current\?\.setAttribute\("placeholder", composerCopy\.placeholder\)/);
+  assert.match(assistant, /partner \? \(zh \? `给 \$\{partner\.name\} 发消息…` : `Message \$\{partner\.name\}…`\) : composerCopy\.placeholder/);
   assert.match(assistant, /composer\.current\?\.setAttribute\("aria-label", composerCopy\.question\)/);
 });

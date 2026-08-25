@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("anchors Ask Guru as a root-layout viewport control", async () => {
+test("anchors Ask Guru as a root-layout viewport control outside the four-choice learning nav", async () => {
   const [layout, assistant, header, css] = await Promise.all([
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/FloatingAssistant.tsx", import.meta.url), "utf8"),
@@ -15,8 +15,10 @@ test("anchors Ask Guru as a root-layout viewport control", async () => {
   assert.doesNotMatch(assistant, /topLevelPages/);
   assert.match(assistant, /route === "\/assistant" \|\| route\.startsWith\("\/auth\/"\)/);
   assert.match(css, /\.floating-assistant\{\s*position:fixed!important;\s*inset:auto[^;]*safe-area-inset-right[^;]*safe-area-inset-bottom[^;]*auto!important;/);
-  assert.match(header, /href=\{`\/\$\{lang\}\/assistant`\}/);
-  assert.match(header, /\{t\.askAi\}/);
+  for (const choice of ["learn", "practice", "speak", "community"]) {
+    assert.match(header, new RegExp(`data-nav="${choice}"`));
+  }
+  assert.doesNotMatch(header, /href=\{`\/\$\{lang\}\/assistant`\}/);
 });
 
 test("keeps the supplementary Guru shortcut outside every release viewport", async () => {

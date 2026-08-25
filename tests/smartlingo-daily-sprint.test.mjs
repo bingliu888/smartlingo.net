@@ -114,10 +114,12 @@ test("course and anonymous Play expose six isolated learning activities", () => 
   assert.match(rewardsRoute, /digital_redeem/);
 });
 
-test("Home feature buttons use the same canonical pages as navigation, and the task image opens Sprint", () => {
+test("Primary navigation exposes the four learning choices and the task image opens Sprint", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
-  assert.ok(header.indexOf("t.courses") < header.indexOf("t.colleges"));
+  assert.ok(header.indexOf('data-nav="learn"') < header.indexOf('data-nav="practice"'));
+  assert.ok(header.indexOf('data-nav="practice"') < header.indexOf('data-nav="speak"'));
+  assert.ok(header.indexOf('data-nav="speak"') < header.indexOf('data-nav="community"'));
   assert.ok(home.indexOf('href={`/${locale}/programs`}') < home.indexOf('href={`/${locale}/colleges`}'));
   for (const path of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(path));
   assert.match(home, /play\?language=\$\{locale\}/);

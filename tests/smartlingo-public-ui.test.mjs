@@ -20,9 +20,9 @@ test("SmartLingo branding exposes the four primary learning choices", async () =
   assert.match(wordmark, /<span>Smart<\/span><em>Lingo<\/em>/);
   assert.match(css, /@media\(min-width:1101px\) and \(max-width:1320px\)\{\.smartlingo-wordmark\{display:grid/);
   assert.match(css, /\.ai-cert-brand \.smartlingo-wordmark em,\.smartlingo-footer-brand \.smartlingo-wordmark em\{color:#0b9475\}/);
-  for (const path of ["play/everyday", "programs", "play", "assistant"]) assert.match(header, new RegExp(`/${path}`));
-  for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(locale, new RegExp(label));
-  assert.doesNotMatch(header, /\/classes|\/community/);
+  for (const path of ["learn", "smartcards", "play/everyday", "community"]) assert.match(header, new RegExp(`/${path}`));
+  for (const label of ["学习", "练习", "开口", "社区", "我的"]) assert.match(locale, new RegExp(label));
+  assert.doesNotMatch(header, /\/classes/);
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["about", "privacy", "terms", "project"]) assert.match(footer, new RegExp(`/${path}`));
   assert.ok(footer.indexOf("/about") < footer.indexOf("/privacy") && footer.indexOf("/privacy") < footer.indexOf("/terms") && footer.indexOf("/terms") < footer.indexOf("/project"));

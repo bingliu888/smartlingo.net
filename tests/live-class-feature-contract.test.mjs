@@ -40,7 +40,9 @@ test("course entrances replace the standalone classroom directory", () => {
   assert.doesNotMatch(home, /classrooms\?view=mine/);
   assert.match(dashboard, /DashboardLearningHub/);
   assert.doesNotMatch(dashboard, /classrooms\?view=mine/);
-  assert.match(community, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(community, /CommunityMeetings/);
+  assert.match(community, /NearbyLearning/);
+  assert.doesNotMatch(community, /classrooms\?view=mine/);
 });
 
 test("viewer join is permission-free and video tiles support fullscreen", () => {

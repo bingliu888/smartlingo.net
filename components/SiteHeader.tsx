@@ -10,12 +10,10 @@ import { interfaceCopyFor, type InterfaceLanguage } from "../lib/interface-local
 function GlobalLinks({ lang }: { lang: InterfaceLanguage }) {
   const t = interfaceCopyFor(lang);
   return <>
-    <Link href={`/${lang}/play/everyday`}>{t.everyday}</Link>
-    <Link href={`/${lang}/play?language=${lang}`}>{t.play}</Link>
-    <Link href={`/${lang}/play/rankings`}>{lang === "zh" ? "排行榜" : lang === "ja" ? "ランキング" : lang === "ko" ? "순위" : "Ranking"}</Link>
-    <Link href={`/${lang}/programs`}>{t.courses}</Link>
-    <Link href={`/${lang}/colleges`}>{t.colleges}</Link>
-    <Link href={`/${lang}/assistant`}>{t.askAi}</Link>
+    <Link href={`/${lang}/learn`} data-nav="learn">{t.learn}</Link>
+    <Link href={`/${lang}/smartcards`} data-nav="practice">{t.practice}</Link>
+    <Link href={`/${lang}/play/everyday`} data-nav="speak">{t.speak}</Link>
+    <Link href={`/${lang}/community`} data-nav="community">{t.community}</Link>
   </>;
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type MemberMeeting = { id: string; threadId: string; title: string; scheduledAt: number };
 type Member = { id: string; displayName: string; createdAt: number; imageUrl?: string; meeting?: MemberMeeting | null };
@@ -10,7 +11,7 @@ type Data = { currentUserId: string; members: Member[]; topics: Topic[]; replies
 
 const channels = ["all", "general", "learning", "projects", "events"] as const;
 
-export function CommunityClient({ lang }: { lang: "en" | "zh" }) {
+export function CommunityClient({ lang }: { lang: InterfaceLanguage }) {
   const zh = lang === "zh";
   const [data, setData] = useState<Data>({ currentUserId: "", members: [], topics: [], replies: [] });
   const [channel, setChannel] = useState<(typeof channels)[number]>("all");

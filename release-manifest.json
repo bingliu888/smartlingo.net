@@ -1,83 +1,85 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-vocabulary-learning-order-2026-08-24-v37",
+  "releaseId": "smartlingo-community-ai-classmates-2026-08-24-v38",
   "site": "smartlingo.net",
   "title": {
-    "en": "Add grade-aware vocabulary order and reliable learning interactions",
-    "zh": "新增学段词汇排序与可靠学习交互"
+    "en": "Launch the four-choice learning navigation and safe Nearby AI classmates",
+    "zh": "发布四大主导航与安全的 Nearby AI 同学"
   },
   "purpose": {
-    "en": "Teach the easiest useful words first across SmartLingo while making Slow speech audibly distinct and sentence building a meaningful choice task.",
-    "zh": "在 SmartLingo 全部学习入口优先教授最容易且最实用的词，同时让慢速语音真正可辨，并让组句成为有有效干扰项的选择练习。"
+    "en": "Make SmartLingo easier to understand as Learn, Practice, Speak, Community, and Me while giving every signed-in learner an immediately available, clearly disclosed AI classmate and an optional privacy-bounded way to find real study partners.",
+    "zh": "把 SmartLingo 清晰组织为学习、练习、口语、社区和我的入口，并让每位登录学员都能立即使用明确标注的 AI 同学，同时可在隐私边界内自愿寻找真人学伴。"
   },
   "features": {
     "en": [
-      "Give every published vocabulary item a recommended grade from 0 (K/Pre-K) through 12 and display difficulty, frequency, and grade together on learner-facing word cards, tiles, and items.",
-      "Use one deterministic easiest-first order: difficulty ascending, frequency descending, grade ascending, then catalog sequence.",
-      "Give every sentence builder the exact answer length plus at least two unique distractor words and score automatically when all answer slots are filled.",
-      "Apply distinct Normal 0.84× and Slow 0.42× speech synthesis behavior across Sprint, courses, SmartCard, and Everyday Speaking surfaces."
+      "Replace the former product-link header with four stable learning choices—Learn, Practice, Speak, and Community—while the account control remains the Me destination on desktop and mobile.",
+      "Restore Community as a signed-in learning hub with Nearby, study discussions, live study meetings, colleges, rankings, and direct access to three always-available AI classmates.",
+      "Add Mika for conversation, Leo for friendly challenge practice, and Aya for real-life roleplay; every greeting, card, and response identifies the partner as AI and never presents it as a real nearby person.",
+      "Offer optional adult-only real-member Nearby matching by user-entered city or broad region, exact language pair, level, activity, and availability, with block and report controls on every result.",
+      "Explain and surface SmartLingo's two-level learning-school model: a college or school contains language departments, and each department receives administrator-created courses and the four free learning products."
     ],
     "zh": [
-      "为每个已发布词汇增加 0（幼儿园/学前）至 12 的建议学段，并在面向学员的词卡、tile 与词条上同时展示难度、频率和学段。",
-      "统一采用确定性的由易到难排序：难度升序、频率降序、学段升序，最后按词库序号。",
-      "每个组句题均提供与答案相同数量的空位及至少两个不重复干扰词，并在填满空位后自动判分。",
-      "在今日速成、课程、SmartCard 与生活口语中统一应用可区分的正常 0.84× 与慢速 0.42× 语音。"
+      "把原产品链接导航改为四个稳定学习入口——学习、练习、口语和社区；桌面与移动端账户控制继续作为“我的”入口。",
+      "恢复社区为登录用户学习中心，整合 Nearby、学习讨论、实时学习会、学院、排行榜，以及三个常驻 AI 同学的直接入口。",
+      "新增会话伙伴 Mika、友好挑战伙伴 Leo 和生活角色扮演伙伴 Aya；每个问候、卡片和回复都明确标注 AI，绝不伪装成附近真人。",
+      "新增仅限成年用户自愿开启的真人 Nearby：只按用户填写的城市或大区域、精确语言组合、级别、活动和时间匹配，每张结果卡都提供屏蔽与举报。",
+      "在产品中说明并展示 SmartLingo 两层学习学校模式：学院或学校下设语言部门，每个部门自动获得管理员创建的课程与四项免费学习产品。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo vocabulary schema and migration, vocabulary/Sprint/SmartCard/course APIs, reusable sentence and speech engines, and all learner-facing vocabulary surfaces.",
-      "The change is isolated to smartlingo.net and does not alter Clerk, payments, Cloudflare resource boundaries, sibling sites, or external-service configuration."
+      "SmartLingo header navigation, Learn routing, Community, assistant personas, signed-in dashboard, My colleges explanation, D1 community schema, and the local 3 AM real-user QA plan.",
+      "The change is isolated to smartlingo.net and does not alter Clerk identity configuration, payments, supervisor prices, the 70/30 split, Cloudflare resource boundaries, sibling sites, or external-service credentials."
     ],
     "zh": [
-      "影响 SmartLingo 词汇数据库结构与迁移、词汇/今日速成/SmartCard/课程 API、可复用组句与语音引擎，以及全部面向学员的词汇界面。",
-      "变更仅限 smartlingo.net，不修改 Clerk、支付、Cloudflare 资源边界、兄弟站点或外部服务配置。"
+      "影响 SmartLingo 顶部导航、学习路由、社区、AI 助手角色、登录面板、我的学院说明、D1 社区结构及本机凌晨 3 点真实用户 QA 计划。",
+      "变更仅限 smartlingo.net，不修改 Clerk 身份配置、支付、主管套餐价格、70/30 分成、Cloudflare 资源边界、兄弟站点或外部服务凭据。"
     ]
   },
   "changes": {
     "en": [
-      "Backfill all 48,000 published multilingual vocabulary rows into 13 bounded grade bands and add a database learning-order index and deployment completeness gate.",
-      "Centralize grade validation, bilingual labels, and the learning comparator so database queries, seeded lessons, daily practice, Sprint, SmartCard, and course vocabulary agree.",
-      "Queue browser speech after cancellation to prevent Safari from reusing a prior utterance rate, select a matching language voice, and bound playback cleanup.",
-      "Generate plausible language-specific distractors from the active round before falling back to simple common words."
+      "Add migration 0170 with isolated Nearby profile, block, and report tables; no latitude, longitude, address, school, workplace, email, or device-location field is stored.",
+      "Add authenticated Nearby read/save/block/report APIs with bounded input, supported-language validation, bidirectional blocking, private no-store responses, and exact language-pair matching.",
+      "Add responsive Community and dashboard modules, route-aware AI partner prompts, and a system boundary that forbids an AI classmate from claiming human identity, location, lived experience, or persistent memory.",
+      "Update the 3 AM recovery plan to verify the four-choice navigation, all six anonymous Play activities, explicit AI disclosure, and the rule that scheduled QA never enables real-member Nearby."
     ],
     "zh": [
-      "把 48,000 个已发布多语种词汇回填至 13 个受约束学段，增加数据库学习顺序索引及部署完整性门禁。",
-      "集中管理学段校验、双语标签与学习排序比较器，使数据库查询、预置课程、每日练习、今日速成、SmartCard 和课程词汇保持一致。",
-      "取消旧语音后建立浏览器队列边界，避免 Safari 复用前一次语速，并匹配目标语言 voice、限制播放清理时间。",
-      "优先从当前学习轮次生成目标语言的合理干扰词，只有孤立题目才使用简单常用词后备。"
+      "新增 0170 迁移，隔离存储 Nearby 资料、屏蔽和举报；不存储经纬度、地址、学校、单位、邮箱或设备定位字段。",
+      "新增需要登录的 Nearby 读取、保存、屏蔽和举报 API，包含输入长度限制、支持语言校验、双向屏蔽、private no-store 响应及精确语言组合匹配。",
+      "新增响应式社区与面板模块、按角色区分的 AI 学伴提示词，并在系统边界禁止 AI 同学声称真人身份、位置、真实经历或持久记忆。",
+      "更新凌晨 3 点恢复测试计划，验证四大导航、匿名 Play 六个入口、明确 AI 身份，以及定时 QA 绝不开启真人 Nearby 的规则。"
     ]
   },
   "validation": {
     "en": [
-      "All 362 repository tests pass, including the exact 48,000-row grade distribution, comparator order, Slow 0.42× mapping, three-attribute UI contracts, and answer-plus-two sentence choices.",
-      "TypeScript, changed-file ESLint with zero errors, whitespace validation, the production vinext build, and shared site policy/architecture/base-feature contracts pass.",
-      "GitHub Actions additionally rejects a deployment unless all 48,000 published rows have valid difficulty, frequency, and grade values covering all 13 grades."
+      "All 365 repository tests pass, including Nearby privacy/safety, AI disclosure, dashboard placement, 21-day learning, 48,000 vocabulary rows, speech speed, sentence distractors, scores, rankings, courses, colleges, and Clerk boundaries.",
+      "The production vinext build, TypeScript, changed-file ESLint with zero errors, sensitive-data scan, whitespace validation, and 65-migration D1 first-run/idempotent rerun with zero foreign-key violations pass.",
+      "The isolated authenticated runtime verifies 12 protected pages and 6 APIs, and native WebKit verifies 260/260 combinations across 26 routes, Chinese and English, and five desktop, iPad, and phone viewports."
     ],
     "zh": [
-      "仓库 362 项测试全部通过，包括精确的 48,000 行学段分布、排序比较器、慢速 0.42× 映射、三属性 UI 合同及答案加两个干扰词。",
-      "TypeScript、修改文件 ESLint 零错误、空白校验、生产 vinext 构建及共享站点政策/架构/基础功能合同均通过。",
-      "GitHub Actions 还会在 48,000 个已发布词未全部具有合法难度、频率、学段且未覆盖 13 个学段时阻止部署。"
+      "仓库 365 项测试全部通过，覆盖 Nearby 隐私与安全、AI 身份披露、面板位置、21 天学习、48,000 行词汇、语速、组句干扰词、成绩、排行榜、课程、学院及 Clerk 边界。",
+      "生产 vinext 构建、TypeScript、修改文件 ESLint 零错误、敏感信息扫描、空白校验，以及 65 个 D1 迁移的首次执行与幂等重跑均通过，外键违规为零。",
+      "隔离认证运行时验证 12 个受保护页面与 6 个 API；原生 WebKit 在 26 条路由、中英双语以及桌面、iPad、手机五种视口上完成 260/260 验证。"
     ]
   },
   "deferred": {
     "en": [
-      "Grade is a SmartLingo recommended learning-grade and age-of-acquisition proxy derived from the reviewed catalog order, not an official school-board certification; future corpus review may refine individual rows without changing the 0–12 contract.",
-      "Browser automation can verify the utterance rate supplied to speech synthesis but cannot fabricate a physical speaker-duration measurement."
+      "Scheduled and release QA deliberately leaves real-member Nearby disabled and does not create public location or invitation data; real matching becomes testable only after consenting adult members opt in.",
+      "The first AI-classmate release is conversation-first and reuses the audited SmartLingo assistant gateway; richer original animation and shared mission state can be added without weakening the explicit-AI boundary."
     ],
     "zh": [
-      "学段是从已审核词库顺序推导的 SmartLingo 建议学习学段与习得年龄代理，并非官方教育局认证；后续语料审核可细化单词学段，但不改变 0–12 合同。",
-      "浏览器自动化可以核验传给语音合成器的语速，但不会虚构实体扬声器的时长测量。"
+      "定时与发布 QA 会刻意保持真人 Nearby 关闭，不创建公开地区或邀请数据；只有成年会员主动同意并开启后，真人匹配才具备可测试数据。",
+      "首版 AI 同学以会话为主并复用已审计的 SmartLingo 助手网关；后续可增加原创动画与共同任务状态，但不会削弱明确标注 AI 的边界。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo's 12-language vocabulary, original learning UI, Repeat After Me default-off behavior, anonymous cookie boundaries, signed-in database progress, and GitHub Actions to Cloudflare delivery.",
-      "Do not import Duolingo artwork, copy, code, or proprietary data; the interaction remains a SmartLingo implementation informed by successful learning patterns."
+      "Preserve SmartLingo's 12 interface languages, 21-day learning paths, picture vocabulary, Today’s Sprint, SmartCard, challenge, Everyday Speaking, course progress, anonymous feature-scoped cookies, signed-in D1 progress, and GitHub Actions to Cloudflare delivery.",
+      "Competitor review informed the hierarchy of short practice, social encouragement, AI roleplay, and organization learning, but no Duolingo artwork, copy, code, user data, or proprietary curriculum was imported."
     ],
     "zh": [
-      "保留 SmartLingo 的 12 语种词库、原创学习 UI、跟读默认关闭、匿名 Cookie 边界、登录用户数据库进度，以及 GitHub Actions 至 Cloudflare 发布流程。",
-      "不导入 Duolingo 的美术、文案、代码或专有数据；交互仍是借鉴成功学习模式的 SmartLingo 自有实现。"
+      "保留 SmartLingo 的 12 种界面语言、21 天学习路径、图片词汇、今日速成、SmartCard、挑战、生活口语、课程进度、匿名功能级 Cookie、登录用户 D1 进度及 GitHub Actions 至 Cloudflare 发布。",
+      "竞品研究仅用于理解短练习、社交鼓励、AI 角色扮演和组织学习的层级；没有导入 Duolingo 美术、文案、代码、用户数据或专有课程。"
     ]
   }
 }

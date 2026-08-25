@@ -43,6 +43,15 @@ export default async function MyCollegesPage({ params }: { params: Promise<{ lan
       </div>
     </section>
 
+    <section className="college-two-level-model" aria-labelledby="college-two-level-title">
+      <header><p className="section-kicker">TWO-LEVEL LEARNING SCHOOL</p><h2 id="college-two-level-title">{zh ? "两层组织，平台统一教学质量" : "Two levels, one platform quality standard"}</h2></header>
+      <div>
+        <article><span>01</span><h3>{zh ? "学院／学校" : "College / school"}</h3><p>{zh ? "学院总监负责招生、品牌和部门管理；黄金、白金、钻石方案分别支持 3、9、15 个语言部门。" : "A College Supervisor manages enrollment, identity, and departments; Gold, Platinum, and Diamond support 3, 9, or 15 language departments."}</p></article>
+        <article><span>02</span><h3>{zh ? "语言部门／课程组" : "Language department / course group"}</h3><p>{zh ? "每个部门选择教学语言与学习语言后，自动获得平台管理员课程、今日速成、生活口语、智慧卡、智慧卡挑战和默认音频学习房间。" : "After selecting interface and target languages, each department automatically receives admin-created courses, Today’s Sprint, Everyday Speaking, Smart Cards, Smart Card Challenge, and an audio-first learning room."}</p></article>
+      </div>
+      <p>{zh ? "课程价格仍由平台管理员统一制定；符合条件的部门课程收入按 70% 给学院／部门、30% 给平台。" : "Course prices remain platform-admin controlled; eligible department course revenue is split 70% to the college/department and 30% to the platform."}</p>
+    </section>
+
     {!coordinator ? <section className="college-coordinator-plan">
       <div>
         <p className="section-kicker">COLLEGE SUPERVISOR</p>

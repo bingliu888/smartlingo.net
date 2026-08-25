@@ -48,10 +48,12 @@ Required daily procedure:
         or clicking unordered tiles is not a pass. Record which prompt direction, target language,
         feedback state, and question-counter transition were observed without recording private data.
    b. Play discovery and practice:
-      - From the production home page shared header, click Learn through play. Verify the resulting
-        URL carries the Chinese interface language (`/zh/play?language=zh`), all six activity tiles
-        are visible (Today's Sprint, SmartCard Practice, SmartCard Challenge, Free Trial, Rankings,
-        and Redeem), and the twelve-language picker is visible below them.
+      - From the production home page shared header, click Learn. For the signed-in test learner,
+        verify it opens `/zh/dashboard` and that Today’s Sprint plus the Learn, Practice, Speak,
+        Community, and Me destinations are reachable without losing the Chinese interface language.
+        Then navigate to `/zh/play` for the dedicated Play acceptance surface. Verify all six activity
+        tiles are visible (Today's Sprint, SmartCard Practice, SmartCard Challenge, Free Trial,
+        Rankings, and Redeem), and the twelve-language picker is visible below them.
       - Return to the production home page and click the Today task image. Verify the same Daily
         Sprint language-and-time dialog opens over the home page without first navigating to Play,
         with all twelve languages, all four durations, and 10 minutes selected by default. A visible
@@ -93,7 +95,11 @@ Required daily procedure:
       When the timer expires, finish the current atomic exercise. Use both the plan's deep-focus
       Course skill and rotating feature focus for additional questions so the run explores more than
       the Course-only happy path.
-   e. Produce at least one legitimate server-graded score and verify its persisted learning log for
+   e. Open Community from the shared header. Verify that Mika, Leo, and Aya are visibly labeled AI
+      study partners and that one can start a turn-taking activity without enabling real-member
+      Nearby or sharing a location. Do not enable real-member Nearby in scheduled QA. Verify that the
+      page explains adult-only opt-in, broad city/region matching, and block/report controls.
+   f. Produce at least one legitimate server-graded score and verify its persisted learning log for
       every language. Prefer the daily course quiz when available; additional vocabulary, reading,
       writing, listening, or speaking scores are welcome. Do not insert, edit, or simulate database
       activity or score rows.

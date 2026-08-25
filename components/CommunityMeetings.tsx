@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type Meeting = {
   id: string;
@@ -28,7 +29,7 @@ function countdown(seconds: number, zh: boolean) {
   return zh ? `${pad(hours)}:${pad(minutes)}:${pad(secs)} 后开始` : `starts in ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 }
 
-export function CommunityMeetings({ lang }: { lang: "en" | "zh" }) {
+export function CommunityMeetings({ lang }: { lang: InterfaceLanguage }) {
   const zh = lang === "zh";
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [open, setOpen] = useState(true);

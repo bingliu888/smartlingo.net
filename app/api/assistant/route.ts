@@ -9,11 +9,12 @@ import {
 import { validateSmartLingoMedia } from "../../../lib/smartlingo-media";
 import { requestUser } from "../../../lib/request-user";
 import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES } from "../../../lib/smartlingo-language-communities";
+import { smartLingoAiStudyPartner } from "../../../lib/smartlingo-ai-study-partners";
 
 type ChatMessage = { role?: unknown; content?: unknown };
 type AssistantFeature = Extract<SmartAiFeature, "public_guru" | "message_polish" | "chat_guru">;
 type AssistantImage = { dataUrl?: unknown; mimeType?: unknown; size?: unknown; name?: unknown };
-type AssistantRequest = { feature?: unknown; language?: unknown; targetLanguage?: unknown; practiceMode?: unknown; messages?: ChatMessage[]; image?: AssistantImage };
+type AssistantRequest = { feature?: unknown; language?: unknown; targetLanguage?: unknown; practiceMode?: unknown; partner?: unknown; messages?: ChatMessage[]; image?: AssistantImage };
 
 const GURU_INSTRUCTIONS = `You are Guru, the bilingual public language-learning and course assistant for SmartLingo.net. Match the requested language. Be clear, concise, encouraging, and practical. Help people choose among Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi; compare the fixed Beginner ($20/month), Intermediate ($100/month), and Advanced ($300/month) courses; explain the free first month; and practice vocabulary, reading, writing, listening, dialogue, accent correction, speeches, and speech-draft revision when included in the selected level. Courses are created and priced only by SmartLingo administrators. Each course has an A/V webinar classroom whose administrator may assign co-host speakers. Do not claim that members can create courses, set fees, or receive course payouts. Do not invent lesson completion, assessment, payment, or subscription status. AI corrections and scores support practice only and are not official examination results. Never promise fluency, education, employment, visa, income, or other outcomes. Protect personal data, identify uncertainty, and refer high-stakes questions to appropriate official or qualified sources.`;
 
@@ -59,6 +60,10 @@ export async function POST(request: Request) {
     ? SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === body.targetLanguage)
     : undefined;
   const practiceMode = body?.practiceMode === "pronunciation" || body?.practiceMode === "writing" || body?.practiceMode === "conversation" ? body.practiceMode : "conversation";
+  const partner = smartLingoAiStudyPartner(body?.partner);
+  const partnerInstruction = partner
+    ? `\nAct as ${partner.name}, a clearly disclosed SmartLingo AI study partner. Never imply that ${partner.name} is a real person, is physically nearby, remembers the learner outside this conversation, or has lived experiences. Take one short turn at a time and invite the learner to answer before continuing. Use ${partner.activity} activities, encouraging corrections, and level-appropriate words.`
+    : "";
   const targetInstruction = targetLanguage ? `\nThe learner selected ${targetLanguage.nameEn} (${targetLanguage.nativeName}) as the target language and ${practiceMode} as the practice mode. Keep explanations in the interface language, but examples and practice prompts in the selected target language.` : "";
   const messages = Array.isArray(body?.messages) ? body.messages.slice(-12).flatMap(message => {
     const role = message.role === "assistant" ? "Assistant" : message.role === "user" ? "User" : null;
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
       const answer = await askSmartAiVision({
         subject: user ? `user:${user.id}` : `visitor:${visitor}`,
         language,
-        instructions: `${GURU_INSTRUCTIONS}${targetInstruction}\nAnalyze only the attached image and the supplied question. Answer in ${language === "zh" ? "Simplified Chinese" : "English"}. Do not infer sensitive traits or identity.`,
+        instructions: `${GURU_INSTRUCTIONS}${targetInstruction}${partnerInstruction}\nAnalyze only the attached image and the supplied question. Answer in ${language === "zh" ? "Simplified Chinese" : "English"}. Do not infer sensitive traits or identity.`,
         content: messages.join("\n"),
         imageDataUrl: decodedImage.dataUrl,
         imageBytes: decodedImage.bytes.byteLength,
@@ -110,7 +115,7 @@ export async function POST(request: Request) {
       feature,
       subject: user ? `user:${user.id}` : `visitor:${visitor}`,
       language,
-      instructions: `${GURU_INSTRUCTIONS}${targetInstruction}\nAnswer in ${language === "zh" ? "Simplified Chinese" : "English"}.`,
+      instructions: `${GURU_INSTRUCTIONS}${targetInstruction}${partnerInstruction}\nAnswer in ${language === "zh" ? "Simplified Chinese" : "English"}.`,
       content: messages.join("\n"),
       preserveOnFailure: feature === "message_polish" ? originalPolishText(messages.at(-1) ?? "") : undefined,
       deps: {

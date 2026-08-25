@@ -306,6 +306,64 @@ export const communityMeetings = sqliteTable("community_meetings", {
   index("smartlingo_community_meeting_schedule_idx").on(table.endedAt, table.scheduledAt),
 ]);
 
+/**
+ * Nearby discovery is deliberately coarse and opt-in. SmartLingo never stores
+ * coordinates or an address for this feature; a member supplies a city/region
+ * label and can disable discovery without deleting learning history.
+ */
+export const smartLingoNearbyProfiles = sqliteTable("smartlingo_nearby_profiles", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  adultConfirmed: integer("adult_confirmed", { mode: "boolean" }).notNull().default(false),
+  coarseRegion: text("coarse_region").notNull().default(""),
+  sourceLanguage: text("source_language").notNull().default("zh"),
+  targetLanguage: text("target_language").notNull().default("en"),
+  level: text("level").notNull().default("beginner"),
+  studyMode: text("study_mode").notNull().default("mixed"),
+  availability: text("availability").notNull().default("flexible"),
+  bio: text("bio").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_nearby_enabled_ck", sql`${table.enabled} IN (0,1) AND ${table.adultConfirmed} IN (0,1)`),
+  check("smartlingo_nearby_region_ck", sql`length(${table.coarseRegion}) <= 80`),
+  check("smartlingo_nearby_language_pair_ck", sql`${table.sourceLanguage} <> ${table.targetLanguage}`),
+  check("smartlingo_nearby_level_ck", sql`${table.level} IN ('beginner','intermediate','advanced')`),
+  check("smartlingo_nearby_mode_ck", sql`${table.studyMode} IN ('vocabulary','challenge','speaking','mixed')`),
+  check("smartlingo_nearby_availability_ck", sql`${table.availability} IN ('weekdays','evenings','weekends','flexible')`),
+  check("smartlingo_nearby_bio_ck", sql`length(${table.bio}) <= 280`),
+  check("smartlingo_nearby_opt_in_ck", sql`${table.enabled} = 0 OR (${table.adultConfirmed} = 1 AND length(trim(${table.coarseRegion})) BETWEEN 2 AND 80)`),
+  index("smartlingo_nearby_match_idx").on(table.enabled, table.coarseRegion, table.sourceLanguage, table.targetLanguage, table.level, table.updatedAt),
+]);
+
+export const smartLingoNearbyBlocks = sqliteTable("smartlingo_nearby_blocks", {
+  blockerUserId: text("blocker_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  blockedUserId: text("blocked_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.blockerUserId, table.blockedUserId] }),
+  check("smartlingo_nearby_block_distinct_ck", sql`${table.blockerUserId} <> ${table.blockedUserId}`),
+  index("smartlingo_nearby_blocked_idx").on(table.blockedUserId, table.blockerUserId),
+]);
+
+export const smartLingoNearbyReports = sqliteTable("smartlingo_nearby_reports", {
+  id: text("id").primaryKey(),
+  reporterUserId: text("reporter_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  reportedUserId: text("reported_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  category: text("category").notNull(),
+  detail: text("detail").notNull().default(""),
+  status: text("status").notNull().default("open"),
+  createdAt: integer("created_at").notNull(),
+  reviewedAt: integer("reviewed_at"),
+}, (table) => [
+  check("smartlingo_nearby_report_distinct_ck", sql`${table.reporterUserId} <> ${table.reportedUserId}`),
+  check("smartlingo_nearby_report_category_ck", sql`${table.category} IN ('spam','harassment','unsafe','other')`),
+  check("smartlingo_nearby_report_status_ck", sql`${table.status} IN ('open','reviewed','closed')`),
+  check("smartlingo_nearby_report_detail_ck", sql`length(${table.detail}) <= 500`),
+  index("smartlingo_nearby_report_status_idx").on(table.status, table.createdAt),
+  index("smartlingo_nearby_report_target_idx").on(table.reportedUserId, table.createdAt),
+]);
+
 export const messages = sqliteTable("messages", {
   id: text("id").primaryKey(),
   threadId: text("thread_id").notNull().references(() => messageThreads.id, { onDelete: "cascade" }),

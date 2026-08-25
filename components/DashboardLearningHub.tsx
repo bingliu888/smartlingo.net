@@ -8,11 +8,11 @@ import styles from "./DashboardLearningHub.module.css";
 export type DashboardJoinedCourse = { id: string; title: string; targetLanguage: string; packageTier: string };
 type Feature = "smartcards" | "challenge" | "everyday" | "courses";
 
-const featureCopy: Record<Feature, { icon: string; en: string; zh: string; bodyEn: string; bodyZh: string }> = {
-  smartcards: { icon: "◇", en: "Smart Card Practice", zh: "智慧卡练习", bodyEn: "Review vocabulary by difficulty and frequency.", bodyZh: "按难度和常用度复习词汇。" },
-  challenge: { icon: "⚡", en: "Smart Card Challenge", zh: "智慧卡挑战", bodyEn: "Play the daily timed challenge and compare scores.", bodyZh: "参加每日限时挑战并比较成绩。" },
-  everyday: { icon: "☀", en: "Everyday speaking", zh: "生活口语", bodyEn: "Practice twelve useful real-life situations.", bodyZh: "练习十二个实用生活场景。" },
-  courses: { icon: "▤", en: "Courses", zh: "课程", bodyEn: "Continue courses you joined or subscribed to.", bodyZh: "继续已经加入或订阅的课程。" },
+const featureCopy: Record<Feature, { icon: string; domainEn: string; domainZh: string; en: string; zh: string; bodyEn: string; bodyZh: string }> = {
+  smartcards: { icon: "◇", domainEn: "Practice", domainZh: "练习", en: "Smart Card Practice", zh: "智慧卡练习", bodyEn: "Review vocabulary by difficulty and frequency.", bodyZh: "按难度和常用度复习词汇。" },
+  challenge: { icon: "⚡", domainEn: "Practice", domainZh: "练习", en: "Smart Card Challenge", zh: "智慧卡挑战", bodyEn: "Play the daily timed challenge and compare scores.", bodyZh: "参加每日限时挑战并比较成绩。" },
+  everyday: { icon: "☀", domainEn: "Speak", domainZh: "开口", en: "Everyday speaking", zh: "生活口语", bodyEn: "Practice twelve useful real-life situations.", bodyZh: "练习十二个实用生活场景。" },
+  courses: { icon: "▤", domainEn: "Learn", domainZh: "学习", en: "Courses", zh: "课程", bodyEn: "Continue courses you joined or subscribed to.", bodyZh: "继续已经加入或订阅的课程。" },
 };
 
 function featureHref(feature: Feature, lang: InterfaceLanguage, language: string) {
@@ -41,7 +41,7 @@ export function DashboardLearningHub({ lang, courses }: { lang: InterfaceLanguag
     <div className={styles.grid}>{features.map(feature => {
       const copy = featureCopy[feature];
       return <article key={feature}>
-        <div className={styles.title}><span>{copy.icon}</span><div><h3>{text(copy.en, copy.zh)}</h3><p>{text(copy.bodyEn, copy.bodyZh)}</p></div></div>
+        <div className={styles.title}><span>{copy.icon}</span><div><small>{text(copy.domainEn, copy.domainZh)}</small><h3>{text(copy.en, copy.zh)}</h3><p>{text(copy.bodyEn, copy.bodyZh)}</p></div></div>
         <div className={styles.languageList}>{languages.map(language => {
           const languageCourses = courses.filter(course => course.targetLanguage === language.code);
           return <Link href={featureHref(feature, lang, language.code)} key={language.code}>

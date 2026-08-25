@@ -40,12 +40,13 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   for (const skill of ["vocabulary", "reading", "writing", "listening", "speaking"]) {
     assert.match(recoveryPrompt, new RegExp(skill));
   }
-  assert.match(recoveryPrompt, /Learn through play/);
-  assert.match(recoveryPrompt, /shared header, click Learn through play/);
+  assert.match(recoveryPrompt, /shared header, click Learn/);
+  assert.match(recoveryPrompt, /opens `\/zh\/dashboard`/);
+  assert.match(recoveryPrompt, /navigate to `\/zh\/play`/);
   assert.match(recoveryPrompt, /click the Today task image/);
   assert.match(recoveryPrompt, /dialog opens over the home page without first navigating to Play/);
-  assert.match(recoveryPrompt, /\/zh\/play\?language=zh/);
-  assert.match(recoveryPrompt, /all six activity tiles/);
+  assert.match(recoveryPrompt, /navigate to `\/zh\/play`/);
+  assert.match(recoveryPrompt, /all six activity\s+tiles/);
   for (const activity of [
     "Today's Sprint",
     "SmartCard Practice",
@@ -77,6 +78,8 @@ test("local 3 AM task requires real Gmail, Chrome, login, and complete learning 
   assert.match(recoveryPrompt, /normal no-microphone path/);
   assert.match(recoveryPrompt, /Score History/);
   assert.match(recoveryPrompt, /Rankings/);
+  assert.match(recoveryPrompt, /Mika, Leo, and Aya/);
+  assert.match(recoveryPrompt, /Do not enable real-member Nearby/);
   assert.match(recoveryPrompt, /4 languages x \(Dashboard language section \+ 5 Course skills \+ completed\s+Today's Sprint \+ SmartCard Practice \+ SmartCard Challenge interaction \+ Everyday Speaking \+\s+Score History \+ Rankings\)/);
   assert.match(recoveryPrompt, /Close every QA-created Chrome tab/);
   assert.match(recoveryPrompt, /Never weaken an assertion/);

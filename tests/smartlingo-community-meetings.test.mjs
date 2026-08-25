@@ -17,7 +17,7 @@ test("community meetings have one active meeting per host and own durable group 
   assert.match(route, /You already have a live or scheduled meeting/);
 });
 
-test("retired Community page redirects while meeting runtime remains isolated", () => {
+test("Community page hosts meetings, discussions, and Nearby without merging their records", () => {
   const center = read("components/CommunityMeetings.tsx");
   const community = read("components/CommunityClient.tsx");
   const page = read("app/[lang]/community/page.tsx");
@@ -30,7 +30,9 @@ test("retired Community page redirects while meeting runtime remains isolated", 
   assert.match(community, /meetingCountdown/);
   assert.match(community, /joinMemberMeeting/);
   assert.match(community, /addEventListener\("smartlingo:meetings-changed"/);
-  assert.match(page, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(page, /<CommunityMeetings lang=\{lang\}\/?>/);
+  assert.match(page, /<CommunityClient lang=\{lang\}\/?>/);
+  assert.match(page, /<NearbyLearning lang=\{lang\}\/?>/);
 });
 
 test("only the host can end a meeting and ending closes its active realtime call", () => {

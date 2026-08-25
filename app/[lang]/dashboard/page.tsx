@@ -8,6 +8,7 @@ import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { DashboardLearningHub, type DashboardJoinedCourse } from "../../../components/DashboardLearningHub";
 import { DashboardDailySprint } from "../../../components/DashboardDailySprint";
+import { DashboardCommunityHub } from "../../../components/DashboardCommunityHub";
 import { homeInterfaceTranslations } from "../../../lib/home-interface-translations.generated";
 import { interfaceLanguages, safeInterfaceLanguage, translateHomeCopy } from "../../../lib/interface-locale";
 import "./dashboard-tuneup.css";
@@ -82,6 +83,7 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
         <div className="dashboard-title"><p className="section-kicker">{t.level}</p><h1>{t.welcome}, {user.displayName}.</h1><p>{t.subtitle}</p><a className="primary-button" href={`/${lang}/score-history`}>{locale === "zh" ? "查看成绩记录" : "View score history"} →</a></div>
         <DashboardDailySprint lang={locale} courses={joinedCourses}/>
         <DashboardLearningHub lang={locale} courses={joinedCourses}/>
+        <DashboardCommunityHub lang={locale}/>
         <MembershipPanel lang={locale} />
         <div className="dashboard-grid">
           <section className="dashboard-cert-card"><div className="dashboard-cert-count"><span aria-hidden="true">SL</span><strong>{certificateCount.toLocaleString()}</strong></div><div><p className="section-kicker">SMARTLINGO CERTS</p><h2>{t.certs}</h2><p>{t.certsBody}</p><a className="primary-button" href={`/${lang}/certificates`}>{t.certsAction} <span>→</span></a></div></section>
