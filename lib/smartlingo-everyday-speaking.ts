@@ -48,9 +48,17 @@ const CAFE_ESSENTIALS: Essential[] = [
 export function buildEverydaySpeakingDeck(language: SmartLingoCommunityLanguage, sceneId: SmartLingoEverydayScenarioId, level: SmartLingoLevel = "beginner") {
   const scene = SMARTLINGO_EVERYDAY_SCENARIOS.find(item => item.id === sceneId)!;
   const essentials = sceneId === "grocery" ? GROCERY_ESSENTIALS : sceneId === "cafe" ? CAFE_ESSENTIALS : null;
-  const vocabulary = essentials
-    ? essentials.map((item, index) => ({ id:`${scene.id}-${level}-word-${index + 1}`,kind:"word" as const,form:item.forms[language],pronunciation:item.pronunciation?.[language] || "",meaningZh:item.meaningZh,meaningEn:item.meaningEn,stageZh:"先认识实物",stageEn:"Meet the essentials",imageKey:beginnerVocabularyImageKey(item.forms[language],item.meaningZh,item.meaningEn) }))
-    : scene.days.slice(0,2).flatMap((day,stageIndex)=>beginnerVocabularySeedsForDay(language,day).map((seed,itemIndex)=>({id:`${scene.id}-${level}-word-${stageIndex + 1}-${itemIndex + 1}`,kind:"word" as const,form:seed[0],pronunciation:seed[1],meaningZh:seed[2],meaningEn:seed[3],stageZh:"场景关键词",stageEn:"Scene essentials",imageKey:beginnerVocabularyImageKey(seed[0],seed[2],seed[3])})));
+  const offset = level === "beginner" ? 0 : level === "intermediate" ? 1 : 2;
+  const essentialVocabulary = essentials ? [...essentials.slice(offset), ...essentials.slice(0, offset)] : null;
+  const vocabularyDays = level === "beginner" ? scene.days.slice(0, 2) : level === "intermediate" ? scene.days.slice(1, 3) : [scene.days[2], scene.days[0]];
+  const vocabularyStage = level === "beginner"
+    ? { zh: "初级 · 场景关键词", en: "Beginner · Scene essentials" }
+    : level === "intermediate"
+      ? { zh: "中级 · 情境变化词汇", en: "Intermediate · Situational vocabulary" }
+      : { zh: "高级 · 协商表达词汇", en: "Advanced · Negotiation vocabulary" };
+  const vocabulary = essentialVocabulary
+    ? essentialVocabulary.map((item, index) => ({ id:`${scene.id}-${level}-word-${index + 1}`,kind:"word" as const,form:item.forms[language],pronunciation:item.pronunciation?.[language] || "",meaningZh:item.meaningZh,meaningEn:item.meaningEn,stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(item.forms[language],item.meaningZh,item.meaningEn) }))
+    : vocabularyDays.flatMap((day,stageIndex)=>beginnerVocabularySeedsForDay(language,day).map((seed,itemIndex)=>({id:`${scene.id}-${level}-word-${stageIndex + 1}-${itemIndex + 1}`,kind:"word" as const,form:seed[0],pronunciation:seed[1],meaningZh:seed[2],meaningEn:seed[3],stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(seed[0],seed[2],seed[3])})));
   const sentences = dialogueSlides(scene.id, level, prebuiltEverydayDialogueLines(scene.id, language, level));
   return [...vocabulary, ...sentences];
 }

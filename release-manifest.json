@@ -1,63 +1,63 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-duplicate-sentence-tokens-2026-08-24-v34",
+  "releaseId": "smartlingo-everyday-level-speed-2026-08-24-v35",
   "site": "smartlingo.net",
   "title": {
-    "en": "Make duplicate sentence tokens unambiguous",
-    "zh": "消除组句重复词块歧义"
+    "en": "Make Everyday levels and speech speed explicit",
+    "zh": "明确显示生活口语等级与语速"
   },
   "purpose": {
-    "en": "Close the Japanese Writing defect found in the four-language matrix: a sentence with two identical particles left the already selected copy in the choice bank, making the second copy ambiguous and preventing the final slot from being filled.",
-    "zh": "修复四语矩阵发现的日语写作缺陷：句子含两个相同助词时，已选副本仍留在候选区，导致第二个副本有歧义、最后一个空位无法填满。"
+    "en": "Close the final Everyday acceptance gap: Intermediate and Advanced links preserved their URL level, but the player did not identify the selected level and opened with the same Beginner vocabulary; normal and slow playback settings also lacked an observable status.",
+    "zh": "修复最后一项生活口语验收缺口：中级、高级链接虽保留 URL 等级，但播放器未标识所选等级且仍以相同初级词汇开场；正常与慢速播放也缺少可观察状态。"
   },
   "features": {
     "en": [
-      "Remove each selected token from the available choice bank while keeping its unique identity in the answer slots.",
-      "Return a token to the choice bank when the learner removes it from an answer slot.",
-      "Allow repeated words and particles to be selected independently and still trigger automatic grading when all slots are filled."
+      "Show Beginner, Intermediate, or Advanced in the player heading and every slide's progress label.",
+      "Start each level with visibly distinct, level-labelled scenario vocabulary while retaining ten paired conversations per place and level.",
+      "Expose the selected normal 0.84× or genuinely slow 0.42× speech setting with aria-pressed controls and a live status."
     ],
     "zh": [
-      "词块选入句子后从候选区移除，同时在答案空位中保持唯一身份。",
-      "学习者从答案空位撤回词块时，该词块重新出现在候选区。",
-      "重复单词或助词可独立选择，并在填满所有空位后正常触发自动判题。"
+      "在播放器标题和每张幻灯片进度中显示初级、中级或高级。",
+      "每个等级从明显不同且带等级标签的场景词汇开始，同时保留每个地点、每个等级十组一问一答。",
+      "使用 aria-pressed 控件及实时状态显示正常 0.84× 或真正慢速 0.42× 语速设置。"
     ]
   },
   "affected": {
     "en": [
-      "Sentence-builder interaction in subscribed courses and shared Sprint surfaces; no Clerk, payment, administrator, sibling-site, or database schema behavior."
+      "Everyday Speaking presentation and prebuilt vocabulary ordering for all twelve languages and twelve places; no Clerk, payment, administrator, sibling-site, microphone, or database schema behavior."
     ],
     "zh": [
-      "订阅课程及共享 Sprint 界面的组句交互；不影响 Clerk、支付、管理员、兄弟站点或数据库结构。"
+      "十二种语言、十二个地点的生活口语展示与预构建词汇顺序；不影响 Clerk、支付、管理员、兄弟站点、麦克风或数据库结构。"
     ]
   },
   "changes": {
     "en": [
-      "Filter selected token identities out of the visible choice bank instead of leaving disabled duplicates.",
-      "Keep slot removal reversible so every selected token can return to the bank.",
-      "Add a regression contract for duplicate-label selection and removal."
+      "Derive a bilingual visible level name from the selected route level and render it in the player.",
+      "Rotate scenario vocabulary by level and label each vocabulary stage with its level objective.",
+      "Add exact effective speed status and regression coverage for all levels, languages, and speed controls."
     ],
     "zh": [
-      "按唯一身份从可见候选区过滤已选词块，不再保留禁用的同名副本。",
-      "保留空位撤回能力，使任何已选词块都能回到候选区。",
-      "增加重复标签选择及撤回的回归合同。"
+      "从所选路由等级生成双语可见等级名称并显示在播放器中。",
+      "按等级轮换场景词汇，并以等级目标标注每个词汇阶段。",
+      "增加精确有效语速状态，以及覆盖全部等级、语言和语速控件的回归测试。"
     ]
   },
   "validation": {
     "en": [
-      "Run the duplicate-token regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
-      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner to complete the same 16-token Japanese Writing sentence with two identical particles and verify feedback plus counter advance."
+      "Run the Everyday level/speed contracts, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
+      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner to open English airport Beginner, Intermediate, and Advanced and verify distinct visible level/data plus the normal/slow state transition."
     ],
     "zh": [
-      "执行重复词块回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
-      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员完成含两个相同助词的同一道 16 词块日语写作题，并验证反馈与题号推进。"
+      "执行生活口语等级/语速合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
+      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员打开英语机场初、中、高三级，并验证不同可见等级/数据以及正常与慢速状态切换。"
     ]
   },
   "deferred": {
     "en": [
-      "The remaining en/ja/es/it course matrix and observable normal-versus-slow audio timing require the fresh Terra production retest after this deployment."
+      "The final bilingual Project QA report requires a fresh Terra production retest of the three Everyday levels and observable speed state after this deployment."
     ],
     "zh": [
-      "剩余英/日/西/意真实学习矩阵及可观察的正常/慢速音频时长，需要在本次发布后由 Terra 重新执行生产验收。"
+      "最终双语 Project QA 报告需要 Terra 在本次发布后复测生活口语三级及可观察语速状态。"
     ]
   },
   "siteAdaptations": {

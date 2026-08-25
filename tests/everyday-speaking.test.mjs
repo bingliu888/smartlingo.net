@@ -57,6 +57,20 @@ test("the player includes three scored attempts, two speeds, explicit continuati
   assert.match(player, /\/api\/everyday-speaking\/speech/);
   assert.match(player, /watchdog = window\.setTimeout/);
   assert.doesNotMatch(player, />🎙 \{listening \?/);
+  assert.match(player, /languageName\} · \{levelName\} ·/);
+  assert.match(player, /aria-pressed=\{modelRate > \.7\}/);
+  assert.match(player, /aria-pressed=\{modelRate <= \.7\}/);
+  assert.match(player, /当前语速：慢速 0\.42×/);
+});
+
+test("everyday levels start with visibly distinct vocabulary and level stages", () => {
+  for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
+    for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
+      const decks = ["beginner", "intermediate", "advanced"].map(level => buildEverydaySpeakingDeck(language, scene.id, level));
+      assert.equal(new Set(decks.map(deck => deck[0]?.form)).size, 3, `${language}/${scene.id} first word per level`);
+      assert.deepEqual(decks.map(deck => deck[0]?.stageEn.split(" · ")[0]), ["Beginner", "Intermediate", "Advanced"]);
+    }
+  }
 });
 
 test("everyday speaking has a validated multilingual server transcription fallback", async () => {
