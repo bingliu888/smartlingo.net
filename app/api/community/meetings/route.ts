@@ -52,9 +52,22 @@ async function listMeetings(currentUserId: string) {
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const meetings = await listMeetings(user.id);
-  return NextResponse.json({ currentUserId: user.id, serverNow: nowSeconds(), meetings });
+  const meetings = await listMeetings(user?.id || "");
+  const visibleMeetings = user ? meetings : meetings.map(meeting => ({
+    id: meeting.id,
+    ownerUserId: "",
+    ownerName: meeting.ownerName,
+    ownerImageUrl: meeting.ownerImageUrl,
+    threadId: "",
+    title: meeting.title,
+    scheduledAt: meeting.scheduledAt,
+    participantCount: meeting.participantCount,
+    callParticipantCount: meeting.activeCallId ? meeting.callParticipantCount : 0,
+    activeCallId: null,
+    isOwner: false,
+    status: meeting.status,
+  }));
+  return NextResponse.json({ currentUserId: user?.id || "", viewerAuthenticated: Boolean(user), serverNow: nowSeconds(), meetings: visibleMeetings });
 }
 
 export async function POST(request: Request) {

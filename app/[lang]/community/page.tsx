@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { CommunityClient } from "../../../components/CommunityClient";
 import { CommunityMeetings } from "../../../components/CommunityMeetings";
 import { NearbyLearning } from "../../../components/NearbyLearning";
@@ -22,8 +22,9 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   const { lang } = await params;
   if (!isInterfaceLanguage(lang)) notFound();
   const user = await requestUser();
-  if (!user) redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/community`)}`);
+  const signedIn = Boolean(user);
   const text = (english: string, chinese: string) => interfaceText(lang, english, chinese);
+  const signInHref = `/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/community`)}`;
 
   return <main className="community-page" data-layout-page="community" data-layout-ready="true">
     <SiteHeader lang={lang}/>
@@ -37,10 +38,10 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
       <Link href={`/${lang}/colleges`}><small>03 · COLLEGES</small><strong>{text("Learning schools", "学习学院")}</strong><span>{text("College → language department → platform courses", "学院 → 语言部门 → 平台课程")}</span></Link>
       <Link href={`/${lang}/play/rankings`}><small>04 · RANKINGS</small><strong>{text("Fair rankings", "公平排行榜")}</strong><span>{text("Compare verified learning days by category and language", "按类别和语言比较已验证学习日")}</span></Link>
     </nav>
-    <NearbyLearning lang={lang}/>
-    <CommunityMeetings lang={lang}/>
-    <section className="community-discussions-heading" id="discussions"><div><p className="section-kicker">DISCUSS · REFLECT · HELP</p><h2>{text("The learning commons", "学习共享区")}</h2></div><Link href={`/${lang}/messages`}>{text("Open messages", "打开消息")} →</Link></section>
-    <CommunityClient lang={lang}/>
+    <NearbyLearning lang={lang} signedIn={signedIn}/>
+    <CommunityMeetings lang={lang} signedIn={signedIn}/>
+    <section className="community-discussions-heading" id="discussions"><div><p className="section-kicker">DISCUSS · REFLECT · HELP</p><h2>{text("The learning commons", "学习共享区")}</h2></div><Link href={signedIn ? `/${lang}/messages` : signInHref}>{signedIn ? text("Open messages", "打开消息") : text("Sign in to take part", "登录后参与")} →</Link></section>
+    <CommunityClient lang={lang} signedIn={signedIn}/>
     <SiteFooter lang={lang}/>
   </main>;
 }

@@ -1,85 +1,85 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-community-ai-classmates-2026-08-24-v38",
+  "releaseId": "smartlingo-public-community-responsive-headings-2026-08-24-v39",
   "site": "smartlingo.net",
   "title": {
-    "en": "Launch the four-choice learning navigation and safe Nearby AI classmates",
-    "zh": "发布四大主导航与安全的 Nearby AI 同学"
+    "en": "Open Community and Nearby AI learning while fixing responsive learning headlines",
+    "zh": "开放社区与 Nearby AI 学习并修复学习页响应式标题"
   },
   "purpose": {
-    "en": "Make SmartLingo easier to understand as Learn, Practice, Speak, Community, and Me while giving every signed-in learner an immediately available, clearly disclosed AI classmate and an optional privacy-bounded way to find real study partners.",
-    "zh": "把 SmartLingo 清晰组织为学习、练习、口语、社区和我的入口，并让每位登录学员都能立即使用明确标注的 AI 同学，同时可在隐私边界内自愿寻找真人学伴。"
+    "en": "Let every visitor see SmartLingo's learning community and practice immediately with clearly disclosed AI classmates, while keeping real-member contact and every community mutation behind sign-in and making key learning headlines fit desktop, iPad, and phone screens cleanly.",
+    "zh": "让每位访客都能浏览 SmartLingo 学习社区并立即与明确标注的 AI 同学练习，同时继续把真人联系与所有社区写入操作置于登录边界内，并让关键学习标题在桌面、iPad 与手机上整齐适配。"
   },
   "features": {
     "en": [
-      "Replace the former product-link header with four stable learning choices—Learn, Practice, Speak, and Community—while the account control remains the Me destination on desktop and mobile.",
-      "Restore Community as a signed-in learning hub with Nearby, study discussions, live study meetings, colleges, rankings, and direct access to three always-available AI classmates.",
-      "Add Mika for conversation, Leo for friendly challenge practice, and Aya for real-life roleplay; every greeting, card, and response identifies the partner as AI and never presents it as a real nearby person.",
-      "Offer optional adult-only real-member Nearby matching by user-entered city or broad region, exact language pair, level, activity, and availability, with block and report controls on every result.",
-      "Explain and surface SmartLingo's two-level learning-school model: a college or school contains language departments, and each department receives administrator-created courses and the four free learning products."
+      "Make Community a public-read destination instead of redirecting anonymous visitors to sign-in; public topics, replies, meeting summaries, colleges, rankings, and AI partners remain visible.",
+      "Give anonymous visitors three clearly labeled AI learning partners and a 12-language practice selector, with direct access to the existing public assistant experience.",
+      "Keep real-member Nearby, member search, posting, replying, meeting scheduling, meeting joining, blocking, and reporting gated by sign-in; public meeting payloads never expose private thread IDs.",
+      "Repair homepage, SmartCard, and Community headline sizing and wrapping so iPad-width screens no longer isolate the final Chinese character or overflow the viewport."
     ],
     "zh": [
-      "把原产品链接导航改为四个稳定学习入口——学习、练习、口语和社区；桌面与移动端账户控制继续作为“我的”入口。",
-      "恢复社区为登录用户学习中心，整合 Nearby、学习讨论、实时学习会、学院、排行榜，以及三个常驻 AI 同学的直接入口。",
-      "新增会话伙伴 Mika、友好挑战伙伴 Leo 和生活角色扮演伙伴 Aya；每个问候、卡片和回复都明确标注 AI，绝不伪装成附近真人。",
-      "新增仅限成年用户自愿开启的真人 Nearby：只按用户填写的城市或大区域、精确语言组合、级别、活动和时间匹配，每张结果卡都提供屏蔽与举报。",
-      "在产品中说明并展示 SmartLingo 两层学习学校模式：学院或学校下设语言部门，每个部门自动获得管理员创建的课程与四项免费学习产品。"
+      "把社区改为公开只读目的地，匿名访客不再被重定向登录；公开主题、回复、学习会摘要、学院、排行榜与 AI 学伴均可浏览。",
+      "为匿名访客提供三个明确标注的 AI 学伴及 12 种练习语言选择，并直接进入现有公开 AI 助手体验。",
+      "真人 Nearby、成员搜索、发帖、回复、安排或加入学习会、屏蔽和举报仍要求登录；公开学习会数据不会暴露私密会话 ID。",
+      "修复首页、SmartCard 与社区标题的字号和换行，使 iPad 宽度不再出现末尾中文单字孤行，也不会产生横向溢出。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo header navigation, Learn routing, Community, assistant personas, signed-in dashboard, My colleges explanation, D1 community schema, and the local 3 AM real-user QA plan.",
-      "The change is isolated to smartlingo.net and does not alter Clerk identity configuration, payments, supervisor prices, the 70/30 split, Cloudflare resource boundaries, sibling sites, or external-service credentials."
+      "SmartLingo Community page and public-read APIs, Nearby AI entry, community meetings, homepage social heading, SmartCard heading, and their contract tests.",
+      "The release is isolated to smartlingo.net and does not change Clerk configuration, signed-in learning progress, payments, college economics, Cloudflare resource boundaries, sibling sites, or external credentials."
     ],
     "zh": [
-      "影响 SmartLingo 顶部导航、学习路由、社区、AI 助手角色、登录面板、我的学院说明、D1 社区结构及本机凌晨 3 点真实用户 QA 计划。",
-      "变更仅限 smartlingo.net，不修改 Clerk 身份配置、支付、主管套餐价格、70/30 分成、Cloudflare 资源边界、兄弟站点或外部服务凭据。"
+      "影响 SmartLingo 社区页面与公开只读 API、Nearby AI 入口、社区学习会、首页社交标题、SmartCard 标题及其契约测试。",
+      "本次发布仅限 smartlingo.net，不修改 Clerk 配置、登录用户学习进度、支付、学院经济模型、Cloudflare 资源边界、兄弟站点或外部凭据。"
     ]
   },
   "changes": {
     "en": [
-      "Add migration 0170 with isolated Nearby profile, block, and report tables; no latitude, longitude, address, school, workplace, email, or device-location field is stored.",
-      "Add authenticated Nearby read/save/block/report APIs with bounded input, supported-language validation, bidirectional blocking, private no-store responses, and exact language-pair matching.",
-      "Add responsive Community and dashboard modules, route-aware AI partner prompts, and a system boundary that forbids an AI classmate from claiming human identity, location, lived experience, or persistent memory.",
-      "Update the 3 AM recovery plan to verify the four-choice navigation, all six anonymous Play activities, explicit AI disclosure, and the rule that scheduled QA never enables real-member Nearby."
+      "Split Community access into a public read path and authenticated interaction path; server-side POST handlers remain protected even if a client attempts to bypass the UI.",
+      "Prevent anonymous Community from requesting the real-member Nearby endpoint, while making AI partner cards and target-language selection available without location, profile, or cookie sharing.",
+      "Return public topics and meeting summaries with anonymous viewer metadata; omit member directories for anonymous visitors and blank private meeting thread IDs.",
+      "Use bounded responsive typography, natural line wrapping, full-width heading containers, and phone/iPad/desktop layout rules without adding horizontal scrolling.",
+      "No D1 migration is required for this release."
     ],
     "zh": [
-      "新增 0170 迁移，隔离存储 Nearby 资料、屏蔽和举报；不存储经纬度、地址、学校、单位、邮箱或设备定位字段。",
-      "新增需要登录的 Nearby 读取、保存、屏蔽和举报 API，包含输入长度限制、支持语言校验、双向屏蔽、private no-store 响应及精确语言组合匹配。",
-      "新增响应式社区与面板模块、按角色区分的 AI 学伴提示词，并在系统边界禁止 AI 同学声称真人身份、位置、真实经历或持久记忆。",
-      "更新凌晨 3 点恢复测试计划，验证四大导航、匿名 Play 六个入口、明确 AI 身份，以及定时 QA 绝不开启真人 Nearby 的规则。"
+      "把社区访问拆分为公开读取与登录互动两条路径；即使客户端绕过界面，服务端 POST 写入仍受认证保护。",
+      "匿名社区不会请求真人 Nearby 接口；AI 学伴卡片和目标语言选择无需位置、个人资料或跨功能 Cookie 即可使用。",
+      "公开返回主题与学习会摘要并标记匿名查看者；匿名访客不获取成员目录，私密学习会 thread ID 会被清空。",
+      "采用有界响应式字号、自然换行、全宽标题容器与手机、iPad、桌面布局规则，且不引入横向滚动。",
+      "本次发布不需要 D1 迁移。"
     ]
   },
   "validation": {
     "en": [
-      "All 365 repository tests pass, including Nearby privacy/safety, AI disclosure, dashboard placement, 21-day learning, 48,000 vocabulary rows, speech speed, sentence distractors, scores, rankings, courses, colleges, and Clerk boundaries.",
-      "The production vinext build, TypeScript, changed-file ESLint with zero errors, sensitive-data scan, whitespace validation, and 65-migration D1 first-run/idempotent rerun with zero foreign-key violations pass.",
-      "The isolated authenticated runtime verifies 12 protected pages and 6 APIs, and native WebKit verifies 260/260 combinations across 26 routes, Chinese and English, and five desktop, iPad, and phone viewports."
+      "All 366 repository tests pass, including the new public-read/authenticated-write Community boundary, anonymous AI Nearby, private meeting IDs, protected navigation, and responsive headline contracts.",
+      "The production vinext build, TypeScript, changed-file ESLint with zero errors, sensitive-data scan, artifact validation, whitespace validation, and shared site-policy gates pass.",
+      "Browser testing covers anonymous Community navigation and refresh, the 12-language AI selector, AI assistant entry, homepage and SmartCard headings, Chinese and English, and five phone, iPad, laptop, and desktop viewports with zero horizontal overflow."
     ],
     "zh": [
-      "仓库 365 项测试全部通过，覆盖 Nearby 隐私与安全、AI 身份披露、面板位置、21 天学习、48,000 行词汇、语速、组句干扰词、成绩、排行榜、课程、学院及 Clerk 边界。",
-      "生产 vinext 构建、TypeScript、修改文件 ESLint 零错误、敏感信息扫描、空白校验，以及 65 个 D1 迁移的首次执行与幂等重跑均通过，外键违规为零。",
-      "隔离认证运行时验证 12 个受保护页面与 6 个 API；原生 WebKit 在 26 条路由、中英双语以及桌面、iPad、手机五种视口上完成 260/260 验证。"
+      "仓库 366 项测试全部通过，覆盖新增的社区公开读取／登录写入边界、匿名 AI Nearby、私密学习会 ID、受保护导航及响应式标题契约。",
+      "生产 vinext 构建、TypeScript、修改文件 ESLint 零错误、敏感信息扫描、产物验证、空白校验及共享站点策略门禁全部通过。",
+      "浏览器验证覆盖匿名进入与刷新社区、12 种语言 AI 选择器、AI 助手入口、首页与 SmartCard 标题、中英双语及五种手机、iPad、笔记本和桌面视口，横向溢出为零。"
     ]
   },
   "deferred": {
     "en": [
-      "Scheduled and release QA deliberately leaves real-member Nearby disabled and does not create public location or invitation data; real matching becomes testable only after consenting adult members opt in.",
-      "The first AI-classmate release is conversation-first and reuses the audited SmartLingo assistant gateway; richer original animation and shared mission state can be added without weakening the explicit-AI boundary."
+      "Anonymous visitors can learn with AI and read public community material, but must sign in before contacting a real member or changing community state; this is an intentional safety boundary rather than missing functionality.",
+      "Scheduled and release QA do not enable real-member Nearby, create posts, send messages, or schedule meetings."
     ],
     "zh": [
-      "定时与发布 QA 会刻意保持真人 Nearby 关闭，不创建公开地区或邀请数据；只有成年会员主动同意并开启后，真人匹配才具备可测试数据。",
-      "首版 AI 同学以会话为主并复用已审计的 SmartLingo 助手网关；后续可增加原创动画与共同任务状态，但不会削弱明确标注 AI 的边界。"
+      "匿名访客可与 AI 学习并阅读公开社区内容，但联系真人或改变社区状态前必须登录；这是有意设置的安全边界，而非功能缺失。",
+      "定时与发布 QA 不会开启真人 Nearby、创建帖子、发送消息或安排学习会。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo's 12 interface languages, 21-day learning paths, picture vocabulary, Today’s Sprint, SmartCard, challenge, Everyday Speaking, course progress, anonymous feature-scoped cookies, signed-in D1 progress, and GitHub Actions to Cloudflare delivery.",
-      "Competitor review informed the hierarchy of short practice, social encouragement, AI roleplay, and organization learning, but no Duolingo artwork, copy, code, user data, or proprietary curriculum was imported."
+      "Preserve SmartLingo's 12 interface languages, 21-day learning paths, anonymous feature-scoped progress, signed-in D1 progress, AI disclosure, and GitHub Actions to Cloudflare delivery.",
+      "Community is useful before sign-in through public educational content and AI practice, while human social features continue to follow consent, privacy, and abuse-control requirements."
     ],
     "zh": [
-      "保留 SmartLingo 的 12 种界面语言、21 天学习路径、图片词汇、今日速成、SmartCard、挑战、生活口语、课程进度、匿名功能级 Cookie、登录用户 D1 进度及 GitHub Actions 至 Cloudflare 发布。",
-      "竞品研究仅用于理解短练习、社交鼓励、AI 角色扮演和组织学习的层级；没有导入 Duolingo 美术、文案、代码、用户数据或专有课程。"
+      "保留 SmartLingo 的 12 种界面语言、21 天学习路径、匿名功能级进度、登录用户 D1 进度、AI 身份披露及 GitHub Actions 至 Cloudflare 发布流程。",
+      "社区在登录前即可通过公开教育内容与 AI 练习产生价值；真人社交功能继续遵守同意、隐私与滥用控制要求。"
     ]
   }
 }

@@ -117,7 +117,11 @@ test("privacy, terms, and refund policy remain visibly labeled legal drafts", as
 
 test("public assets are local and the responsive system contains text at desktop, tablet, and phone widths", async () => {
   await access(new URL("../public/smartlingo-language-community-1600.png", import.meta.url));
-  const css = await read("../app/globals.css");
+  const [css, smartcards, communityCss] = await Promise.all([
+    read("../app/globals.css"),
+    read("../app/[lang]/smartcards/page.tsx"),
+    read("../app/[lang]/community/community-hub.css"),
+  ]);
 
   assert.match(css, /\.lingo-home\{[^}]*overflow-x:clip/);
   assert.match(css, /\.lingo-hero\{width:min\(1420px,100%\)/);
@@ -127,4 +131,9 @@ test("public assets are local and the responsive system contains text at desktop
   assert.match(css, /@media\(max-width:820px\)/);
   assert.match(css, /@media\(max-width:560px\)/);
   assert.match(css, /grid-template-columns:1fr!important/);
+  assert.match(css, /\.lingo-social-section \.lingo-heading\{max-width:none\}/);
+  assert.match(css, /\.lingo-social-section \.lingo-heading h2\{width:100%;text-wrap:wrap;overflow-wrap:normal\}/);
+  assert.match(smartcards, /smartcard-directory-hero h1\{width:100%;max-width:100%/);
+  assert.match(smartcards, /clamp\(46px,5\.8vw,82px\)/);
+  assert.match(communityCss, /@media\(max-width:1080px\)\{\.community-hero\{grid-template-columns:1fr\}/);
 });

@@ -41,11 +41,11 @@ function initialProfile(lang: InterfaceLanguage): Profile {
   };
 }
 
-export function NearbyLearning({ lang }: { lang: InterfaceLanguage }) {
+export function NearbyLearning({ lang, signedIn }: { lang: InterfaceLanguage; signedIn: boolean }) {
   const text = useCallback((english: string, chinese: string) => interfaceText(lang, english, chinese), [lang]);
   const [profile, setProfile] = useState<Profile>(() => initialProfile(lang));
   const [matches, setMatches] = useState<Match[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(!signedIn);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
@@ -75,8 +75,11 @@ export function NearbyLearning({ lang }: { lang: InterfaceLanguage }) {
   }, [lang, text]);
 
   // The request resolves before it mutates visible discovery state.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { load().catch(error => { setLoaded(true); setNotice(error instanceof Error ? error.message : text("Unable to load Nearby.", "暂时无法读取 Nearby。")); }); }, [load, text]);
+  useEffect(() => {
+    if (!signedIn) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load().catch(error => { setLoaded(true); setNotice(error instanceof Error ? error.message : text("Unable to load Nearby.", "暂时无法读取 Nearby。")); });
+  }, [load, signedIn, text]);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -136,12 +139,18 @@ export function NearbyLearning({ lang }: { lang: InterfaceLanguage }) {
   const levelName = (level: Level) => ({ beginner: text("Beginner", "初级"), intermediate: text("Intermediate", "中级"), advanced: text("Advanced", "高级") })[level];
   const modeName = (mode: StudyMode) => ({ vocabulary: text("Vocabulary", "词汇"), challenge: text("Challenge", "挑战"), speaking: text("Speaking", "口语"), mixed: text("Mixed practice", "混合练习") })[mode];
   const availabilityName = (value: Availability) => ({ weekdays: text("Weekdays", "工作日"), evenings: text("Evenings", "晚间"), weekends: text("Weekends", "周末"), flexible: text("Flexible", "时间灵活") })[value];
+  const signInHref = `/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/community`)}`;
 
   return <section className="nearby-learning" id="nearby" aria-labelledby="nearby-title">
     <header className="nearby-heading">
       <div><p className="section-kicker">NEARBY · LEARN TOGETHER</p><h2 id="nearby-title">{text("Find a study partner—or start with an AI classmate.", "找同城学习伙伴，也可以马上和 AI 同学一起练。")}</h2><p>{text("AI partners are always available and are clearly labeled. Real-member discovery is optional, adult-only, and uses only the city or region you enter—never GPS or an exact address.", "AI 学习伙伴始终在线并明确标注。真人 Nearby 仅限成年会员主动开启，只使用您填写的城市或区域，绝不读取 GPS 或精确地址。")}</p></div>
-      <button type="button" className="secondary-button" onClick={() => setEditing(value => !value)}>{editing ? text("Close settings", "关闭设置") : profile.enabled ? text("Edit Nearby", "修改 Nearby") : text("Turn on Nearby", "开启 Nearby")}</button>
+      {signedIn ? <button type="button" className="secondary-button" onClick={() => setEditing(value => !value)}>{editing ? text("Close settings", "关闭设置") : profile.enabled ? text("Edit Nearby", "修改 Nearby") : text("Turn on Nearby", "开启 Nearby")}</button> : <Link className="secondary-button" href={signInHref}>{text("Sign in for real Nearby", "登录后匹配真人")}</Link>}
     </header>
+
+    <div className="ai-partner-toolbar">
+      <div><strong>{text("Choose what you want to practice", "选择想练的语言")}</strong><span>{text("No account is needed to start with an AI classmate.", "无需账户即可与 AI 同学开始练习。")}</span></div>
+      <label><span>{text("I am learning", "我在学习")}</span><select value={profile.targetLanguage} onChange={event => setProfile(value => ({ ...value, targetLanguage: event.target.value }))}>{SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => <option value={language.code} key={language.code}>{language.nativeName}</option>)}</select></label>
+    </div>
 
     <div className="ai-partner-grid" aria-label={text("AI study partners", "AI 学习伙伴")}>{SMARTLINGO_AI_STUDY_PARTNERS.map(partner => <article className={`ai-partner ${partner.accent}`} key={partner.id}>
       <div className="ai-partner-avatar" aria-hidden="true">{partner.avatar}<i>AI</i></div>
@@ -151,7 +160,7 @@ export function NearbyLearning({ lang }: { lang: InterfaceLanguage }) {
       <Link href={`/${lang}/assistant?language=${profile.targetLanguage}&mode=conversation&partner=${partner.id}`}>{text("Learn together now", "现在一起学")} →</Link>
     </article>)}</div>
 
-    {editing ? <form className="nearby-settings" onSubmit={save}>
+    {signedIn && editing ? <form className="nearby-settings" onSubmit={save}>
       <div className="nearby-setting-lead"><div><strong>{text("Real-member discovery", "真人学习伙伴发现")}</strong><span>{text("You control whether your profile appears.", "是否展示由您随时控制。")}</span></div><label className="nearby-toggle"><input type="checkbox" checked={profile.enabled} onChange={event => setProfile(value => ({ ...value, enabled: event.target.checked }))}/><span>{profile.enabled ? text("On", "开启") : text("Off", "关闭")}</span></label></div>
       <div className="nearby-fields">
         <label><span>{text("City or broad region", "城市或大区域")}</span><input value={profile.coarseRegion} onChange={event => setProfile(value => ({ ...value, coarseRegion: event.target.value }))} maxLength={80} placeholder={text("Example: Irvine, California", "例如：加州尔湾")}/><small>{text("Do not enter an address, school, workplace, or coordinates.", "请勿填写地址、学校、单位或坐标。")}</small></label>
@@ -167,6 +176,7 @@ export function NearbyLearning({ lang }: { lang: InterfaceLanguage }) {
     </form> : null}
 
     <section className="nearby-real-members" aria-label={text("Nearby real learners", "Nearby 真人学习伙伴")}>
+      {!signedIn ? <div className="nearby-public-access"><div><p className="section-kicker">REAL LEARNERS · OPT-IN</p><h3>{text("Real Nearby stays private until you choose to join.", "真人 Nearby 只在您主动加入后开放。")}</h3><p>{text("Sign in to optionally match with adult learners who share your language pair and broad region. SmartLingo never uses GPS or shows an exact address.", "登录后可选择匹配同语言组合、同大区域的成年学习者。SmartLingo 不读取 GPS，也不展示精确地址。")}</p></div><Link className="primary-button" href={signInHref}>{text("Sign in for real learners", "登录后寻找真人伙伴")} →</Link></div> : <>
       <header><div><p className="section-kicker">REAL LEARNERS · OPT-IN</p><h3>{profile.enabled ? text(`Learners in ${profile.coarseRegion}`, `${profile.coarseRegion} 的学习伙伴`) : text("Real-member Nearby is off", "真人 Nearby 尚未开启")}</h3></div>{profile.enabled ? <span>{matches.length}</span> : null}</header>
       {!loaded ? <p>{text("Loading…", "读取中…")}</p> : profile.enabled && matches.length ? <div className="nearby-match-grid">{matches.map(member => <article key={member.id}>
         <div className="nearby-member-title"><span>{member.imageUrl ? <img src={member.imageUrl} alt=""/> : member.displayName.slice(0, 1).toUpperCase()}</span><div><h4>{member.displayName}</h4><p>{member.coarseRegion}</p></div></div>
@@ -175,7 +185,7 @@ export function NearbyLearning({ lang }: { lang: InterfaceLanguage }) {
         <button className="primary-button" type="button" onClick={() => void invite(member)} disabled={busy === member.id}>{busy === member.id ? text("Sending…", "发送中…") : text("Invite to learn together", "邀请一起学习")}</button>
         <div className="nearby-safety"><button type="button" onClick={() => void safetyAction(member.id, "block")} disabled={busy === `block-${member.id}`}>{text("Block", "屏蔽")}</button><button type="button" onClick={() => setReporting(value => value === member.id ? "" : member.id)}>{text("Report", "举报")}</button></div>
         {reporting === member.id ? <div className="nearby-report"><select aria-label={text("Report reason", "举报原因")} value={reportReason} onChange={event => setReportReason(event.target.value)}><option value="spam">{text("Spam", "垃圾信息")}</option><option value="harassment">{text("Harassment", "骚扰")}</option><option value="unsafe">{text("Unsafe behavior", "不安全行为")}</option><option value="other">{text("Other", "其他")}</option></select><button type="button" onClick={() => void safetyAction(member.id, "report")} disabled={busy === `report-${member.id}`}>{text("Submit & hide", "提交并隐藏")}</button></div> : null}
-      </article>)}</div> : <p>{profile.enabled ? text(`No opted-in ${target?.nameEn || "language"} partners match this region yet. Your AI classmates are ready above.`, `这个区域暂时没有匹配的${target?.nameZh || "语言"}真人伙伴；上面的 AI 同学已经可以陪练。`) : text("Turn it on only when you want real members with the same language pair to find you. AI classmates remain available without location sharing.", "只有想让相同语言组合的真人会员找到您时才开启；不分享区域也可以一直使用 AI 同学。")}</p>}
+      </article>)}</div> : <p>{profile.enabled ? text(`No opted-in ${target?.nameEn || "language"} partners match this region yet. Your AI classmates are ready above.`, `这个区域暂时没有匹配的${target?.nameZh || "语言"}真人伙伴；上面的 AI 同学已经可以陪练。`) : text("Turn it on only when you want real members with the same language pair to find you. AI classmates remain available without location sharing.", "只有想让相同语言组合的真人会员找到您时才开启；不分享区域也可以一直使用 AI 同学。")}</p>}</>}
     </section>
     {notice ? <p className="nearby-notice" role="status">{notice}</p> : null}
   </section>;

@@ -30,9 +30,32 @@ test("Community page hosts meetings, discussions, and Nearby without merging the
   assert.match(community, /meetingCountdown/);
   assert.match(community, /joinMemberMeeting/);
   assert.match(community, /addEventListener\("smartlingo:meetings-changed"/);
-  assert.match(page, /<CommunityMeetings lang=\{lang\}\/?>/);
-  assert.match(page, /<CommunityClient lang=\{lang\}\/?>/);
-  assert.match(page, /<NearbyLearning lang=\{lang\}\/?>/);
+  assert.match(page, /<CommunityMeetings lang=\{lang\} signedIn=\{signedIn\}\/?>/);
+  assert.match(page, /<CommunityClient lang=\{lang\} signedIn=\{signedIn\}\/?>/);
+  assert.match(page, /<NearbyLearning lang=\{lang\} signedIn=\{signedIn\}\/?>/);
+});
+
+test("Community meetings and discussions are public to read while mutations remain authenticated", () => {
+  const meetingsRoute = read("app/api/community/meetings/route.ts");
+  const communityRoute = read("app/api/community/route.ts");
+  const communityClient = read("components/CommunityClient.tsx");
+  const meetingsClient = read("components/CommunityMeetings.tsx");
+  const meetingsGet = meetingsRoute.slice(meetingsRoute.indexOf("export async function GET"), meetingsRoute.indexOf("export async function POST"));
+  const communityGet = communityRoute.slice(communityRoute.indexOf("export async function GET"), communityRoute.indexOf("export async function POST"));
+  assert.doesNotMatch(meetingsGet, /Unauthorized/);
+  assert.doesNotMatch(communityGet, /Unauthorized/);
+  assert.match(meetingsGet, /viewerAuthenticated: Boolean\(user\)/);
+  assert.match(communityGet, /viewerAuthenticated: Boolean\(user\)/);
+  assert.match(meetingsGet, /ownerUserId: ""/);
+  assert.match(meetingsGet, /threadId: ""/);
+  assert.match(meetingsGet, /activeCallId: null/);
+  assert.match(communityGet, /const authorProjection = user \? "u\.id" : "''"/);
+  assert.match(meetingsRoute, /if \(!user\) return NextResponse\.json\(\{ error: "Unauthorized" \}/);
+  assert.match(communityRoute, /if \(!user\) return NextResponse\.json\(\{ error: "Unauthorized" \}/);
+  assert.match(communityClient, /signedIn \? <form className="topic-compose"/);
+  assert.match(communityClient, /Open for everyone to read/);
+  assert.match(meetingsClient, /signedIn \? <button className="meeting-schedule"/);
+  assert.match(meetingsClient, /Sign in to join/);
 });
 
 test("only the host can end a meeting and ending closes its active realtime call", () => {

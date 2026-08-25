@@ -29,9 +29,12 @@ const protectedApis = [
   "/api/classes",
   "/api/classes/course_en_basic/learning",
   "/api/classes/course_en_basic/vocabulary?timeZone=America%2FLos_Angeles",
-  "/api/community",
   "/api/messages",
   "/api/messages?thread=layout-check",
+];
+const publicReadApis = [
+  "/api/community",
+  "/api/community/meetings",
 ];
 
 function run(command, args, options = {}) {
@@ -96,7 +99,11 @@ async function assertControls(baseURL, token) {
     const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
     if (anonymous.status !== 401) throw new Error(`anonymous API control failed: ${path} returned ${anonymous.status}`);
   }
-  process.stdout.write(`Authenticated layout controls verified: ${protectedPages.length} pages + ${protectedApis.length} APIs return 200; anonymous controls still redirect or return 401.\n`);
+  for (const path of publicReadApis) {
+    const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
+    if (anonymous.status !== 200) throw new Error(`public-read API control failed: ${path} returned ${anonymous.status}`);
+  }
+  process.stdout.write(`Authenticated layout controls verified: ${protectedPages.length} pages + ${protectedApis.length} protected APIs; ${publicReadApis.length} Community read APIs remain public.\n`);
 }
 
 async function stopChild(child) {
@@ -140,6 +147,7 @@ async function main() {
     CLOUDFLARE_INCLUDE_PROCESS_ENV: "false",
     WRANGLER_WRITE_LOGS: "false",
     WRANGLER_LOG_PATH: join(work, "wrangler.log"),
+    WRANGLER_REGISTRY_PATH: join(work, "registry"),
     MINIFLARE_REGISTRY_PATH: join(work, "registry"),
   });
 

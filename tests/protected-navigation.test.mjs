@@ -12,6 +12,8 @@ test("the primary navigation exposes the four learning choices", async () => {
     assert.ok(header.includes(`href={\`/\${lang}/${path}\`} data-nav="${key}"`));
   }
   assert.doesNotMatch(header, /\/classes/);
-  assert.match(community, /<NearbyLearning lang=\{lang\}\/?>/);
-  assert.match(community, /<CommunityMeetings lang=\{lang\}\/?>/);
+  assert.match(community, /const signedIn = Boolean\(user\)/);
+  assert.doesNotMatch(community, /redirect\(/);
+  assert.match(community, /<NearbyLearning lang=\{lang\} signedIn=\{signedIn\}\/?>/);
+  assert.match(community, /<CommunityMeetings lang=\{lang\} signedIn=\{signedIn\}\/?>/);
 });

@@ -34,10 +34,14 @@ test("Community always offers clearly disclosed AI classmates and keeps real mat
     read("../components/AssistantClient.tsx"),
     read("../app/api/assistant/route.ts"),
   ]);
-  assert.match(page, /<NearbyLearning lang=\{lang\}\/?>/);
+  assert.match(page, /<NearbyLearning lang=\{lang\} signedIn=\{signedIn\}\/?>/);
+  assert.doesNotMatch(page, /redirect\(/);
   for (const name of ["Mika", "Leo", "Aya"]) assert.match(partners, new RegExp(name));
   assert.match(client, /AI STUDY PARTNER/);
   assert.match(client, /partner=\$\{partner\.id\}/);
+  assert.match(client, /No account is needed to start with an AI classmate/);
+  assert.match(client, /if \(!signedIn\) return/);
+  assert.match(client, /Sign in for real learners/);
   assert.match(assistant, /not a real person/);
   assert.match(assistant, /SmartLingo AI 学习伙伴，不是真人/);
   assert.match(assistantRoute, /Never imply that \$\{partner\.name\} is a real person/);

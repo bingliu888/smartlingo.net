@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { InterfaceLanguage } from "../lib/interface-locale";
 
@@ -29,7 +30,7 @@ function countdown(seconds: number, zh: boolean) {
   return zh ? `${pad(hours)}:${pad(minutes)}:${pad(secs)} 后开始` : `starts in ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 }
 
-export function CommunityMeetings({ lang }: { lang: InterfaceLanguage }) {
+export function CommunityMeetings({ lang, signedIn }: { lang: InterfaceLanguage; signedIn: boolean }) {
   const zh = lang === "zh";
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [open, setOpen] = useState(true);
@@ -90,6 +91,7 @@ export function CommunityMeetings({ lang }: { lang: InterfaceLanguage }) {
     date.setSeconds(0, 0);
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
+  const signInHref = `/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/community`)}`;
 
   return <section className="community-meetings" data-layout-fill="community-meetings" data-layout-text-fit="community-meetings">
     <header>
@@ -98,12 +100,12 @@ export function CommunityMeetings({ lang }: { lang: InterfaceLanguage }) {
         <span><small>{zh ? "社区实时空间" : "COMMUNITY LIVE SPACE"}</small><strong>{zh ? "实时会议" : "Live Meetings"}</strong></span>
         <b>{live.length} {zh ? "进行中" : "live"} · {upcoming.length} {zh ? "即将开始" : "upcoming"}</b><i>{open ? "−" : "+"}</i>
       </button>
-      <button className="meeting-schedule" type="button" disabled={ownsMeeting} onClick={() => { setOpen(true); setShowForm(value => !value); if (!start) setStart(defaultStart()); }}>
+      {signedIn ? <button className="meeting-schedule" type="button" disabled={ownsMeeting} onClick={() => { setOpen(true); setShowForm(value => !value); if (!start) setStart(defaultStart()); }}>
         {ownsMeeting ? (zh ? "您已有一个会议" : "One meeting already active") : (zh ? "预约会议" : "Schedule")}
-      </button>
+      </button> : <Link className="meeting-schedule" href={signInHref}>{zh ? "登录后预约" : "Sign in to schedule"}</Link>}
     </header>
     {open && <div className="meeting-center">
-      {showForm && <form className="meeting-form" onSubmit={schedule}>
+      {signedIn && showForm && <form className="meeting-form" onSubmit={schedule}>
         <label>{zh ? "会议标题" : "Meeting title"}<input autoFocus value={title} onChange={event => setTitle(event.target.value)} minLength={3} maxLength={80} required placeholder={zh ? "例如：意大利语旅行会话练习" : "e.g. Italian travel conversation practice"}/></label>
         <label>{zh ? "开始时间" : "Start time"}<input type="datetime-local" value={start} onChange={event => setStart(event.target.value)} required/></label>
         <div><button type="button" onClick={() => setShowForm(false)}>{zh ? "取消" : "Cancel"}</button><button disabled={busy}>{zh ? "创建会议与群聊" : "Create meeting & chat"}</button></div>
@@ -117,7 +119,7 @@ export function CommunityMeetings({ lang }: { lang: InterfaceLanguage }) {
         {visible.map(meeting => <article key={meeting.id}>
           <span className="meeting-host-avatar">{meeting.ownerImageUrl ? <img src={meeting.ownerImageUrl} alt=""/> : meeting.ownerName.slice(0, 1).toUpperCase()}</span>
           <div><small>{meeting.status === "live" ? (zh ? "● 正在进行" : "● LIVE NOW") : countdown(meeting.scheduledAt - now, zh)}</small><h3>{meeting.title}</h3><p>{zh ? `发起人：${meeting.ownerName}` : `Hosted by ${meeting.ownerName}`} · {meeting.participantCount} {zh ? "位成员" : "members"}{meeting.activeCallId ? ` · ${meeting.callParticipantCount} ${zh ? "人在通话" : "in call"}` : ""}</p></div>
-          <div className="meeting-actions"><button disabled={busy} onClick={() => meetingAction(meeting, "join")}>{meeting.status === "live" ? (zh ? "加入会议" : "Join meeting") : (zh ? "进入群聊" : "Enter chat")}</button>{meeting.isOwner && <button className="meeting-end" disabled={busy} onClick={() => meetingAction(meeting, "end")}>{meeting.status === "live" ? (zh ? "结束" : "End") : (zh ? "取消预约" : "Cancel")}</button>}</div>
+          <div className="meeting-actions">{signedIn ? <button disabled={busy} onClick={() => meetingAction(meeting, "join")}>{meeting.status === "live" ? (zh ? "加入会议" : "Join meeting") : (zh ? "进入群聊" : "Enter chat")}</button> : <Link href={signInHref}>{zh ? "登录后加入" : "Sign in to join"}</Link>}{signedIn && meeting.isOwner && <button className="meeting-end" disabled={busy} onClick={() => meetingAction(meeting, "end")}>{meeting.status === "live" ? (zh ? "结束" : "End") : (zh ? "取消预约" : "Cancel")}</button>}</div>
         </article>)}
         {!visible.length && <div className="meeting-empty"><b>{tab === "live" ? (zh ? "目前没有正在进行的会议" : "No live meetings right now") : (zh ? "目前没有已预约的会议" : "No upcoming meetings")}</b><p>{zh ? "预约一个主题会话，邀请社区会员边聊边练。" : "Schedule a focused conversation and practice together."}</p></div>}
       </div>

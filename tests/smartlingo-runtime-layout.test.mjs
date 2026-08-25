@@ -169,6 +169,7 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /database_id: "00000000-0000-4000-8000-000000000001"/);
   assert.doesNotMatch(releaseSource, /\broutes:/);
   assert.match(releaseSource, /WRANGLER_SEND_METRICS: "false"/);
+  assert.match(releaseSource, /WRANGLER_REGISTRY_PATH: join\(work, "registry"\)/);
   assert.match(releaseSource, /CLOUDFLARE_INCLUDE_PROCESS_ENV: "false"/);
   assert.match(releaseSource, /writeFile\(sessionCookieFile, `\$\{token\}\\n`, \{ mode: 0o600 \}\)/);
   assert.match(releaseSource, /"--session-cookie-file", sessionCookieFile/);
@@ -176,6 +177,8 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /'layout-placement-active'/);
   assert.match(releaseSource, /anonymous page control failed/);
   assert.match(releaseSource, /anonymous API control failed/);
+  assert.match(releaseSource, /public-read API control failed/);
+  assert.match(releaseSource, /const publicReadApis = \[/);
   assert.match(releaseSource, /rm\(work, \{ recursive: true, force: true \}\)/);
   assert.match(packageSource, /"validate:layout": "node scripts\/verify-runtime-layout-release\.mjs"/);
 });

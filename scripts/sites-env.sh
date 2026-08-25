@@ -20,6 +20,7 @@ export XDG_DATA_HOME="${runtime_root}/xdg-data"
 export TMPDIR="${runtime_root}/tmp"
 export WRANGLER_WRITE_LOGS=false
 export WRANGLER_LOG_PATH="${runtime_root}/wrangler/logs"
+export WRANGLER_REGISTRY_PATH="${runtime_root}/wrangler/registry"
 export MINIFLARE_REGISTRY_PATH="${runtime_root}/wrangler/registry"
 
 # The runtime may provide a global npm cache. Keep the image's read-only Sites
