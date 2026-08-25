@@ -1,60 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-course-reading-entry-2026-08-24-v31",
+  "releaseId": "smartlingo-course-dialogue-text-path-2026-08-24-v32",
   "site": "smartlingo.net",
   "title": {
-    "en": "Restore the separate subscribed-course Reading entry",
-    "zh": "恢复订阅课程的独立阅读入口"
+    "en": "Enable no-microphone course dialogue learning",
+    "zh": "启用无需麦克风的课程对话学习"
   },
   "purpose": {
-    "en": "Close the production navigation defect found during the four-language matrix: the Reading URL loaded the default five-skill view because the course menu and route mapping omitted Reading.",
-    "zh": "修复四语生产矩阵发现的导航缺陷：课程菜单及路由映射漏掉阅读，导致阅读 URL 打开默认五技能视图。"
+    "en": "Close the production acceptance gap where a typed course-dialogue response could not be submitted unless the learner first completed three optional microphone scores.",
+    "zh": "修复生产验收发现的缺口：课程对话虽可输入文本，但必须先完成三次可选麦克风评分才能提交。"
   },
   "features": {
     "en": [
-      "Expose Reading as its own course training tile alongside vocabulary, speaking, listening, writing, and quiz.",
-      "Map training=reading to the existing Reading tab in the server-rendered learning session.",
-      "Preserve the same database-authoritative daily task, grading, checkpoint, and Continue flow."
+      "Make typed dialogue responses a complete first-class path when Repeat After Me is off.",
+      "Keep three-attempt voice scoring available as an optional enhancement rather than a submission prerequisite.",
+      "Clarify the voice control and typed-submit labels while preserving database-authoritative grading and feedback."
     ],
     "zh": [
-      "在词汇、口语、听力、写作和测验旁新增独立的课程阅读训练 tile。",
-      "将 training=reading 映射到服务器渲染学习会话中已有的阅读标签。",
-      "保持同一数据库权威的每日任务、判分、断点及继续流程。"
+      "跟读关闭时，文本对话回答可作为完整正式学习路径。",
+      "三次语音评分保留为可选增强，不再是提交前置条件。",
+      "明确区分可选语音按钮与文本提交按钮，同时保持数据库权威判分和反馈。"
     ]
   },
   "affected": {
     "en": [
-      "Signed-in subscribed-course training navigation for all course languages; no Clerk, payment, administrator, sibling-site, or anonymous learning behavior."
+      "Signed-in subscribed-course dialogue training for all course languages; no Clerk, payment, administrator, sibling-site, or anonymous learning behavior."
     ],
     "zh": [
-      "所有课程语言的登录订阅课程训练导航；不影响 Clerk、支付、管理员、兄弟站点或匿名学习行为。"
+      "所有课程语言的登录订阅课程对话训练；不影响 Clerk、支付、管理员、兄弟站点或匿名学习行为。"
     ]
   },
   "changes": {
     "en": [
-      "Add a bilingual Reading tile to the course training menu.",
-      "Recognize the Reading query in the signed-in session page's initial-skill mapping.",
-      "Add regression coverage for both the visible entry and route-to-tab contract."
+      "Remove the three-voice-score condition from the typed dialogue submit action.",
+      "Relabel the microphone action as optional and add explicit no-microphone guidance.",
+      "Add regression coverage proving typed dialogue submission is not gated by voice scores."
     ],
     "zh": [
-      "在课程训练菜单新增双语阅读 tile。",
-      "在登录学习会话页的初始技能映射中识别阅读查询参数。",
-      "为可见入口及路由到标签合同增加回归覆盖。"
+      "移除文本对话提交操作对三次语音评分的依赖。",
+      "把麦克风操作明确标记为可选，并增加无需麦克风的操作说明。",
+      "增加回归覆盖，证明文本对话提交不受语音评分门槛限制。"
     ]
   },
   "validation": {
     "en": [
-      "Run the course-entry regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
-      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner to enter Spanish and Italian Reading directly and complete a real graded item."
+      "Run the dialogue UI regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
+      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner with Repeat After Me off to submit real Spanish and Italian typed dialogue responses without microphone access."
     ],
     "zh": [
-      "执行课程入口回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
-      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员直接进入西语、意语阅读并完成真实判分。"
+      "执行对话 UI 回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
+      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员在跟读关闭且不访问麦克风的条件下提交真实西语、意语文本对话回答。"
     ]
   },
   "deferred": {
     "en": [
-      "The remaining en/ja/es/it real-learning matrix and observable normal-versus-slow audio timing require the fresh Terra production retest after this deployment."
+      "The remaining en/ja/es/it course matrix and observable normal-versus-slow audio timing require the fresh Terra production retest after this deployment."
     ],
     "zh": [
       "剩余英/日/西/意真实学习矩阵及可观察的正常/慢速音频时长，需要在本次发布后由 Terra 重新执行生产验收。"

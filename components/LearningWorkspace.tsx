@@ -1781,18 +1781,18 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
                 </label>}
                 {skill === "dialogue" && !task.options?.length ? <div className="sl-dialogue-actions" aria-label={lang === "zh" ? "口语训练方式" : "Speaking practice modes"}>
                   <button type="button" disabled={dictating === "dialogue" || Boolean(busyKey)} onClick={() => startDialogueTraining(task, "follow")}>{dialogueMode === "follow" ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "跟我说" : "Repeat after me")}</button>
-                  <button type="button" disabled={dictating === "dialogue" || Boolean(busyKey)} onClick={() => startDialogueTraining(task, "answer")}>{dialogueMode === "answer" ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "回答我" : "Answer me")}</button>
+                  <button type="button" disabled={dictating === "dialogue" || Boolean(busyKey)} onClick={() => startDialogueTraining(task, "answer")}>{dialogueMode === "answer" ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "语音回答（可选）" : "Voice answer (optional)")}</button>
                   <button type="button" onClick={() => playText(task.audioText || task.prompt, task.speechLocale, .84)}>🔊 {lang === "zh" ? "正常语速" : "Normal"}</button>
                   <button type="button" onClick={() => playText(task.audioText || task.prompt, task.speechLocale, .58)}>🐢 {lang === "zh" ? "慢速" : "Slow"}</button>
                   <div className="sl-dialogue-scores">{[1, 2, 3].map(turn => <b className={turn <= dialogueScores.length ? "scored" : ""} key={turn}>{dialogueScores[turn - 1] ?? turn}</b>)}</div>
-                  <small>{lang === "zh" ? "导师先示范，再连续聆听并评分 3 次；完成后自动显示反馈。" : "The tutor models, then listens and scores three attempts before showing feedback automatically."}</small>
+                  <small>{lang === "zh" ? "无需麦克风：可在文本框输入回答并提交。三次语音评分是可选练习。" : "No microphone needed: type a response and submit it. Three scored voice attempts are optional."}</small>
                 </div> : null}
                 {skill === "writing" && !task.options?.length && !task.sentenceExercises?.length ? <button className="sl-voice-action" type="button" disabled={dictating === skill} onClick={() => startDictation(skill, task.speechLocale)}>
                   ◉ {dictating === skill ? t.listeningNow : t.voice}
                 </button> : null}
                 <div className="sl-task-actions">
                   <button type="button" disabled={Boolean(busyKey)} onClick={() => submitTask(task, true)}>{t.skip}</button>
-                  <button className="sl-primary-action" type="button" disabled={Boolean(busyKey) || !answer.trim() || (skill === "dialogue" && dialogueScores.length < 3)} onClick={() => submitTask(task, false)}>{lang === "zh" ? "检查" : "Check"}</button>
+                  <button className="sl-primary-action" type="button" disabled={Boolean(busyKey) || !answer.trim()} onClick={() => submitTask(task, false)}>{skill === "dialogue" ? (lang === "zh" ? "提交文本回答" : "Submit text response") : (lang === "zh" ? "检查" : "Check")}</button>
                 </div>
               </>}
             </div> : <p className="sl-empty-task">{t.noTask}</p>}

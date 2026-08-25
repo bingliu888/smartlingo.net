@@ -48,10 +48,13 @@ test("the subscribed course dashboard opens each training skill without another 
   assert.match(workspace, /startDictation\(skill, task\.speechLocale\)/);
   assert.match(workspace, /submitTask\(task, false\)/);
   assert.match(workspace, /跟我说/);
-  assert.match(workspace, /回答我/);
+  assert.match(workspace, /语音回答（可选）/);
   assert.match(workspace, /startDialogueTraining\(task, "follow"\)/);
   assert.match(workspace, /startDialogueTraining\(task, "answer"\)/);
   assert.match(workspace, /submitTask\(task, false, transcript\)/);
+  assert.match(workspace, /无需麦克风：可在文本框输入回答并提交/);
+  assert.match(workspace, /skill === "dialogue" \? \(lang === "zh" \? "提交文本回答"/);
+  assert.doesNotMatch(workspace, /skill === "dialogue" && dialogueScores\.length < 3/);
 });
 
 test("the person-avatar pronunciation coach leads three scored follow-me turns", async () => {
