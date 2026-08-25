@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildSprintPlan, gradeSprintPlan, sanitizeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
 import { isPublicBeginnerSprintClassId, requirePublicBeginnerSprintCourse } from "../lib/smartlingo-learning-access.ts";
+import { ANONYMOUS_SPRINT_COOKIE, anonymousSprintCookie, parseAnonymousSprintCookie, resumeAnonymousSprintState } from "../lib/smartlingo-anonymous-sprint.ts";
 
 const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   id: `word-${index + 1}`,
@@ -133,7 +134,7 @@ test("Primary navigation exposes the four learning choices and the task image op
   assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
 });
 
-test("anonymous Sprint overwrites its short cookie while signed-in members resume D1 checkpoints", async () => {
+test("anonymous Sprint resumes its matching short cookie while signed-in members resume D1 checkpoints", async () => {
   for (const language of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.equal(isPublicBeginnerSprintClassId(`course_${language}_basic`), true);
   }
@@ -149,11 +150,14 @@ test("anonymous Sprint overwrites its short cookie while signed-in members resum
   const sprintPage = readFileSync(new URL("../app/[lang]/classes/[classId]/sprint/page.tsx", import.meta.url), "utf8");
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");
   const sprintClient = readFileSync(new URL("../components/DailySprint.tsx", import.meta.url), "utf8");
+  const anonymousSprint = readFileSync(new URL("../lib/smartlingo-anonymous-sprint.ts", import.meta.url), "utf8");
   const sentenceBuilder = readFileSync(new URL("../components/SentenceBuilderRound.tsx", import.meta.url), "utf8");
-  assert.match(sprintPage, /query\.source==="play"/);
+  const playPicker = readFileSync(new URL("../components/PlayDailySprintPicker.tsx", import.meta.url), "utf8");
+  assert.match(sprintPage, /query\.source === "play"/);
   assert.match(sprintPage, /isPublicBeginnerSprintClassId\(classId\)/);
-  assert.match(sprintPage, /query\.source==="play"\|\|isPublicBeginnerSprintClassId\(classId\)/);
+  assert.match(sprintPage, /query\.source === "play" \|\| isPublicBeginnerSprintClassId\(classId\)/);
   assert.match(sprintPage, /publicPlay=\{publicPlay\}/);
+  assert.match(sprintPage, /freshAnonymous=\{query\.fresh === "1"\}/);
   assert.match(sprintRoute, /requirePublicBeginnerSprintCourse/);
   assert.match(sprintRoute, /if \(!value\.anonymous && value\.user\) await value\.database\.batch\(\[/);
   assert.match(sprintRoute, /smartlingo_daily_sprint_run_days/);
@@ -163,10 +167,16 @@ test("anonymous Sprint overwrites its short cookie while signed-in members resum
   assert.match(sprintClient, /action: "checkpoint"/);
   assert.match(sprintRoute, /progress_json AS progressJson/);
   assert.match(sprintRoute, /run\.status='in_progress' ORDER BY run\.started_at DESC LIMIT 1/);
-  assert.match(sprintRoute, /smartlingo-anonymous-sprint/);
+  assert.match(anonymousSprint, /smartlingo-anonymous-sprint/);
   assert.match(sprintRoute, /Set-Cookie/);
-  assert.match(sprintRoute, /Max-Age=7200/);
+  assert.match(anonymousSprint, /ANONYMOUS_SPRINT_MAX_AGE = 7200/);
   assert.match(sprintRoute, /if \(value\.anonymous \|\| !value\.user\)/);
+  assert.match(sprintRoute, /resumeAnonymousSprintState/);
+  assert.match(sprintRoute, /resumed: Boolean\(resumedAnonymous\)/);
+  assert.match(playPicker, /source=play&fresh=1/);
+  assert.match(sprintClient, /url\.searchParams\.delete\("fresh"\)/);
+  assert.match(sprintClient, /await saveTransition\(nextStage, nextWordIndex\)/);
+  assert.match(sprintClient, /durationMinutes, dayNumber: activeDay/);
   assert.match(sprintClient, /免费注册/);
   assert.match(sprintClient, /登录/);
   assert.match(sprintClient, /recognition\.stop\(\)/);
@@ -196,6 +206,33 @@ test("anonymous Sprint overwrites its short cookie while signed-in members resum
   assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id/);
   assert.match(sprintRoute, /adaptiveSentenceRounds/);
   assert.doesNotMatch(sprintRoute, /resumeRunId/);
+});
+
+test("anonymous Sprint cookie preserves the advanced step and elapsed timer only for the same feature", () => {
+  const state = {
+    runId: "anonymous-run-1",
+    classId: "course_en_basic",
+    language: "en",
+    durationMinutes: 10,
+    dayNumber: 1,
+    roundIndex: 0,
+    stage: "vocabulary",
+    wordIndex: 1,
+    responses: [{ vocabularyAnswers: { hello: "hello" }, vocabularySeen: ["hello"] }, {}],
+    remainingSeconds: 587,
+    updatedAt: 1_000,
+  };
+  const header = `unrelated=value; ${anonymousSprintCookie(state).split(";")[0]}`;
+  const parsed = parseAnonymousSprintCookie(header);
+  assert.equal(parsed?.runId, state.runId);
+  assert.equal(parsed?.wordIndex, 1);
+  assert.equal(parsed?.responses[0].vocabularyAnswers.hello, "hello");
+  const resumed = resumeAnonymousSprintState(parsed, { classId: "course_en_basic", language: "en", durationMinutes: 10, dayNumber: 1 }, 1_007);
+  assert.equal(resumed?.wordIndex, 1);
+  assert.equal(resumed?.remainingSeconds, 580);
+  assert.equal(resumeAnonymousSprintState(parsed, { classId: "course_ja_basic", language: "ja", durationMinutes: 10, dayNumber: 1 }, 1_007), null);
+  assert.equal(resumeAnonymousSprintState(parsed, { classId: "course_en_basic", language: "en", durationMinutes: 10, dayNumber: 2 }, 1_007), null);
+  assert.equal(parseAnonymousSprintCookie(`${ANONYMOUS_SPRINT_COOKIE}=not-json`), null);
 });
 
 test("sentence building always crosses from one language to another", () => {
