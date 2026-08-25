@@ -1,5 +1,6 @@
 import { getDatabase } from "@/lib/auth";
 import { isSmartLingoCommunityLanguage } from "@/lib/smartlingo-language-communities";
+import { compareVocabularyLearningOrder } from "@/lib/smartlingo-vocabulary-order";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ type Row = {
   sequence: number;
   difficulty: number;
   frequencyDegree: number;
+  gradeLevel: number;
   form: string;
   pronunciation: string;
   targetPhonetic: string;
@@ -32,7 +34,7 @@ function guides(value: string) {
 }
 
 function dailyDeck(catalog: Row[], startWordId = "") {
-  const ordered = [...catalog].sort((left, right) => left.difficulty - right.difficulty || right.frequencyDegree - left.frequencyDegree || left.sequence - right.sequence);
+  const ordered = [...catalog].sort(compareVocabularyLearningOrder);
   const requestedIndex = startWordId ? ordered.findIndex(item => item.id === startWordId) : 0;
   const startIndex = requestedIndex >= 0 ? requestedIndex : 0;
   return ordered.slice(startIndex, startIndex + 20).map((item, index) => {
@@ -56,11 +58,11 @@ export async function GET(request: Request) {
   }
   const database = getDatabase();
   const result = await database.prepare(`SELECT id,target_language AS targetLanguage,sequence,form,pronunciation,
-    target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,difficulty,frequency_degree AS frequencyDegree,
+    target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,difficulty,frequency_degree AS frequencyDegree,grade_level AS gradeLevel,
     pronunciation_guides AS pronunciationGuides,meaning_en AS meaningEn,meaning_zh AS meaningZh,scene_key AS sceneKey
     FROM smartlingo_vocabulary_items
     WHERE target_language=? AND level='beginner' AND review_status='published'
-    ORDER BY difficulty ASC,frequency_degree DESC,sequence,id`).bind(language).run<Row>();
+    ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id`).bind(language).run<Row>();
   const catalog = result.results || [];
   const items = catalog.map(item => ({
     id: item.id,
@@ -71,6 +73,7 @@ export async function GET(request: Request) {
     sceneKey: item.sceneKey,
     difficulty: item.difficulty,
     frequencyDegree: item.frequencyDegree,
+    gradeLevel: item.gradeLevel,
     direction: item.targetLanguage === "ar" ? "rtl" : "ltr",
   }));
   const localDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());

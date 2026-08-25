@@ -8,6 +8,9 @@ import {
   nextLearningDay,
   safeLearningDay,
 } from "../lib/smartlingo-learning-days.ts";
+import { learningSpeechRate, SMARTLINGO_NORMAL_SPEECH_RATE, SMARTLINGO_SLOW_SPEECH_RATE } from "../lib/smartlingo-speech.ts";
+import { buildSentenceChoiceTokens } from "../lib/smartlingo-sentence-exercises.ts";
+import { compareVocabularyLearningOrder } from "../lib/smartlingo-vocabulary-order.ts";
 
 const source = path => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -45,7 +48,7 @@ test("Sprint, SmartCard, courses, rewards, score history, and rankings share the
   for (const marker of [">≪</", ">‹</", ">›</", ">≫</"]) assert.match(picker, new RegExp(marker));
   assert.match(sprintPicker, /LearningDayPicker/);
   assert.match(sprintPicker, /day=\$\{day\}/);
-  assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,sequence,id LIMIT 1000/);
+  assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id LIMIT 1000/);
   assert.match(sprintRoute, /\(dayNumber - 1\) \* 20/);
   assert.match(sprintRoute, /nextLearningDay/);
   assert.match(smartcardRoute, /LIMIT 500/);
@@ -80,7 +83,24 @@ test("level tiles, fallback pictures, and genuinely slow speech are visible cont
   assert.match(challenge, /level=advanced/);
   assert.match(picture, /vocabulary-picture-fallback/);
   assert.match(picture, /generic concept illustration/);
-  assert.match(speech, /slow \? \.42/);
+  assert.match(speech, /SMARTLINGO_SLOW_SPEECH_RATE = \.42/);
   assert.match(course, /speakLearningText/);
-  assert.match(everydayPlayer, /slow \? \.42/);
+  assert.match(everydayPlayer, /speakLearningText/);
+});
+
+test("learning order, genuinely slow speech, and two sentence distractors are deterministic", () => {
+  assert.equal(learningSpeechRate(.58), SMARTLINGO_SLOW_SPEECH_RATE);
+  assert.equal(learningSpeechRate(.86), .86);
+  assert.equal(learningSpeechRate(SMARTLINGO_NORMAL_SPEECH_RATE), SMARTLINGO_NORMAL_SPEECH_RATE);
+  const words = [
+    { id: "grade", difficulty: 2, frequencyDegree: 8, gradeLevel: 0, sequence: 3 },
+    { id: "frequency", difficulty: 2, frequencyDegree: 9, gradeLevel: 12, sequence: 2 },
+    { id: "difficulty", difficulty: 1, frequencyDegree: 1, gradeLevel: 12, sequence: 1 },
+  ].sort(compareVocabularyLearningOrder);
+  assert.deepEqual(words.map(item => item.id), ["difficulty", "frequency", "grade"]);
+  const answer = ["I", "need", "water"];
+  const choices = buildSentenceChoiceTokens(answer, ["I", "want", "coffee", "water"], "en", "test");
+  assert.equal(choices.length, answer.length + 2);
+  assert.deepEqual(choices.slice(0, answer.length), answer);
+  assert.equal(new Set(choices.slice(answer.length).map(item => item.toLowerCase())).size, 2);
 });

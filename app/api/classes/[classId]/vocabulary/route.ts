@@ -9,16 +9,17 @@ import {
   type VocabularyReviewState,
 } from "@/lib/smartlingo-learning";
 import { localDateKey, requireOfficialClassMembership, safeTimeZone } from "@/lib/smartlingo-learning-access";
-import { buildCourseSentenceBank, tokenizeSentence } from "@/lib/smartlingo-sentence-exercises";
+import { buildCourseSentenceBank, buildSentenceChoiceTokens, tokenizeSentence } from "@/lib/smartlingo-sentence-exercises";
 import type { SmartLingoLearningLanguage, SmartLingoLevel } from "@/lib/smartlingo-learning";
 import { adaptiveSentenceRounds } from "@/lib/smartlingo-adaptive-sentences";
 import type { SmartLingoSentenceExercise } from "@/lib/smartlingo-sentence-exercises";
+import { compareVocabularyLearningOrder } from "@/lib/smartlingo-vocabulary-order";
 
 export const dynamic = "force-dynamic";
 
 type CatalogRow = {
   id: string; stableKey: string; version: string; targetLanguage: string; level: string;
-  difficulty: number; frequencyDegree: number; sceneKey: string; sequence: number; form: string; pronunciation: string;
+  difficulty: number; frequencyDegree: number; gradeLevel: number; sceneKey: string; sequence: number; form: string; pronunciation: string;
   targetPhonetic: string; pronunciationEn: string; pronunciationZh: string;
   pronunciationGuides: string;
   meaningEn: string; meaningZh: string;
@@ -97,13 +98,13 @@ async function authorize(request: Request, classId: string) {
 async function catalogFor(database: ReturnType<typeof getDatabase>, targetLanguage: string, level: string) {
   const rank = LEVEL_RANK[level] || 1;
   const result = await database.prepare(`SELECT id,stable_key AS stableKey,version,target_language AS targetLanguage,
-    level,difficulty,frequency_degree AS frequencyDegree,scene_key AS sceneKey,sequence,form,pronunciation,target_phonetic AS targetPhonetic,
+    level,difficulty,frequency_degree AS frequencyDegree,grade_level AS gradeLevel,scene_key AS sceneKey,sequence,form,pronunciation,target_phonetic AS targetPhonetic,
     pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,
     pronunciation_guides AS pronunciationGuides,
     meaning_en AS meaningEn,meaning_zh AS meaningZh
     FROM smartlingo_vocabulary_items WHERE target_language=? AND review_status='published'
       AND (level='beginner' OR (? >= 2 AND level='intermediate') OR (? >= 3 AND level='advanced'))
-    ORDER BY difficulty ASC,frequency_degree DESC,sequence,id`)
+    ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id`)
     .bind(targetLanguage, rank, rank).run<CatalogRow>();
   return result.results || [];
 }
@@ -160,6 +161,7 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) pronunciationGuides = parsed as Record<string, string>;
   } catch { /* Migration constraints keep published rows valid. */ }
   const sentence = adaptiveSentence || buildCourseSentenceBank(item.targetLanguage as SmartLingoLearningLanguage, item.level as SmartLingoLevel)[(item.sequence - 1) % 120];
+  const answerTokens = tokenizeSentence(sentence.targetSentence, item.targetLanguage as SmartLingoLearningLanguage);
   return {
     id: item.id,
     progressKey: progressKey(item),
@@ -175,7 +177,8 @@ function cardPayload(item: CatalogRow, catalog: CatalogRow[], progress: Map<stri
     sceneKey: item.sceneKey,
     difficulty: item.difficulty,
     frequencyDegree: item.frequencyDegree,
-    sentence: { id: sentence.id, scenario: sentence.scenario, promptZh: sentence.translation.zh, promptEn: sentence.translation.en, audioText: sentence.targetSentence, answerTokens: tokenizeSentence(sentence.targetSentence, item.targetLanguage as SmartLingoLearningLanguage) },
+    gradeLevel: item.gradeLevel,
+    sentence: { id: sentence.id, scenario: sentence.scenario, promptZh: sentence.translation.zh, promptEn: sentence.translation.en, audioText: sentence.targetSentence, answerTokens, choiceTokens: buildSentenceChoiceTokens(answerTokens, options.map(option => option.form), item.targetLanguage, sentence.id) },
     direction: item.targetLanguage === "ar" ? "rtl" : "ltr",
     status: learnerStatus(row),
     memoryStage: state.consecutiveCorrect,
@@ -198,6 +201,7 @@ function libraryPayload(item: CatalogRow, progress: Map<string, ProgressRow>, no
     sceneKey: item.sceneKey,
     difficulty: item.difficulty,
     frequencyDegree: item.frequencyDegree,
+    gradeLevel: item.gradeLevel,
     direction: item.targetLanguage === "ar" ? "rtl" as const : "ltr" as const,
     status: learnerStatus(row),
     memoryStage: state.consecutiveCorrect,
@@ -226,7 +230,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
   const started = catalog.filter(item => learnerStatus(progress.get(progressKey(item))) === "learning")
     .sort((a, b) => (progress.get(progressKey(a))?.dueAt ?? 0) - (progress.get(progressKey(b))?.dueAt ?? 0));
   const fresh = catalog.filter(item => learnerStatus(progress.get(progressKey(item))) === "unlearned")
-    .sort((a, b) => a.difficulty - b.difficulty || b.frequencyDegree - a.frequencyDegree || a.sequence - b.sequence);
+    .sort(compareVocabularyLearningOrder);
   const due = started.filter(item => (progress.get(progressKey(item))?.dueAt ?? 0) <= now);
   const startIndex = startWordId ? catalog.findIndex(item => item.id === startWordId) : -1;
   const proposed = startIndex >= 0
@@ -246,7 +250,7 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
     language: access.targetLanguage as SmartLingoLearningLanguage,
     level: level as SmartLingoLevel,
     uiLang,
-    roundVocabulary: Array.from({ length: Math.ceil(selected.length / 5) }, (_, roundIndex) => selected.slice(roundIndex * 5, roundIndex * 5 + 5).map(item => ({ id: item.id, form: item.form, pronunciation: item.pronunciation, meaning: uiLang === "zh" ? item.meaningZh : item.meaningEn, difficulty: item.difficulty, frequencyDegree: item.frequencyDegree }))),
+    roundVocabulary: Array.from({ length: Math.ceil(selected.length / 5) }, (_, roundIndex) => selected.slice(roundIndex * 5, roundIndex * 5 + 5).map(item => ({ id: item.id, form: item.form, pronunciation: item.pronunciation, meaning: uiLang === "zh" ? item.meaningZh : item.meaningEn, difficulty: item.difficulty, frequencyDegree: item.frequencyDegree, gradeLevel: item.gradeLevel }))),
   }).catch(() => null) : null;
   const items = catalog.map(item => libraryPayload(item, progress, now));
   const reportResult = await database.prepare(`SELECT local_date AS localDate,total_count AS total,mastered_count AS mastered,

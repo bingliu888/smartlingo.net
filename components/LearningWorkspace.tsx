@@ -10,6 +10,7 @@ import { LearningLogCalendar, type LearningLogDay } from "./LearningLogCalendar"
 import { LearningDayPicker } from "./LearningDayPicker";
 import { SmartCardStudio } from "./SmartCardStudio";
 import { SentenceBuilderRound } from "./SentenceBuilderRound";
+import { vocabularyGradeLabel } from "../lib/smartlingo-vocabulary-order";
 
 type Lang = "zh" | "en";
 type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
@@ -91,6 +92,9 @@ type VocabularyItem = {
   topic?: string;
   sourceType?: "smartlingo_original";
   humanReviewStatus?: "reviewed";
+  difficulty?: number;
+  frequencyDegree?: number;
+  gradeLevel?: number;
   progress?: { isFocused?: boolean; lapseCount?: number; dueAt?: number | null };
 };
 
@@ -110,6 +114,7 @@ type PracticeTask = {
     prompt: string;
     audioText?: string;
     answerTokens: string[];
+    choiceTokens?: string[];
     sourceLanguage?: string;
     answerLanguage?: string;
   }[];
@@ -141,6 +146,9 @@ type LearningPayload = {
     reason: "saved" | "repeated_error";
     lapseCount: number;
     dueAt: number | null;
+    difficulty?: number;
+    frequencyDegree?: number;
+    gradeLevel?: number;
   }[];
   vocabularyDeckMeta?: {
     day: number;
@@ -1681,6 +1689,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
                     : <strong>{vocabulary.word || vocabulary.form}</strong>}
               {vocabulary.pronunciation && vocabularyMode !== "listening" && vocabularyMode !== "spelling" ? <span>{vocabulary.pronunciation}</span> : null}
             </div>
+            <div className="sl-word-attributes" style={{ margin: "12px auto", color: "#087d62", fontSize: 13, fontWeight: 850, textAlign: "center" }}><span>{lang === "zh" ? "难度" : "Difficulty"} {vocabulary.difficulty || 1}/5</span> · <span>{lang === "zh" ? "常用度" : "Frequency"} {vocabulary.frequencyDegree || 10}/10</span> · <span>{vocabularyGradeLabel(vocabulary.gradeLevel, lang)}</span></div>
             <div className="sl-inline-actions">
               <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale, .86)}>🔊 {lang === "zh" ? "正常语速" : "Normal"}</button>
               <button type="button" onClick={() => playText(vocabulary.audioText || vocabulary.word || vocabulary.form || "", vocabulary.speechLocale, .58)}>🐢 {lang === "zh" ? "慢速" : "Slow"}</button>
@@ -1725,7 +1734,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
             <ul>{learning.vocabularyFocusPack.map(item => <li key={item.sampleId}>
               <div><strong>{item.form}</strong>{item.pronunciation ? <span>{item.pronunciation}</span> : null}</div>
               <p>{localizedText(item.meaning, lang)}</p>
-              <small>{item.reason === "saved" ? `★ ${t.focusSaved}` : `↻ ${t.focusMistake}${item.lapseCount > 1 ? ` × ${item.lapseCount}` : ""}`}</small>
+              <small>{item.reason === "saved" ? `★ ${t.focusSaved}` : `↻ ${t.focusMistake}${item.lapseCount > 1 ? ` × ${item.lapseCount}` : ""}`} · {lang === "zh" ? "难度" : "Difficulty"} {item.difficulty || 1}/5 · {lang === "zh" ? "常用度" : "Frequency"} {item.frequencyDegree || 10}/10 · {vocabularyGradeLabel(item.gradeLevel, lang)}</small>
             </li>)}</ul>
           </section> : null}
           {classId ? <SmartCardStudio lang={lang} classId={classId}/> : null}

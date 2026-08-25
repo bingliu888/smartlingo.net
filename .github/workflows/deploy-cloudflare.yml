@@ -60,6 +60,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Verify vocabulary learning-order attributes
+        shell: bash
+        run: |
+          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(*)=48000 AND SUM(difficulty BETWEEN 1 AND 5)=COUNT(*) AND SUM(frequency_degree BETWEEN 1 AND 10)=COUNT(*) AND SUM(grade_level BETWEEN 0 AND 12)=COUNT(*) AND COUNT(DISTINCT grade_level)=13 THEN 'VOCAB_ORDER_COMPLETE' ELSE 'VOCAB_ORDER_INCOMPLETE' END AS verification FROM smartlingo_vocabulary_items WHERE review_status='published';")"
+          grep -F 'VOCAB_ORDER_COMPLETE' <<<"$result"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Build
         run: npm run build
 

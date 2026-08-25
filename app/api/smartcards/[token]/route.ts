@@ -7,7 +7,7 @@ const COOKIE = "sl_guest_cards";
 const POLICY = { startingPoints: 100, correctPoints: 10, wrongPenalty: 5, pronunciationPoints: 5, maxAttempts: 3, pointsPerUsd: 100, challengeSeconds: 10, winnerBonusBasisPoints: 1000 } as const;
 
 type Deck = { id: string; ownerUserId: string; ownerName: string; classId: string | null; targetLanguage: string; level: string; title: string; version: number };
-type Card = { id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string; pronunciationZh: string; pronunciationGuides: Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number };
+type Card = { id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string; pronunciationZh: string; pronunciationGuides: Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; difficulty: number; frequencyDegree: number; gradeLevel: number };
 type RawCard = Omit<Card,"pronunciationGuides"> & { pronunciationGuides: string | Record<string,string> };
 type Evidence = { cardId?: unknown; choices?: unknown; transcripts?: unknown };
 type SavedPracticeEvidence = { cardId: string; choices: string[]; transcripts: string[] };
@@ -80,9 +80,9 @@ async function readDeck(token: string, request?: Request, userId?: string | null
   if (!deck) return null;
   const starter = officialStarter(token);
   if (starter && starter.language === deck.targetLanguage && starter.level === deck.level) {
-    const poolResult = await database.prepare(`SELECT id,form,pronunciation,target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,pronunciation_guides AS pronunciationGuides,meaning_en AS meaningEn,meaning_zh AS meaningZh,scene_key AS sceneKey,difficulty
+    const poolResult = await database.prepare(`SELECT id,form,pronunciation,target_phonetic AS targetPhonetic,pronunciation_en AS pronunciationEn,pronunciation_zh AS pronunciationZh,pronunciation_guides AS pronunciationGuides,meaning_en AS meaningEn,meaning_zh AS meaningZh,scene_key AS sceneKey,difficulty,frequency_degree AS frequencyDegree,grade_level AS gradeLevel
       FROM smartlingo_vocabulary_items WHERE target_language=? AND level=? AND review_status='published'
-      ORDER BY difficulty ASC,frequency_degree DESC,sequence,id LIMIT 500`).bind(deck.targetLanguage,deck.level).run<RawCard>();
+      ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id LIMIT 500`).bind(deck.targetLanguage,deck.level).run<RawCard>();
     const pool = normalizeCards(poolResult.results || []);
     if (pool.length < 20) return null;
     const url = request ? new URL(request.url) : null;
@@ -112,7 +112,7 @@ async function readDeck(token: string, request?: Request, userId?: string | null
     const start = (dayNumber - 1) * 20;
     return { database, deck, cards: pool.slice(start,start + 20), dayNumber, poolSize: pool.length };
   }
-  const items = await database.prepare(`SELECT item.id,item.form,item.pronunciation,item.target_phonetic AS targetPhonetic,item.pronunciation_en AS pronunciationEn,item.pronunciation_zh AS pronunciationZh,item.pronunciation_guides AS pronunciationGuides,item.meaning_en AS meaningEn,item.meaning_zh AS meaningZh,item.scene_key AS sceneKey,item.difficulty FROM smartlingo_smartcard_items deck_item JOIN smartlingo_vocabulary_items item ON item.id=deck_item.vocabulary_item_id WHERE deck_item.deck_id=? AND item.review_status='published' ORDER BY deck_item.position`).bind(deck.id).run<RawCard>();
+  const items = await database.prepare(`SELECT item.id,item.form,item.pronunciation,item.target_phonetic AS targetPhonetic,item.pronunciation_en AS pronunciationEn,item.pronunciation_zh AS pronunciationZh,item.pronunciation_guides AS pronunciationGuides,item.meaning_en AS meaningEn,item.meaning_zh AS meaningZh,item.scene_key AS sceneKey,item.difficulty,item.frequency_degree AS frequencyDegree,item.grade_level AS gradeLevel FROM smartlingo_smartcard_items deck_item JOIN smartlingo_vocabulary_items item ON item.id=deck_item.vocabulary_item_id WHERE deck_item.deck_id=? AND item.review_status='published' ORDER BY deck_item.position`).bind(deck.id).run<RawCard>();
   return { database, deck, cards: normalizeCards(items.results || []), dayNumber: 1, poolSize: items.results?.length || 0 };
 }
 

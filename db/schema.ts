@@ -1116,6 +1116,8 @@ export const lingoVocabularyItems = sqliteTable("smartlingo_vocabulary_items", {
   level: text("level").notNull(),
   cefrBand: text("cefr_band").notNull(),
   difficulty: integer("difficulty").notNull(),
+  frequencyDegree: integer("frequency_degree").notNull().default(1),
+  gradeLevel: integer("grade_level").notNull().default(0),
   sceneKey: text("scene_key").notNull(),
   sequence: integer("sequence").notNull(),
   form: text("form").notNull(),
@@ -1134,6 +1136,8 @@ export const lingoVocabularyItems = sqliteTable("smartlingo_vocabulary_items", {
 }, (table) => [
   uniqueIndex("smartlingo_vocabulary_identity_uq").on(table.targetLanguage, table.stableKey, table.version),
   index("smartlingo_vocabulary_catalog_idx").on(table.targetLanguage, table.level, table.reviewStatus, table.sceneKey, table.sequence),
+  check("smartlingo_vocabulary_frequency_degree_ck", sql`${table.frequencyDegree} BETWEEN 1 AND 10`),
+  check("smartlingo_vocabulary_grade_level_ck", sql`${table.gradeLevel} BETWEEN 0 AND 12`),
 ]);
 
 export const lingoSmartcardDecks = sqliteTable("smartlingo_smartcard_decks", {

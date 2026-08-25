@@ -6,6 +6,8 @@ export type SmartCardContent = {
   meaningZh: string;
   sceneKey: string;
   difficulty: number;
+  frequencyDegree: number;
+  gradeLevel: number;
 };
 
 export type SmartCardChallengeQuestion = {

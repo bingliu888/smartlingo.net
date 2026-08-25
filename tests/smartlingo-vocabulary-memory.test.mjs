@@ -27,12 +27,13 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
   assert.match(workspace, /targetPhonetic/);
   assert.match(workspace, /pronunciationGuides\?\.\[lang\]/);
   assert.match(workspace, /SpeechRecognition/);
-  assert.match(workspace, /speechSynthesis\.cancel\(\);\s*finish\(\)/);
+  assert.match(workspace, /speakLearningText/);
   assert.match(workspace, /listeningWatchdog = window\.setTimeout/);
   assert.match(workspace, /recognition\.onend = recoverListening/);
   assert.match(workspace, /也可以跳过本词/);
   assert.match(workspace, /New word/);
   assert.match(workspace, /Previous mistake/);
+  assert.match(workspace, /vocabularyGradeLabel/);
   assert.match(workspace, /playWord\(\.86\)/);
   assert.match(workspace, /playWord\(\.58\)/);
   assert.match(workspace, /setPhase\("feedback"\)/);
@@ -75,6 +76,8 @@ test("production deployment rejects an incomplete multilingual pronunciation cor
   assert.match(workflow, /json_extract\(pronunciation_guides,'\$\.hi'\)<>''/);
   assert.match(workflow, /lexical_source_license<>''/);
   assert.match(workflow, /VOCAB_PRONUNCIATION_COMPLETE/);
+  assert.match(workflow, /VOCAB_ORDER_COMPLETE/);
+  assert.match(workflow, /COUNT\(DISTINCT grade_level\)=13/);
 });
 
 test("daily deck prioritizes due reviews, uses twenty-word rounds, and reports real published totals", async () => {
@@ -83,8 +86,9 @@ test("daily deck prioritizes due reviews, uses twenty-word rounds, and reports r
   assert.match(route, /fresh\.slice\(0, 20\)/);
   assert.match(route, /\.slice\(0, 20\)/);
   assert.match(route, /frequency_degree AS frequencyDegree/);
-  assert.match(route, /ORDER BY difficulty ASC,frequency_degree DESC/);
-  assert.match(route, /a\.difficulty - b\.difficulty \|\| b\.frequencyDegree - a\.frequencyDegree/);
+  assert.match(route, /grade_level AS gradeLevel/);
+  assert.match(route, /ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC/);
+  assert.match(route, /compareVocabularyLearningOrder/);
   assert.match(route, /const total = catalog\.length/);
   assert.match(route, /percent <= 0 \? 0 : Math\.min\(5, Math\.ceil\(percent \/ 20\)\)/);
 });

@@ -56,9 +56,14 @@ export function buildEverydaySpeakingDeck(language: SmartLingoCommunityLanguage,
     : level === "intermediate"
       ? { zh: "中级 · 情境变化词汇", en: "Intermediate · Situational vocabulary" }
       : { zh: "高级 · 协商表达词汇", en: "Advanced · Negotiation vocabulary" };
+  const attributes = (index: number) => ({
+    difficulty: level === "beginner" ? 1 + Math.floor(index / 6) : level === "intermediate" ? 3 + Math.floor(index / 8) : 5,
+    frequencyDegree: Math.max(1, 10 - (index % 10)),
+    gradeLevel: level === "beginner" ? Math.min(4, index) : level === "intermediate" ? 5 + Math.min(3, index) : 9 + Math.min(3, index),
+  });
   const vocabulary = essentialVocabulary
-    ? essentialVocabulary.map((item, index) => ({ id:`${scene.id}-${level}-word-${index + 1}`,kind:"word" as const,form:item.forms[language],pronunciation:item.pronunciation?.[language] || "",meaningZh:item.meaningZh,meaningEn:item.meaningEn,stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(item.forms[language],item.meaningZh,item.meaningEn) }))
-    : vocabularyDays.flatMap((day,stageIndex)=>beginnerVocabularySeedsForDay(language,day).map((seed,itemIndex)=>({id:`${scene.id}-${level}-word-${stageIndex + 1}-${itemIndex + 1}`,kind:"word" as const,form:seed[0],pronunciation:seed[1],meaningZh:seed[2],meaningEn:seed[3],stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(seed[0],seed[2],seed[3])})));
+    ? essentialVocabulary.map((item, index) => ({ id:`${scene.id}-${level}-word-${index + 1}`,kind:"word" as const,form:item.forms[language],pronunciation:item.pronunciation?.[language] || "",meaningZh:item.meaningZh,meaningEn:item.meaningEn,stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(item.forms[language],item.meaningZh,item.meaningEn),...attributes(index) }))
+    : vocabularyDays.flatMap((day,stageIndex)=>beginnerVocabularySeedsForDay(language,day).map((seed,itemIndex)=>({id:`${scene.id}-${level}-word-${stageIndex + 1}-${itemIndex + 1}`,kind:"word" as const,form:seed[0],pronunciation:seed[1],meaningZh:seed[2],meaningEn:seed[3],stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(seed[0],seed[2],seed[3]),...attributes(stageIndex * 10 + itemIndex)})));
   const sentences = dialogueSlides(scene.id, level, prebuiltEverydayDialogueLines(scene.id, language, level));
   return [...vocabulary, ...sentences];
 }

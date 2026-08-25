@@ -1,75 +1,83 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-production-real-user-qa-2026-08-24-v36",
+  "releaseId": "smartlingo-vocabulary-learning-order-2026-08-24-v37",
   "site": "smartlingo.net",
   "title": {
-    "en": "Complete the two-part four-language production QA",
-    "zh": "完成两部分四语生产真实用户验收"
+    "en": "Add grade-aware vocabulary order and reliable learning interactions",
+    "zh": "新增学段词汇排序与可靠学习交互"
   },
   "purpose": {
-    "en": "Publish the final bilingual administrator record after completing anonymous Play and signed-in learner acceptance in production across English, Japanese, Spanish, and Italian.",
-    "zh": "在生产环境完成匿名 Play 与登录学员的英语、日语、西班牙语和意大利语验收后，发布最终双语管理员记录。"
+    "en": "Teach the easiest useful words first across SmartLingo while making Slow speech audibly distinct and sentence building a meaningful choice task.",
+    "zh": "在 SmartLingo 全部学习入口优先教授最容易且最实用的词，同时让慢速语音真正可辨，并让组句成为有有效干扰项的选择练习。"
   },
   "features": {
     "en": [
-      "Record independent language selection, cookie isolation, Sprint reset and extension, and local-date Challenge behavior across all six anonymous Play tiles.",
-      "Record Dashboard, Course 5 skills, Sprint, SmartCard, Challenge, Everyday, Score History, Rankings, and database-resume acceptance for the signed-in test learner.",
-      "Publish per-language planned and visible persisted learning time, scores, recovery releases, and verified educational-media coverage."
+      "Give every published vocabulary item a recommended grade from 0 (K/Pre-K) through 12 and display difficulty, frequency, and grade together on learner-facing word cards, tiles, and items.",
+      "Use one deterministic easiest-first order: difficulty ascending, frequency descending, grade ascending, then catalog sequence.",
+      "Give every sentence builder the exact answer length plus at least two unique distractor words and score automatically when all answer slots are filled.",
+      "Apply distinct Normal 0.84× and Slow 0.42× speech synthesis behavior across Sprint, courses, SmartCard, and Everyday Speaking surfaces."
     ],
     "zh": [
-      "记录匿名 Play 六个 tile 的独立选语、Cookie 隔离、今日速成重置与续时，以及当地日期挑战行为。",
-      "记录登录测试学员的 Dashboard、课程五技能、今日速成、SmartCard、挑战、生活口语、分数历史、排行榜及数据库续学验收。",
-      "发布各语言计划与可见持久化学习时长、分数、恢复版本及已核验教育媒体覆盖率。"
+      "为每个已发布词汇增加 0（幼儿园/学前）至 12 的建议学段，并在面向学员的词卡、tile 与词条上同时展示难度、频率和学段。",
+      "统一采用确定性的由易到难排序：难度升序、频率降序、学段升序，最后按词库序号。",
+      "每个组句题均提供与答案相同数量的空位及至少两个不重复干扰词，并在填满空位后自动判分。",
+      "在今日速成、课程、SmartCard 与生活口语中统一应用可区分的正常 0.84× 与慢速 0.42× 语音。"
     ]
   },
   "affected": {
     "en": [
-      "Administrator QA documentation and release history only; this final record adds no new runtime, database, Clerk, payment, or external-service behavior."
+      "SmartLingo vocabulary schema and migration, vocabulary/Sprint/SmartCard/course APIs, reusable sentence and speech engines, and all learner-facing vocabulary surfaces.",
+      "The change is isolated to smartlingo.net and does not alter Clerk, payments, Cloudflare resource boundaries, sibling sites, or external-service configuration."
     ],
     "zh": [
-      "仅影响管理员 QA 文档与发布历史；本次最终记录不新增运行时、数据库、Clerk、支付或外部服务行为。"
+      "影响 SmartLingo 词汇数据库结构与迁移、词汇/今日速成/SmartCard/课程 API、可复用组句与语音引擎，以及全部面向学员的词汇界面。",
+      "变更仅限 smartlingo.net，不修改 Clerk、支付、Cloudflare 资源边界、兄弟站点或外部服务配置。"
     ]
   },
   "changes": {
     "en": [
-      "Add the 2026-08-24 bilingual Project daily QA report with the complete anonymous and signed-in acceptance matrix.",
-      "Document English 2/5, Japanese 2/4, Spanish 2/4, and Italian 5/6 planned/visible persisted Course minutes and all four Sprint scores.",
-      "Document the v26-v35 defect-recovery chain, final production evidence, and 100% imageable Beginner-word media coverage."
+      "Backfill all 48,000 published multilingual vocabulary rows into 13 bounded grade bands and add a database learning-order index and deployment completeness gate.",
+      "Centralize grade validation, bilingual labels, and the learning comparator so database queries, seeded lessons, daily practice, Sprint, SmartCard, and course vocabulary agree.",
+      "Queue browser speech after cancellation to prevent Safari from reusing a prior utterance rate, select a matching language voice, and bound playback cleanup.",
+      "Generate plausible language-specific distractors from the active round before falling back to simple common words."
     ],
     "zh": [
-      "新增 2026-08-24 双语 Project 每日 QA 报告，包含完整匿名与登录验收矩阵。",
-      "记录英语 2/5、日语 2/4、西班牙语 2/4、意大利语 5/6 的计划/可见持久化课程分钟，以及四种语言的今日速成分数。",
-      "记录 v26-v35 缺陷恢复链、最终生产证据及可图像化初级词 100% 媒体覆盖。"
+      "把 48,000 个已发布多语种词汇回填至 13 个受约束学段，增加数据库学习顺序索引及部署完整性门禁。",
+      "集中管理学段校验、双语标签与学习排序比较器，使数据库查询、预置课程、每日练习、今日速成、SmartCard 和课程词汇保持一致。",
+      "取消旧语音后建立浏览器队列边界，避免 Safari 复用前一次语速，并匹配目标语言 voice、限制播放清理时间。",
+      "优先从当前学习轮次生成目标语言的合理干扰词，只有孤立题目才使用简单常用词后备。"
     ]
   },
   "validation": {
     "en": [
-      "Anonymous production acceptance passed all six Play tiles, isolated language choices and cookies, Sprint reset/extension, and date-only Challenge auto-advance.",
-      "Signed-in production acceptance passed the four-language Dashboard and real-learning matrix, persisted Course and score records, SmartCard resume, Challenge, Everyday, Score History, and Rankings.",
-      "Final product gates passed 361/361 tests, TypeScript, 64 D1 migrations, production build, sensitive-data scans, changed-file lint, shared policy/architecture/base-feature gates, and 11 shared contracts."
+      "All 362 repository tests pass, including the exact 48,000-row grade distribution, comparator order, Slow 0.42× mapping, three-attribute UI contracts, and answer-plus-two sentence choices.",
+      "TypeScript, changed-file ESLint with zero errors, whitespace validation, the production vinext build, and shared site policy/architecture/base-feature contracts pass.",
+      "GitHub Actions additionally rejects a deployment unless all 48,000 published rows have valid difficulty, frequency, and grade values covering all 13 grades."
     ],
     "zh": [
-      "匿名生产验收通过全部六个 Play tile、独立选语与 Cookie、今日速成重置/续时及仅日期挑战自动推进。",
-      "登录生产验收通过四语 Dashboard 与真实学习矩阵、课程及分数持久化、SmartCard 续学、挑战、生活口语、分数历史和排行榜。",
-      "最终产品门禁通过 361/361 测试、TypeScript、64 个 D1 迁移、生产构建、敏感数据扫描、修改文件 lint、共享政策/架构/基础功能门禁及 11 个共享合同。"
+      "仓库 362 项测试全部通过，包括精确的 48,000 行学段分布、排序比较器、慢速 0.42× 映射、三属性 UI 合同及答案加两个干扰词。",
+      "TypeScript、修改文件 ESLint 零错误、空白校验、生产 vinext 构建及共享站点政策/架构/基础功能合同均通过。",
+      "GitHub Actions 还会在 48,000 个已发布词未全部具有合法难度、频率、学段且未覆盖 13 个学段时阻止部署。"
     ]
   },
   "deferred": {
     "en": [
-      "Browser automation cannot reliably measure physical speaker duration. The visible and accessible Normal 0.84× and Slow 0.42× states and their bidirectional control were verified; no acoustic duration was fabricated. No required functional acceptance remains deferred."
+      "Grade is a SmartLingo recommended learning-grade and age-of-acquisition proxy derived from the reviewed catalog order, not an official school-board certification; future corpus review may refine individual rows without changing the 0–12 contract.",
+      "Browser automation can verify the utterance rate supplied to speech synthesis but cannot fabricate a physical speaker-duration measurement."
     ],
     "zh": [
-      "浏览器自动化无法可靠测量实体扬声器时长；已验证可见且可访问的正常 0.84×、慢速 0.42× 状态及双向切换，没有虚构声学时长。没有必需功能验收被延期。"
+      "学段是从已审核词库顺序推导的 SmartLingo 建议学习学段与习得年龄代理，并非官方教育局认证；后续语料审核可细化单词学段，但不改变 0–12 合同。",
+      "浏览器自动化可以核验传给语音合成器的语速，但不会虚构实体扬声器的时长测量。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo-only data and brand boundaries, Repeat After Me default-off behavior, and GitHub Actions to Cloudflare delivery.",
-      "No test address, verification code, email body, cookie, session artifact, payment, referral, certificate, administrator action, sibling site, or cloud configuration was recorded or changed."
+      "Preserve SmartLingo's 12-language vocabulary, original learning UI, Repeat After Me default-off behavior, anonymous cookie boundaries, signed-in database progress, and GitHub Actions to Cloudflare delivery.",
+      "Do not import Duolingo artwork, copy, code, or proprietary data; the interaction remains a SmartLingo implementation informed by successful learning patterns."
     ],
     "zh": [
-      "保持仅限 SmartLingo 的数据与品牌边界、跟读默认关闭及 GitHub Actions 至 Cloudflare 发布。",
-      "没有记录或修改测试邮箱、验证码、邮件正文、Cookie、会话信息、支付、推荐、证书、管理员操作、兄弟站点或云配置。"
+      "保留 SmartLingo 的 12 语种词库、原创学习 UI、跟读默认关闭、匿名 Cookie 边界、登录用户数据库进度，以及 GitHub Actions 至 Cloudflare 发布流程。",
+      "不导入 Duolingo 的美术、文案、代码或专有数据；交互仍是借鉴成功学习模式的 SmartLingo 自有实现。"
     ]
   }
 }

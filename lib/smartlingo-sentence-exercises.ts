@@ -196,6 +196,43 @@ export function tokenizeSentence(sentence: string, language: SmartLingoLearningL
   return [...segmenter.segment(sentence)].filter(part => part.isWordLike).map(part => part.segment);
 }
 
+const SIMPLE_DISTRACTORS: Record<string, readonly string[]> = {
+  zh: ["今天", "这里", "请", "谢谢", "可以", "现在"],
+  en: ["today", "here", "please", "thanks", "can", "now"],
+  es: ["hoy", "aquí", "por", "gracias", "puedo", "ahora"],
+  ja: ["今日", "ここ", "どうぞ", "ありがとう", "できます", "今"],
+  ko: ["오늘", "여기", "주세요", "감사합니다", "할", "지금"],
+  fr: ["aujourd’hui", "ici", "s’il", "merci", "peux", "maintenant"],
+  de: ["heute", "hier", "bitte", "danke", "kann", "jetzt"],
+  ru: ["сегодня", "здесь", "пожалуйста", "спасибо", "могу", "сейчас"],
+  it: ["oggi", "qui", "per", "grazie", "posso", "adesso"],
+  pt: ["hoje", "aqui", "por", "obrigado", "posso", "agora"],
+  ar: ["اليوم", "هنا", "من", "شكرًا", "يمكن", "الآن"],
+  hi: ["आज", "यहाँ", "कृपया", "धन्यवाद", "सकता", "अभी"],
+};
+
+/** Every sentence-builder question contains the answer plus at least two
+ * plausible extra word tiles. Round vocabulary is preferred; very common
+ * fallback words only cover a single isolated exercise. */
+export function buildSentenceChoiceTokens(
+  answerTokens: readonly string[],
+  candidateTokens: readonly string[],
+  language: string,
+  seed: string,
+) {
+  const answerKeys = new Set(answerTokens.map(normalizeSentenceAnswer));
+  const unique = new Map<string, string>();
+  for (const token of [...candidateTokens, ...(SIMPLE_DISTRACTORS[language] || SIMPLE_DISTRACTORS.en)]) {
+    const key = normalizeSentenceAnswer(token);
+    if (!key || answerKeys.has(key) || unique.has(key)) continue;
+    unique.set(key, token);
+  }
+  const extras = [...unique.values()]
+    .sort((left, right) => stableHash(`${seed}:${left}`) - stableHash(`${seed}:${right}`))
+    .slice(0, 2);
+  return [...answerTokens, ...extras];
+}
+
 export function normalizeSentenceAnswer(value: string) {
   return value.normalize("NFKC").toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, "");
 }

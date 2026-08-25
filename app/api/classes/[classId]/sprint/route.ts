@@ -52,9 +52,9 @@ export async function POST(request: Request, { params }: Params) {
     }
     const runId = createId();
     const vocabularyResult = await value.database.prepare(`SELECT id,form,COALESCE(target_phonetic,pronunciation,'') AS pronunciation,
-      CASE WHEN ?='zh' THEN meaning_zh ELSE meaning_en END AS meaning,difficulty,frequency_degree AS frequencyDegree FROM smartlingo_vocabulary_items
+      CASE WHEN ?='zh' THEN meaning_zh ELSE meaning_en END AS meaning,difficulty,frequency_degree AS frequencyDegree,grade_level AS gradeLevel FROM smartlingo_vocabulary_items
       WHERE target_language=? AND level=? AND review_status='published'
-      ORDER BY difficulty ASC,frequency_degree DESC,sequence,id LIMIT 1000`)
+      ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id LIMIT 1000`)
       .bind(uiLang(body.lang), language, courseLevel).run<SprintVocabulary>();
     const vocabulary = vocabularyResult.results || [];
     const dayStart = (dayNumber - 1) * 20;

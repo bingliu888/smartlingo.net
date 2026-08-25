@@ -14,10 +14,11 @@ for (const file of [
   "0131_multilingual_pronunciation_guides.sql", ...catalogFiles, "0043_beginner_gloss_quality.sql", ...correctionFiles,
   "0148_japanese_beginner_common_senses.sql", "0153_english_beginner_away_gloss.sql", "0154_vocabulary_learner_quality_sweep.sql",
   "0155_vocabulary_frequency_degree.sql",
+  "0169_vocabulary_grade_order.sql",
 ]) database.exec(readFileSync(new URL(file, drizzleDirectory), "utf8"));
 
-const rows = database.prepare(`SELECT target_language AS language,form,meaning_en AS meaningEn,meaning_zh AS meaningZh,difficulty,frequency_degree AS frequency
-  FROM smartlingo_vocabulary_items WHERE level='beginner' AND review_status='published' ORDER BY difficulty,frequency_degree DESC,sequence`).all();
+const rows = database.prepare(`SELECT target_language AS language,form,meaning_en AS meaningEn,meaning_zh AS meaningZh,difficulty,frequency_degree AS frequency,grade_level AS gradeLevel
+  FROM smartlingo_vocabulary_items WHERE level='beginner' AND review_status='published' ORDER BY difficulty,frequency_degree DESC,grade_level,sequence`).all();
 
 const grammarForms = new Set(`a an the and or but if so because as at by for from in into of on out over than to up with
 i me my we our us you your he him his she her hers it its they them their this that these those who whom whose which what when where why how

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { speakLearningText } from "../lib/smartlingo-speech";
+import { buildSentenceChoiceTokens } from "../lib/smartlingo-sentence-exercises";
 
 type Exercise = {
   id: string;
@@ -9,6 +10,7 @@ type Exercise = {
   prompt: string;
   audioText?: string;
   answerTokens: readonly string[];
+  choiceTokens?: readonly string[];
   sourceLanguage?: string;
   answerLanguage?: string;
 };
@@ -24,7 +26,7 @@ function hash(value: string) {
 }
 
 function shuffledTokens(exercise: Exercise) {
-  const tokens = exercise.answerTokens.map((label, index) => ({ id: `${exercise.id}:${index}`, label, index }));
+  const tokens = (exercise.choiceTokens || exercise.answerTokens).map((label, index) => ({ id: `${exercise.id}:${index}`, label, index }));
   const shuffled = [...tokens].sort((left, right) => hash(`${exercise.id}:${left.index}`) - hash(`${exercise.id}:${right.index}`));
   return shuffled.every((item, index) => item.index === index) && shuffled.length > 1 ? shuffled.reverse() : shuffled;
 }
@@ -49,7 +51,16 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
   const advanceTimer = useRef<number | undefined>(undefined);
   const exerciseKey = exercises.map(item => item.id).join("|");
   const exercise = exercises[index];
-  const tiles = useMemo(() => exercise ? shuffledTokens(exercise) : [], [exercise]);
+  const tiles = useMemo(() => {
+    if (!exercise) return [];
+    const candidateTokens = exercises.flatMap(item => item.answerTokens);
+    return shuffledTokens({
+      ...exercise,
+      choiceTokens: exercise.choiceTokens?.length && exercise.choiceTokens.length >= exercise.answerTokens.length + 2
+        ? exercise.choiceTokens
+        : buildSentenceChoiceTokens(exercise.answerTokens, candidateTokens, exercise.answerLanguage || speechLocale.slice(0, 2), exercise.id),
+    });
+  }, [exercise, exercises, speechLocale]);
   const selectedTiles = selected.map(id => tiles.find(tile => tile.id === id)).filter((tile): tile is NonNullable<typeof tile> => Boolean(tile));
   const built = selectedTiles.map(tile => tile.label).join(" ");
   const expected = exercise?.answerTokens.join(" ") || "";
@@ -82,12 +93,12 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
     if (nextSelected.length !== exercise.answerTokens.length) return;
     const nextBuilt = nextSelected.map(id => tiles.find(tile => tile.id === id)?.label || "").join(" ");
     setFeedback(normalized(nextBuilt) === normalized(expected) ? "correct" : "incorrect");
-    if (autoAdvance) advanceTimer.current = window.setTimeout(next, 1400);
+    if (autoAdvance) advanceTimer.current = window.setTimeout(() => next(nextBuilt), 1400);
   }
 
-  function next() {
+  function next(answerOverride?: string) {
     if (!exercise) return;
-    const nextAnswers = [...answers, built];
+    const nextAnswers = [...answers, answerOverride || built];
     if (index + 1 >= exercises.length) {
       setAnswers(nextAnswers); setIndex(exercises.length); setSelected([]); setFeedback("idle");
       onComplete(JSON.stringify(nextAnswers));
@@ -106,8 +117,8 @@ export function SentenceBuilderRound({ lang, mode, speechLocale, exercises, onCo
       {mode === "listening" ? <nav><button type="button" onClick={() => play(.86)} aria-label={zh ? "正常速度播放" : "Play at normal speed"}>🔊</button><button type="button" onClick={() => play(.58)} aria-label={zh ? "慢速播放" : "Play slowly"}>🐢</button></nav> : <blockquote>{exercise.prompt}</blockquote>}
     </div>
     <div className="sentence-answer" aria-label={zh ? `${exercise.answerTokens.length} 个组句空位` : `${exercise.answerTokens.length} sentence slots`}>{exercise.answerTokens.map((_, slot) => { const tile = selectedTiles[slot]; return tile ? <button type="button" onClick={() => feedback === "idle" && setSelected(current => current.filter(id => id !== tile.id))} key={tile.id}>{tile.label}</button> : <span className="sentence-slot" aria-label={zh ? `空位 ${slot + 1}` : `Empty slot ${slot + 1}`} key={`slot-${slot}`}>{slot + 1}</span>; })}</div>
-    <div className="sentence-tiles" aria-label={zh ? "可选词语" : "Available words"}>{tiles.filter(tile => !selected.includes(tile.id)).map(tile => <button type="button" disabled={feedback !== "idle"} onClick={() => selectTile(tile.id)} key={tile.id}>{tile.label}</button>)}</div>
-    {feedback !== "idle" ? <aside aria-live="polite"><strong>{feedback === "correct" ? `✓ ${zh ? "回答正确" : "Correct"}` : `× ${zh ? "再接再厉" : "Keep learning"}`}</strong>{feedback === "incorrect" ? <p><b>{zh ? "正确答案：" : "Correct answer: "}</b>{expected}</p> : <p>{zh ? "词序完全正确！" : "Every word is in the right place."}</p>}{autoAdvance ? <small>{zh ? "即将自动进入下一项…" : "Moving to the next activity…"}</small> : <button type="button" onClick={next}>{zh ? "继续" : "Continue"} →</button>}</aside> : <small className="sentence-auto-hint">{zh ? `填满 ${exercise.answerTokens.length} 个空位后自动检查` : `Fill all ${exercise.answerTokens.length} slots to check automatically`}</small>}
+    <div className="sentence-tiles" aria-label={zh ? `可选词语，共 ${tiles.length} 个；含 2 个干扰词` : `${tiles.length} available words, including 2 distractors`}>{tiles.filter(tile => !selected.includes(tile.id)).map(tile => <button type="button" disabled={feedback !== "idle"} onClick={() => selectTile(tile.id)} key={tile.id}>{tile.label}</button>)}</div>
+    {feedback !== "idle" ? <aside aria-live="polite"><strong>{feedback === "correct" ? `✓ ${zh ? "回答正确" : "Correct"}` : `× ${zh ? "再接再厉" : "Keep learning"}`}</strong>{feedback === "incorrect" ? <p><b>{zh ? "正确答案：" : "Correct answer: "}</b>{expected}</p> : <p>{zh ? "词序完全正确！" : "Every word is in the right place."}</p>}{autoAdvance ? <small>{zh ? "即将自动进入下一项…" : "Moving to the next activity…"}</small> : <button type="button" onClick={() => next()}>{zh ? "继续" : "Continue"} →</button>}</aside> : <small className="sentence-auto-hint">{zh ? `填满 ${exercise.answerTokens.length} 个空位后自动检查` : `Fill all ${exercise.answerTokens.length} slots to check automatically`}</small>}
     <style>{`.sentence-builder,.sentence-builder *{box-sizing:border-box}.sentence-builder{margin-top:22px;padding:clamp(18px,4vw,34px);border:1px solid #d7e0db;border-radius:22px;background:#fbfcfb}.sentence-builder>header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px}.sentence-close{width:38px;height:38px;border:0;background:transparent;color:#789088;font-size:30px}.sentence-progress{height:9px;border-radius:99px;background:#dfe6e2;overflow:hidden}.sentence-progress span{display:block;height:100%;border-radius:inherit;background:#1acb86}.sentence-builder>header>strong{color:#5f716a}.sentence-prompt{min-height:170px;padding:34px 0 22px;display:grid;place-items:center;align-content:center;text-align:center}.sentence-prompt>p{margin:0 0 22px;font-size:clamp(22px,3vw,34px);font-weight:900}.sentence-prompt nav{display:flex;align-items:end;gap:12px}.sentence-prompt nav button{width:78px;height:72px;border:0;border-radius:19px;background:#139dd7;color:#fff;font-size:34px;box-shadow:0 5px 0 #087aaa}.sentence-prompt nav button+button{width:58px;height:54px;font-size:24px}.sentence-prompt blockquote{margin:0;padding:18px 24px;border:0;border-radius:17px;background:#edf7f2;font-size:clamp(22px,3.5vw,38px);font-weight:850}.sentence-answer{min-height:75px;padding:13px 4px;display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;border-block:2px solid #e0e5e2}.sentence-answer>span{padding:10px;color:#8a9893}.sentence-answer button,.sentence-tiles button{min-height:46px;padding:8px 14px;border:1px solid #c9d2ce;border-radius:10px;background:#fff;color:#18332b;font:800 17px/1.2 inherit;box-shadow:0 3px 0 #d7ddda}.sentence-tiles{min-height:86px;padding:26px 4px;display:flex;justify-content:center;align-content:flex-start;gap:9px;flex-wrap:wrap}.sentence-tiles button:disabled{opacity:.18}.sentence-builder footer{display:flex;justify-content:flex-end}.sentence-builder footer button,.sentence-builder aside button{min-width:150px;min-height:48px;padding:9px 20px;border:0;border-radius:14px;background:#13a46f;color:#fff;font-weight:900}.sentence-builder footer button:disabled{opacity:.4}.sentence-builder aside{margin:20px -34px -34px;padding:24px 34px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;align-items:center;background:#dff7e9;color:#096646}.sentence-builder.incorrect aside{background:#ffe3e3;color:#a23232}.sentence-builder aside strong{font-size:24px}.sentence-builder aside p{margin:0}.sentence-builder aside>small{color:currentColor;font-weight:850}.sentence-builder aside button{grid-column:2;grid-row:1/3;background:currentColor}.sentence-builder aside button{color:#fff}.sentence-builder.incorrect aside button{background:#e44747}@media(max-width:620px){.sentence-builder{padding:16px}.sentence-builder aside{margin:18px -16px -16px;padding:20px 16px;grid-template-columns:1fr}.sentence-builder aside button{grid-column:1;grid-row:auto;width:100%}.sentence-prompt{min-height:145px}.sentence-answer button,.sentence-tiles button{font-size:16px}}`}</style>
   </section>;
 }

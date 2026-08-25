@@ -1,6 +1,7 @@
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
 import {
   buildDailySentenceRound,
+  buildSentenceChoiceTokens,
   gradeSentenceRound,
   tokenizeSentence,
 } from "./smartlingo-sentence-exercises.ts";
@@ -10,6 +11,7 @@ import {
   beginnerVocabularySeedsForDay,
   type SmartLingoBeginnerScene,
 } from "./smartlingo-beginner-vocabulary.ts";
+import { compareVocabularyLearningOrder } from "./smartlingo-vocabulary-order.ts";
 
 export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-21.1" as const;
 export const SMARTLINGO_GUIDED_FLOW_VERSION = "2026-08-23.2" as const;
@@ -61,6 +63,9 @@ export interface SmartLingoVocabularySample {
   readonly topic: "greeting" | "planning" | "ideas" | SmartLingoBeginnerScene;
   readonly sourceType: "smartlingo_original";
   readonly humanReviewStatus: "reviewed";
+  readonly difficulty: number;
+  readonly frequencyDegree: number;
+  readonly gradeLevel: number;
 }
 
 export interface SmartLingoVocabularyVisualCue {
@@ -126,6 +131,9 @@ function vocabularySample(
     topic,
     sourceType: "smartlingo_original",
     humanReviewStatus: "reviewed",
+    difficulty: level === "beginner" ? 1 : level === "intermediate" ? 3 : 5,
+    frequencyDegree: level === "beginner" ? 10 : level === "intermediate" ? 7 : 5,
+    gradeLevel: level === "beginner" ? 0 : level === "intermediate" ? 5 : 9,
   };
 }
 
@@ -325,6 +333,9 @@ export function getBeginnerVocabularyDeck(
     topic,
     sourceType: "smartlingo_original" as const,
     humanReviewStatus: "reviewed" as const,
+    difficulty: Math.min(3, 1 + Math.floor((normalizedDay - 1) / 3)),
+    frequencyDegree: Math.max(4, 11 - normalizedDay - Math.floor(index / 2)),
+    gradeLevel: Math.min(4, Math.floor((normalizedDay - 1) / 2)),
   }));
 }
 
@@ -345,7 +356,7 @@ export function getBeginnerSessionVocabularyDeck(
     ...Array.from({ length: 6 }, (_, index) => ((normalizedDay + index) % 7) + 1),
   ];
   const cards = orderedDays.flatMap(deckDay => getBeginnerVocabularyDeck(language, deckDay));
-  return cards.slice(0, 10);
+  return cards.sort(compareVocabularyLearningOrder).slice(0, 10);
 }
 
 export function getVocabularySampleById(
@@ -760,6 +771,7 @@ export interface DailyPracticeItem {
     readonly prompt: string;
     readonly audioText?: string;
     readonly answerTokens: readonly string[];
+    readonly choiceTokens: readonly string[];
     readonly sourceLanguage: SmartLingoLearningLanguage | SmartLingoInterfaceLanguage;
     readonly answerLanguage: SmartLingoLearningLanguage | SmartLingoInterfaceLanguage;
   }[];
@@ -808,20 +820,25 @@ export function buildDailyPracticeItem(
   const question = buildDailyInternalQuestion(language, skill, date, levelOverride);
   const level = levelOverride ?? question.level;
   const bridgeLanguage: SmartLingoInterfaceLanguage = language === uiLang ? (uiLang === "zh" ? "en" : "zh") : uiLang;
-  const sentenceExercises = skill === "listening" || skill === "writing"
-    ? buildDailySentenceRound(language, level, date, skill).map(exercise => ({
+  const sentenceRound = skill === "listening" || skill === "writing"
+    ? buildDailySentenceRound(language, level, date, skill)
+    : [];
+  const sentenceRoundTokens = sentenceRound.flatMap(exercise => tokenizeSentence(exercise.targetSentence, language));
+  const sentenceExercises = sentenceRound.length
+    ? sentenceRound.map(exercise => {
+      const answerTokens = tokenizeSentence(exercise.targetSentence, language);
+      return {
       id: exercise.id,
       scenario: exercise.scenario,
       prompt: skill === "listening"
         ? (uiLang === "zh" ? "选择听到的内容" : "Build what you hear")
         : exercise.translation[uiLang],
       audioText: skill === "listening" ? exercise.targetSentence : undefined,
-      answerTokens: skill === "listening"
-        ? tokenizeSentence(exercise.targetSentence, language)
-        : tokenizeSentence(exercise.targetSentence, language),
+      answerTokens,
+      choiceTokens: buildSentenceChoiceTokens(answerTokens, sentenceRoundTokens, language, exercise.id),
       sourceLanguage: skill === "listening" ? language : bridgeLanguage,
       answerLanguage: language,
-    }))
+    }; })
     : undefined;
   return {
     taskId: question.id,

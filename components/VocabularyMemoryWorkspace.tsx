@@ -7,6 +7,8 @@ import { SentenceBuilderRound } from "./SentenceBuilderRound";
 import { interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
 import { beginnerVocabularyImageKey } from "../lib/smartlingo-vocabulary-images";
 import { VocabularyPicture } from "./VocabularyPicture";
+import { speakLearningText } from "../lib/smartlingo-speech";
+import { vocabularyGradeLabel } from "../lib/smartlingo-vocabulary-order";
 
 type Status = "mastered" | "learning" | "unlearned";
 type Mode = "recognition" | "recall" | "listening" | "spelling" | "cloze";
@@ -14,11 +16,11 @@ type Card = {
   id: string; form: string; pronunciation: string; targetPhonetic: string; pronunciationEn: string;
   pronunciationZh: string; pronunciationGuides: Record<string, string>; meaningEn: string; meaningZh: string; sceneKey: string; direction: "ltr" | "rtl";
   status: Status; memoryStage: number; nextMemoryDay: number | null; mode: Mode; dueAt: number | null;
-  difficulty: number; frequencyDegree: number;
-  sentence: { id: string; scenario: string; promptZh: string; promptEn: string; audioText: string; answerTokens: string[] };
+  difficulty: number; frequencyDegree: number; gradeLevel: number;
+  sentence: { id: string; scenario: string; promptZh: string; promptEn: string; audioText: string; answerTokens: string[]; choiceTokens?: string[] };
   options: { id: string; form: string; meaningEn: string; meaningZh: string }[];
 };
-type LibraryItem = Pick<Card, "id" | "form" | "targetPhonetic" | "meaningEn" | "meaningZh" | "sceneKey" | "direction" | "status" | "memoryStage" | "difficulty" | "frequencyDegree">;
+type LibraryItem = Pick<Card, "id" | "form" | "targetPhonetic" | "meaningEn" | "meaningZh" | "sceneKey" | "direction" | "status" | "memoryStage" | "difficulty" | "frequencyDegree" | "gradeLevel">;
 type Summary = { total: number; mastered: number; learning: number; unlearned: number; percent: number; stars: number };
 type Report = Summary & { localDate: string };
 type Payload = {
@@ -102,26 +104,8 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
   useEffect(() => { if (!textMode || phase !== "answer" || !typed.trim() || busy) return; const timer = window.setTimeout(checkTyped, 900); return () => window.clearTimeout(timer); }, [typed, textMode, phase, busy]);
 
   function playWord(rate = .86, after?: () => void) {
-    if (!card || !("speechSynthesis" in window)) { after?.(); return; }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(card.form);
-    utterance.lang = SPEECH_LOCALES[data?.targetLanguage || ""] || data?.targetLanguage || "en-US";
-    utterance.rate = rate;
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(watchdog);
-      after?.();
-    };
-    const watchdog = window.setTimeout(() => {
-      window.speechSynthesis.cancel();
-      finish();
-    }, Math.min(8000, Math.max(3000, Array.from(card.form).length * 500 + 1800)));
-    utterance.onend = finish;
-    utterance.onerror = finish;
-    window.speechSynthesis.resume();
-    window.speechSynthesis.speak(utterance);
+    if (!card) { after?.(); return; }
+    speakLearningText(card.form, SPEECH_LOCALES[data?.targetLanguage || ""] || data?.targetLanguage || "en-US", rate, after);
   }
 
   async function submit(selectedId: string, answer = "") {
@@ -271,7 +255,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
       <header><div><p>{data.localDate} · {data.targetLanguage.toUpperCase()}</p><h2 id="vm-practice-title">{t("Today's SmartCard practice", "今日智慧卡练习")}</h2></div><div className="vm-practice-tools"><label><input type="checkbox" checked={repeatAfterMe} onChange={event => setRepeatAfterMe(event.target.checked)}/><span>{t("Three scored repeats (off by default)", "三次跟读评分（默认关闭）")}</span></label><strong>{Math.min(index + 1, cards.length)} <span>/ {cards.length} · {practicePercent}%</span></strong></div></header>
       {card && phase !== "done" ? <div className="vm-card" dir={card.direction} style={{ backgroundImage: `linear-gradient(rgba(3,55,47,.64),rgba(3,55,47,.64)),url('/images/smartcards/learning-world-${timeScene}.jpg')`, backgroundPosition: "center", backgroundSize: "cover", textShadow: "0 3px 14px rgba(0,20,16,.9)" }}>
         <div className="vm-progress" role="progressbar" aria-label={t("Today's card progress", "今日词卡进度")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={practicePercent}><span style={{ width: `${practicePercent}%` }}/></div>
-        <div className="vm-card-status"><strong>{card.status === "unlearned" ? t("New word", "新词") : t("Previous mistake", "以前错过")}</strong><span>{t("Difficulty", "难度")} {card.difficulty}/5</span><span>{t("Frequency", "常用度")} {card.frequencyDegree}/10</span></div>
+        <div className="vm-card-status"><strong>{card.status === "unlearned" ? t("New word", "新词") : t("Previous mistake", "以前错过")}</strong><span>{t("Difficulty", "难度")} {card.difficulty}/5</span><span>{t("Frequency", "常用度")} {card.frequencyDegree}/10</span><span>{vocabularyGradeLabel(card.gradeLevel, zh ? "zh" : "en")}</span></div>
         <div className="vm-card-scene"><span>{SCENES[card.sceneKey] || "✨"}</span><small>{modeLabel[card.mode]} · {t("Memory stage", "记忆阶段")} {card.memoryStage}/5</small></div>
         {phase === "answer" && !revealed ? <div className="vm-study-card">{data.level === "beginner" ? <VocabularyPicture imageKey={beginnerVocabularyImageKey(card.form, card.meaningEn, card.meaningZh)} label={meaning(card)}/> : null}<strong>{card.form}</strong>{card.targetPhonetic ? <b>{card.targetPhonetic}</b> : null}<small>{t("Learn the word, then continue to check its meaning.", "先认识这个词，再继续检查词义。")}</small><button type="button" onClick={() => setRevealed(true)}>{t("Continue", "继续")}</button></div> : phase === "answer" && revealed ? <div className="vm-card-back"><h3>{meaning(card)}</h3></div> : phase === "feedback" ? <div className={`vm-answer-feedback ${answerCorrect ? "correct" : "incorrect"}`} role="status"><strong>{answerCorrect ? `✓ ${t("Correct", "回答正确")}` : `× ${t("Keep learning", "继续学习")}`}</strong><p>{answerCorrect ? t("One retrieval has been recorded.", "已记录一次有效回忆。") : <>{t("Correct answer", "正确答案")}：<b>{card.form}</b> · {meaning(card)}</>}</p><button type="button" onClick={continueAfterFeedback}>{t("Continue", "继续")}</button></div> : card.mode === "listening" ? <div className="vm-speed-controls"><button type="button" onClick={() => playWord(.86)}>🔊 {t("Normal", "正常语速")}</button><button type="button" onClick={() => playWord(.58)}>🐢 {t("Slow", "慢速")}</button></div> : phase !== "sentence" && phase !== "speak" ? <h3>{card.mode === "recall" || textMode ? meaning(card) : card.form}</h3> : null}
         {phase === "answer" ? !revealed ? null : textMode ? <div className="vm-typing"><input value={typed} onChange={event => setTyped(event.target.value)} onKeyDown={event => { if (event.key === "Enter") checkTyped(); }} placeholder={t("Type the target-language word", "输入目标语言词语")}/><button type="button" disabled={!typed.trim() || busy} onClick={checkTyped}>{t("Submit", "提交")}</button></div> : <div className={`vm-options ${data.level === "beginner" ? "vm-picture-options" : ""}`}>{card.options.map(option => <button type="button" aria-pressed={selectedOptionId === option.id} className={selectedOptionId === option.id ? "selected" : ""} disabled={busy} onClick={() => setSelectedOptionId(option.id)} key={option.id}>{data.level === "beginner" ? <VocabularyPicture imageKey={beginnerVocabularyImageKey(option.form, option.meaningEn, option.meaningZh)} label={meaning(option)}/> : null}<span>{card.mode === "recall" ? option.form : meaning(option)}</span></button>)}</div> : phase === "speak" ? <div className="vm-speak">
@@ -287,7 +271,7 @@ export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLa
 
     <section className="vm-library"><header><div><p>{t("VOCABULARY LIBRARY", "词汇库")}</p><h2>{t("My course vocabulary", "我的课程词汇")}</h2></div><div role="tablist">{(["mastered","learning","unlearned"] as Status[]).map(status => <button role="tab" aria-selected={tab === status} className={tab === status ? "active" : ""} onClick={() => { setTab(status); setLibraryPage(1); }} key={status}>{status === "mastered" ? t("Mastered", "学会了") : status === "learning" ? t("Learning", "正在学") : t("Not started", "还未学")} <b>{data.summary[status]}</b></button>)}</div></header>
       <p className="vm-library-note">{t("Twenty words per page. Select any word to start a SmartCard set there. Showing", "每页 20 个词；点击任意词即可从该词开始一组智慧卡。当前显示")} {pageResult.start}–{pageResult.end} / {filtered.length}。</p>
-      <div className="vm-word-grid">{pageItems.map(item => <button className="vm-word-start" type="button" onClick={() => void startFromWord(item.id)} disabled={busy} key={item.id}><span>{SCENES[item.sceneKey] || "Aa"}</span><div><strong dir={item.direction}>{item.form}</strong>{item.targetPhonetic ? <small>{item.targetPhonetic}</small> : null}<p>{meaning(item)}</p><em>{t("Difficulty", "难度")} {item.difficulty}/5 · {t("Frequency", "常用度")} {item.frequencyDegree}/10</em></div></button>)}</div>
+      <div className="vm-word-grid">{pageItems.map(item => <button className="vm-word-start" type="button" onClick={() => void startFromWord(item.id)} disabled={busy} key={item.id}><span>{SCENES[item.sceneKey] || "Aa"}</span><div><strong dir={item.direction}>{item.form}</strong>{item.targetPhonetic ? <small>{item.targetPhonetic}</small> : null}<p>{meaning(item)}</p><em>{t("Difficulty", "难度")} {item.difficulty}/5 · {t("Frequency", "常用度")} {item.frequencyDegree}/10 · {vocabularyGradeLabel(item.gradeLevel, zh ? "zh" : "en")}</em></div></button>)}</div>
       <nav className="vm-pagination" aria-label={t("Vocabulary pages", "词汇分页")}><button type="button" disabled={visiblePage <= 1} onClick={() => setLibraryPage(page => Math.max(1, page - 1))}>← {t("Previous", "上一页")}</button><span>{visiblePage} / {pageCount}</span><button type="button" disabled={visiblePage >= pageCount} onClick={() => setLibraryPage(page => Math.min(pageCount, page + 1))}>{t("Next", "下一页")} →</button></nav>
     </section>
 

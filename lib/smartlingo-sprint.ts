@@ -1,4 +1,4 @@
-import { buildCourseSentenceBank, normalizeSentenceAnswer, tokenizeSentence } from "./smartlingo-sentence-exercises.ts";
+import { buildCourseSentenceBank, buildSentenceChoiceTokens, normalizeSentenceAnswer, tokenizeSentence } from "./smartlingo-sentence-exercises.ts";
 import type { SmartLingoInterfaceLanguage, SmartLingoLearningLanguage, SmartLingoLevel } from "./smartlingo-learning.ts";
 
 export const SPRINT_DURATIONS = [5, 10, 15, 20] as const;
@@ -11,14 +11,15 @@ export type SprintVocabulary = {
   meaning: string;
   difficulty: number;
   frequencyDegree: number;
+  gradeLevel: number;
 };
 
 export type SprintRound = {
   number: number;
   vocabulary: SprintVocabulary[];
   reading: { id: string; prompt: string; options: { id: string; label: string }[]; answerId: string };
-  listening: { id: string; scenario: string; prompt: string; audioText: string; answerTokens: string[]; expected: string; sourceLanguage: string; answerLanguage: string };
-  writing: { id: string; scenario: string; prompt: string; answerTokens: string[]; expected: string; sourceLanguage: string; answerLanguage: string };
+  listening: { id: string; scenario: string; prompt: string; audioText: string; answerTokens: string[]; choiceTokens: string[]; expected: string; sourceLanguage: string; answerLanguage: string };
+  writing: { id: string; scenario: string; prompt: string; answerTokens: string[]; choiceTokens: string[]; expected: string; sourceLanguage: string; answerLanguage: string };
   dialogue: { id: string; prompt: string; audioText: string; expected: string };
 };
 
@@ -103,6 +104,10 @@ export function buildSprintPlan(input: {
     const writing = sentences[2];
     const dialogue = sentences[3];
     const bridge = bridgeLanguage(input.language, input.uiLang);
+    const listeningTokens = tokenizeSentence(promptFor(listening, bridge), bridge);
+    const listeningTokenPool = sentences.flatMap(sentence => tokenizeSentence(promptFor(sentence, bridge), bridge));
+    const writingTokens = tokenizeSentence(writing.targetSentence, input.language);
+    const writingTokenPool = sentences.flatMap(sentence => tokenizeSentence(sentence.targetSentence, input.language));
     const currentReadingOptions = sentences.map(item => ({ id: item.id, label: promptFor(item, bridge) }));
     const fallbackReadingOptions = rotate(bank, `${seed}:reading-options`, bank.length)
       .map(item => ({ id: item.id, label: promptFor(item, bridge) }));
@@ -120,7 +125,8 @@ export function buildSprintPlan(input: {
         scenario: listening.scenario,
         prompt: promptFor(listening, bridge),
         audioText: listening.targetSentence,
-        answerTokens: tokenizeSentence(promptFor(listening, bridge), bridge),
+        answerTokens: listeningTokens,
+        choiceTokens: buildSentenceChoiceTokens(listeningTokens, listeningTokenPool, bridge, `${seed}:listening`),
         expected: promptFor(listening, bridge),
         sourceLanguage: input.language,
         answerLanguage: bridge,
@@ -129,7 +135,8 @@ export function buildSprintPlan(input: {
         id: writing.id,
         scenario: writing.scenario,
         prompt: promptFor(writing, bridge),
-        answerTokens: tokenizeSentence(writing.targetSentence, input.language),
+        answerTokens: writingTokens,
+        choiceTokens: buildSentenceChoiceTokens(writingTokens, writingTokenPool, input.language, `${seed}:writing`),
         expected: writing.targetSentence,
         sourceLanguage: bridge,
         answerLanguage: input.language,

@@ -11,6 +11,7 @@ const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   meaning: `词义 ${index + 1}`,
   difficulty: 1 + Math.floor(index / 250),
   frequencyDegree: 10 - (index % 10),
+  gradeLevel: Math.min(12, Math.floor(index / 2)),
 }));
 
 test("Daily Sprint offers the four requested durations and one complete five-skill round per five minutes", () => {
@@ -190,7 +191,7 @@ test("anonymous Sprint overwrites its short cookie while signed-in members resum
   assert.match(sprintClient, /是否延长 5 分钟完成/);
   assert.match(sprintClient, /setRemainingSeconds\(300\)/);
   assert.match(sprintClient, /否，退出/);
-  assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,sequence,id/);
+  assert.match(sprintRoute, /ORDER BY difficulty ASC,frequency_degree DESC,grade_level ASC,sequence,id/);
   assert.match(sprintRoute, /adaptiveSentenceRounds/);
   assert.doesNotMatch(sprintRoute, /resumeRunId/);
 });

@@ -15,6 +15,7 @@ const japaneseCorrectionFile = "0148_japanese_beginner_common_senses.sql";
 const englishAwayCorrectionFile = "0153_english_beginner_away_gloss.sql";
 const learnerQualitySweepFile = "0154_vocabulary_learner_quality_sweep.sql";
 const frequencyDegreeFile = "0155_vocabulary_frequency_degree.sql";
+const gradeOrderFile = "0169_vocabulary_grade_order.sql";
 
 test("the release contains one deterministic 4,000-item catalog migration per language", () => {
   assert.equal(catalogFiles.length, 12);
@@ -53,6 +54,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     englishAwayCorrectionFile,
     learnerQualitySweepFile,
     frequencyDegreeFile,
+    gradeOrderFile,
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
@@ -70,13 +72,21 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
   const learningOrder = database.prepare(`SELECT COUNT(*) AS total,
     SUM(difficulty BETWEEN 1 AND 5) AS validDifficulty,
     SUM(frequency_degree BETWEEN 1 AND 10) AS validFrequency,
-    COUNT(DISTINCT frequency_degree) AS frequencyBands
+    SUM(grade_level BETWEEN 0 AND 12) AS validGrade,
+    COUNT(DISTINCT frequency_degree) AS frequencyBands,
+    COUNT(DISTINCT grade_level) AS gradeBands
     FROM smartlingo_vocabulary_items WHERE review_status='published'`).get();
-  assert.deepEqual({ ...learningOrder }, { total: 48000, validDifficulty: 48000, validFrequency: 48000, frequencyBands: 10 });
+  assert.deepEqual({ ...learningOrder }, { total: 48000, validDifficulty: 48000, validFrequency: 48000, validGrade: 48000, frequencyBands: 10, gradeBands: 13 });
   const frequencyDistribution = database.prepare(`SELECT frequency_degree AS degree,COUNT(*) AS count
     FROM smartlingo_vocabulary_items WHERE review_status='published' GROUP BY frequency_degree ORDER BY frequency_degree`).all();
   assert.equal(frequencyDistribution.length, 10);
   assert.ok(frequencyDistribution.every(row => row.count === 4800));
+  const gradeDistribution = database.prepare(`SELECT grade_level AS grade,COUNT(*) AS count
+    FROM smartlingo_vocabulary_items WHERE review_status='published' GROUP BY grade_level ORDER BY grade_level`).all();
+  assert.deepEqual(gradeDistribution.map(row => [row.grade, row.count]), [
+    [0,1440],[1,2160],[2,2400],[3,2400],[4,2400],[5,2400],[6,3600],
+    [7,3600],[8,3600],[9,4800],[10,4800],[11,6000],[12,8400],
+  ]);
 
   const incomplete = database.prepare(`SELECT COUNT(*) AS count FROM smartlingo_vocabulary_items
     WHERE review_status='published' AND (

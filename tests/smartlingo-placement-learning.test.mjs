@@ -30,6 +30,7 @@ import {
   gradeSentenceRound,
   tokenizeSentence,
 } from "../lib/smartlingo-sentence-exercises.ts";
+import { compareVocabularyLearningOrder } from "../lib/smartlingo-vocabulary-order.ts";
 
 test("daily session plans fill exactly 15, 30, 45, or 60 minutes", () => {
   for (const minutes of [15, 30, 45, 60]) {
@@ -48,6 +49,10 @@ test("every beginner timed session assigns ten unique vocabulary cards", () => {
       assert.equal(deck.length, 10, `${language} day ${day} must assign ten cards`);
       assert.equal(new Set(deck.map(card => card.stableId)).size, 10);
       assert.ok(deck.every(card => card.sourceType === "smartlingo_original"));
+      assert.ok(deck.every(card => card.difficulty >= 1 && card.difficulty <= 5));
+      assert.ok(deck.every(card => card.frequencyDegree >= 1 && card.frequencyDegree <= 10));
+      assert.ok(deck.every(card => card.gradeLevel >= 0 && card.gradeLevel <= 12));
+      assert.deepEqual([...deck].sort(compareVocabularyLearningOrder).map(card => card.stableId), deck.map(card => card.stableId));
     }
   }
 });
@@ -67,6 +72,7 @@ test("course dashboard starts a focused tabbed session with a compact bottom-rig
   assert.match(workspace, /"exam"/);
   assert.match(workspace, /quitSession/);
   assert.match(workspace, /vocabularyItems: "10 vocabulary items"/);
+  assert.match(workspace, /vocabularyGradeLabel/);
   assert.match(workspace, /position:fixed;right:max\(18px,env\(safe-area-inset-right\)\)/);
 });
 
