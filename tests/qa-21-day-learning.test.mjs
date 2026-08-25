@@ -15,6 +15,7 @@ test("cloud runner is route-only preflight for all required languages and surfac
   assert.match(runner, /anonymous route preflight only/i);
   assert.match(runner, /not login, subscription, learning, speech, score, progress/i);
   assert.doesNotMatch(runner, /INSERT|UPDATE|DELETE|smartlingo_learning_activity_events|smartlingo-project-status/);
+  assert.match(runner, /\["挑战日历", "每天同一套 20 题"\]/);
 });
 
 test("workflow runs at 3 AM PDT for the fixed window without writing learning evidence", () => {
@@ -22,6 +23,7 @@ test("workflow runs at 3 AM PDT for the fixed window without writing learning ev
   assert.match(workflow, /2026-08-21/);
   assert.match(workflow, /2026-09-10/);
   assert.match(workflow, /route-only preflight evidence/i);
+  assert.match(workflow, /set -o pipefail\s+node scripts\/run-qa-21-day-learning\.mjs \| tee/);
   assert.match(workflow, /Never publish a passed learning report/i);
   assert.doesNotMatch(workflow, /wrangler d1 execute|QA_DAY_COMPLETE|COUNT\(DISTINCT r\.user_id\)/);
 });

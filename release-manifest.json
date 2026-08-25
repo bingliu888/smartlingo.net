@@ -1,75 +1,34 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-anonymous-sprint-resume-2026-08-25-v40",
+  "releaseId": "smartlingo-route-preflight-truthful-gate-2026-08-25-v41",
   "site": "smartlingo.net",
-  "title": {
-    "en": "Restore anonymous Sprint step and timer continuity",
-    "zh": "恢复匿名今日速成步骤与计时连续性"
-  },
+  "title": {"en": "Make the 21-day route preflight truthful", "zh": "修复 21 天路由预检的真实失败传播"},
   "purpose": {
-    "en": "Fix the production regression where an anonymous learner could answer a Sprint vocabulary item, continue to the next item, then reload and be returned to vocabulary 1/5 with a near-reset timer.",
-    "zh": "修复生产回归：匿名学员完成今日速成词汇题并继续到下一题后，刷新却返回词汇 1/5 且计时器接近重置。"
+    "en": "Fix the daily QA route preflight after its SmartCard Challenge checks returned false while the GitHub workflow incorrectly completed successfully.",
+    "zh": "修复每日 QA 路由预检：SmartCard Challenge 检查返回失败时，GitHub workflow 仍错误显示成功。"
   },
   "features": {
-    "en": [
-      "Resume a matching anonymous Sprint from its server-managed HttpOnly feature cookie, including round, stage, word, answers, and remaining time.",
-      "Treat a new selection from Play as a fresh Sprint, then remove the one-use fresh marker so reloading the same Sprint URL resumes instead of resets.",
-      "Persist a vocabulary Continue transition before showing the next item, eliminating the delayed-checkpoint reload race."
-    ],
-    "zh": [
-      "从服务器管理的 HttpOnly 功能 Cookie 恢复匹配的匿名今日速成，包括回合、阶段、单词、答案及剩余时间。",
-      "从 Play 新选择时创建全新 Sprint，随后移除一次性 fresh 标记，使同一 Sprint URL 刷新时续学而非重置。",
-      "在显示下一词汇题前保存 Continue 转换，消除延迟 checkpoint 与立即刷新的竞态。"
-    ]
+    "en": ["Recognize the server-rendered Challenge calendar heading used by every selected-language route.", "Propagate the route checker's nonzero exit through tee so a failed artifact cannot produce a green workflow."],
+    "zh": ["识别每个已选语言 Challenge 路由稳定服务端渲染的挑战日历标题。", "让路由检查器的非零退出码穿透 tee，禁止失败 artifact 产生绿色 workflow。"]
   },
   "affected": {
-    "en": [
-      "Anonymous Today's Sprint start, checkpoint, vocabulary Continue, reload, and timer behavior on smartlingo.net only.",
-      "Signed-in Sprint remains D1-backed. No Clerk, payment, college, community, AI-provider, sibling-site, or cloud-binding behavior changes."
-    ],
-    "zh": [
-      "仅影响 smartlingo.net 匿名今日速成的开始、checkpoint、词汇 Continue、刷新和计时行为。",
-      "登录用户 Sprint 继续由 D1 保存；不修改 Clerk、支付、学院、社区、AI 提供商、兄弟站点或云绑定。"
-    ]
+    "en": ["Only the SmartLingo 21-day anonymous route preflight script, workflow failure semantics, contract tests, and release metadata change.", "No learning data, score, authentication, payment, referral, certificate, production binding, or sibling-site behavior changes."],
+    "zh": ["仅修改 SmartLingo 21 天匿名路由预检脚本、workflow 失败语义、合同测试与发布元数据。", "不修改学习数据、成绩、身份验证、支付、推荐、证书、生产绑定或兄弟站点行为。"]
   },
   "changes": {
-    "en": [
-      "Add strict cookie parsing, feature/day/language/duration matching, bounded state restoration, two-hour expiry, and elapsed-time reconciliation.",
-      "Send complete Sprint identity with every anonymous checkpoint while keeping all anonymous learning state out of D1.",
-      "Add behavioral regression coverage for matching resume, timer continuity, feature/day isolation, malformed-cookie rejection, fresh Play entry, and synchronous Continue persistence."
-    ],
-    "zh": [
-      "新增严格 Cookie 解析、功能/日期/语言/时长匹配、有界状态恢复、两小时过期及已流逝时间校准。",
-      "每次匿名 checkpoint 均携带完整 Sprint 身份，同时继续禁止匿名学习状态写入 D1。",
-      "新增行为回归测试，覆盖匹配续学、计时连续性、功能/日期隔离、损坏 Cookie 拒绝、Play 新进入及同步 Continue 保存。"
-    ]
+    "en": ["Replace post-fetch Challenge markers with stable SSR calendar copy while retaining HTTP, response-size, and marker requirements.", "Enable Bash pipefail on the workflow route-check step and add regression assertions for both contracts."],
+    "zh": ["将依赖后续数据加载的 Challenge 标记替换为稳定 SSR 日历文案，同时保留 HTTP、响应大小与标记要求。", "在 workflow 路由检查步骤启用 Bash pipefail，并为两项合同新增回归断言。"]
   },
   "validation": {
-    "en": [
-      "Run the focused Sprint contracts, complete repository tests, TypeScript, D1 migration validation, production-equivalent build, sensitive-data scan, changed-file lint, artifact/whitespace checks, and shared policy/architecture/base-feature/contracts gates.",
-      "Deploy only through GitHub Actions to Cloudflare, then have Terra repeat the exact anonymous Chinese-interface English Day 1 ten-minute vocabulary answer, Continue, reload, and timer-resume flow in production."
-    ],
-    "zh": [
-      "执行 Sprint 专项合同、全仓测试、TypeScript、D1 迁移验证、生产等价构建、敏感信息扫描、修改文件 lint、产物/空白检查及共享政策/架构/基础功能/合同门禁。",
-      "仅通过 GitHub Actions 发布至 Cloudflare，再由 Terra 在生产环境复测精确流程：中文界面、英语、第 1 天、10 分钟、词汇答题、Continue、刷新及计时续接。"
-    ]
+    "en": ["Run the QA contract, production route preflight for 2026-08-25, complete repository release gate, sensitive-data scan, source-drift checks, and shared policy/architecture/base-feature/contracts gates.", "Deploy through GitHub Actions to Cloudflare, rerun the corrected daily route preflight, and verify the production Challenge route in the real Chrome acceptance session."],
+    "zh": ["执行 QA 合同、2026-08-25 生产路由预检、全仓发布门禁、敏感信息扫描、源码漂移检查及共享政策/架构/基础功能/合同门禁。", "通过 GitHub Actions 发布到 Cloudflare，重跑修正后的每日路由预检，并在真实 Chrome 验收中验证生产 Challenge 路由。"]
   },
   "deferred": {
-    "en": [
-      "No functional scope is intentionally deferred. Repeat After Me remains off during the no-microphone acceptance flow."
-    ],
-    "zh": [
-      "没有功能范围被有意延期；无麦克风验收期间三次跟读继续保持关闭。"
-    ]
+    "en": ["No functional scope is intentionally deferred; this anonymous preflight remains explicitly separate from signed-in learning evidence."],
+    "zh": ["没有功能范围被有意延期；该匿名预检继续明确独立于登录学习证据。"]
   },
   "siteAdaptations": {
-    "en": [
-      "Preserve SmartLingo's rule that entering from Play starts a new anonymous Sprint while a reload of that selected Sprint resumes its isolated cookie state.",
-      "Preserve user-authored untracked files and the existing GitHub Actions to Cloudflare delivery boundary."
-    ],
-    "zh": [
-      "保持 SmartLingo 规则：从 Play 进入会开始新的匿名 Sprint，而刷新已选择的 Sprint 会恢复其隔离 Cookie 状态。",
-      "保留用户未跟踪文件及既有 GitHub Actions 至 Cloudflare 发布边界。"
-    ]
+    "en": ["Use SmartLingo's Chinese Challenge calendar copy and preserve the fixed four-language 21-day QA plan.", "Preserve user-authored untracked files and the existing GitHub Actions to Cloudflare delivery boundary."],
+    "zh": ["使用 SmartLingo 中文 Challenge 日历文案，并保持固定四语言的 21 天 QA 计划。", "保留用户未跟踪文件及既有 GitHub Actions 至 Cloudflare 发布边界。"]
   }
 }

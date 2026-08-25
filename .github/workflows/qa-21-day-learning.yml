@@ -61,7 +61,10 @@ jobs:
 
       - name: Check all learning-feature production routes
         if: steps.date.outputs.run == 'true'
-        run: node scripts/run-qa-21-day-learning.mjs | tee smartlingo-qa-route-preflight.json
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/run-qa-21-day-learning.mjs | tee smartlingo-qa-route-preflight.json
         env:
           QA_LOCAL_DATE: ${{ steps.date.outputs.local_date }}
           QA_BASE_URL: https://smartlingo.net

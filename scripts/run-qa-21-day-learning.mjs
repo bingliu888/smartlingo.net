@@ -42,7 +42,7 @@ for (const target of targets) {
   checks.push(await checkRoute(target, "play", `/zh/play?language=${target}`, ["智慧卡", "边玩边学", "游戏"]));
   checks.push(await checkRoute(target, "todays_sprint", `/zh/play/sprint`, ["今日速成", "选择语言", "学习日"]));
   checks.push(await checkRoute(target, "smartcard_practice", `/zh/smartcards`, ["智慧卡", "初级", "中级"]));
-  checks.push(await checkRoute(target, "smartcard_challenge", `/zh/play/challenge?language=${target}&level=beginner`, ["智慧卡挑战", "当地", "题库"]));
+  checks.push(await checkRoute(target, "smartcard_challenge", `/zh/play/challenge?language=${target}&level=beginner`, ["挑战日历", "每天同一套 20 题"]));
   checks.push(await checkRoute(target, "everyday_speaking", `/zh/play/everyday?language=${target}`, ["生活口语", "机场", "酒店"]));
   checks.push(await checkRoute(target, "rankings", `/zh/play/rankings`, ["排行榜", "今日速成", "前 25"]));
 }
