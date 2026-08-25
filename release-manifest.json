@@ -1,73 +1,75 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-everyday-level-speed-2026-08-24-v35",
+  "releaseId": "smartlingo-production-real-user-qa-2026-08-24-v36",
   "site": "smartlingo.net",
   "title": {
-    "en": "Make Everyday levels and speech speed explicit",
-    "zh": "明确显示生活口语等级与语速"
+    "en": "Complete the two-part four-language production QA",
+    "zh": "完成两部分四语生产真实用户验收"
   },
   "purpose": {
-    "en": "Close the final Everyday acceptance gap: Intermediate and Advanced links preserved their URL level, but the player did not identify the selected level and opened with the same Beginner vocabulary; normal and slow playback settings also lacked an observable status.",
-    "zh": "修复最后一项生活口语验收缺口：中级、高级链接虽保留 URL 等级，但播放器未标识所选等级且仍以相同初级词汇开场；正常与慢速播放也缺少可观察状态。"
+    "en": "Publish the final bilingual administrator record after completing anonymous Play and signed-in learner acceptance in production across English, Japanese, Spanish, and Italian.",
+    "zh": "在生产环境完成匿名 Play 与登录学员的英语、日语、西班牙语和意大利语验收后，发布最终双语管理员记录。"
   },
   "features": {
     "en": [
-      "Show Beginner, Intermediate, or Advanced in the player heading and every slide's progress label.",
-      "Start each level with visibly distinct, level-labelled scenario vocabulary while retaining ten paired conversations per place and level.",
-      "Expose the selected normal 0.84× or genuinely slow 0.42× speech setting with aria-pressed controls and a live status."
+      "Record independent language selection, cookie isolation, Sprint reset and extension, and local-date Challenge behavior across all six anonymous Play tiles.",
+      "Record Dashboard, Course 5 skills, Sprint, SmartCard, Challenge, Everyday, Score History, Rankings, and database-resume acceptance for the signed-in test learner.",
+      "Publish per-language planned and visible persisted learning time, scores, recovery releases, and verified educational-media coverage."
     ],
     "zh": [
-      "在播放器标题和每张幻灯片进度中显示初级、中级或高级。",
-      "每个等级从明显不同且带等级标签的场景词汇开始，同时保留每个地点、每个等级十组一问一答。",
-      "使用 aria-pressed 控件及实时状态显示正常 0.84× 或真正慢速 0.42× 语速设置。"
+      "记录匿名 Play 六个 tile 的独立选语、Cookie 隔离、今日速成重置与续时，以及当地日期挑战行为。",
+      "记录登录测试学员的 Dashboard、课程五技能、今日速成、SmartCard、挑战、生活口语、分数历史、排行榜及数据库续学验收。",
+      "发布各语言计划与可见持久化学习时长、分数、恢复版本及已核验教育媒体覆盖率。"
     ]
   },
   "affected": {
     "en": [
-      "Everyday Speaking presentation and prebuilt vocabulary ordering for all twelve languages and twelve places; no Clerk, payment, administrator, sibling-site, microphone, or database schema behavior."
+      "Administrator QA documentation and release history only; this final record adds no new runtime, database, Clerk, payment, or external-service behavior."
     ],
     "zh": [
-      "十二种语言、十二个地点的生活口语展示与预构建词汇顺序；不影响 Clerk、支付、管理员、兄弟站点、麦克风或数据库结构。"
+      "仅影响管理员 QA 文档与发布历史；本次最终记录不新增运行时、数据库、Clerk、支付或外部服务行为。"
     ]
   },
   "changes": {
     "en": [
-      "Derive a bilingual visible level name from the selected route level and render it in the player.",
-      "Rotate scenario vocabulary by level and label each vocabulary stage with its level objective.",
-      "Add exact effective speed status and regression coverage for all levels, languages, and speed controls."
+      "Add the 2026-08-24 bilingual Project daily QA report with the complete anonymous and signed-in acceptance matrix.",
+      "Document English 2/5, Japanese 2/4, Spanish 2/4, and Italian 5/6 planned/visible persisted Course minutes and all four Sprint scores.",
+      "Document the v26-v35 defect-recovery chain, final production evidence, and 100% imageable Beginner-word media coverage."
     ],
     "zh": [
-      "从所选路由等级生成双语可见等级名称并显示在播放器中。",
-      "按等级轮换场景词汇，并以等级目标标注每个词汇阶段。",
-      "增加精确有效语速状态，以及覆盖全部等级、语言和语速控件的回归测试。"
+      "新增 2026-08-24 双语 Project 每日 QA 报告，包含完整匿名与登录验收矩阵。",
+      "记录英语 2/5、日语 2/4、西班牙语 2/4、意大利语 5/6 的计划/可见持久化课程分钟，以及四种语言的今日速成分数。",
+      "记录 v26-v35 缺陷恢复链、最终生产证据及可图像化初级词 100% 媒体覆盖。"
     ]
   },
   "validation": {
     "en": [
-      "Run the Everyday level/speed contracts, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
-      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner to open English airport Beginner, Intermediate, and Advanced and verify distinct visible level/data plus the normal/slow state transition."
+      "Anonymous production acceptance passed all six Play tiles, isolated language choices and cookies, Sprint reset/extension, and date-only Challenge auto-advance.",
+      "Signed-in production acceptance passed the four-language Dashboard and real-learning matrix, persisted Course and score records, SmartCard resume, Challenge, Everyday, Score History, and Rankings.",
+      "Final product gates passed 361/361 tests, TypeScript, 64 D1 migrations, production build, sensitive-data scans, changed-file lint, shared policy/architecture/base-feature gates, and 11 shared contracts."
     ],
     "zh": [
-      "执行生活口语等级/语速合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
-      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员打开英语机场初、中、高三级，并验证不同可见等级/数据以及正常与慢速状态切换。"
+      "匿名生产验收通过全部六个 Play tile、独立选语与 Cookie、今日速成重置/续时及仅日期挑战自动推进。",
+      "登录生产验收通过四语 Dashboard 与真实学习矩阵、课程及分数持久化、SmartCard 续学、挑战、生活口语、分数历史和排行榜。",
+      "最终产品门禁通过 361/361 测试、TypeScript、64 个 D1 迁移、生产构建、敏感数据扫描、修改文件 lint、共享政策/架构/基础功能门禁及 11 个共享合同。"
     ]
   },
   "deferred": {
     "en": [
-      "The final bilingual Project QA report requires a fresh Terra production retest of the three Everyday levels and observable speed state after this deployment."
+      "Browser automation cannot reliably measure physical speaker duration. The visible and accessible Normal 0.84× and Slow 0.42× states and their bidirectional control were verified; no acoustic duration was fabricated. No required functional acceptance remains deferred."
     ],
     "zh": [
-      "最终双语 Project QA 报告需要 Terra 在本次发布后复测生活口语三级及可观察语速状态。"
+      "浏览器自动化无法可靠测量实体扬声器时长；已验证可见且可访问的正常 0.84×、慢速 0.42× 状态及双向切换，没有虚构声学时长。没有必需功能验收被延期。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo's existing database authority, Repeat After Me default-off behavior, GitHub-to-Cloudflare delivery, and SmartLingo-only data boundaries.",
-      "Do not modify any other site, account, credential, payment rail, database binding, or cloud resource."
+      "Preserve SmartLingo-only data and brand boundaries, Repeat After Me default-off behavior, and GitHub Actions to Cloudflare delivery.",
+      "No test address, verification code, email body, cookie, session artifact, payment, referral, certificate, administrator action, sibling site, or cloud configuration was recorded or changed."
     ],
     "zh": [
-      "保持 SmartLingo 既有数据库权威、跟读默认关闭、GitHub 至 Cloudflare 发布及仅限 SmartLingo 的数据边界。",
-      "不修改其他站点、账户、凭据、支付通道、数据库绑定或云资源。"
+      "保持仅限 SmartLingo 的数据与品牌边界、跟读默认关闭及 GitHub Actions 至 Cloudflare 发布。",
+      "没有记录或修改测试邮箱、验证码、邮件正文、Cookie、会话信息、支付、推荐、证书、管理员操作、兄弟站点或云配置。"
     ]
   }
 }
