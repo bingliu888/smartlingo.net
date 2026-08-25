@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-course-dialogue-text-path-2026-08-24-v32",
+  "releaseId": "smartlingo-visible-dialogue-text-submit-2026-08-24-v33",
   "site": "smartlingo.net",
   "title": {
-    "en": "Enable no-microphone course dialogue learning",
-    "zh": "启用无需麦克风的课程对话学习"
+    "en": "Keep no-microphone dialogue submission visible",
+    "zh": "保持无需麦克风的对话提交操作可见"
   },
   "purpose": {
-    "en": "Close the production acceptance gap where a typed course-dialogue response could not be submitted unless the learner first completed three optional microphone scores.",
-    "zh": "修复生产验收发现的缺口：课程对话虽可输入文本，但必须先完成三次可选麦克风评分才能提交。"
+    "en": "Close the follow-up production layout defect where the newly enabled typed dialogue submit action inherited the site's intentional hidden-Check rule and therefore remained invisible.",
+    "zh": "修复后续生产布局缺陷：新启用的文本对话提交操作继承了全站有意隐藏 Check 的规则，因而仍不可见。"
   },
   "features": {
     "en": [
-      "Make typed dialogue responses a complete first-class path when Repeat After Me is off.",
-      "Keep three-attempt voice scoring available as an optional enhancement rather than a submission prerequisite.",
-      "Clarify the voice control and typed-submit labels while preserving database-authoritative grading and feedback."
+      "Give the typed dialogue submit action a dedicated visible class that does not inherit the hidden-Check rule.",
+      "Keep typed dialogue as the no-microphone default path and three-attempt voice scoring as an optional enhancement.",
+      "Preserve database-authoritative grading, feedback, and Continue behavior."
     ],
     "zh": [
-      "跟读关闭时，文本对话回答可作为完整正式学习路径。",
-      "三次语音评分保留为可选增强，不再是提交前置条件。",
-      "明确区分可选语音按钮与文本提交按钮，同时保持数据库权威判分和反馈。"
+      "为文本对话提交设置专用可见样式，不再继承隐藏 Check 的全站规则。",
+      "保持文本对话为默认无需麦克风路径，三次语音评分为可选增强。",
+      "保持数据库权威判分、反馈及继续操作。"
     ]
   },
   "affected": {
@@ -32,23 +32,23 @@
   },
   "changes": {
     "en": [
-      "Remove the three-voice-score condition from the typed dialogue submit action.",
-      "Relabel the microphone action as optional and add explicit no-microphone guidance.",
-      "Add regression coverage proving typed dialogue submission is not gated by voice scores."
+      "Render the dialogue submit button with a dedicated class and explicit visible primary-action styling.",
+      "Retain the optional microphone label and explicit no-microphone guidance from v32.",
+      "Extend regression coverage to prevent both logical gating and CSS hiding."
     ],
     "zh": [
-      "移除文本对话提交操作对三次语音评分的依赖。",
-      "把麦克风操作明确标记为可选，并增加无需麦克风的操作说明。",
-      "增加回归覆盖，证明文本对话提交不受语音评分门槛限制。"
+      "使用专用 class 渲染对话提交按钮，并明确设置可见的主操作样式。",
+      "保留 v32 的可选麦克风标签及无需麦克风说明。",
+      "扩展回归覆盖，同时防止逻辑门槛和 CSS 隐藏。"
     ]
   },
   "validation": {
     "en": [
-      "Run the dialogue UI regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
+      "Run the dialogue visibility regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
       "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner with Repeat After Me off to submit real Spanish and Italian typed dialogue responses without microphone access."
     ],
     "zh": [
-      "执行对话 UI 回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
+      "执行对话可见性回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
       "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员在跟读关闭且不访问麦克风的条件下提交真实西语、意语文本对话回答。"
     ]
   },

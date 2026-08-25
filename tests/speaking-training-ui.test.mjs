@@ -55,6 +55,8 @@ test("the subscribed course dashboard opens each training skill without another 
   assert.match(workspace, /无需麦克风：可在文本框输入回答并提交/);
   assert.match(workspace, /skill === "dialogue" \? \(lang === "zh" \? "提交文本回答"/);
   assert.doesNotMatch(workspace, /skill === "dialogue" && dialogueScores\.length < 3/);
+  assert.match(workspace, /skill === "dialogue" \? "sl-dialogue-text-submit" : "sl-primary-action"/);
+  assert.match(workspace, /\.sl-task-actions \.sl-dialogue-text-submit\{display:inline-flex/);
 });
 
 test("the person-avatar pronunciation coach leads three scored follow-me turns", async () => {
