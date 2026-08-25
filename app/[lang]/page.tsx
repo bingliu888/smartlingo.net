@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { PlayDailySprintPicker } from "../../components/PlayDailySprintPicker";
 import { SiteFooter } from "../../components/SiteFooter";
@@ -170,12 +171,13 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>
           </div>
           <PlayDailySprintPicker lang={locale} initialLanguage={locale} triggerClassName="lingo-hero-visual" triggerLabel={ui.openSprint}>
-            <img
+            <Image
               className="lingo-community-art"
               src="/smartlingo-language-community-1600.png"
-              width="1600"
-              height="858"
+              width={1600}
+              height={858}
               alt={ui.communityArtAlt}
+              unoptimized
             />
           <div className="lingo-coach-card">
             <header><span>{t.coachLabel}</span><b>12 XP</b></header>

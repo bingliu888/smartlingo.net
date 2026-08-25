@@ -11,5 +11,5 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const { lang } = await params;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const { month } = await searchParams;
-  return <ProjectDashboard lang={lang as any} month={month} />;
+  return <ProjectDashboard lang={lang === "zh" ? "zh" : "en"} month={month} />;
 }

@@ -45,7 +45,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
   const t = copy[lang === "zh" ? "zh" : "en"];
   return (
     <main className="ai-cert-legal-page">
-      <SiteHeader lang={lang as any}/>
+      <SiteHeader lang={lang}/>
       <article className="ai-cert-legal-main">
         <p className="section-kicker">{t.eyebrow}</p>
         <h1>{t.title}</h1>
@@ -58,7 +58,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
           <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
         </p>
       </article>
-      <SiteFooter lang={lang as any}/>
+      <SiteFooter lang={lang}/>
     </main>
   );
 }

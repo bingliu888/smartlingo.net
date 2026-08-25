@@ -24,11 +24,10 @@ test("vocabulary library pagination returns exactly twenty and clamps pages", ()
 });
 
 test("home and dashboard use canonical feature routes without duplicate home panels", async () => {
-  const [home, dashboard, dashboardHub, header, assistant, assistantRoute, locale] = await Promise.all([
+  const [home, dashboard, dashboardHub, assistant, assistantRoute, locale] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
     read("../components/DashboardLearningHub.tsx"),
-    read("../components/SiteHeader.tsx"),
     read("../components/AssistantClient.tsx"),
     read("../app/api/assistant/route.ts"),
     read("../lib/interface-locale.ts"),

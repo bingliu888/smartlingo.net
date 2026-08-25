@@ -13,5 +13,5 @@ export default async function MembersPage({ params }: { params: Promise<{ lang: 
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/members`);
-  return <main className="members-page-shell"><SiteHeader lang={lang as any}/><MembersDirectory lang={lang as any}/><SiteFooter lang={lang as any}/></main>;
+  return <main className="members-page-shell"><SiteHeader lang={lang}/><MembersDirectory lang={lang === "zh" ? "zh" : "en"}/><SiteFooter lang={lang}/></main>;
 }

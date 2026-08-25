@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SMARTLINGO_AI_STUDY_PARTNERS } from "../lib/smartlingo-ai-study-partners";
@@ -179,7 +180,7 @@ export function NearbyLearning({ lang, signedIn }: { lang: InterfaceLanguage; si
       {!signedIn ? <div className="nearby-public-access"><div><p className="section-kicker">REAL LEARNERS · OPT-IN</p><h3>{text("Real Nearby stays private until you choose to join.", "真人 Nearby 只在您主动加入后开放。")}</h3><p>{text("Sign in to optionally match with adult learners who share your language pair and broad region. SmartLingo never uses GPS or shows an exact address.", "登录后可选择匹配同语言组合、同大区域的成年学习者。SmartLingo 不读取 GPS，也不展示精确地址。")}</p></div><Link className="primary-button" href={signInHref}>{text("Sign in for real learners", "登录后寻找真人伙伴")} →</Link></div> : <>
       <header><div><p className="section-kicker">REAL LEARNERS · OPT-IN</p><h3>{profile.enabled ? text(`Learners in ${profile.coarseRegion}`, `${profile.coarseRegion} 的学习伙伴`) : text("Real-member Nearby is off", "真人 Nearby 尚未开启")}</h3></div>{profile.enabled ? <span>{matches.length}</span> : null}</header>
       {!loaded ? <p>{text("Loading…", "读取中…")}</p> : profile.enabled && matches.length ? <div className="nearby-match-grid">{matches.map(member => <article key={member.id}>
-        <div className="nearby-member-title"><span>{member.imageUrl ? <img src={member.imageUrl} alt=""/> : member.displayName.slice(0, 1).toUpperCase()}</span><div><h4>{member.displayName}</h4><p>{member.coarseRegion}</p></div></div>
+        <div className="nearby-member-title"><span>{member.imageUrl ? <Image src={member.imageUrl} alt="" width={96} height={96} unoptimized/> : member.displayName.slice(0, 1).toUpperCase()}</span><div><h4>{member.displayName}</h4><p>{member.coarseRegion}</p></div></div>
         <div className="nearby-member-tags"><span>{levelName(member.level)}</span><span>{modeName(member.studyMode)}</span><span>{availabilityName(member.availability)}</span></div>
         {member.bio ? <p>{member.bio}</p> : null}
         <button className="primary-button" type="button" onClick={() => void invite(member)} disabled={busy === member.id}>{busy === member.id ? text("Sending…", "发送中…") : text("Invite to learn together", "邀请一起学习")}</button>

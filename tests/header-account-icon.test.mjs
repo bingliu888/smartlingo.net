@@ -9,7 +9,7 @@ test("desktop account icon and the mobile drawer expose the same account destina
   assert.equal((header.match(/<HeaderAccount lang=\{lang\}/g) ?? []).length, 2);
   assert.match(header, /<HeaderAccount lang=\{lang\} mobile onNavigate=/);
   assert.doesNotMatch(header, /variant="text"/);
-  assert.match(account, /session\.imageUrl \? <img src=\{session\.imageUrl\} alt=""\/> : <span className="avatar-glyph"/);
+  assert.match(account, /session\.imageUrl \? <Image src=\{session\.imageUrl\} alt="" width=\{96\} height=\{96\} unoptimized\/> : <span className="avatar-glyph"/);
   assert.match(account, /className="user-icon" href=\{`\/\$\{lang\}\/auth\/login`\} aria-label=\{label\} title=\{label\}/);
   assert.doesNotMatch(account, /variant === "icon"/);
   assert.match(account, /mobile \? <nav className=\{styles\.mobileSignIn\}/);

@@ -18,19 +18,6 @@ export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
   window.dispatchEvent(new CustomEvent(TARGET_LANGUAGE_EVENT, { detail: code }));
 }
 
-function subscribeToTargetLanguage(update: () => void) {
-  window.addEventListener(TARGET_LANGUAGE_EVENT, update);
-  window.addEventListener("storage", update);
-  return () => {
-    window.removeEventListener(TARGET_LANGUAGE_EVENT, update);
-    window.removeEventListener("storage", update);
-  };
-}
-
-function isCommunityLanguage(value: string | null): value is SmartLingoCommunityLanguage {
-  return SMARTLINGO_LANGUAGE_COMMUNITIES.some(language => language.code === value);
-}
-
 function localizedPath(pathname: string, language: Lang) {
   const segments = pathname.split("/");
   if (isInterfaceLanguage(segments[1])) segments[1] = language;

@@ -14,7 +14,11 @@ export function ClassAccessManagers({ code, showSubscribers = false, zh = false 
     const data = await response.json().catch(() => ({})) as { members?: Member[]; error?: string };
     if (response.ok) setMembers(data.members || []); else setMessage(data.error || "Unable to load members");
   }, [code]);
-  useEffect(() => { if (panel) void load(panel); }, [load, panel]);
+  useEffect(() => {
+    if (!panel) return;
+    const timer = window.setTimeout(() => void load(panel), 0);
+    return () => window.clearTimeout(timer);
+  }, [load, panel]);
   async function add() {
     if (!panel) return;
     setMessage("");

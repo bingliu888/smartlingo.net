@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
 import { VocabularyPicture } from "./VocabularyPicture";
@@ -387,7 +388,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
     <label className="everyday-repeat-check"><input type="checkbox" checked={repeatAfterMe} onChange={event => setRepeat(event.target.checked)}/><span><b>{zh ? "开启三次跟读与评分" : "Repeat after me three times with scoring"}</b><small>{zh ? "默认关闭；需要口语训练时再开启麦克风。" : "Off by default. Enable it only when you want microphone practice."}</small></span></label>
     <fieldset className="everyday-language-help"><legend>{zh ? "用户语言语音辅助" : "User-language spoken help"}</legend><label><input type="radio" name="user-language-help" checked={!userLanguageHelp} onChange={() => setUserLanguageHelp(false)}/>{zh ? "关闭" : "Off"}</label><label><input type="radio" name="user-language-help" checked={userLanguageHelp} onChange={() => setUserLanguageHelp(true)}/>{zh ? "开启" : "On"}</label><small>{zh ? "开启后先用用户语言提示，再播放学习语言；评分仍只检查学习语言。" : "When on, hear a bridge-language cue before the learning language. Scoring still checks only the learning language."}</small></fieldset>
     <div className="everyday-stage" dir={direction}>
-      <img src={sceneMedia} alt={zh ? `${scene.nameZh}生活口语场景` : `${scene.nameEn} everyday speaking scene`}/>
+      <Image src={sceneMedia} alt={zh ? `${scene.nameZh}生活口语场景` : `${scene.nameEn} everyday speaking scene`} width={1200} height={800} unoptimized/>
       <div className="everyday-shade"/>
       <div className="everyday-progress"><span style={{ width: `${(index + 1) * 100 / slides.length}%` }}/></div>
       <div className={`everyday-conversation-person ${customerTurn ? "customer" : "staff"}`} aria-hidden="true"><span>{customerTurn ? "👤" : "●"}</span><i>{speakerLabel}</i></div>

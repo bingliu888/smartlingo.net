@@ -9,9 +9,16 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "dist/**",
+    ".wrangler/**",
+    ".sites-runtime/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "output/**",
+    "tmp/**",
+    "public/pdf.worker.min.mjs",
+    "public/wallet-assets/greatlove-onboard.js",
   ]),
 ]);
 

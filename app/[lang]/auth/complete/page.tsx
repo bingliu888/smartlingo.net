@@ -35,7 +35,7 @@ export default async function AuthCompletePage({
     <section className="auth-panel">
       <div className="auth-top">
         <Link href={`/${lang}`}>← {lang === "zh" ? "返回首页" : "Back to home"}</Link>
-        <LanguageLink lang={lang as any}/>
+        <LanguageLink lang={lang}/>
       </div>
       <ClerkSessionBridge lang={lang} returnTo={returnTo}/>
     </section>

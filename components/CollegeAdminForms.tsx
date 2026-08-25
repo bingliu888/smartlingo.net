@@ -9,13 +9,6 @@ const fields=(zh:boolean)=><>
   <label>{zh?"英文介绍":"English description"}<textarea name="descriptionEn"/></label>
   <label>{zh?"中文介绍":"中文介绍"}<textarea name="descriptionZh"/></label>
 </>;
-const accessFields=(zh:boolean,tags:CollegeTag[])=><>
-  <label>{zh?"访问类型":"Access type"}<select name="accessType" defaultValue="public"><option value="public">{zh?"公开学院":"Open college"}</option><option value="trial">{zh?"推荐学院":"Referred college"}</option><option value="private">{zh?"专属学院":"Private college"}</option></select></label>
-  <label>{zh?"价格（美元）":"Price (USD)"}<input name="tuition" type="number" min="0" step="0.01" defaultValue="0"/></label>
-  <label>{zh?"推荐试用天数":"Referral days"}<input name="trialDays" type="number" min="0" max="365" defaultValue="7"/></label>
-  <label>{zh?"标签":"Tag"}<select name="tag">{tags.map(tag=><option key={tag.id} value={tag.slug}>{zh?tag.nameZh:tag.nameEn}</option>)}</select></label>
-</>;
-
 export function CollegeCreateForm({lang,tags}:{lang:"en"|"zh";tags:CollegeTag[]}){
   const zh=lang==="zh",router=useRouter(),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);
   async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();setBusy(true);setNotice("");const response=await fetch("/api/colleges",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.fromEntries(new FormData(event.currentTarget)))});const data=await response.json().catch(()=>({})) as{code?:string;error?:string};if(response.ok&&data.code){router.push(`/${lang}/college/${data.code}`);return;}setNotice(data.error||(zh?"无法创建学院":"Unable to create college"));setBusy(false);}

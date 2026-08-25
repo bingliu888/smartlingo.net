@@ -37,6 +37,7 @@ export function LiveClassPlaylistManager({
   realtimeMode: "group_call" | "webinar" | "livestream";
 }) {
   const zh = locale === "zh";
+  void realtimeMode;
   const [items, setItems] = useState<PlaylistItem[]>([]);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);

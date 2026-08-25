@@ -15,5 +15,5 @@ export default async function CardCompletePage({ params, searchParams }: { param
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/pay/card/complete?session_id=${encodeURIComponent(sessionId)}`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
-  return <main className="billing-page"><SiteHeader lang={lang as any}/><CardCheckoutComplete lang={lang as any} classId={classId} sessionId={sessionId}/><SiteFooter lang={lang as any}/></main>;
+  return <main className="billing-page"><SiteHeader lang={lang}/><CardCheckoutComplete lang={lang === "zh" ? "zh" : "en"} classId={classId} sessionId={sessionId}/><SiteFooter lang={lang}/></main>;
 }

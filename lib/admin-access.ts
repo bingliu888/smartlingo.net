@@ -1,4 +1,4 @@
-import { BOOTSTRAP_ADMIN_EMAIL, getDatabase, getSessionUser, type SessionUser } from "./auth";
+import { BOOTSTRAP_ADMIN_EMAIL, getSessionUser, type SessionUser } from "./auth";
 
 export function isAdmin(user: SessionUser | null): user is SessionUser & { role: "admin" } {
   return user?.role === "admin";

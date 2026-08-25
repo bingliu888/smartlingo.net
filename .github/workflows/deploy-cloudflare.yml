@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint authored source with zero-warning policy
+        run: npm run lint
+
       - name: Validate detailed release manifest
         run: node scripts/release-manifest.mjs --require-current-commit
 

@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { LiveClassSiteFrame } from "@/components/live-class-site-frame";
 import { ClassDetailExperience } from "@/components/class-detail-experience";
 import { classAccess, classByCode } from "@/lib/live-classrooms";

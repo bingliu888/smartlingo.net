@@ -125,8 +125,9 @@ export function ClassPlaylistPlayer({
   }, [apiBase, code, zh]);
 
   useEffect(() => {
+    const video = videoRef.current;
     if (!enabled || !items.length) {
-      videoRef.current?.pause();
+      video?.pause();
       onState(false);
       return;
     }
@@ -141,7 +142,7 @@ export function ClassPlaylistPlayer({
     return () => {
       recordPlayedTime();
       clearLimitTimer();
-      videoRef.current?.pause();
+      video?.pause();
       onState(false);
     };
   }, [enabled, items.length, onState]);

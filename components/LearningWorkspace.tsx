@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -1825,7 +1826,7 @@ export function LearningWorkspace({ lang, classId = "", calendarOnly = false, vi
         {learning.dailyQuizStatus ? <p className="sl-quiz-status">{t.quizResult}：{learning.dailyQuizStatus.score} / 100 · {learning.dailyQuizStatus.correctCount} / {learning.dailyQuizStatus.questionCount}</p> : null}
         <div className="sl-quiz-questions">{learning.dailyQuiz.questions.map((question, index) => <fieldset key={question.id}>
           <legend>{index + 1}. <span dir={learning.class?.targetLanguage === "ar" ? "rtl" : "ltr"}>{question.prompt}</span>{question.pronunciation ? <small>{question.pronunciation}</small> : null}</legend>
-          {question.imageUrl ? <figure className="sl-quiz-image"><img src={question.imageUrl} alt={lang === "zh" ? "本题情境图" : "Visual prompt for this question"} /><figcaption>{lang === "zh" ? "观察图片后，选择、说出或写出最合适的答案。" : "Study the image, then choose, say, or write the best answer."}</figcaption></figure> : null}
+          {question.imageUrl ? <figure className="sl-quiz-image"><Image src={question.imageUrl} alt={lang === "zh" ? "本题情境图" : "Visual prompt for this question"} width={1200} height={900} unoptimized/><figcaption>{lang === "zh" ? "观察图片后，选择、说出或写出最合适的答案。" : "Study the image, then choose, say, or write the best answer."}</figcaption></figure> : null}
           {question.responseMode === "image_free" ? <div className="sl-quiz-free-answer"><label><span>{lang === "zh" ? "用所学语言说出或写出图片内容" : "Say or write the image answer in the language you are learning"}</span><input value={(quizAnswers[question.id] || "").replace(/^free:/, "")} maxLength={75} autoComplete="off" onChange={event => setQuizAnswers(current => ({ ...current, [question.id]: `free:${event.target.value}` }))}/></label><button type="button" className={quizListeningId === question.id ? "selected" : ""} onClick={() => startQuizSpeech(question.id)}>{quizListeningId === question.id ? (lang === "zh" ? "正在聆听…" : "Listening…") : (lang === "zh" ? "使用麦克风回答" : "Answer by microphone")}</button></div> : <div>{question.options.map(option => <button type="button" className={quizAnswers[question.id] === option.id ? "selected" : ""} aria-pressed={quizAnswers[question.id] === option.id} key={option.id} onClick={() => setQuizAnswers(current => ({ ...current, [question.id]: option.id }))}>{option.label}</button>)}</div>}
         </fieldset>)}</div>
         {learning.dailyQuizResult?.responses?.length ? <section className="sl-quiz-feedback" aria-live="polite">

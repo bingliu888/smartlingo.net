@@ -12,7 +12,7 @@ test("account supports setting and updating a Clerk password", async () => {
   assert.doesNotMatch(form, /currentPassword/);
   assert.match(form, /recent email-code verification/);
   assert.match(form, /newPassword/);
-  assert.match(account, /<PasswordSettings lang=\{lang as any\}\/>/);
+  assert.match(account, /<PasswordSettings lang=\{lang === "zh" \? "zh" : "en"\}\/>/);
   assert.match(account, /Manage your SmartLingo profile/);
   assert.match(account, /管理您的 SmartLingo 个人资料/);
   assert.match(menu, /lang === "zh" \? "个人资料" : "Profile"/);

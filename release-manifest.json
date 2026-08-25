@@ -1,34 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-route-preflight-truthful-gate-2026-08-25-v41",
+  "releaseId": "smartlingo-class-timezone-eslint-zero-20260825",
   "site": "smartlingo.net",
-  "title": {"en": "Make the 21-day route preflight truthful", "zh": "修复 21 天路由预检的真实失败传播"},
+  "title": {
+    "en": "Lock classroom time to Los Angeles and enforce zero-warning source quality",
+    "zh": "锁定课堂洛杉矶时区并实施源码零告警质量门禁"
+  },
   "purpose": {
-    "en": "Fix the daily QA route preflight after its SmartCard Challenge checks returned false while the GitHub workflow incorrectly completed successfully.",
-    "zh": "修复每日 QA 路由预检：SmartCard Challenge 检查返回失败时，GitHub workflow 仍错误显示成功。"
+    "en": "Publish the shared classroom timezone correction on SmartLingo, remove retired or unused implementation paths, and prevent future releases when authored source has any ESLint error or warning.",
+    "zh": "在 SmartLingo 发布共享课堂时区修复，清除已退役或未使用的实现路径，并在作者源码出现任何 ESLint 错误或告警时阻止后续发布。"
   },
   "features": {
-    "en": ["Recognize the server-rendered Challenge calendar heading used by every selected-language route.", "Propagate the route checker's nonzero exit through tee so a failed artifact cannot produce a green workflow."],
-    "zh": ["识别每个已选语言 Challenge 路由稳定服务端渲染的挑战日历标题。", "让路由检查器的非零退出码穿透 tee，禁止失败 artifact 产生绿色 workflow。"]
+    "en": [
+      "Keep every class start time explicitly formatted in America/Los_Angeles instead of inheriting each visitor device timezone.",
+      "Run ESLint with a zero-warning threshold locally and in GitHub Actions before build and deployment.",
+      "Render first-party learning artwork, user avatars, chat attachments, and AI images through the maintained Next image component while retaining authenticated media support."
+    ],
+    "zh": [
+      "所有课堂开始时间明确使用 America/Los_Angeles 格式化，不再继承访客设备时区。",
+      "本地与 GitHub Actions 在构建和发布前均以零告警阈值运行 ESLint。",
+      "第一方学习图片、用户头像、聊天附件及 AI 图片改用维护中的 Next 图片组件，同时保留已登录媒体支持。"
+    ]
   },
   "affected": {
-    "en": ["Only the SmartLingo 21-day anonymous route preflight script, workflow failure semantics, contract tests, and release metadata change.", "No learning data, score, authentication, payment, referral, certificate, production binding, or sibling-site behavior changes."],
-    "zh": ["仅修改 SmartLingo 21 天匿名路由预检脚本、workflow 失败语义、合同测试与发布元数据。", "不修改学习数据、成绩、身份验证、支付、推荐、证书、生产绑定或兄弟站点行为。"]
+    "en": [
+      "Class detail time display, language-safe component boundaries, class screen sharing effects, roster and playlist effects, AI/community media, lint configuration, regression tests, and the Cloudflare deployment workflow.",
+      "SmartLingo learning, colleges, 48,000-word vocabulary catalog, Clerk authentication, Stripe and crypto payment behavior, private class media, and isolated production services remain unchanged."
+    ],
+    "zh": [
+      "涉及课程详情时间显示、语言类型安全边界、课堂共享副作用、学员与播放列表副作用、AI/社区媒体、Lint 配置、回归测试及 Cloudflare 发布流程。",
+      "SmartLingo 学习功能、学院、48,000 词词库、Clerk 登录、Stripe 与加密支付行为、私有课堂媒体及独立生产服务保持不变。"
+    ]
   },
   "changes": {
-    "en": ["Replace post-fetch Challenge markers with stable SSR calendar copy while retaining HTTP, response-size, and marker requirements.", "Enable Bash pipefail on the workflow route-check step and add regression assertions for both contracts."],
-    "zh": ["将依赖后续数据加载的 Challenge 标记替换为稳定 SSR 日历文案，同时保留 HTTP、响应大小与标记要求。", "在 workflow 路由检查步骤启用 Bash pipefail，并为两项合同新增回归断言。"]
+    "en": [
+      "Retain the explicit America/Los_Angeles classroom formatter and its regression contract for the cross-site timezone fix.",
+      "Remove an unused legacy playlist viewer, obsolete program copy, unused helpers/imports/types, and unsafe interface-language casts.",
+      "Stabilize client effects for class sharing, access managers, student rosters, crypto settings, challenge calendar timing, and playlist cleanup so state updates occur outside effect bodies.",
+      "Exclude only generated build/runtime assets and user-generated work directories from lint; authored app, component, library, script, and test source remains covered."
+    ],
+    "zh": [
+      "保留明确的 America/Los_Angeles 课堂时间格式化及其跨站时区修复回归合同。",
+      "删除未使用的旧播放列表查看器、过期课程文案、无用辅助函数/导入/类型及不安全的界面语言强制转换。",
+      "稳定课堂共享、访问管理员、学员名单、加密设置、挑战日历计时和播放列表清理的客户端副作用，避免在副作用主体内直接更新状态。",
+      "Lint 仅排除生成的构建/运行时资产与用户生成工作目录；应用、组件、库、脚本及测试作者源码继续全部受检。"
+    ]
   },
   "validation": {
-    "en": ["Run the QA contract, production route preflight for 2026-08-25, complete repository release gate, sensitive-data scan, source-drift checks, and shared policy/architecture/base-feature/contracts gates.", "Deploy through GitHub Actions to Cloudflare, rerun the corrected daily route preflight, and verify the production Challenge route in the real Chrome acceptance session."],
-    "zh": ["执行 QA 合同、2026-08-25 生产路由预检、全仓发布门禁、敏感信息扫描、源码漂移检查及共享政策/架构/基础功能/合同门禁。", "通过 GitHub Actions 发布到 Cloudflare，重跑修正后的每日路由预检，并在真实 Chrome 验收中验证生产 Challenge 路由。"]
+    "en": [
+      "Require ESLint 0 errors and 0 warnings, TypeScript no-emit typecheck, verified production build and artifact scan, complete repository tests, release-manifest validation, and shared site contracts.",
+      "Deploy through GitHub Actions to Cloudflare, verify production course and payment boundaries, and publish and re-read this exact bilingual Project release record."
+    ],
+    "zh": [
+      "要求 ESLint 0 错误/0 告警、TypeScript no-emit 类型检查、已验证的生产构建与产物扫描、全仓测试、发布清单验证及共享站点合同全部通过。",
+      "通过 GitHub Actions 发布至 Cloudflare，核对线上课程与支付边界，并写入后重新读取本次精确的中英文 Project 发布记录。"
+    ]
   },
   "deferred": {
-    "en": ["No functional scope is intentionally deferred; this anonymous preflight remains explicitly separate from signed-in learning evidence."],
-    "zh": ["没有功能范围被有意延期；该匿名预检继续明确独立于登录学习证据。"]
+    "en": [
+      "The global migration does not repeat the dedicated four-user realtime report; SmartLingo's existing classroom realtime behavior and site-isolated credentials are intentionally preserved."
+    ],
+    "zh": [
+      "本次全站迁移不重复专站四用户实时报告；SmartLingo 既有课堂实时行为与站点隔离凭据按要求保留。"
+    ]
   },
   "siteAdaptations": {
-    "en": ["Use SmartLingo's Chinese Challenge calendar copy and preserve the fixed four-language 21-day QA plan.", "Preserve user-authored untracked files and the existing GitHub Actions to Cloudflare delivery boundary."],
-    "zh": ["使用 SmartLingo 中文 Challenge 日历文案，并保持固定四语言的 21 天 QA 计划。", "保留用户未跟踪文件及既有 GitHub Actions 至 Cloudflare 发布边界。"]
+    "en": [
+      "Use SmartLingo's course-detail classroom surface and keep its America/Los_Angeles display contract rather than importing SmartMeeting room UI.",
+      "Preserve the untracked tutorial output and temporary work directories, and keep SmartLingo's GitHub Actions-to-Cloudflare release boundary."
+    ],
+    "zh": [
+      "使用 SmartLingo 自有课程详情课堂界面，并保持 America/Los_Angeles 显示合同，不导入 SmartMeeting 房间 UI。",
+      "保留未跟踪的教程输出与临时工作目录，并维持 SmartLingo 既有 GitHub Actions 至 Cloudflare 发布边界。"
+    ]
   }
 }

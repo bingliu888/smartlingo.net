@@ -42,6 +42,7 @@ export function CourseStudentManager({ classId, lang }: { classId: string; lang:
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
+  const [now, setNow] = useState(0);
 
   const load = useCallback(async () => {
     const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/students`, { cache: "no-store" });
@@ -50,7 +51,16 @@ export function CourseStudentManager({ classId, lang }: { classId: string; lang:
     setRoster(body);
   }, [classId, t.failed]);
 
-  useEffect(() => { void load().catch(error => setNotice(error instanceof Error ? error.message : t.failed)); }, [load, t.failed]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load().catch(error => setNotice(error instanceof Error ? error.message : t.failed)), 0);
+    return () => window.clearTimeout(timer);
+  }, [load, t.failed]);
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    const initial = window.setTimeout(update, 0);
+    const timer = window.setInterval(update, 60_000);
+    return () => { window.clearTimeout(initial); window.clearInterval(timer); };
+  }, []);
 
   async function addSubscriber(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,7 +98,7 @@ export function CourseStudentManager({ classId, lang }: { classId: string; lang:
       <button type="button" role="tab" aria-selected={tab === "subscribers"} onClick={() => setTab("subscribers")}>{t.subscribers} <b>{roster.subscribers.length}</b></button>
     </div>
     <div className="course-student-list">{rows.length ? rows.map(student => <div className="course-student-row" key={student.userId}>
-      <div><strong>{student.displayName}</strong><small>{student.email}</small><small>{tab === "trial" ? `${student.trialEndsAt * 1000 <= Date.now() ? t.expired : t.trialEnds}: ${date(student.trialEndsAt, lang)}` : student.currentPeriodEndsAt ? `${t.periodEnds}: ${date(student.currentPeriodEndsAt, lang)}` : ""}</small></div>
+      <div><strong>{student.displayName}</strong><small>{student.email}</small><small>{tab === "trial" ? `${now > 0 && student.trialEndsAt * 1000 <= now ? t.expired : t.trialEnds}: ${date(student.trialEndsAt, lang)}` : student.currentPeriodEndsAt ? `${t.periodEnds}: ${date(student.currentPeriodEndsAt, lang)}` : ""}</small></div>
       <button type="button" disabled={busy === student.userId} onClick={() => void update(student, tab === "trial" ? "enable" : "disable")}>{busy === student.userId ? t.enabling : tab === "trial" ? t.enable : t.disable}</button>
     </div>) : <p className="course-student-empty">{tab === "trial" ? t.emptyTrial : t.emptySubscribers}</p>}</div>
     {notice && <p className="course-student-notice" role="status">{notice}</p>}

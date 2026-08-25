@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { InterfaceLanguage } from "../lib/interface-locale";
 
@@ -117,7 +118,7 @@ export function CommunityMeetings({ lang, signedIn }: { lang: InterfaceLanguage;
       </nav>
       <div className="meeting-list">
         {visible.map(meeting => <article key={meeting.id}>
-          <span className="meeting-host-avatar">{meeting.ownerImageUrl ? <img src={meeting.ownerImageUrl} alt=""/> : meeting.ownerName.slice(0, 1).toUpperCase()}</span>
+          <span className="meeting-host-avatar">{meeting.ownerImageUrl ? <Image src={meeting.ownerImageUrl} alt="" width={96} height={96} unoptimized/> : meeting.ownerName.slice(0, 1).toUpperCase()}</span>
           <div><small>{meeting.status === "live" ? (zh ? "● 正在进行" : "● LIVE NOW") : countdown(meeting.scheduledAt - now, zh)}</small><h3>{meeting.title}</h3><p>{zh ? `发起人：${meeting.ownerName}` : `Hosted by ${meeting.ownerName}`} · {meeting.participantCount} {zh ? "位成员" : "members"}{meeting.activeCallId ? ` · ${meeting.callParticipantCount} ${zh ? "人在通话" : "in call"}` : ""}</p></div>
           <div className="meeting-actions">{signedIn ? <button disabled={busy} onClick={() => meetingAction(meeting, "join")}>{meeting.status === "live" ? (zh ? "加入会议" : "Join meeting") : (zh ? "进入群聊" : "Enter chat")}</button> : <Link href={signInHref}>{zh ? "登录后加入" : "Sign in to join"}</Link>}{signedIn && meeting.isOwner && <button className="meeting-end" disabled={busy} onClick={() => meetingAction(meeting, "end")}>{meeting.status === "live" ? (zh ? "结束" : "End") : (zh ? "取消预约" : "Cancel")}</button>}</div>
         </article>)}

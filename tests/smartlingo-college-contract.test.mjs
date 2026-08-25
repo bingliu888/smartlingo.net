@@ -57,7 +57,7 @@ test("My colleges offers the three one-time supervisor packages and college crea
 });
 
 test("directory supports code entry, search, tags, access filters, and My colleges",async()=>{
-  const page=await read("app/[lang]/colleges/page.tsx"),entry=await read("components/JoinCollegeByCode.tsx"),header=await read("components/SiteHeader.tsx"),home=await read("app/[lang]/page.tsx"),locale=await read("lib/interface-locale.ts");
+  const page=await read("app/[lang]/colleges/page.tsx"),entry=await read("components/JoinCollegeByCode.tsx"),home=await read("app/[lang]/page.tsx"),locale=await read("lib/interface-locale.ts");
   assert.match(page,/type="search"/);assert.match(page,/view=mine/);assert.match(page,/query\.tag/);assert.match(page,/query\.access/);
   assert.ok(entry.indexOf("<input")<entry.indexOf("<button"));
   assert.match(entry,/zh\?"进入":"Enter"/);

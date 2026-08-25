@@ -19,5 +19,5 @@ export default async function AnonymousTrialPage({ params }: { params: Promise<{
   const skills = ["reading", "writing", "listening", "dialogue"] as const;
   const cards = getBeginnerSessionVocabularyDeck(language, 1).map(card => ({ stableId: card.stableId, form: card.form, pronunciation: card.pronunciation, meaning: card.meaning }));
   const tasks = skills.map(skill => buildDailyPracticeItem(language, skill, date, lang === "zh" ? "zh" : "en", "beginner"));
-  return <main className="learning-page" data-layout-page="anonymous-trial"><SiteHeader lang={lang as any}/><AnonymousBeginnerTrial lang={lang as any} language={language} languageName={`${item.nativeName} · ${lang === "zh" ? item.nameZh : item.nameEn}`} speechLocale={item.speechLocale} direction={item.direction} cards={cards} tasks={tasks}/><SiteFooter lang={lang as any}/></main>;
+  return <main className="learning-page" data-layout-page="anonymous-trial"><SiteHeader lang={lang}/><AnonymousBeginnerTrial lang={lang === "zh" ? "zh" : "en"} language={language} languageName={`${item.nativeName} · ${lang === "zh" ? item.nameZh : item.nameEn}`} speechLocale={item.speechLocale} direction={item.direction} cards={cards} tasks={tasks}/><SiteFooter lang={lang}/></main>;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { prepareAvatarUpload } from "./avatar-image";
 import { TextSizeControl } from "./TextSizeControl";
@@ -87,7 +88,7 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
   return <div className="account-profile-grid">
     <form className="profile-form" onSubmit={save}>
       <div className="photo-row">
-        <div className="profile-photo">{imageUrl ? <img src={imageUrl} alt=""/> : <span>{displayName.slice(0,1).toUpperCase()}</span>}</div>
+        <div className="profile-photo">{imageUrl ? <Image src={imageUrl} alt="" width={96} height={96} unoptimized/> : <span>{displayName.slice(0,1).toUpperCase()}</span>}</div>
         <label className="photo-button">{zh ? "上传头像" : "Upload photo"}<input key={photoInputKey} type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={event => uploadPhoto(event.target.files?.[0], event.currentTarget)}/></label>
         <small>{zh ? "JPG、PNG 或 WebP，最大 5 MB" : "JPG, PNG, or WebP · 5 MB maximum"}</small>
       </div>

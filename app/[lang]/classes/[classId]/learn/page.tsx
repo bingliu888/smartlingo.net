@@ -21,11 +21,11 @@ export default async function LearnPage({ params }: { params: Promise<{ lang: st
   }
   return (
     <main className="learning-page" data-layout-page="learning">
-      <SiteHeader lang={lang as any} />
-      <CourseTrainingMenu lang={lang as any} classId={classId}/>
-      <LearningWorkspace lang={lang as any} classId={classId} />
-      <CourseClassroomTile lang={lang as any} classId={classId} compact />
-      <SiteFooter lang={lang as any} />
+      <SiteHeader lang={lang} />
+      <CourseTrainingMenu lang={lang === "zh" ? "zh" : "en"} classId={classId}/>
+      <LearningWorkspace lang={lang === "zh" ? "zh" : "en"} classId={classId} />
+      <CourseClassroomTile lang={lang === "zh" ? "zh" : "en"} classId={classId} compact />
+      <SiteFooter lang={lang} />
     </main>
   );
 }

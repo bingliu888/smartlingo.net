@@ -34,7 +34,7 @@ export default async function CertificateDetailPage({ params }: { params: Promis
     : certificate.durationDays === 14
       ? (zh ? "生活沟通 · 词汇、听力、对话与阅读" : "EVERYDAY COMMUNICATION · VOCABULARY, LISTENING, DIALOGUE & READING")
       : (zh ? "五项语言技能 · 完整实用入门课程" : "FIVE LANGUAGE SKILLS · COMPLETE PRACTICAL BEGINNER COURSE");
-  return <main><SiteHeader lang={lang as any}/><div className="certificate-detail-page" data-layout-page="certificate-detail" data-layout-fill="certificate-detail-page" data-layout-ready="true">
+  return <main><SiteHeader lang={lang}/><div className="certificate-detail-page" data-layout-page="certificate-detail" data-layout-fill="certificate-detail-page" data-layout-ready="true">
     <nav className="certificate-back"><a href={`/${lang}/certificates`}>← {zh ? "全部证书" : "All certificates"}</a></nav>
     <article className="certificate-art" aria-label={zh ? "SmartLingo 结业证书" : "SmartLingo course certificate"}>
       <div className="certificate-orbit one"/><div className="certificate-orbit two"/><span className="certificate-seal" aria-hidden="true">SL</span>
@@ -44,5 +44,5 @@ export default async function CertificateDetailPage({ params }: { params: Promis
       <footer><div><span>{zh ? "证书编号" : "Certificate number"}</span><strong>{certificate.certificateNumber}</strong></div><div><span>{zh ? "验证代码" : "Verification code"}</span><strong>{certificate.verificationCode}</strong></div><em>{certificate.completionReason === "early_mastery" ? (zh ? "卓越掌握 · 提前结业" : "EARLY MASTERY") : (zh ? "完成全部课程" : "COURSE COMPLETE")}</em></footer>
     </article>
     <aside className="certificate-notice"><strong>{zh ? "关于本证书" : "About this certificate"}</strong><p>{zh ? "本证书记录 SmartLingo 平台课程完成情况和练习成绩，不是政府、学校或第三方语言考试证书。" : "This certificate records completion and practice performance in a SmartLingo course. It is not a government, academic, or third-party language examination credential."}</p></aside>
-  </div><SiteFooter lang={lang as any}/></main>;
+  </div><SiteFooter lang={lang}/></main>;
 }

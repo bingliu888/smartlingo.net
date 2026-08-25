@@ -41,11 +41,12 @@ test("SmartLingo brand and original social preview assets are locally hosted", a
 });
 
 test("Guru, live audio, and fixed-course boundaries are explicit", async () => {
-  const [assistant, live, terms, programs, pricing] = await Promise.all([
+  const [assistant, live, terms, programs, planner, pricing] = await Promise.all([
     read("../app/api/assistant/route.ts"),
     read("../app/api/assistant/live/route.ts"),
     read("../app/[lang]/terms/page.tsx"),
     read("../app/[lang]/programs/page.tsx"),
+    read("../components/LearningPathPlanner.tsx"),
     read("../app/[lang]/pricing/page.tsx"),
   ]);
 
@@ -53,8 +54,8 @@ test("Guru, live audio, and fixed-course boundaries are explicit", async () => {
   assert.match(assistant, /A\/V webinar classroom/);
   assert.match(assistant, /Do not claim that members can create courses/);
   assert.match(live, /Never promise fluency, education, employment, visa, income/);
-  assert.match(programs, /实时语音需要登录/);
+  assert.match(planner, /麦克风与实时语音只在登录后开放/);
   assert.match(terms, /不是官方语言考试/);
   assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
-  assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
+  assert.match(programs, /建立真正可用的词汇、阅读、写作、听力与对话能力/);
 });

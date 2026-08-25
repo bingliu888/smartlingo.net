@@ -5,9 +5,7 @@ import test from "node:test";
 const source = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("Chinese shared controls and account notices remain localized", async () => {
-  const [header, footer, language, account, assistant, interfaceLocale] = await Promise.all([
-    source("components/SiteHeader.tsx"),
-    source("components/SiteFooter.tsx"),
+  const [language, account, assistant, interfaceLocale] = await Promise.all([
     source("components/LanguageMemory.tsx"),
     source("components/HeaderAccount.tsx"),
     source("components/FloatingAssistant.tsx"),
@@ -67,10 +65,11 @@ test("necessary product and infrastructure names stay intact", async () => {
 });
 
 test("Chinese My Courses, catalog, pricing, and retired Admin UI are truthful", async () => {
-  const [classes, pricing, programs, packages, adminPage, adminApi, auth] = await Promise.all([
+  const [classes, pricing, programs, planner, packages, adminPage, adminApi, auth] = await Promise.all([
     source("components/ClassStudio.tsx"),
     source("app/[lang]/pricing/page.tsx"),
     source("app/[lang]/programs/page.tsx"),
+    source("components/LearningPathPlanner.tsx"),
     source("lib/smartlingo-course-packages.ts"),
     source("app/[lang]/admin/classes/page.tsx"),
     source("app/api/admin/classes/route.ts"),
@@ -82,7 +81,8 @@ test("Chinese My Courses, catalog, pricing, and retired Admin UI are truthful", 
   assert.match(packages, /中级课程/);
   assert.match(packages, /高级课程/);
   assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
-  assert.match(programs, /词汇 · 阅读 · 写作 · 听力 · 对话/);
+  assert.match(programs, /建立真正可用的词汇、阅读、写作、听力与对话能力/);
+  assert.match(planner, /设备语音播放 · 登录后麦克风与实时语音/);
   assert.match(programs, /选择课程/);
   assert.match(adminPage, /notFound\(\)/);
   assert.match(adminApi, /status: 410/);

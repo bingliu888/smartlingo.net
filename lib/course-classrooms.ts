@@ -1,5 +1,5 @@
 import { createId, getDatabase, type SessionUser } from "@/lib/auth";
-import { classByCode, generateClassCode, type ClassRoom } from "@/lib/live-classrooms";
+import { classByCode, generateClassCode } from "@/lib/live-classrooms";
 
 export type CourseClassroomCourse = {
   id: string;

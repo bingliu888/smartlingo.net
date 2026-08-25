@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { SMARTLINGO_EVERYDAY_SCENARIOS } from "../lib/smartlingo-everyday-speaking";
@@ -49,7 +50,7 @@ export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
         <header><div><p>{section.kicker}</p><h2>{zh ? section.titleZh : section.titleEn}</h2><span>{zh ? section.introZh : section.introEn}</span></div><nav aria-label={zh ? `${section.titleZh}滑动控制` : `${section.titleEn} slider controls`}><button type="button" onClick={() => scroll(section.area, -1)} aria-label={zh ? "向前滑动" : "Scroll back"}>‹</button><button type="button" onClick={() => scroll(section.area, 1)} aria-label={zh ? "向后滑动" : "Scroll forward"}>›</button></nav></header>
         <div className={styles.rail} ref={node => { rails.current[section.area] = node; }}>
           {section.choices.map((choice, index) => {
-            const content = <>{choice.image ? <img src={choice.image} alt=""/> : <span className={styles.icon}>{choice.icon || String(index + 1).padStart(2, "0")}</span>}
+            const content = <>{choice.image ? <Image src={choice.image} alt="" width={800} height={600} unoptimized/> : <span className={styles.icon}>{choice.icon || String(index + 1).padStart(2, "0")}</span>}
               <small>{String(index + 1).padStart(2, "0")}</small><strong>{zh ? choice.titleZh : choice.titleEn}</strong><em>{zh ? choice.bodyZh : choice.bodyEn}</em><b>{active === choice.id ? (zh ? "已选择" : "Selected") : (zh ? "选择" : "Choose")}</b></>;
             return <button type="button" aria-pressed={active === choice.id} className={active === choice.id ? styles.active : ""} onClick={() => setSelected(current => ({ ...current, [section.area]: choice.id }))} key={choice.id}>{content}</button>;
           })}

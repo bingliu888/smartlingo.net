@@ -74,7 +74,7 @@ export default async function MyCollegesPage({ params }: { params: Promise<{ lan
         <span>{items.length}</span>
       </header>
       <div className="college-card-grid">
-        {items.map(college => <CollegeCard key={college.id} college={college} lang={lang}/>)}
+        {items.map(college => <CollegeCard key={college.id} college={college} lang={lang === "zh" ? "zh" : "en"}/>)}
       </div>
       {!items.length ? <p className="college-empty">{zh
         ? "您还没有加入学院。可以先浏览学院，或购买学院总监方案后创建一个学院。"
