@@ -1,55 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-visible-dialogue-text-submit-2026-08-24-v33",
+  "releaseId": "smartlingo-duplicate-sentence-tokens-2026-08-24-v34",
   "site": "smartlingo.net",
   "title": {
-    "en": "Keep no-microphone dialogue submission visible",
-    "zh": "保持无需麦克风的对话提交操作可见"
+    "en": "Make duplicate sentence tokens unambiguous",
+    "zh": "消除组句重复词块歧义"
   },
   "purpose": {
-    "en": "Close the follow-up production layout defect where the newly enabled typed dialogue submit action inherited the site's intentional hidden-Check rule and therefore remained invisible.",
-    "zh": "修复后续生产布局缺陷：新启用的文本对话提交操作继承了全站有意隐藏 Check 的规则，因而仍不可见。"
+    "en": "Close the Japanese Writing defect found in the four-language matrix: a sentence with two identical particles left the already selected copy in the choice bank, making the second copy ambiguous and preventing the final slot from being filled.",
+    "zh": "修复四语矩阵发现的日语写作缺陷：句子含两个相同助词时，已选副本仍留在候选区，导致第二个副本有歧义、最后一个空位无法填满。"
   },
   "features": {
     "en": [
-      "Give the typed dialogue submit action a dedicated visible class that does not inherit the hidden-Check rule.",
-      "Keep typed dialogue as the no-microphone default path and three-attempt voice scoring as an optional enhancement.",
-      "Preserve database-authoritative grading, feedback, and Continue behavior."
+      "Remove each selected token from the available choice bank while keeping its unique identity in the answer slots.",
+      "Return a token to the choice bank when the learner removes it from an answer slot.",
+      "Allow repeated words and particles to be selected independently and still trigger automatic grading when all slots are filled."
     ],
     "zh": [
-      "为文本对话提交设置专用可见样式，不再继承隐藏 Check 的全站规则。",
-      "保持文本对话为默认无需麦克风路径，三次语音评分为可选增强。",
-      "保持数据库权威判分、反馈及继续操作。"
+      "词块选入句子后从候选区移除，同时在答案空位中保持唯一身份。",
+      "学习者从答案空位撤回词块时，该词块重新出现在候选区。",
+      "重复单词或助词可独立选择，并在填满所有空位后正常触发自动判题。"
     ]
   },
   "affected": {
     "en": [
-      "Signed-in subscribed-course dialogue training for all course languages; no Clerk, payment, administrator, sibling-site, or anonymous learning behavior."
+      "Sentence-builder interaction in subscribed courses and shared Sprint surfaces; no Clerk, payment, administrator, sibling-site, or database schema behavior."
     ],
     "zh": [
-      "所有课程语言的登录订阅课程对话训练；不影响 Clerk、支付、管理员、兄弟站点或匿名学习行为。"
+      "订阅课程及共享 Sprint 界面的组句交互；不影响 Clerk、支付、管理员、兄弟站点或数据库结构。"
     ]
   },
   "changes": {
     "en": [
-      "Render the dialogue submit button with a dedicated class and explicit visible primary-action styling.",
-      "Retain the optional microphone label and explicit no-microphone guidance from v32.",
-      "Extend regression coverage to prevent both logical gating and CSS hiding."
+      "Filter selected token identities out of the visible choice bank instead of leaving disabled duplicates.",
+      "Keep slot removal reversible so every selected token can return to the bank.",
+      "Add a regression contract for duplicate-label selection and removal."
     ],
     "zh": [
-      "使用专用 class 渲染对话提交按钮，并明确设置可见的主操作样式。",
-      "保留 v32 的可选麦克风标签及无需麦克风说明。",
-      "扩展回归覆盖，同时防止逻辑门槛和 CSS 隐藏。"
+      "按唯一身份从可见候选区过滤已选词块，不再保留禁用的同名副本。",
+      "保留空位撤回能力，使任何已选词块都能回到候选区。",
+      "增加重复标签选择及撤回的回归合同。"
     ]
   },
   "validation": {
     "en": [
-      "Run the dialogue visibility regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
-      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner with Repeat After Me off to submit real Spanish and Italian typed dialogue responses without microphone access."
+      "Run the duplicate-token regression contract, TypeScript, the complete automated suite, D1 migration validation, sensitive-data scan, production-equivalent build, changed-file lint, and shared portfolio gates.",
+      "Deploy only through GitHub Actions to Cloudflare, then use the ordinary test learner to complete the same 16-token Japanese Writing sentence with two identical particles and verify feedback plus counter advance."
     ],
     "zh": [
-      "执行对话可见性回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
-      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员在跟读关闭且不访问麦克风的条件下提交真实西语、意语文本对话回答。"
+      "执行重复词块回归合同、TypeScript、全量自动化、D1 迁移、敏感数据扫描、生产等价构建、修改文件 lint 与共享组合门禁。",
+      "仅通过 GitHub Actions 发布到 Cloudflare，再由普通测试学员完成含两个相同助词的同一道 16 词块日语写作题，并验证反馈与题号推进。"
     ]
   },
   "deferred": {

@@ -70,3 +70,10 @@ test("the person-avatar pronunciation coach leads three scored follow-me turns",
   assert.match(workspace, /speechSynthesis\.speak\(utterance\)/);
   assert.match(workspace, /action: "pronunciation_review"/);
 });
+
+test("sentence builders remove selected duplicate labels from the choice bank until returned", async () => {
+  const builder = await readFile(new URL("../components/SentenceBuilderRound.tsx", import.meta.url), "utf8");
+  assert.match(builder, /tiles\.filter\(tile => !selected\.includes\(tile\.id\)\)\.map/);
+  assert.match(builder, /setSelected\(current => current\.filter\(id => id !== tile\.id\)\)/);
+  assert.doesNotMatch(builder, /disabled=\{selected\.includes\(tile\.id\)/);
+});
