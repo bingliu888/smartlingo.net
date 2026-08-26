@@ -20,10 +20,6 @@ function readableError(issue: unknown, lang: InterfaceLanguage, t: Translator) {
   if (isClerkAPIResponseError(issue)) {
     const error = issue.errors[0];
     if (error?.code === "form_password_incorrect") return t("Your current password is incorrect.", "当前密码不正确。");
-    if (error?.code === "form_password_pwned") return t(
-      "Password updating is working, but the new password appears in a known data breach. Use a unique random password that you have never used elsewhere (12 or more characters recommended).",
-      "密码更新功能正常，但你输入的新密码已出现在已知数据泄露名单中。请使用从未在其他网站使用过的随机强密码（建议至少 12 个字符）。",
-    );
     if (error?.code === "session_reverification_required") return t(
       "Confirm your identity to save the password, then try again.",
       "请先完成身份确认，再保存密码。",
@@ -72,7 +68,7 @@ export function PasswordSettings({ lang }: { lang: InterfaceLanguage }) {
     <p>{mode.action === "update" ? t("Enter your current password. If this sign-in is no longer recent, a secure identity confirmation will appear before saving.", "输入当前密码即可更改；如果本次登录已超过安全时限，保存前会出现安全身份确认。") : t("Add a password from this signed-in session. A recent email-code sign-in needs no extra code, and both sign-in methods will remain available.", "从当前已登录会话添加密码；近期使用邮箱验证码登录无需再次输入验证码，添加后两种登录方式都会保留。")}</p>
     {!isLoaded ? <p className={styles.notice}>{t("Loading account…", "正在读取账户…")}</p> : <form className={styles.form} onSubmit={submit}>
       {mode.requiresCurrentPassword && <PasswordInput lang={lang} label={t("Current password", "当前密码")} autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />}
-      <PasswordInput lang={lang} label={t("New password", "新密码")} autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} hint={t("At least 8 characters; use a unique random password of 12 or more characters when possible.", "至少 8 个字符；建议使用 12 个以上、从未在其他网站使用过的随机强密码。")} />
+      <PasswordInput lang={lang} label={t("New password", "新密码")} autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} hint={t("At least 8 characters.", "至少 8 个字符。")} />
       <PasswordInput lang={lang} label={t("Confirm new password", "确认新密码")} autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
       {error && <p className={styles.error} role="alert">{error}</p>}{success && <p className={styles.success} role="status">{success}</p>}
       <button disabled={busy}>{busy ? t("Saving…", "正在保存…") : mode.action === "update" ? t("Update password", "更新密码") : t("Add password", "添加密码")}</button>

@@ -4,13 +4,13 @@ import test from "node:test";
 
 test("anchors Ask Guru as a root-layout viewport control outside the four-choice learning nav", async () => {
   const [layout, assistant, header, css] = await Promise.all([
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/[lang]/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/FloatingAssistant.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(layout, /\{children\}<FloatingAssistant\s*\/>/);
+  assert.match(layout, /\{children\}<\/PersistentCallProvider><FloatingAssistant\s*\/>/);
   assert.match(assistant, /className="floating-assistant"/);
   assert.doesNotMatch(assistant, /topLevelPages/);
   assert.match(assistant, /route === "\/assistant" \|\| route\.startsWith\("\/auth\/"\)/);

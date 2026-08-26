@@ -78,10 +78,6 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
       if (key === "verification_expired") return t("That code expired. Request a new one.", "验证码已过期，请重新发送。");
       if (key === "form_identifier_not_found") return t("No account exists with that email.", "未找到使用该邮箱的账户。");
       if (key === "form_password_incorrect") return t("That password is incorrect.", "密码不正确。");
-      if (key === "form_password_pwned") return t(
-        "That password appears in a known data breach. Use a unique random password that you have never used elsewhere (12 or more characters recommended).",
-        "该密码已出现在已知数据泄露名单中。请使用从未在其他网站使用过的随机强密码（建议至少 12 个字符）。",
-      );
       if (key === "form_password_length_too_short") return t("Your password must be at least 8 characters.", "密码至少需要 8 个字符。");
       return lang === "en"
         ? issue.errors[0]?.longMessage || issue.errors[0]?.message || "Request failed."
