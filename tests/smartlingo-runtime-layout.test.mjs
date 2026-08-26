@@ -26,6 +26,7 @@ test("runtime layout matrix pins both path locales and all five required viewpor
   ]);
   assert.deepEqual(SMARTLINGO_LAYOUT_ROUTES, [
     "/",
+    "/tutorial",
     "/classes",
     "/colleges",
     "/college/820101",
@@ -121,7 +122,7 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {
-  for (const page of ["home", "courses", "colleges", "college-detail", "college-create", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
+  for (const page of ["home", "tutorial", "courses", "colleges", "college-detail", "college-create", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
   }
   assert.match(runnerSource, /requiredHooks/);

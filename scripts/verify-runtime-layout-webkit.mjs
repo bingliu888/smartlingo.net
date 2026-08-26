@@ -18,6 +18,7 @@ export const SMARTLINGO_LAYOUT_LANGUAGES = Object.freeze(["zh", "en"]);
 
 export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/",
+  "/tutorial",
   "/classes",
   "/colleges",
   "/college/820101",
@@ -61,6 +62,7 @@ export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
 
 const expectedPageNames = Object.freeze({
   "/": "home",
+  "/tutorial": "tutorial",
   "/classes": "courses",
   "/colleges": "colleges",
   "/college/820101": "college-detail",
@@ -90,6 +92,7 @@ const expectedPageNames = Object.freeze({
 
 const requiredHooks = Object.freeze({
   "/": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
+  "/tutorial": { fills: 1, readableCopy: 1 },
   "/classes": {},
   "/colleges": { fills: 1 },
   "/college/820101": { fills: 1 },

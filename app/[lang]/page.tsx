@@ -6,6 +6,7 @@ import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
 import { homeInterfaceTranslations } from "../../lib/home-interface-translations.generated";
 import { interfaceCopyFor, safeInterfaceLanguage, translateHomeCopy } from "../../lib/interface-locale";
+import { smartLingoTutorialCopyFor } from "../../lib/smartlingo-tutorial";
 
 const copy = {
   en: {
@@ -152,6 +153,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const locale = safeInterfaceLanguage(lang);
   const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
   const ui = interfaceCopyFor(locale);
+  const tutorial = smartLingoTutorialCopyFor(locale);
   return (
     <main className="lingo-home" data-layout-page="home">
       <div className="lingo-hero-shell" data-layout-fill="home-hero-shell">
@@ -161,6 +163,11 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <p className="section-kicker">{t.eyebrow}</p>
             <h2 data-layout-text-fit="home-hero-title">{t.title}</h2>
             <p>{t.intro}</p>
+            <Link className="lingo-tour-spotlight" href={`/${locale}/tutorial`}>
+              <span aria-hidden="true">▶</span>
+              <strong>{tutorial.homeAction}</strong>
+              <small>{tutorial.duration}</small>
+            </Link>
             <div className="lingo-actions">
               <Link className="primary-button" href={`/${locale}/play/everyday`}>{ui.everyday} →</Link>
               <Link className="secondary-button" href={`/${locale}/play?language=${locale}`}>{ui.play}</Link>

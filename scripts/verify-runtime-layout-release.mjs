@@ -228,9 +228,9 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
       cwd: projectRoot,
       env: isolatedEnv,
     });
-    const evidence = verified.stdout.match(/WebKit runtime layout verified: 260\/260[^\n]*/)?.[0];
+    const evidence = verified.stdout.match(/WebKit runtime layout verified: 270\/270[^\n]*/)?.[0];
     if (!evidence) {
-      throw new Error(`Full 260/260 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+      throw new Error(`Full 270/270 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
     }
     await writeFile(join(tmpdir(), "smartlingo-layout-release-evidence.txt"), `${evidence}\n`, { mode: 0o600 });
     process.stderr.write(`${evidence}\n`);
