@@ -1,15 +1,27 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { clerkLocalizationLanguage, clerkLocalizationLanguages } from "../lib/clerk-localization-language.ts";
 
-test("the application shell always mounts inside ClerkProvider", async () => {
-  const layout = await readFile(
-    new URL("../app/layout.tsx", import.meta.url),
-    "utf8",
-  );
+test("the application shell always mounts inside the localized Clerk provider", async () => {
+  const [layout, provider] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/LocalizedClerkProvider.tsx", import.meta.url), "utf8"),
+  ]);
 
-  assert.match(layout, /<ClerkProvider>/);
+  assert.match(layout, /<LocalizedClerkProvider>/);
+  assert.match(provider, /<ClerkProvider localization=\{clerkLocalizations\[language\]\}>/);
   assert.doesNotMatch(layout, /publishableKey\s*\?/);
+});
+
+test("Clerk dialogs follow all twelve SmartLingo route languages", () => {
+  assert.equal(clerkLocalizationLanguages.length, 12);
+  for (const language of clerkLocalizationLanguages) {
+    assert.equal(clerkLocalizationLanguage(`/${language}/account`), language);
+  }
+  assert.equal(clerkLocalizationLanguage("/r/invitation"), "en");
+  assert.equal(clerkLocalizationLanguage("/xx/account"), "en");
+  assert.equal(clerkLocalizationLanguage(null), "en");
 });
 
 test("the Clerk session bridge can verify with the production secret key", async () => {

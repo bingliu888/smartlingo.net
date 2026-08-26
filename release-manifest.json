@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-password-reverification-recovery-20260826",
+  "releaseId": "smartlingo-localized-password-reverification-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Complete password changes with secure Clerk reverification",
-    "zh": "通过 Clerk 安全身份确认完成密码更改"
+    "en": "Complete localized password changes with secure Clerk reverification",
+    "zh": "通过本地化 Clerk 安全身份确认完成密码更改"
   },
   "purpose": {
     "en": "Ensure password adding and updating complete from both recent and older signed-in sessions instead of failing when Clerk requires a fresh identity confirmation.",
@@ -14,12 +14,14 @@
     "en": [
       "Detect Clerk password capability before rendering the signed-in Account security form.",
       "Hide the current-password field completely for passwordless accounts and label the action Add password.",
-      "Complete Clerk's secure reverification flow when the current session is no longer recent, then retry the original password change automatically."
+      "Complete Clerk's secure reverification flow when the current session is no longer recent, then retry the original password change automatically.",
+      "Keep Clerk's verification dialog in the active SmartLingo interface language across all twelve supported languages."
     ],
     "zh": [
       "在渲染已登录账户安全表单前检测 Clerk 账户是否已有密码。",
       "无密码账户完全隐藏当前密码字段，并将操作明确标为“添加密码”。",
-      "当前会话不够新时完成 Clerk 安全身份确认，并自动重试原密码更改。"
+      "当前会话不够新时完成 Clerk 安全身份确认，并自动重试原密码更改。",
+      "让 Clerk 身份确认弹窗在全部十二种支持语言中始终跟随当前 SmartLingo 界面语言。"
     ]
   },
   "affected": {
@@ -36,12 +38,14 @@
     "en": [
       "Wrap Clerk password changes with useReverification, which handles the session_reverification_required response and retries after secure confirmation.",
       "Pass currentPassword only in update mode; passwordless add mode still omits the current-password field entirely.",
-      "Localize accurate confirmation, cancellation, and recovery guidance across all twelve interface languages while preserving eye controls and breached-password protection."
+      "Localize accurate confirmation, cancellation, and recovery guidance across all twelve interface languages while preserving eye controls and breached-password protection.",
+      "Load the matching official Clerk localization from the language segment in every SmartLingo URL, with a safe English fallback for non-language routes."
     ],
     "zh": [
       "使用 useReverification 包装 Clerk 密码更改，处理 session_reverification_required 并在安全确认后自动重试。",
       "仅在更新模式传递 currentPassword；无密码添加模式仍完全不显示当前密码字段。",
-      "为全部十二种界面语言本地化准确的确认、取消与恢复提示，同时保留眼睛按钮和泄露密码保护。"
+      "为全部十二种界面语言本地化准确的确认、取消与恢复提示，同时保留眼睛按钮和泄露密码保护。",
+      "按每个 SmartLingo URL 的语言段加载对应 Clerk 官方本地化，非语言路由安全回退至英语。"
     ]
   },
   "validation": {

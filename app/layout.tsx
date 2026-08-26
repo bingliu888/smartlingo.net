@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { headers } from "next/headers";
 import { TextSizeInitializer } from "../components/TextSizeControl";
 import { FloatingAssistant } from "../components/FloatingAssistant";
 import { NotificationBar } from "../components/NotificationBar";
+import { LocalizedClerkProvider } from "../components/LocalizedClerkProvider";
 import "./globals.css";
 import "./readability.css";
 import "./project-status.css";
@@ -34,10 +34,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <LocalizedClerkProvider>
       <html lang="zh-CN" data-text-size="comfortable">
         <body><TextSizeInitializer/><NotificationBar/>{children}<FloatingAssistant/></body>
       </html>
-    </ClerkProvider>
+    </LocalizedClerkProvider>
   );
 }
