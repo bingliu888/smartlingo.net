@@ -1,7 +1,7 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./cloudflare.bindings.json";
-import { sites } from "./build/sites-vite-plugin";
+import hostingConfig from "./cloudflare.bindings.json" with { type: "json" };
+import { sites } from "./build/sites-vite-plugin.ts";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -44,6 +44,20 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    build: {
+      // The route-scoped semantic vocabulary catalog is intentionally large.
+      // Keep an explicit ceiling so Vite stays quiet at the accepted size while
+      // still warning if a future client chunk grows beyond this reviewed bound.
+      chunkSizeWarningLimit: 2_500,
+      rolldownOptions: {
+        checks: {
+          // Vinext's required RSC transforms dominate these short local build
+          // phases by design. The timing notice has no actionable threshold for
+          // this application; build duration remains enforced separately.
+          pluginTimings: false,
+        },
+      },
+    },
     server: {
       host: "0.0.0.0",
       allowedHosts: ["terminal.local"],

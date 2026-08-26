@@ -15,17 +15,23 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Configure deterministic Git defaults
+        run: git config --global init.defaultBranch main
+
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --loglevel=error
+
+      - name: Audit all production and build dependencies
+        run: npm audit --audit-level=moderate
 
       - name: Lint authored source with zero-warning policy
         run: npm run lint
@@ -38,15 +44,11 @@ jobs:
 
       - name: Validate D1 migrations
         run: npm run db:validate
+        env:
+          NODE_OPTIONS: --disable-warning=ExperimentalWarning
 
       - name: Typecheck
         run: npx tsc --noEmit
-
-      - name: Ensure private class-media bucket
-        run: npx wrangler r2 bucket create smartlingo-net-class-files --config wrangler.cloudflare.jsonc || true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc
@@ -137,8 +139,8 @@ jobs:
       - name: Publish exact Project release record
         shell: bash
         run: |
-          node scripts/deployment-report-sql.mjs > /tmp/smartlingo-release.sql
-          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --file /tmp/smartlingo-release.sql
+          release_sql="$(node scripts/deployment-report-sql.mjs)"
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "$release_sql"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

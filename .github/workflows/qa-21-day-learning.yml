@@ -40,20 +40,24 @@ jobs:
             echo "local_date=$local_date" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Configure deterministic Git defaults
+        if: steps.date.outputs.run == 'true'
+        run: git config --global init.defaultBranch main
+
       - name: Check out source
         if: steps.date.outputs.run == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
         if: steps.date.outputs.run == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
         if: steps.date.outputs.run == 'true'
-        run: npm ci
+        run: npm ci --loglevel=error
 
       - name: Verify the QA contract
         if: steps.date.outputs.run == 'true'
@@ -71,7 +75,7 @@ jobs:
 
       - name: Upload route-only preflight evidence
         if: always() && steps.date.outputs.run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smartlingo-route-preflight-${{ steps.date.outputs.local_date }}
           path: smartlingo-qa-route-preflight.json

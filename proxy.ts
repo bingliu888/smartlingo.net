@@ -15,5 +15,11 @@ export default function proxy(request: NextRequest, event: unknown) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)", "/(api|trpc)(.*)"],
+  // Match only application pages and APIs. Static files never need Clerk, and
+  // explicit locale alternatives avoid the ambiguous negative-lookahead form
+  // rejected by Vinext's safe matcher compiler.
+  matcher: [
+    "/:lang(zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)/:path*",
+    "/api/:path*",
+  ],
 };

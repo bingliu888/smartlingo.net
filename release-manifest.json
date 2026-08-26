@@ -1,83 +1,95 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-bilingual-first-time-video-tour-20260826",
+  "releaseId": "smartlingo-zero-warning-release-closeout-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Publish narrated first-time video tours for visitors and members",
-    "zh": "发布面向访客与会员的双语语音新手视频教程"
+    "en": "Clear deployment warnings and stale release work",
+    "zh": "清理部署告警与陈旧发布任务"
   },
   "purpose": {
-    "en": "Help a first-time visitor understand SmartLingo before joining and help a new member find saved learning, scores, courses, community, messages, and account security without exposing private account data.",
-    "zh": "帮助第一次访问者在注册前理解 SmartLingo，并帮助新会员找到已保存学习、成绩、课程、社区、消息与账户安全功能，同时不暴露任何私人账户资料。"
+    "en": "Close the current SmartLingo release cycle with no active deployment error, warning annotation, or stale queued release while preserving immutable audit history.",
+    "zh": "在保留不可变审计历史的同时，完成当前 SmartLingo 发布周期，清除活动中的部署错误、告警注释与陈旧排队发布。"
   },
   "features": {
     "en": [
-      "Add separate Chinese and English first-time tour videos with natural text-to-speech narration, burned-in key captions, and selectable WebVTT captions.",
-      "Cover the signed-out visitor journey first and the signed-in member journey second, including email-code and password sign-up choices.",
-      "Add an easy-to-find tutorial action near the top of the home page and a dedicated public tutorial player page.",
-      "Localize the tutorial page and home action across all twelve interface languages while routing Chinese to the Chinese recording and every other locale to English."
+      "Move both SmartLingo workflows to the current Node 24-native GitHub Actions majors.",
+      "Remove the repeated attempt to create an R2 bucket that already exists and previously printed a tolerated red Cloudflare error on every deployment.",
+      "Keep dependency installation, D1 validation, production builds, and Project release writes free of known non-actionable warning output while retaining fail-closed behavior.",
+      "Update the production framework, React runtime, Vinext/Vite toolchain, Cloudflare integration, webinar SDK, spreadsheet parser, and vulnerable transitive implementations so dependency advisories are removed.",
+      "Add an executable workflow contract that prevents the removed warning and tolerated-error patterns from returning."
     ],
     "zh": [
-      "新增独立的中文与英文新手导览视频，包含自然文字转语音旁白、画面重点字幕及可选择的 WebVTT 字幕。",
-      "先完整介绍未登录访客流程，再介绍登录会员流程，并覆盖邮箱验证码与密码两种注册选择。",
-      "在首页顶部附近增加易发现的教程入口，并新增公开教程播放器页面。",
-      "为全部十二种界面语言本地化教程页与首页入口；中文使用中文视频，其他语言统一使用英文视频。"
+      "把两个 SmartLingo 工作流升级到当前原生使用 Node 24 的 GitHub Actions 主版本。",
+      "移除每次部署都重复创建既有 R2 bucket、并输出被容忍的 Cloudflare 红色错误的步骤。",
+      "清除依赖安装、D1 验证、生产构建与 Project 发布写入中的已知非操作性告警输出，同时继续保持失败即停止。",
+      "更新生产框架、React 运行时、Vinext/Vite 工具链、Cloudflare 集成、网络研讨会 SDK、表格解析器与存在漏洞的传递式实现，清除依赖安全告警。",
+      "新增可执行工作流契约，防止已移除的告警与容忍错误模式回归。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo public home hero, new language-prefixed tutorial route, static tutorial media, captions, and responsive layout release matrix.",
-      "Learning data, member progress, Clerk configuration, D1, college records, course commerce, AI providers, and external-service boundaries remain unchanged."
+      "SmartLingo GitHub Actions, the reviewed Vite client-chunk ceiling, the pinned Wrangler toolchain, release metadata, and continuous route preflight.",
+      "Learning behavior, member records, Clerk configuration, D1 schemas and content, R2 objects, colleges, commerce, AI providers, and other sites remain unchanged."
     ],
     "zh": [
-      "涉及 SmartLingo 公开首页首屏、新增的语言前缀教程路由、静态教程媒体、字幕与响应式布局发布矩阵。",
-      "学习数据、会员进度、Clerk 配置、D1、学院记录、课程交易、AI 提供方及外部服务边界保持不变。"
+      "涉及 SmartLingo GitHub Actions、经审核的 Vite 客户端分块上限、固定 Wrangler 工具链、发布元数据与持续路由预检。",
+      "学习行为、会员记录、Clerk 配置、D1 结构与内容、R2 对象、学院、交易、AI 提供方及其他站点保持不变。"
     ]
   },
   "changes": {
     "en": [
-      "Produce a 25-chapter Chinese tour lasting 11:19 and a 25-chapter English tour lasting 10:21 in Safari-compatible H.264 Main Profile with AAC narration and fast-start metadata.",
-      "Mask the dedicated QA member identity and account email, remove browser chrome from member captures, and never record a real password or verification code.",
-      "Render a responsive HTML5 video player with controls, inline mobile playback, poster artwork, metadata-only preload, and no autoplay.",
-      "Expand the release WebKit matrix from 260 to 270 cases so the new route is checked in Chinese and English at five required viewports."
+      "Upgrade checkout, setup-node, and route-evidence upload actions to v7 and pin Wrangler 4.126.0.",
+      "Upgrade Next.js to 16.3.3, React to 19.2.8, Vinext to 1.0.0-beta.8, Vite to 8.2.2, Cloudflare's Vite plugin to 1.54.0, RealtimeKit to 2.0.2, and SheetJS to the official 0.20.3 distribution; force vulnerable legacy UUID, esbuild, and tmp transitive dependencies to compatible fixed releases.",
+      "Make npm install output error-only in CI and suppress only Node's expected experimental SQLite notice during the dedicated migration replay step.",
+      "Set the runner's Git default branch before checkout so repository initialization is deterministic and does not emit the legacy branch-name hint.",
+      "Write the small Project release statement through Wrangler's command path instead of the bulk-file path that emits a database-availability warning.",
+      "Set a reviewed 2,500 kB client-chunk warning ceiling; the existing route-scoped semantic vocabulary catalog remains below it and future growth above it still warns. Disable only Rolldown's non-actionable per-plugin timing notice while retaining the bounded-build timeout.",
+      "Document SmartLingo's intentional full-page navigation boundary after authentication, payment, enrollment, and realtime-session mutations so the new framework advisory does not misclassify required session refreshes.",
+      "Use native-loader-compatible Vite imports and replace the legacy ambiguous middleware matcher with explicit twelve-language and API route matchers; static assets remain outside Clerk middleware."
     ],
     "zh": [
-      "制作 25 章、时长 11:19 的中文教程，以及 25 章、时长 10:21 的英文教程；采用 Safari 兼容的 H.264 Main Profile、AAC 旁白与 fast-start 元数据。",
-      "遮挡专用 QA 会员身份和账户邮箱，清理会员截图中的浏览器栏，并且绝不录制真实密码或验证码。",
-      "使用响应式 HTML5 播放器，提供控件、移动端行内播放、封面图、仅元数据预载且不自动播放。",
-      "将发布 WebKit 矩阵由 260 项扩充至 270 项，让新路由在中英文与五种必测视口下持续验收。"
+      "将 checkout、setup-node 与路由证据上传 action 升级至 v7，并固定 Wrangler 4.126.0。",
+      "将 Next.js 升级到 16.3.3、React 升级到 19.2.8、Vinext 升级到 1.0.0-beta.8、Vite 升级到 8.2.2、Cloudflare Vite 插件升级到 1.54.0、RealtimeKit 升级到 2.0.2，并使用 SheetJS 官方 0.20.3 发行包；把存在漏洞的旧传递式 UUID、esbuild 与 tmp 依赖锁定到兼容修复版本。",
+      "在 CI 中只输出 npm 安装错误，并且仅在专用迁移重放步骤关闭 Node 预期的实验性 SQLite 提示。",
+      "在检出代码前设置运行器的 Git 默认分支，使仓库初始化保持确定性且不再输出旧分支命名提示。",
+      "通过 Wrangler command 路径写入小型 Project 发布语句，不再使用会输出数据库可用性告警的批量文件路径。",
+      "设置经审核的 2,500 kB 客户端分块告警上限；现有路由专用语义词汇目录低于该值，未来超出仍会触发告警。仅关闭 Rolldown 不具可操作性的逐插件计时提示，并继续保留有界构建超时。",
+      "记录 SmartLingo 在认证、支付、选课与实时会话变更后必须进行完整页面跳转的边界，避免新框架建议规则把必要的会话刷新误判为告警。",
+      "采用兼容原生加载器的 Vite 导入格式，并把旧式歧义 middleware matcher 替换为明确的十二语言与 API 路由匹配；静态资源继续不经过 Clerk middleware。"
     ]
   },
   "validation": {
     "en": [
-      "Require TypeScript no-emit, zero-warning ESLint, verified vinext production builds, sensitive-data scans, tutorial media contract tests, and the repository test suite.",
-      "Decode both finished MP4 files end to end, verify H.264 plus AAC streams, measure audible narration at -18.4 dB Chinese and -16.2 dB English average volume, and inspect visitor, member, and masked-account frames.",
-      "Run the real WebKit tutorial matrix across Chinese and English at 390x844, 430x932, 834x1112, 1194x834, and 1440x1000 with all 10 combinations passing."
+      "Require zero-warning ESLint, TypeScript no-emit, the verified production build, sensitive-data and artifact checks, all repository tests, D1 replay, and shared site policy and architecture contracts.",
+      "Require the complete production-and-build dependency audit to report zero advisories and enforce the moderate-or-higher audit gate in every deployment.",
+      "Inspect the terminal GitHub run annotations and logs, production route preflight, production Project record, exact deployed commit, and public localized routes after deployment.",
+      "Confirm no SmartLingo QA or Recovery task is actively running and reconcile the daily QA automation to the exact new production version."
     ],
     "zh": [
-      "要求 TypeScript no-emit、零告警 ESLint、已验证 vinext 生产构建、敏感数据扫描、教程媒体契约测试与全仓测试通过。",
-      "对两支最终 MP4 做全片解码，验证 H.264 与 AAC 音轨，实测中文平均响度 -18.4 dB、英文 -16.2 dB，并人工检查访客、会员及邮箱遮挡画面。",
-      "使用真实 WebKit 在 390x844、430x932、834x1112、1194x834、1440x1000 下完成中英文教程矩阵，10 个组合全部通过。"
+      "要求零告警 ESLint、TypeScript no-emit、经验证的生产构建、敏感信息与产物检查、全仓测试、D1 重放及共享站点政策与架构契约通过。",
+      "要求生产与构建依赖的完整安全审计为零告警，并在每次部署中强制执行中危及以上审计门禁。",
+      "部署后核对终态 GitHub 运行注释与日志、生产路由预检、生产 Project 记录、精确部署提交及公开本地化路由。",
+      "确认没有 SmartLingo QA 或 Recovery 任务正在运行，并把每日 QA 自动化校准到新的精确生产版本。"
     ]
   },
   "deferred": {
     "en": [
-      "The current release provides full Chinese and English narration; the other ten interface languages intentionally use the English recording while retaining localized page controls and explanatory copy.",
-      "Videos are intentionally user-started and do not request microphone access; speaking-practice permissions remain separate and opt-in."
+      "Historical failed, cancelled, blocked, and warning records remain intact as audit evidence; they are not current release blockers.",
+      "The daily 03:00 QA schedule remains intentionally active as continuous monitoring and is not an unfinished release task."
     ],
     "zh": [
-      "本次提供完整中文与英文旁白；其余十种界面语言按要求使用英文视频，同时保留本地化页面控件与说明文案。",
-      "视频必须由用户主动播放且不会请求麦克风；口语练习权限继续独立并由用户主动开启。"
+      "历史失败、取消、受阻及告警记录作为审计证据完整保留；它们不是当前发布阻塞项。",
+      "每天 03:00 的 QA 计划按设计继续启用，属于持续监控，不是未完成的发布任务。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Use SmartLingo's existing green, cream, and coral visual language, shared header and footer, and visitor/member terminology without copying a competitor's branded assets.",
-      "Preserve the isolated SmartLingo repository, existing user-owned dirty files, Clerk and Cloudflare boundaries, and GitHub Actions-to-Cloudflare deployment path."
+      "Keep SmartLingo's isolated GitHub-to-Cloudflare deployment, D1-before-build ordering, Project evidence contract, and 21-day route preflight.",
+      "Preserve the user's untracked local files and every Clerk, Cloudflare, AI, media, data, and external-service boundary."
     ],
     "zh": [
-      "沿用 SmartLingo 既有绿色、米色与珊瑚色视觉语言、共用页眉页脚及访客／会员术语，不复制竞争对手品牌资产。",
-      "保留 SmartLingo 独立代码库、用户已有未提交文件、Clerk 与 Cloudflare 边界，以及 GitHub Actions 至 Cloudflare 发布路径。"
+      "保留 SmartLingo 独立的 GitHub 至 Cloudflare 发布、D1 先于构建顺序、Project 证据契约与 21 天路由预检。",
+      "保留用户本地未跟踪文件，以及所有 Clerk、Cloudflare、AI、媒体、数据与外部服务边界。"
     ]
   }
 }
