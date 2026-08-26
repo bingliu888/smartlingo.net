@@ -2,9 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
+import { homeInterfaceTranslations } from "../../../lib/home-interface-translations.generated";
+import { isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy } from "../../../lib/interface-locale";
 
 const copy = {
   en: {
+    metadata: "Privacy Policy — Draft",
+    draft: "DRAFT · FORMAL LEGAL REVIEW PENDING",
+    eyebrow: "PRIVACY POLICY",
     title: "Language, course, community, and voice data should stay understandable.",
     intro: "Draft for preview as of July 31, 2026. Formal legal and regional privacy review remains required before production billing.",
     sections: [
@@ -20,6 +25,9 @@ const copy = {
     ],
   },
   zh: {
+    metadata: "隐私政策（草案）",
+    draft: "草案 · 待正式法律审核",
+    eyebrow: "隐私政策",
     title: "让语言学习、课程、社区与语音资料的处理方式清楚易懂。",
     intro: "预览草案，日期为 2026 年 7 月 31 日。启用生产收费前，仍须完成正式法律与地区隐私审核。",
     sections: [
@@ -38,12 +46,15 @@ const copy = {
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  return { title: lang === "en" ? "Privacy Policy — Draft" : "隐私政策（草案）" };
+  const locale = safeInterfaceLanguage(lang);
+  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  return { title: t.metadata };
 }
 
 export default async function PrivacyPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
-  const t = copy[lang === "zh" ? "zh" : "en"];
-  return <main className="ai-cert-legal-page lingo-public-page"><SiteHeader lang={lang}/><article className="ai-cert-legal-main"><div className="ai-draft-note"><strong>{lang === "zh" ? "草案 · 待正式法律审核" : "DRAFT · FORMAL LEGAL REVIEW PENDING"}</strong><span>{t.intro}</span></div><p className="section-kicker">{lang === "zh" ? "隐私政策" : "PRIVACY POLICY"}</p><h1>{t.title}</h1><div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div></article><SiteFooter lang={lang}/></main>;
+  if (!isInterfaceLanguage(lang)) notFound();
+  const locale = safeInterfaceLanguage(lang);
+  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  return <main className="ai-cert-legal-page lingo-public-page"><SiteHeader lang={locale}/><article className="ai-cert-legal-main"><div className="ai-draft-note"><strong>{t.draft}</strong><span>{t.intro}</span></div><p className="section-kicker">{t.eyebrow}</p><h1>{t.title}</h1><div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div></article><SiteFooter lang={locale}/></main>;
 }

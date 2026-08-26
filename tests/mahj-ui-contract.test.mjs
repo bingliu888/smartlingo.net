@@ -63,10 +63,10 @@ test("email code state shows the destination and switches localized actions", as
   assert.match(form, /authView\.secondaryAction/);
 });
 
-test("icon-only message controls and the reply editor have bilingual accessible names", async () => {
+test("icon-only message controls and the reply editor use localized accessible names", async () => {
   const center = await read("../components/MessageCenter.tsx");
-  assert.equal((center.match(/aria-label=\{zh \? "返回消息列表" : "Back to messages"\}/g) ?? []).length, 2);
-  assert.match(center, /className="thread-delete"[\s\S]*?aria-label=\{zh \? "删除会话" : "Delete conversation"\}/);
-  assert.match(center, /aria-label=\{zh \? "删除消息" : "Delete message"\}/);
-  assert.match(center, /aria-label=\{zh \? "回复消息" : "Reply message"\}/);
+  assert.equal((center.match(/aria-label=\{t\("Back to messages", "返回消息列表"\)\}/g) ?? []).length, 2);
+  assert.match(center, /className="thread-delete"[\s\S]*?aria-label=\{t\("Delete conversation", "删除会话"\)\}/);
+  assert.match(center, /aria-label=\{t\("Delete message", "删除消息"\)\}/);
+  assert.match(center, /aria-label=\{t\("Reply message", "回复消息"\)\}/);
 });

@@ -19,7 +19,8 @@ test("account profile can display, validate, save, and update an EVM wallet", as
   assert.match(editor, /walletEditing/);
   assert.match(editor, /walletAddress: normalizedWallet/);
   assert.match(route, /wallet_address AS walletAddress/);
-  assert.match(route, /assignments\.push\("wallet_address = \?"\)/);
+  assert.match(route, /bindSmartPayWallet\(user\.id, walletAddress\)/);
+  assert.match(route, /WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT/);
   assert.match(route, /\^0x\[a-fA-F0-9\]\{40\}\$/);
   assert.match(schema, /walletAddress: text\("wallet_address"\)/);
   assert.match(migrationSources.join("\n"), /ALTER TABLE `users` ADD `wallet_address` text/);

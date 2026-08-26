@@ -2,12 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
+import { homeInterfaceTranslations } from "../../../lib/home-interface-translations.generated";
+import { interfaceCopyFor, isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy } from "../../../lib/interface-locale";
 
 const copy = {
   en: {
     eyebrow: "ABOUT SMARTLINGO",
     title: "Language learning that connects daily practice, teachers, and community.",
     intro: "SmartLingo is an independent AI-native language-learning platform built around vocabulary, reading, writing, listening, dialogue, member-led courses, social learning, and transparent commerce.",
+    attribution: "Vocabulary attribution:",
+    license: "licensed under",
     sections: [
       ["Our starting point", "The prior SmartLingo public experience centered on speaking from day one with an AI tutor, pronunciation feedback, structured A1-to-A2 learning, daily radio, reading, vocabulary, seven languages, and social progress."],
       ["Four skills, one daily loop", "Listening, speaking, reading, and writing connect to short lessons, spaced review, vocabulary cards, mistake practice, and progress that a learner can understand."],
@@ -22,6 +26,8 @@ const copy = {
     eyebrow: "关于 SMARTLINGO",
     title: "把每日语言训练、老师和学习社区真正连接起来。",
     intro: "SmartLingo 是独立的人工智能原生语言学习平台，围绕词汇、阅读、写作、听力、对话五项技能、会员自主开班、社交学习与透明商务规则建设。",
+    attribution: "词汇数据鸣谢：",
+    license: "许可：",
     sections: [
       ["我们的起点", "原 SmartLingo 公开体验以从第一天开口为中心，提供人工智能导师、发音反馈、A1 至 A2 结构化学习、每日广播、阅读、词汇、七种语言与社交进度。"],
       ["四项能力，一个每日闭环", "听力、口语、阅读和写作与短课、间隔复习、词汇卡、错题训练及清楚易懂的学习进度连接起来。"],
@@ -36,29 +42,31 @@ const copy = {
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  return { title: lang === "en" ? "About" : "关于我们" };
+  const locale = safeInterfaceLanguage(lang);
+  return { title: interfaceCopyFor(locale).about };
 }
 
 export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
-  const t = copy[lang === "zh" ? "zh" : "en"];
+  if (!isInterfaceLanguage(lang)) notFound();
+  const locale = safeInterfaceLanguage(lang);
+  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
   return (
     <main className="ai-cert-legal-page">
-      <SiteHeader lang={lang}/>
+      <SiteHeader lang={locale}/>
       <article className="ai-cert-legal-main">
         <p className="section-kicker">{t.eyebrow}</p>
         <h1>{t.title}</h1>
         <p className="ai-legal-intro">{t.intro}</p>
         <div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div>
         <p className="ai-legal-intro">
-          {lang === "zh" ? "词汇数据鸣谢：" : "Vocabulary attribution: "}
+          {t.attribution} {" "}
           <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project">EDRDG JMdict</a>
-          {lang === "zh" ? "，许可：" : ", licensed under "}
+          {", "}{t.license}{" "}
           <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
         </p>
       </article>
-      <SiteFooter lang={lang}/>
+      <SiteFooter lang={locale}/>
     </main>
   );
 }

@@ -1,81 +1,97 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-server-localized-password-reverification-20260826",
+  "releaseId": "smartlingo-course-crypto-refid-multilingual-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Complete localized password changes with secure Clerk reverification",
-    "zh": "通过本地化 Clerk 安全身份确认完成密码更改"
+    "en": "Add annual course crypto checkout, RefID claims, and complete multilingual account flows",
+    "zh": "新增年度课程加密货币付款、RefID 入账与完整多语言账户流程"
   },
   "purpose": {
-    "en": "Ensure password adding and updating complete from both recent and older signed-in sessions instead of failing when Clerk requires a fresh identity confirmation.",
-    "zh": "确保添加与更新密码在近期及较早的登录会话中都能完成，避免 Clerk 要求新的身份确认时直接失败。"
+    "en": "Bring SmartLingo onto the current course-payment architecture so a wallet payment can be attributed to the intended SmartLingo learner and activate exactly one annual language course, while completing multilingual coverage for the surrounding account and checkout journeys.",
+    "zh": "将 SmartLingo 迁移到当前课程付款架构，让钱包付款可准确对应目标 SmartLingo 学员并仅开通一门年度语言课程，同时补齐账户与付款流程周边页面的完整多语言支持。"
   },
   "features": {
     "en": [
-      "Detect Clerk password capability before rendering the signed-in Account security form.",
-      "Hide the current-password field completely for passwordless accounts and label the action Add password.",
-      "Complete Clerk's secure reverification flow when the current session is no longer recent, then retry the original password change automatically.",
-      "Keep Clerk's verification dialog in the active SmartLingo interface language across all twelve supported languages."
+      "Add a public six-character RefID to each profile and icon-only copy controls for both RefID and EVM wallet fields.",
+      "Offer contract-authoritative annual course prices and single- or dual-token wallet checkout with balance and gas preflight before any wallet transaction.",
+      "Bind each payment to the payer wallet, RefID, course language, and course tier so a matching signed-in learner can claim the correct annual course without exposing administrative identifiers in user pages.",
+      "Add the dedicated administrator crypto-payment console for deployment, redeployment, source verification, ownership, W1-W5 splits, pause, withdrawal preflight, payment rules, and transaction review.",
+      "Translate account menus, all checkout steps, messages, My colleges, Project, About, Privacy, and Terms across all twelve SmartLingo interface languages."
     ],
     "zh": [
-      "在渲染已登录账户安全表单前检测 Clerk 账户是否已有密码。",
-      "无密码账户完全隐藏当前密码字段，并将操作明确标为“添加密码”。",
-      "当前会话不够新时完成 Clerk 安全身份确认，并自动重试原密码更改。",
-      "让 Clerk 身份确认弹窗在全部十二种支持语言中始终跟随当前 SmartLingo 界面语言。"
+      "为每个账户加入公开的六位 RefID，并在 RefID 与 EVM 钱包字段后提供仅图标的标准复制按钮。",
+      "提供以链上规则为准的年度课程价格及单币／双币钱包付款，并在任何钱包交易前检查代币余额与 Gas。",
+      "将每笔付款绑定付款钱包、RefID、课程语言和课程等级，让匹配的登录学员只领取正确的一门年度课程，同时不在用户页面暴露管理标识。",
+      "新增管理员专用加密货币付款控制台，覆盖部署、重新部署、源码验证、Owner、W1-W5 分账、暂停、提现预检、付款规则和交易核对。",
+      "将账户菜单、全部付款步骤、消息、我的学院、项目、关于、隐私与条款补齐为 SmartLingo 全部十二种界面语言。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo twelve-language Account/Profile password settings and their shared password controls.",
-      "Clerk configuration, account identity, D1 member data, learning progress, colleges, payments, AI, and media remain unchanged."
+      "SmartLingo annual Beginner, Intermediate, and Advanced courses for all twelve learning languages, the Account/Profile wallet and RefID fields, course crypto checkout, and administrator crypto-payment management.",
+      "The additive D1 migration introduces RefID, wallet-binding, payment-claim, deployment-publication, and current-contract settings without changing existing course progress or subscription dates.",
+      "Existing Clerk identities, card checkout, learning records, colleges, messages, AI features, and classroom media remain isolated and intact."
     ],
     "zh": [
-      "涉及 SmartLingo 十二种语言的账户／个人资料密码设置及其共用密码控件。",
-      "Clerk 配置、账户身份、D1 会员数据、学习进度、学院、支付、AI 与媒体保持不变。"
+      "涉及 SmartLingo 十二种学习语言的初期、中级和高级年度课程、账户／个人资料钱包与 RefID、课程加密货币付款及管理员付款管理。",
+      "新增式 D1 迁移加入 RefID、钱包绑定、付款领取、部署公开记录和当前合约设置，不修改既有课程进度或订阅日期。",
+      "既有 Clerk 身份、信用卡付款、学习记录、学院、消息、人工智能功能与课堂媒体继续隔离并保持不变。"
     ]
   },
   "changes": {
     "en": [
-      "Wrap Clerk password changes with useReverification, which handles the session_reverification_required response and retries after secure confirmation.",
-      "Pass currentPassword only in update mode; passwordless add mode still omits the current-password field entirely.",
-      "Localize accurate confirmation, cancellation, and recovery guidance across all twelve interface languages while preserving eye controls and breached-password protection.",
-      "Mount the official Clerk provider in the server-rendered language layout and pass its validated route language directly, keeping authentication hooks inside the provider boundary."
+      "Make SmartPay3 the sole authored public payment ABI, compile it reproducibly with OpenZeppelin, and remove retired SmartPay1 and SmartPay2 runtime compatibility paths.",
+      "Read price rules from the active contract, show the original primary-token price before wallet connection, and offer the configured secondary-token split only after the connected wallet satisfies the on-chain threshold.",
+      "Normalize wallet addresses, compare RefIDs case-insensitively at claim time, prevent an already subscribed wallet from silently moving to another account, and record each verified claim idempotently in D1.",
+      "Wait six seconds after payment, then retry chain-log verification three more times at ten-second intervals before reporting an unconfirmed result.",
+      "Register migration 0172 in the Drizzle journal so production deploys the SmartPay3 and course-claim schema instead of stopping at migration 0171.",
+      "Strengthen the translation generator so placeholder loss fails the build rather than publishing malformed localized text."
     ],
     "zh": [
-      "使用 useReverification 包装 Clerk 密码更改，处理 session_reverification_required 并在安全确认后自动重试。",
-      "仅在更新模式传递 currentPassword；无密码添加模式仍完全不显示当前密码字段。",
-      "为全部十二种界面语言本地化准确的确认、取消与恢复提示，同时保留眼睛按钮和泄露密码保护。",
-      "在服务器渲染的语言布局中挂载 Clerk 官方 Provider 并直接传入已验证的路由语言，让认证 Hooks 始终位于 Provider 边界内。"
+      "将 SmartPay3 作为唯一编写并公开的付款 ABI，使用 OpenZeppelin 可重复编译，并删除已停用的 SmartPay1、SmartPay2 运行时兼容路径。",
+      "从当前合约读取价格规则；连接钱包前显示原始主代币价格，只有连接钱包满足链上门槛后才提供管理员配置的第二代币组合付款。",
+      "统一钱包地址格式、领取时对 RefID 进行不区分大小写比较、防止已有订阅的钱包被静默移到另一账户，并在 D1 中幂等记录每笔已验证领取。",
+      "付款后先等待六秒，再以十秒间隔重试三次链上日志核对，之后才报告尚未确认。",
+      "将 0172 迁移登记到 Drizzle 清单，确保生产发布真正执行 SmartPay3 与课程领取数据结构，而不是停在 0171。",
+      "强化翻译生成器：任何占位符丢失都会让构建失败，不再发布损坏的本地化文案。"
     ]
   },
   "validation": {
     "en": [
-      "Require executable add/update mode tests, the full repository suite, zero-warning ESLint, TypeScript no-emit, verified production build, sensitive-data scan, D1 replay, and the 260-case WebKit layout matrix.",
-      "Deploy only through GitHub Actions to Cloudflare, then create an isolated random password account, exercise the post-sign-up reverification path, update to a second generated strong password, sign out, and sign in with the updated password."
+      "Pass TypeScript no-emit, zero-warning ESLint, the verified production build, sensitive-data scan, artifact validation, and all 388 repository tests.",
+      "Pass four executable SmartPay3 VM tests covering authoritative rules, mixed and single-token payments, secondary eligibility, immediate owner transfer, and rejection of every former or non-owner administrative call.",
+      "Replay all 67 tracked D1 migrations twice with zero foreign-key violations and confirm 0172_smartpay3_course_refid is the newest production migration.",
+      "Verify complete twelve-language coverage and placeholder preservation for signed-in menus, profile copy controls, every wallet-checkout step, messages, colleges, legal pages, and Project."
     ],
     "zh": [
-      "要求可执行的添加／更新模式测试、全仓测试、零告警 ESLint、TypeScript no-emit、已验证生产构建、敏感数据扫描、D1 重放及 260 项 WebKit 布局矩阵通过。",
-      "仅通过 GitHub Actions 发布至 Cloudflare；随后创建隔离的随机密码账户，覆盖注册后身份确认路径，更新为第二个随机强密码，退出并使用更新后的密码重登。"
+      "通过 TypeScript no-emit、零告警 ESLint、已验证生产构建、敏感信息扫描、部署产物验证及全部 388 项仓库测试。",
+      "通过四项可执行 SmartPay3 虚拟机测试，覆盖链上权威规则、混合与单币付款、第二代币资格、Owner 立即转移以及前 Owner／非 Owner 管理调用拒绝。",
+      "两次重放全部 67 个已登记 D1 迁移，外键违规为零，并确认 0172_smartpay3_course_refid 是最新生产迁移。",
+      "验证已登录菜单、个人资料复制按钮、每个钱包付款步骤、消息、学院、法律页面与项目页的十二语言完整性和占位符保留。"
     ]
   },
   "deferred": {
     "en": [
-      "SmartLingo continues to reject passwords found in known breach data; this security control is intentionally not relaxed.",
-      "No personal password or recovery code is used, logged, stored, or included in release evidence; isolated random QA accounts remain ordinary unverified members."
+      "An administrator must deploy or import the site-specific contract and confirm its payment rules before production wallet checkout can offer a course payment.",
+      "Automated validation does not submit a real token approval or payment and does not change any live wallet, owner, split, withdrawal, or course subscription.",
+      "Realtime classroom testing was not repeated because this release changes course commerce, account fields, and localization rather than meeting-room media behavior."
     ],
     "zh": [
-      "SmartLingo 继续拒绝已出现在已知泄露数据中的密码；该安全保护不会降低。",
-      "不使用、记录、保存或写入发布证据任何个人密码或找回验证码；隔离随机 QA 账户始终只是未验证普通会员。"
+      "生产钱包付款可提供课程前，管理员仍需部署或导入本站专属合约并确认其付款规则。",
+      "自动验证不会提交真实代币授权或付款，也不会修改任何线上钱包、Owner、分账、提现或课程订阅。",
+      "本次发布修改课程商务、账户字段和多语言，不涉及会议室媒体行为，因此未重复实时课堂测试。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Reuse the existing eye treatment already established for protected SmartLingo course entry while adapting contrast for light account and auth surfaces.",
-      "Preserve the isolated SmartLingo repository, Clerk application, bindings, GitHub Actions-to-Cloudflare delivery, and user-owned untracked files."
+      "Map payment products to SmartLingo's twelve language codes and three annual course tiers instead of a generic site subscription.",
+      "Keep learner-facing pages limited to course term, token price, wallet balance, and payment status; SmartPay names, mainID, secondID, deployment controls, and contract administration remain administrator-only.",
+      "Preserve SmartLingo's independent repository, Cloudflare D1/R2/Worker bindings, Clerk application, GitHub Actions deployment, existing course dates, and user-owned untracked files."
     ],
     "zh": [
-      "复用 SmartLingo 受保护课程入口既有眼睛交互，并为浅色账户与登录界面调整对比度。",
-      "保留 SmartLingo 独立代码库、Clerk 应用、绑定、GitHub Actions 至 Cloudflare 流程及用户未跟踪文件。"
+      "将付款产品映射到 SmartLingo 的十二种语言代码与三档年度课程，而不是通用网站订阅。",
+      "学员页面只显示课程期限、代币价格、钱包余额和付款状态；SmartPay 名称、mainID、secondID、部署控件与合约管理继续仅供管理员查看。",
+      "保留 SmartLingo 独立代码库、Cloudflare D1／R2／Worker 绑定、Clerk 应用、GitHub Actions 发布、既有课程日期与用户拥有的未跟踪文件。"
     ]
   }
 }

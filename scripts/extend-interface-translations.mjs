@@ -45,8 +45,11 @@ for (const target of targets) {
     endpoint.searchParams.set("tl", target);
     const placeholders = [...new Set(english.match(/\{[a-z]+\}/g) ?? [])];
     let query = english;
+    const placeholderTokens = placeholders.map((_, index) =>
+      `SMARTLINGOPLACEHOLDER${String.fromCharCode(65 + index)}`,
+    );
     placeholders.forEach((placeholder, index) => {
-      query = query.replaceAll(placeholder, `SMARTLINGOTOKEN${index}`);
+      query = query.replaceAll(placeholder, placeholderTokens[index]);
     });
     endpoint.searchParams.set("q", query);
     const response = await fetch(endpoint, { signal: AbortSignal.timeout(30000) });
@@ -55,8 +58,13 @@ for (const target of targets) {
     if (!Array.isArray(result) || typeof result[0] !== "string") throw new Error(`${target} invalid translation`);
     let translated = result[0];
     placeholders.forEach((placeholder, index) => {
-      translated = translated.replace(new RegExp(`SMARTLINGOTOKEN${index}`, "gi"), placeholder);
+      translated = translated.replace(new RegExp(placeholderTokens[index], "gi"), placeholder);
     });
+    for (const placeholder of placeholders) {
+      if (!translated.includes(placeholder)) {
+        throw new Error(`${target} lost placeholder ${placeholder}: ${english}`);
+      }
+    }
     translations[target][english] = translated;
     await wait(80);
   }

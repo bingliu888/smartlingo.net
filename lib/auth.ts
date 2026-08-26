@@ -11,6 +11,7 @@ type D1Result<T> = { results?: T[]; success: boolean };
 type Statement = {
   bind: (...values: unknown[]) => Statement;
   first: <T>() => Promise<T | null>;
+  all: <T>() => Promise<D1Result<T>>;
   run: <T = Record<string, unknown>>() => Promise<D1Result<T>>;
 };
 type Database = {

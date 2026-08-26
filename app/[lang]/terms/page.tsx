@@ -2,9 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
+import { homeInterfaceTranslations } from "../../../lib/home-interface-translations.generated";
+import { isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy } from "../../../lib/interface-locale";
 
 const copy = {
   en: {
+    metadata: "Terms of Use — Draft",
+    draft: "DRAFT · FORMAL LEGAL REVIEW PENDING",
+    eyebrow: "TERMS OF USE",
     title: "Learn, teach, coordinate, and refer responsibly.",
     intro: "Draft for preview as of July 31, 2026. Final terms require formal legal, tax, payment, and regional review.",
     sections: [
@@ -20,6 +25,9 @@ const copy = {
     ],
   },
   zh: {
+    metadata: "使用条款（草案）",
+    draft: "草案 · 待正式法律审核",
+    eyebrow: "使用条款",
     title: "负责任地学习、教学、协调课程与直接推荐。",
     intro: "预览草案，日期为 2026 年 7 月 31 日。最终条款仍须完成正式法律、税务、支付与地区审核。",
     sections: [
@@ -36,5 +44,5 @@ const copy = {
   },
 } as const;
 
-export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> { const { lang } = await params; return { title: lang === "en" ? "Terms of Use — Draft" : "使用条款（草案）" }; }
-export default async function TermsPage({ params }: { params: Promise<{ lang: string }> }) { const { lang } = await params; if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound(); const t = copy[lang === "zh" ? "zh" : "en"]; return <main className="ai-cert-legal-page lingo-public-page"><SiteHeader lang={lang}/><article className="ai-cert-legal-main"><div className="ai-draft-note"><strong>{lang === "zh" ? "草案 · 待正式法律审核" : "DRAFT · FORMAL LEGAL REVIEW PENDING"}</strong><span>{t.intro}</span></div><p className="section-kicker">{lang === "zh" ? "使用条款" : "TERMS OF USE"}</p><h1>{t.title}</h1><div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div></article><SiteFooter lang={lang}/></main>; }
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> { const { lang } = await params; const locale = safeInterfaceLanguage(lang); const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations); return { title: t.metadata }; }
+export default async function TermsPage({ params }: { params: Promise<{ lang: string }> }) { const { lang } = await params; if (!isInterfaceLanguage(lang)) notFound(); const locale = safeInterfaceLanguage(lang); const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations); return <main className="ai-cert-legal-page lingo-public-page"><SiteHeader lang={locale}/><article className="ai-cert-legal-main"><div className="ai-draft-note"><strong>{t.draft}</strong><span>{t.intro}</span></div><p className="section-kicker">{t.eyebrow}</p><h1>{t.title}</h1><div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div></article><SiteFooter lang={locale}/></main>; }

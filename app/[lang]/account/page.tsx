@@ -4,9 +4,11 @@ import Link from "next/link";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { ProfileEditor } from "../../../components/ProfileEditor";
+import { SmartPayAccountLookup } from "../../../components/SmartPayAccountLookup";
 import { PasswordSettings } from "../../../components/PasswordSettings";
 import { getDatabase, getSessionUser } from "../../../lib/auth";
 import { interfaceText, isInterfaceLanguage } from "../../../lib/interface-locale";
+import { ensureSmartPayRefId } from "../../../lib/smartpay-refid";
 import "../../profile-fixes.css";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,8 @@ export default async function AccountPage({ params }: { params: Promise<{ lang: 
     .prepare("SELECT user_id AS userId FROM user_avatars WHERE user_id = ?")
     .bind(user.id)
     .first<{ userId: string }>();
+  const wallet = await getDatabase().prepare("SELECT wallet_address AS wallet FROM users WHERE id=? LIMIT 1").bind(user.id).first<{ wallet: string | null }>();
+  const refId = await ensureSmartPayRefId(user.id);
 
   return <main className="account-settings-page" dir={lang === "ar" ? "rtl" : "ltr"}>
     <SiteHeader lang={lang}/>
@@ -40,10 +44,13 @@ export default async function AccountPage({ params }: { params: Promise<{ lang: 
         lang={lang}
         email={user.email}
         initialName={user.displayName}
+        initialWalletAddress={wallet?.wallet || ""}
+        initialRefId={refId}
         initialAiProviderPreference={user.aiProviderPreference}
         initialIntroducer={introducer ?? null}
         initialImageUrl={avatar ? `/api/profile?avatar=${encodeURIComponent(user.id)}` : ""}
       />
+      <SmartPayAccountLookup lang={lang}/>
       <div className="account-settings-grid account-secondary">
         <article>
           <h2>{t("Learning and courses", "学习与课程")}</h2>

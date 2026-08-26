@@ -4,6 +4,7 @@ import { TextSizeInitializer } from "../components/TextSizeControl";
 import "./globals.css";
 import "./readability.css";
 import "./project-status.css";
+import "./smartpay3.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

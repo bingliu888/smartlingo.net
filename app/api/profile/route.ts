@@ -5,6 +5,8 @@ import {
   storeSmartLingoMedia,
   tombstoneSmartLingoMedia,
 } from "../../../lib/smartlingo-media";
+import { ensureSmartPayRefId } from "../../../lib/smartpay-refid";
+import { bindSmartPayWallet } from "../../../lib/wallet-binding";
 
 function bucket() {
   const value = (globalThis as unknown as { __SMARTLINGO_BUCKET__?: R2Bucket }).__SMARTLINGO_BUCKET__;
@@ -43,7 +45,7 @@ export async function GET(request: Request) {
     LIMIT 1`).bind(user.id).first<{ displayName: string; status: string }>();
   const avatar = await getDatabase().prepare("SELECT user_id AS userId FROM user_avatars WHERE user_id = ?").bind(user.id).first<{ userId: string }>();
   const wallet = await getDatabase().prepare("SELECT wallet_address AS walletAddress FROM users WHERE id = ?").bind(user.id).first<{ walletAddress: string | null }>();
-  return Response.json({ profile: { displayName: user.displayName, preferredLanguage: user.preferredLanguage, aiProviderPreference: user.aiProviderPreference, walletAddress: wallet?.walletAddress ?? "", imageUrl: avatar ? `/api/profile?avatar=${encodeURIComponent(user.id)}` : "" }, introducer: introducer ?? null });
+  return Response.json({ profile: { displayName: user.displayName, preferredLanguage: user.preferredLanguage, aiProviderPreference: user.aiProviderPreference, walletAddress: wallet?.walletAddress ?? "", refId: await ensureSmartPayRefId(user.id), imageUrl: avatar ? `/api/profile?avatar=${encodeURIComponent(user.id)}` : "" }, introducer: introducer ?? null });
 }
 
 export async function POST(request: Request) {
@@ -120,8 +122,14 @@ export async function POST(request: Request) {
   const assignments: string[] = [];
   const values: unknown[] = [];
   if (hasProfile) { assignments.push("display_name = ?", "preferred_language = ?"); values.push(displayName, preferredLanguage); }
-  if (hasWallet) { assignments.push("wallet_address = ?"); values.push(walletAddress || null); }
+  if (hasWallet) {
+    try { await bindSmartPayWallet(user.id, walletAddress); }
+    catch (error) {
+      const reason = error instanceof Error ? error.message : "WALLET_SAVE_FAILED";
+      return Response.json({ error: reason === "WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT" ? "This wallet already belongs to another account with subscription or payment history." : reason }, { status: reason === "WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT" ? 409 : 400 });
+    }
+  }
   if (hasAiProviderPreference) { assignments.push("ai_provider_preference = ?"); values.push(aiProviderPreference); }
-  await getDatabase().prepare(`UPDATE users SET ${assignments.join(", ")} WHERE id = ?`).bind(...values, user.id).run();
-  return Response.json({ profile: { displayName: displayName ?? user.displayName, preferredLanguage: hasProfile ? preferredLanguage : user.preferredLanguage, aiProviderPreference: hasAiProviderPreference ? aiProviderPreference : user.aiProviderPreference, walletAddress } });
+  if (assignments.length) await getDatabase().prepare(`UPDATE users SET ${assignments.join(", ")} WHERE id = ?`).bind(...values, user.id).run();
+  return Response.json({ profile: { displayName: displayName ?? user.displayName, preferredLanguage: hasProfile ? preferredLanguage : user.preferredLanguage, aiProviderPreference: hasAiProviderPreference ? aiProviderPreference : user.aiProviderPreference, walletAddress, refId: await ensureSmartPayRefId(user.id) } });
 }

@@ -8,10 +8,15 @@ import { TextSizeControl } from "./TextSizeControl";
 
 type Introducer = { displayName: string; status: string } | null;
 
-export function ProfileEditor({ lang, email, initialName, initialWalletAddress = "", initialAiProviderPreference = "auto", initialIntroducer, initialImageUrl = "" }: { lang: InterfaceLanguage; email: string; initialName: string; initialWalletAddress?: string; initialAiProviderPreference?: "auto" | "openai" | "deepseek"; initialIntroducer: Introducer; initialImageUrl?: string }) {
+function CopyIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>;
+}
+
+export function ProfileEditor({ lang, email, initialName, initialWalletAddress = "", initialRefId = "", initialAiProviderPreference = "auto", initialIntroducer, initialImageUrl = "" }: { lang: InterfaceLanguage; email: string; initialName: string; initialWalletAddress?: string; initialRefId?: string; initialAiProviderPreference?: "auto" | "openai" | "deepseek"; initialIntroducer: Introducer; initialImageUrl?: string }) {
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const [displayName, setDisplayName] = useState(initialName);
   const [walletAddress, setWalletAddress] = useState(initialWalletAddress);
+  const [refId, setRefId] = useState(initialRefId);
   const [walletEditing, setWalletEditing] = useState(!initialWalletAddress);
   const [aiProviderPreference, setAiProviderPreference] = useState(initialAiProviderPreference);
   const [busy, setBusy] = useState(false);
@@ -20,11 +25,12 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
   const [imageUrl, setImageUrl] = useState(initialImageUrl);
 
   useEffect(() => {
-    if (initialWalletAddress) return;
     void fetch("/api/profile", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
       .then((result) => {
         const savedWallet = result?.profile?.walletAddress;
+        const savedRefId = result?.profile?.refId;
+        if (typeof savedRefId === "string" && savedRefId) setRefId(savedRefId);
         if (typeof savedWallet === "string" && savedWallet) {
           setWalletAddress(savedWallet);
           setWalletEditing(false);
@@ -32,6 +38,12 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
       })
       .catch(() => undefined);
   }, [initialWalletAddress]);
+
+  async function copyValue(value: string) {
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    setMessage(t("Copied.", "已复制。"));
+  }
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -94,6 +106,7 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
         <small>{t("JPG, PNG, or WebP · 5 MB maximum", "JPG、PNG 或 WebP，最大 5 MB")}</small>
       </div>
       <label>{t("Display name", "显示名称")}<input required minLength={2} maxLength={60} value={displayName} onChange={event => setDisplayName(event.target.value)}/></label>
+      <div className="wallet-profile-field"><label>{t("Your 6-character RefID", "您的 6 位 RefID")}</label><div className="copy-field"><input readOnly value={refId}/><button type="button" className="copy-icon-button profile-copy-button" title={t("Copy RefID", "复制 RefID")} aria-label={t("Copy RefID", "复制 RefID")} onClick={() => void copyValue(refId)}><CopyIcon/></button></div><small>{t("This public ID connects a wallet payment to your account. It is not a password.", "该公开编号用于把钱包付款对应到您的账户，不是密码。")}</small></div>
       <fieldset className="ai-provider-field">
         <legend>{t("Default text model", "默认文本模型")}</legend>
         <label><input type="radio" name="ai-provider" value="auto" checked={aiProviderPreference === "auto"} onChange={() => setAiProviderPreference("auto")}/><span><b>{t("Automatic (recommended)", "自动（推荐）")}</b><small>{t("Prefer DeepSeek V4 Flash in China and OpenAI in other supported regions.", "中国优先使用 DeepSeek V4 Flash；其他地区优先使用 OpenAI。")}</small></span></label>
@@ -103,7 +116,7 @@ export function ProfileEditor({ lang, email, initialName, initialWalletAddress =
       </fieldset>
       <div className="wallet-profile-field">
         <div><label htmlFor="profile-wallet">{t("EVM wallet", "EVM 钱包")}</label><button type="button" onClick={() => setWalletEditing(value => !value)}>{walletEditing ? t("Cancel", "取消") : walletAddress ? t("Edit", "修改") : t("Add", "添加")}</button></div>
-        <input id="profile-wallet" inputMode="text" autoComplete="off" readOnly={!walletEditing} placeholder="0x…" value={walletAddress} onChange={event => setWalletAddress(event.target.value)} />
+        <div className="copy-field"><input id="profile-wallet" inputMode="text" autoComplete="off" readOnly={!walletEditing} placeholder="0x…" value={walletAddress} onChange={event => setWalletAddress(event.target.value)} /><button type="button" className="copy-icon-button profile-copy-button" disabled={!walletAddress} title={t("Copy wallet", "复制钱包地址")} aria-label={t("Copy wallet", "复制钱包地址")} onClick={() => void copyValue(walletAddress)}><CopyIcon/></button></div>
         <small>{t("Optional and used only for compatible features you choose to enable; neither platform subscriptions nor course payments require a wallet.", "可选资料，仅用于您主动启用的兼容功能；平台订阅和课程付款均不要求钱包。")}</small>
       </div>
       <button className="profile-save" disabled={busy}>{busy ? t("Saving…", "正在保存…") : t("Save profile", "保存个人资料")}</button>

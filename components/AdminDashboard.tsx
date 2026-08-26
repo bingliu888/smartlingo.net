@@ -1,6 +1,5 @@
 import type { SessionUser } from "../lib/auth";
 import { getDatabase } from "../lib/auth";
-import AdminCryptoSettings from "./AdminCryptoSettings";
 import { AdminCollegeTags } from "./CollegeAdminForms";
 import { activeCollegeTags } from "../lib/smartlingo-colleges";
 import { AdminLearningRewards } from "./AdminLearningRewards";
@@ -49,11 +48,10 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
       </section>
       <section className="admin-quick-links">
         <h2>{zh ? "运营入口" : "Operations"}</h2>
-        <div><a href={`/${lang}/project`}>{zh ? "项目进展" : "Project"}</a><a href={`/${lang}/community`}>{zh ? "社区" : "Community"}</a><a href={`/${lang}/messages`}>{zh ? "消息与实时聊天" : "Messages & live chat"}</a><a href={`/${lang}/assistant`}>{zh ? "智能导师" : "Ask Guru"}</a></div>
+        <div><a href={`/${lang}/project`}>{zh ? "项目进展" : "Project"}</a><a href={`/${lang}/community`}>{zh ? "社区" : "Community"}</a><a href={`/${lang}/messages`}>{zh ? "消息与实时聊天" : "Messages & live chat"}</a><a href={`/${lang}/assistant`}>{zh ? "智能导师" : "Ask Guru"}</a><a href={`/${lang}/admin/crypto-payments`}>{zh ? "加密货币付款" : "Crypto payments"}</a></div>
       </section>
       <AdminCollegeTags lang={lang} tags={collegeTags}/>
       <AdminLearningRewards lang={lang}/>
-      <AdminCryptoSettings lang={lang}/>
     </div>
   );
 }

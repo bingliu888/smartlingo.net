@@ -43,5 +43,5 @@ test("account supports setting and updating a Clerk password", async () => {
   assert.match(account, /<PasswordSettings lang=\{lang\}\/>/);
   assert.match(account, /Manage your SmartLingo profile/);
   assert.match(account, /管理您的 SmartLingo 个人资料/);
-  assert.match(menu, /lang === "zh" \? "个人资料" : "Profile"/);
+  assert.match(menu, /t\("Profile", "个人资料"\)/);
 });
