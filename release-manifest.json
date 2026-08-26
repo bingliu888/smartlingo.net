@@ -1,67 +1,67 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-password-visibility-update-20260826",
+  "releaseId": "smartlingo-password-add-update-modes-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Clarify password-update security and add accessible reveal controls",
-    "zh": "明确改密安全提示并增加可访问的密码显示按钮"
+    "en": "Distinguish password adding from password updating",
+    "zh": "明确区分添加密码与更新密码"
   },
   "purpose": {
-    "en": "Make SmartLingo password entry easier to verify in all twelve interface languages without weakening Clerk's breached-password protection, and prove that a unique strong password can be changed from the signed-in profile.",
-    "zh": "让 SmartLingo 用户可在全部十二种界面语言中核对密码输入，同时保留 Clerk 泄露密码保护，并验证已登录资料页可使用唯一强密码完成改密。"
+    "en": "Ensure a passwordless member can add a password without a current-password field, while a password-enabled member must confirm the current password before updating it.",
+    "zh": "确保无密码会员添加密码时不显示当前密码字段，而已有密码的会员必须验证当前密码后才能更新。"
   },
   "features": {
     "en": [
-      "Add an independent Show password / Hide password eye control after every sign-in, recovery, and profile password field.",
-      "Keep each password hidden by default and expose twelve-language accessible labels, pressed state, focus treatment, and a 44-pixel touch target.",
-      "Explain that a breached-password rejection means the update service is working and recommend a unique random password of at least 12 characters."
+      "Detect Clerk password capability before rendering the signed-in Account security form.",
+      "Hide the current-password field completely for passwordless accounts and label the action Add password.",
+      "Require the current password for password-enabled accounts and keep the action labeled Update password."
     ],
     "zh": [
-      "在登录、找回密码和资料页的每一个密码框后增加独立的“显示密码／隐藏密码”眼睛按钮。",
-      "密码默认隐藏，并提供十二种语言的无障碍名称、按下状态、键盘焦点及 44 像素触控区域。",
-      "明确说明泄露密码被拒绝代表改密服务正常，并建议使用至少 12 个字符的唯一随机强密码。"
+      "在渲染已登录账户安全表单前检测 Clerk 账户是否已有密码。",
+      "无密码账户完全隐藏当前密码字段，并将操作明确标为“添加密码”。",
+      "已有密码账户必须输入当前密码，并将操作保持为“更新密码”。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo twelve-language sign-in, password registration, password recovery, and Account/Profile password settings.",
+      "SmartLingo twelve-language Account/Profile password settings and their shared password controls.",
       "Clerk configuration, account identity, D1 member data, learning progress, colleges, payments, AI, and media remain unchanged."
     ],
     "zh": [
-      "涉及 SmartLingo 十二种语言的登录、密码注册、密码找回及账户／个人资料改密界面。",
+      "涉及 SmartLingo 十二种语言的账户／个人资料密码设置及其共用密码控件。",
       "Clerk 配置、账户身份、D1 会员数据、学习进度、学院、支付、AI 与媒体保持不变。"
     ]
   },
   "changes": {
     "en": [
-      "Use one reusable password-input component for current, new, and confirmation values while preserving autocomplete and minimum-length semantics.",
-      "Retain Clerk's current-password check and form_password_pwned protection; no password rule, provider setting, or server secret is bypassed.",
-      "Cover hidden and revealed states in all twelve interface languages, preserve the exact selected language in profile data, and require all account credential fields to use a visibility control."
+      "Use an executable add/update mode model derived from Clerk's passwordEnabled state.",
+      "Pass currentPassword to Clerk only in update mode; add mode submits only the new password from the authenticated session.",
+      "Localize Add password and its explanatory copy across all twelve interface languages while preserving the existing eye controls and breached-password protection."
     ],
     "zh": [
-      "当前密码、新密码与确认密码共用一个可复用密码输入组件，并保留自动填充与最短长度语义。",
-      "保留 Clerk 当前密码校验及 form_password_pwned 保护；不绕过密码规则、服务商设置或服务器密钥。",
-      "覆盖十二种界面语言的隐藏与显示状态，个人资料保留准确的已选语言，并要求所有账户密码输入都具备可见性控制。"
+      "使用由 Clerk passwordEnabled 状态驱动的可执行添加／更新模式模型。",
+      "仅在更新模式向 Clerk 传递 currentPassword；添加模式从已登录会话仅提交新密码。",
+      "为全部十二种界面语言本地化“添加密码”及说明文案，同时保留眼睛按钮和泄露密码保护。"
     ]
   },
   "validation": {
     "en": [
-      "Require targeted password tests, the full repository suite, zero-warning ESLint, TypeScript no-emit, verified production build, sensitive-data scan, D1 replay, layout contracts, and shared SmartLingo gates.",
-      "Deploy only through GitHub Actions to Cloudflare, then use an isolated test account to reveal fields, change to a generated strong password, sign out, sign in with the new password, and restore the test credential."
+      "Require executable add/update mode tests, the full repository suite, zero-warning ESLint, TypeScript no-emit, verified production build, sensitive-data scan, D1 replay, and the 260-case WebKit layout matrix.",
+      "Deploy only through GitHub Actions to Cloudflare, then create an isolated random password account, update it to a second generated strong password, sign out, and sign in with the updated password."
     ],
     "zh": [
-      "要求密码定向测试、全仓测试、零告警 ESLint、TypeScript no-emit、已验证生产构建、敏感数据扫描、D1 重放、布局合同及 SmartLingo 共享检查通过。",
-      "仅通过 GitHub Actions 发布至 Cloudflare；随后使用隔离测试账户显示密码、改为随机强密码、退出、使用新密码重登并恢复测试凭据。"
+      "要求可执行的添加／更新模式测试、全仓测试、零告警 ESLint、TypeScript no-emit、已验证生产构建、敏感数据扫描、D1 重放及 260 项 WebKit 布局矩阵通过。",
+      "仅通过 GitHub Actions 发布至 Cloudflare；随后创建隔离的随机密码账户，更新为第二个随机强密码，退出并使用更新后的密码重登。"
     ]
   },
   "deferred": {
     "en": [
       "SmartLingo continues to reject passwords found in known breach data; this security control is intentionally not relaxed.",
-      "No personal password or recovery code is used, logged, stored, or included in release evidence."
+      "No personal password or recovery code is used, logged, stored, or included in release evidence; the random QA account remains an ordinary unverified member."
     ],
     "zh": [
       "SmartLingo 继续拒绝已出现在已知泄露数据中的密码；该安全保护不会降低。",
-      "不使用、记录、保存或写入发布证据任何个人密码或找回验证码。"
+      "不使用、记录、保存或写入发布证据任何个人密码或找回验证码；随机 QA 账户始终只是未验证普通会员。"
     ]
   },
   "siteAdaptations": {
