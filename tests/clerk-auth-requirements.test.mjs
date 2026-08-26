@@ -188,7 +188,7 @@ test("the executable auth view model owns code, password-compatibility, and CAPT
 test("the form delegates live transitions to tested helpers and mounts Clerk CAPTCHA", async () => {
   const form = await read("../components/ClerkAuthForm.tsx");
 
-  assert.match(form, /prepareEmailCodeFlow\(identifier, lang/);
+  assert.match(form, /prepareEmailCodeFlow\(identifier, baseLang/);
   assert.match(form, /setFlow\(prepared\.flow\)/);
   assert.match(form, /setStep\("code"\)/);
   assert.match(form, /completeSignUpAttempt\(/);

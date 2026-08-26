@@ -12,7 +12,7 @@ const translations = JSON.parse(payload);
 const pairs = new Map();
 for (const sourceUrl of sourceUrls) {
   const source = await fs.readFile(sourceUrl, "utf8");
-  for (const match of source.matchAll(/\bt\(\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*\)/g)) {
+  for (const match of source.matchAll(/\bt\(\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*,?\s*\)/g)) {
     pairs.set(JSON.parse(match[1]), JSON.parse(match[2]));
   }
   for (const match of source.matchAll(/\binterfaceText\([^,]+,\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*\)/g)) {
@@ -43,12 +43,21 @@ for (const target of targets) {
     endpoint.searchParams.set("client", "dict-chrome-ex");
     endpoint.searchParams.set("sl", "en");
     endpoint.searchParams.set("tl", target);
-    endpoint.searchParams.set("q", english);
+    const placeholders = [...new Set(english.match(/\{[a-z]+\}/g) ?? [])];
+    let query = english;
+    placeholders.forEach((placeholder, index) => {
+      query = query.replaceAll(placeholder, `SMARTLINGOTOKEN${index}`);
+    });
+    endpoint.searchParams.set("q", query);
     const response = await fetch(endpoint, { signal: AbortSignal.timeout(30000) });
     if (!response.ok) throw new Error(`${target} translation HTTP ${response.status}`);
     const result = await response.json();
     if (!Array.isArray(result) || typeof result[0] !== "string") throw new Error(`${target} invalid translation`);
-    translations[target][english] = result[0];
+    let translated = result[0];
+    placeholders.forEach((placeholder, index) => {
+      translated = translated.replace(new RegExp(`SMARTLINGOTOKEN${index}`, "gi"), placeholder);
+    });
+    translations[target][english] = translated;
     await wait(80);
   }
   process.stdout.write(`Extended ${target}\n`);

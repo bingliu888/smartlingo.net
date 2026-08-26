@@ -39,13 +39,15 @@ test("keeps the supplementary Guru shortcut outside every release viewport", asy
 });
 
 test("keeps every authentication credential readable without iOS zoom", async () => {
-  const [form, css] = await Promise.all([
+  const [form, passwordInput, css] = await Promise.all([
     readFile(new URL("../components/ClerkAuthForm.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/PasswordInput.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(form, /type="email"/);
-  assert.match(form, /type="password"/);
+  assert.match(form, /<PasswordInput/);
+  assert.match(passwordInput, /type=\{view\.type\}/);
   assert.match(form, /autoComplete="one-time-code"/);
   assert.match(css, /\.auth-form input\{\s*font-size:max\(18px,var\(--reader-base,18px\)\)!important;\s*line-height:1\.35;/);
 });

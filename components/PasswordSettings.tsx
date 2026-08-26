@@ -3,21 +3,30 @@
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { useUser } from "@clerk/nextjs";
 import { FormEvent, useState } from "react";
+import { interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
+import { PasswordInput } from "./PasswordInput";
 import styles from "./password-settings.module.css";
 
-function readableError(issue: unknown, zh: boolean) {
+type Translator = (english: string, chinese: string) => string;
+
+function readableError(issue: unknown, lang: InterfaceLanguage, t: Translator) {
   if (isClerkAPIResponseError(issue)) {
     const error = issue.errors[0];
-    if (error?.code === "form_password_incorrect") return zh ? "当前密码不正确。" : "Your current password is incorrect.";
-    if (error?.code === "form_password_pwned") return zh ? "该密码曾出现在数据泄露中，请换一个。" : "That password appeared in a data breach. Choose another.";
-    return zh ? "无法保存密码，请重试。" : error?.longMessage || error?.message || "Could not save your password. Please try again.";
+    if (error?.code === "form_password_incorrect") return t("Your current password is incorrect.", "当前密码不正确。");
+    if (error?.code === "form_password_pwned") return t(
+      "Password updating is working, but the new password appears in a known data breach. Use a unique random password that you have never used elsewhere (12 or more characters recommended).",
+      "密码更新功能正常，但你输入的新密码已出现在已知数据泄露名单中。请使用从未在其他网站使用过的随机强密码（建议至少 12 个字符）。",
+    );
+    return lang === "en"
+      ? error?.longMessage || error?.message || "Could not save your password. Please try again."
+      : t("Could not save your password. Please try again.", "无法保存密码，请重试。");
   }
-  if (issue instanceof Error) return zh && !/[\u3400-\u9fff]/.test(issue.message) ? "无法保存密码，请重试。" : issue.message;
-  return zh ? "无法保存密码，请重试。" : "Could not save your password. Please try again.";
+  if (issue instanceof Error && lang === "en") return issue.message;
+  return t("Could not save your password. Please try again.", "无法保存密码，请重试。");
 }
 
-export function PasswordSettings({ lang }: { lang: "en" | "zh" }) {
-  const zh = lang === "zh";
+export function PasswordSettings({ lang }: { lang: InterfaceLanguage }) {
+  const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const { isLoaded, user } = useUser();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -29,29 +38,29 @@ export function PasswordSettings({ lang }: { lang: "en" | "zh" }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setSuccess("");
-    if (!user) return setError(zh ? "账户尚未载入。" : "Your account is not ready.");
-    if (passwordEnabled && !currentPassword) return setError(zh ? "请输入当前密码。" : "Enter your current password.");
-    if (newPassword.length < 8) return setError(zh ? "新密码至少需要 8 个字符。" : "Your new password must be at least 8 characters.");
-    if (newPassword !== confirmPassword) return setError(zh ? "两次输入的新密码不一致。" : "The new passwords do not match.");
+    if (!user) return setError(t("Your account is not ready.", "账户尚未载入。"));
+    if (passwordEnabled && !currentPassword) return setError(t("Enter your current password.", "请输入当前密码。"));
+    if (newPassword.length < 8) return setError(t("Your new password must be at least 8 characters.", "新密码至少需要 8 个字符。"));
+    if (newPassword !== confirmPassword) return setError(t("The new passwords do not match.", "两次输入的新密码不一致。"));
     setBusy(true);
     try {
       await user.updatePassword({ currentPassword: passwordEnabled ? currentPassword : undefined, newPassword, signOutOfOtherSessions: false });
       await user.reload();
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
-      setSuccess(zh ? "密码已保存。以后可使用密码或邮箱验证码登录。" : "Password saved. You can sign in with a password or an email code.");
-    } catch (issue) { setError(readableError(issue, zh)); } finally { setBusy(false); }
+      setSuccess(t("Password saved. You can sign in with a password or an email code.", "密码已保存。以后可使用密码或邮箱验证码登录。"));
+    } catch (issue) { setError(readableError(issue, lang, t)); } finally { setBusy(false); }
   }
 
   return <div className={styles.wrap}>
-    <p className={styles.kicker}>{zh ? "账户安全" : "ACCOUNT SECURITY"}</p>
-    <h2>{passwordEnabled ? (zh ? "更新密码" : "Update password") : (zh ? "设置密码" : "Set password")}</h2>
-    <p>{passwordEnabled ? (zh ? "输入当前密码即可更改，不会再次要求邮箱验证码。" : "Confirm with your current password. No additional email code is required.") : (zh ? "从当前已登录会话设置密码，不会再次要求邮箱验证码；以后密码和邮箱验证码都可以登录。" : "Set a password from this signed-in session without another email code; both sign-in methods will remain available.")}</p>
-    {!isLoaded ? <p className={styles.notice}>{zh ? "正在读取账户…" : "Loading account…"}</p> : <form className={styles.form} onSubmit={submit}>
-      {passwordEnabled && <label>{zh ? "当前密码" : "Current password"}<input type="password" autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>}
-      <label>{zh ? "新密码" : "New password"}<input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /><small>{zh ? "至少 8 个字符，请勿使用已泄露的密码。" : "At least 8 characters. Avoid passwords exposed in data breaches."}</small></label>
-      <label>{zh ? "确认新密码" : "Confirm new password"}<input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label>
+    <p className={styles.kicker}>{t("ACCOUNT SECURITY", "账户安全")}</p>
+    <h2>{passwordEnabled ? t("Update password", "更新密码") : t("Set password", "设置密码")}</h2>
+    <p>{passwordEnabled ? t("Confirm with your current password. No additional email code is required.", "输入当前密码即可更改，不会再次要求邮箱验证码。") : t("Set a password from this signed-in session without another email code; both sign-in methods will remain available.", "从当前已登录会话设置密码，不会再次要求邮箱验证码；以后密码和邮箱验证码都可以登录。")}</p>
+    {!isLoaded ? <p className={styles.notice}>{t("Loading account…", "正在读取账户…")}</p> : <form className={styles.form} onSubmit={submit}>
+      {passwordEnabled && <PasswordInput lang={lang} label={t("Current password", "当前密码")} autoComplete="current-password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />}
+      <PasswordInput lang={lang} label={t("New password", "新密码")} autoComplete="new-password" minLength={8} required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} hint={t("At least 8 characters; use a unique random password of 12 or more characters when possible.", "至少 8 个字符；建议使用 12 个以上、从未在其他网站使用过的随机强密码。")} />
+      <PasswordInput lang={lang} label={t("Confirm new password", "确认新密码")} autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
       {error && <p className={styles.error} role="alert">{error}</p>}{success && <p className={styles.success} role="status">{success}</p>}
-      <button disabled={busy}>{busy ? (zh ? "正在保存…" : "Saving…") : passwordEnabled ? (zh ? "更新密码" : "Update password") : (zh ? "设置密码" : "Set password")}</button>
+      <button disabled={busy}>{busy ? t("Saving…", "正在保存…") : passwordEnabled ? t("Update password", "更新密码") : t("Set password", "设置密码")}</button>
     </form>}
   </div>;
 }

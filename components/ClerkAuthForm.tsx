@@ -11,9 +11,12 @@ import {
   startPasswordSignInOrUp,
   type ClerkSignUpAttemptResult,
 } from "../lib/clerk-auth-requirements";
+import { interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
+import { PasswordInput } from "./PasswordInput";
 
-export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang: "en" | "zh"; returnTo?: string }) {
-  const zh = lang === "zh";
+export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang: InterfaceLanguage; returnTo?: string }) {
+  const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
+  const baseLang = lang === "zh" ? "zh" : "en";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -27,12 +30,31 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
   const { isLoaded, userId } = useAuth();
   const { isLoaded: signInLoaded, signIn, setActive: setActiveSignIn } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
-  const authView = clerkAuthStepView(step, method, lang);
+  const authState = clerkAuthStepView(step, method, baseLang);
+  const authView = {
+    ...authState,
+    primaryAction: step === "recovery-email"
+      ? t("Send reset code", "发送重置验证码")
+      : step === "recovery-code"
+        ? t("Reset password & sign in", "重置密码并登录")
+        : step === "code"
+          ? t("Verify & continue", "验证并继续")
+          : step === "password-required"
+            ? t("Create password & sign in", "设置密码并登录")
+            : method === "code"
+              ? t("Send secure code", "发送安全验证码")
+              : t("Continue with password", "使用密码继续"),
+    secondaryAction: step === "code" || step === "password-required" || step === "recovery-email" || step === "recovery-code"
+      ? t("Use another email", "更换邮箱")
+      : method === "code"
+        ? t("Use password instead", "改用密码")
+        : t("Use an email code instead", "改用邮箱验证码"),
+  };
   const completePath = `/${lang}/auth/complete?returnTo=${encodeURIComponent(returnTo)}`;
   type SignInResult = Awaited<ReturnType<NonNullable<typeof signIn>["create"]>>;
 
   const activateSession = (setActive: typeof setActiveSignIn, session: string) => {
-    if (!setActive) throw new Error(zh ? "登录功能仍在加载。" : "Sign-in is still loading.");
+    if (!setActive) throw new Error(t("Sign-in is still loading.", "登录功能仍在加载。"));
     return setActive({
       session,
       navigate: async ({ decorateUrl }) => {
@@ -52,22 +74,27 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
   function readableError(issue: unknown) {
     if (isClerkAPIResponseError(issue)) {
       const key = issue.errors[0]?.code;
-      if (key === "form_code_incorrect") return zh ? "验证码不正确，请重试。" : "That code is incorrect. Please try again.";
-      if (key === "verification_expired") return zh ? "验证码已过期，请重新发送。" : "That code expired. Request a new one.";
-      if (key === "form_identifier_not_found") return zh ? "未找到使用该邮箱的账户。" : "No account exists with that email.";
-      if (key === "form_password_incorrect") return zh ? "密码不正确。" : "That password is incorrect.";
-      if (key === "form_password_pwned") return zh ? "该密码曾出现在数据泄露中，请换一个。" : "That password appeared in a data breach. Choose another.";
-      if (key === "form_password_length_too_short") return zh ? "密码至少需要 8 个字符。" : "Your password must be at least 8 characters.";
-      return zh ? "请求失败，请稍后重试。" : issue.errors[0]?.longMessage || issue.errors[0]?.message || "Request failed.";
+      if (key === "form_code_incorrect") return t("That code is incorrect. Please try again.", "验证码不正确，请重试。");
+      if (key === "verification_expired") return t("That code expired. Request a new one.", "验证码已过期，请重新发送。");
+      if (key === "form_identifier_not_found") return t("No account exists with that email.", "未找到使用该邮箱的账户。");
+      if (key === "form_password_incorrect") return t("That password is incorrect.", "密码不正确。");
+      if (key === "form_password_pwned") return t(
+        "That password appears in a known data breach. Use a unique random password that you have never used elsewhere (12 or more characters recommended).",
+        "该密码已出现在已知数据泄露名单中。请使用从未在其他网站使用过的随机强密码（建议至少 12 个字符）。",
+      );
+      if (key === "form_password_length_too_short") return t("Your password must be at least 8 characters.", "密码至少需要 8 个字符。");
+      return lang === "en"
+        ? issue.errors[0]?.longMessage || issue.errors[0]?.message || "Request failed."
+        : t("Request failed. Please try again later.", "请求失败，请稍后重试。");
     }
-    if (issue instanceof Error) return zh && !/[\u3400-\u9fff]/.test(issue.message) ? "请求失败，请稍后重试。" : issue.message;
-    return zh ? "请求失败。" : "Request failed.";
+    if (issue instanceof Error) return issue.message;
+    return t("Request failed.", "请求失败。");
   }
 
   async function finishSignUp(result: ClerkSignUpAttemptResult) {
     const resolution = await completeSignUpAttempt(
       result,
-      lang,
+      baseLang,
       sessionId => activateSession(setActiveSignUp, sessionId),
     );
     if (resolution.kind === "activated") return;
@@ -76,10 +103,16 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
       setCode("");
       setPassword("");
       setPasswordConfirmation("");
-      setMessage(resolution.message);
+      setMessage(t(
+        "Your email is verified. The current account settings also require new users to create a password; sign-in will finish automatically after you set it.",
+        "电子邮箱已验证。当前账户设置还要求新用户创建密码；设置后将自动完成登录。",
+      ));
       return;
     }
-    throw new Error(resolution.message);
+    throw new Error(t(
+      "Your account requires additional information before sign-in can finish. Use another sign-in method or contact an administrator.",
+      "账户仍需补充资料才能完成登录。请更换登录方式或联系管理员。",
+    ));
   }
 
   async function finishSignIn(result: SignInResult, identifier: string) {
@@ -90,40 +123,45 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
     if (result.status === "needs_second_factor" || result.status === "needs_client_trust") {
       const factor = result.supportedSecondFactors?.find(item => item.strategy === "email_code");
       if (!factor || factor.strategy !== "email_code") {
-        throw new Error(zh ? "此账户需要其他安全验证，请联系管理员。" : "This account requires another security factor. Contact an administrator.");
+        throw new Error(t("This account requires another security factor. Contact an administrator.", "此账户需要其他安全验证，请联系管理员。"));
       }
       await result.prepareSecondFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
       setFlow("second-factor");
       setStep("code");
       setCode("");
       setPassword("");
-      setMessage(zh
-        ? `此设备需要额外验证，新的安全码已发送至 ${identifier}`
-        : `This device needs extra verification. A new security code was sent to ${identifier}`);
+      setMessage(t(
+        "This device needs extra verification. A new security code was sent to {identifier}",
+        "此设备需要额外验证，新的安全码已发送至 {identifier}",
+      ).replace("{identifier}", identifier));
       return;
     }
-    throw new Error(zh
-      ? `登录需要额外步骤（${result.status || "未知"}）。`
-      : `Sign-in needs another step (${result.status || "unknown"}).`);
+    throw new Error(t(
+      "Sign-in needs another step ({status}).",
+      "登录需要额外步骤（{status}）。",
+    ).replace("{status}", result.status || t("unknown", "未知")));
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setMessage(""); setLoading(true);
     try {
-      if (!signInLoaded || !signUpLoaded || !signIn || !signUp) throw new Error(zh ? "登录功能仍在加载。" : "Sign-in is still loading.");
+      if (!signInLoaded || !signUpLoaded || !signIn || !signUp) throw new Error(t("Sign-in is still loading.", "登录功能仍在加载。"));
       const identifier = email.trim().toLowerCase();
       if (step === "recovery-email") {
         await signIn.create({ strategy: "reset_password_email_code", identifier });
         setFlow("recovery");
         setStep("recovery-code");
-        setMessage(zh ? `账户已找到。请检查 ${identifier}，并输入邮件中的一次性重置验证码。` : `Account found. Check ${identifier} and enter the one-time reset code from the email.`);
+        setMessage(t(
+          "Account found. Check {identifier} and enter the one-time reset code from the email.",
+          "账户已找到。请检查 {identifier}，并输入邮件中的一次性重置验证码。",
+        ).replace("{identifier}", identifier));
       } else if (step === "recovery-code" && flow === "recovery") {
-        if (password.length < 8) throw new Error(zh ? "新密码至少需要 8 个字符。" : "Your new password must be at least 8 characters.");
-        if (password !== passwordConfirmation) throw new Error(zh ? "两次输入的新密码不一致。" : "The new passwords do not match.");
+        if (password.length < 8) throw new Error(t("Your new password must be at least 8 characters.", "新密码至少需要 8 个字符。"));
+        if (password !== passwordConfirmation) throw new Error(t("The new passwords do not match.", "两次输入的新密码不一致。"));
         const result = await signIn.attemptFirstFactor({ strategy: "reset_password_email_code", code, password });
         await finishSignIn(result, identifier);
       } else if (step === "credentials" && method === "code") {
-        const prepared = await prepareEmailCodeFlow(identifier, lang, {
+        const prepared = await prepareEmailCodeFlow(identifier, baseLang, {
           createSignIn: value => signIn.create({ identifier: value }),
           createSignUp: value => signUp.create({ emailAddress: value }),
           isIdentifierNotFound: issue => isClerkAPIResponseError(issue)
@@ -131,7 +169,7 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
         });
         setFlow(prepared.flow);
         setStep("code");
-        setMessage(prepared.message);
+        setMessage(t("Code sent to {identifier}", "验证码已发送至 {identifier}").replace("{identifier}", prepared.identifier));
       } else if (step === "credentials") {
         const result = await startPasswordSignInOrUp(identifier, password, {
           createSignIn: (value, secret) => signIn.create({ identifier: value, password: secret }),
@@ -148,8 +186,8 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
         const result = await signIn.attemptFirstFactor({ strategy: "email_code", code });
         await finishSignIn(result, identifier);
       } else if (step === "password-required" && flow === "sign-up") {
-        if (password.length < 8) throw new Error(zh ? "密码至少需要 8 个字符。" : "Your password must be at least 8 characters.");
-        if (password !== passwordConfirmation) throw new Error(zh ? "两次输入的密码不一致。" : "The passwords do not match.");
+        if (password.length < 8) throw new Error(t("Your password must be at least 8 characters.", "密码至少需要 8 个字符。"));
+        if (password !== passwordConfirmation) throw new Error(t("The passwords do not match.", "两次输入的密码不一致。"));
         const result = await signUp.update({ password });
         await finishSignUp(result);
       } else {
@@ -161,20 +199,20 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
 
   function reset(next = method) { setMethod(next); setStep("credentials"); setFlow(null); setCode(""); setPassword(""); setPasswordConfirmation(""); setError(""); setMessage(""); }
 
-  function startRecovery() { setStep("recovery-email"); setFlow(null); setCode(""); setPassword(""); setPasswordConfirmation(""); setError(""); setMessage(zh ? "输入账户邮箱以接收一次性重置验证码。" : "Enter your account email to receive a one-time reset code."); }
+  function startRecovery() { setStep("recovery-email"); setFlow(null); setCode(""); setPassword(""); setPasswordConfirmation(""); setError(""); setMessage(t("Enter your account email to receive a one-time reset code.", "输入账户邮箱以接收一次性重置验证码。")); }
 
-  if (userId) return <p className="form-message success" role="status">{zh ? "正在连接安全会话…" : "Connecting your secure session…"}</p>;
+  if (userId) return <p className="form-message success" role="status">{t("Connecting your secure session…", "正在连接安全会话…")}</p>;
   return <form className="auth-form" onSubmit={submit}>
-    <label>{zh ? "电子邮箱" : "Email address"}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} disabled={step === "code" || step === "password-required" || step === "recovery-code"} required /></label>
-    {((method === "password" && step === "credentials") || step === "password-required" || step === "recovery-code") && <label>{step === "credentials" ? (zh ? "密码" : "Password") : (zh ? "新密码" : "New password")}<input type="password" autoComplete={step === "credentials" ? "current-password" : "new-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required /></label>}
-    {(step === "password-required" || step === "recovery-code") && <label>{zh ? "确认新密码" : "Confirm new password"}<input type="password" autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={event => setPasswordConfirmation(event.target.value)} required /></label>}
-    {method === "password" && step === "credentials" && <button className="form-link auth-forgot-password" type="button" onClick={startRecovery}>{zh ? "忘记密码？" : "Forgot password?"}</button>}
-    {authView.showCodeField && <label>{zh ? "一次性验证码" : "One-time code"}<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ""))} required /></label>}
+    <label>{t("Email address", "电子邮箱")}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} disabled={step === "code" || step === "password-required" || step === "recovery-code"} required /></label>
+    {((method === "password" && step === "credentials") || step === "password-required" || step === "recovery-code") && <PasswordInput lang={lang} label={step === "credentials" ? t("Password", "密码") : t("New password", "新密码")} autoComplete={step === "credentials" ? "current-password" : "new-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required />}
+    {(step === "password-required" || step === "recovery-code") && <PasswordInput lang={lang} label={t("Confirm new password", "确认新密码")} autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={event => setPasswordConfirmation(event.target.value)} required />}
+    {method === "password" && step === "credentials" && <button className="form-link auth-forgot-password" type="button" onClick={startRecovery}>{t("Forgot password?", "忘记密码？")}</button>}
+    {authView.showCodeField && <label>{t("One-time code", "一次性验证码")}<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ""))} required /></label>}
     {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message success" role="status">{message}</p>}
-    {(step === "code" || step === "recovery-code") && <p className="form-message">{zh ? "如果收件箱中没有看到验证码邮件，请检查垃圾邮件或广告邮件文件夹。" : "If you don't see the code email in your inbox, check your Spam or Junk folder."}</p>}
-    {step === "recovery-email" && <p className="form-message">{zh ? "若注册邮箱不存在或无法收信，将无法自行找回密码。" : "Self-service recovery cannot work if the account email is false or unreachable."}</p>}
+    {(step === "code" || step === "recovery-code") && <p className="form-message">{t("If you don't see the code email in your inbox, check your Spam or Junk folder.", "如果收件箱中没有看到验证码邮件，请检查垃圾邮件或广告邮件文件夹。")}</p>}
+    {step === "recovery-email" && <p className="form-message">{t("Self-service recovery cannot work if the account email is false or unreachable.", "若注册邮箱不存在或无法收信，将无法自行找回密码。")}</p>}
     <div id={authView.captchaElementId} />
-    <button className="primary-button full" disabled={loading || !signInLoaded || !signUpLoaded}>{loading ? (zh ? "请稍候…" : "Please wait…") : authView.primaryAction}</button>
+    <button className="primary-button full" disabled={loading || !signInLoaded || !signUpLoaded}>{loading ? t("Please wait…", "请稍候…") : authView.primaryAction}</button>
     {step !== "credentials" ? <button className="form-link" type="button" onClick={() => reset()}>{authView.secondaryAction}</button> : <button className="form-link" type="button" onClick={() => reset(method === "code" ? "password" : "code")}>{authView.secondaryAction}</button>}
   </form>;
 }

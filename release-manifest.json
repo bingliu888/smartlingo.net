@@ -1,79 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-dual-clerk-email-password-20260826",
+  "releaseId": "smartlingo-password-visibility-update-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Add dual Clerk email-code and password access with subject-bound unverified accounts",
-    "zh": "增加 Clerk 邮箱验证码与密码双登录，并隔离未验证邮箱账户"
+    "en": "Clarify password-update security and add accessible reveal controls",
+    "zh": "明确改密安全提示并增加可访问的密码显示按钮"
   },
   "purpose": {
-    "en": "Keep email verification code as the default SmartLingo entry while adding an explicit password path that can create a first-time account without email verification, safely recover an existing password, and manage passwords from the signed-in profile.",
-    "zh": "保留邮箱验证码作为 SmartLingo 默认入口，同时增加明确的密码路径，使首次用户无需验证邮箱即可创建账户，并可安全找回已有账户密码及在已登录资料页管理密码。"
+    "en": "Make SmartLingo password entry easier to verify in all twelve interface languages without weakening Clerk's breached-password protection, and prove that a unique strong password can be changed from the signed-in profile.",
+    "zh": "让 SmartLingo 用户可在全部十二种界面语言中核对密码输入，同时保留 Clerk 泄露密码保护，并验证已登录资料页可使用唯一强密码完成改密。"
   },
   "features": {
     "en": [
-      "Default to email-code sign-in and let the learner switch to email plus password without removing either method.",
-      "Sign in a known password account or create an unknown email account immediately with the submitted password and no verification-email dependency.",
-      "Offer one-time email-code password recovery only for an existing account, and let signed-in members set or change a password without another email-code challenge."
+      "Add an independent Show password / Hide password eye control after every sign-in, recovery, and profile password field.",
+      "Keep each password hidden by default and expose twelve-language accessible labels, pressed state, focus treatment, and a 44-pixel touch target.",
+      "Explain that a breached-password rejection means the update service is working and recommend a unique random password of at least 12 characters."
     ],
     "zh": [
-      "默认使用邮箱验证码登录，并允许学习者切换为邮箱加密码，两种方式长期并存。",
-      "已有密码账户直接登录；未知邮箱则使用所提交密码立即创建账户，不依赖邮箱验证。",
-      "仅为已存在账户提供一次性邮件验证码找回密码；已登录会员无需再次邮箱验证即可设置或更改密码。"
+      "在登录、找回密码和资料页的每一个密码框后增加独立的“显示密码／隐藏密码”眼睛按钮。",
+      "密码默认隐藏，并提供十二种语言的无障碍名称、按下状态、键盘焦点及 44 像素触控区域。",
+      "明确说明泄露密码被拒绝代表改密服务正常，并建议使用至少 12 个字符的唯一随机强密码。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo sign-in, sign-up, recovery, profile password settings, Clerk-to-D1 session bridge, administrator account creation, and permanent-administrator authorization.",
-      "Learning content, progress, colleges, payments, AI boundaries, media, Cloudflare isolation, and existing verified member records remain intact."
+      "SmartLingo twelve-language sign-in, password registration, password recovery, and Account/Profile password settings.",
+      "Clerk configuration, account identity, D1 member data, learning progress, colleges, payments, AI, and media remain unchanged."
     ],
     "zh": [
-      "涉及 SmartLingo 登录、注册、找回密码、资料页密码设置、Clerk 至 D1 会话桥、管理员建号及永久管理员授权。",
-      "学习内容与进度、学院、支付、AI 边界、媒体、Cloudflare 隔离及既有已验证会员记录保持不变。"
+      "涉及 SmartLingo 十二种语言的登录、密码注册、密码找回及账户／个人资料改密界面。",
+      "Clerk 配置、账户身份、D1 会员数据、学习进度、学院、支付、AI 与媒体保持不变。"
     ]
   },
   "changes": {
     "en": [
-      "Persist email_verified in D1, reconcile verified identities by email, and keep unverified identities bound only to their immutable Clerk subject.",
-      "Require verified email status for bootstrap and permanent-administrator privileges across pages, APIs, college controls, payment settings, and global messages.",
-      "Use Clerk's reset-password email-code strategy, return an explicit error for an unknown recovery email, and never issue or display temporary passwords.",
-      "Enable email-code and password account access in all production Clerk applications while disabling mandatory sign-up verification and Device Trust."
+      "Use one reusable password-input component for current, new, and confirmation values while preserving autocomplete and minimum-length semantics.",
+      "Retain Clerk's current-password check and form_password_pwned protection; no password rule, provider setting, or server secret is bypassed.",
+      "Cover hidden and revealed states in all twelve interface languages, preserve the exact selected language in profile data, and require all account credential fields to use a visibility control."
     ],
     "zh": [
-      "在 D1 持久化 email_verified；仅已验证身份可按邮箱归并，未验证身份只绑定不可变的 Clerk subject。",
-      "页面、API、学院控制、支付设置和全局消息中的启动及永久管理员权限均要求邮箱已验证。",
-      "使用 Clerk 一次性邮件验证码重置密码；不存在的找回邮箱返回明确错误；绝不签发或展示临时密码。",
-      "所有生产 Clerk 应用均启用邮箱验证码与密码访问，同时关闭注册强制验证及 Device Trust。"
+      "当前密码、新密码与确认密码共用一个可复用密码输入组件，并保留自动填充与最短长度语义。",
+      "保留 Clerk 当前密码校验及 form_password_pwned 保护；不绕过密码规则、服务商设置或服务器密钥。",
+      "覆盖十二种界面语言的隐藏与显示状态，个人资料保留准确的已选语言，并要求所有账户密码输入都具备可见性控制。"
     ]
   },
   "validation": {
     "en": [
-      "Require zero-warning ESLint, TypeScript no-emit, verified Vinext production build, sensitive-data and Cloudflare artifact scans, all repository tests, D1 migration replay, and shared site policy and architecture contracts.",
-      "Deploy only through GitHub Actions to Cloudflare, then exercise first-time fake-email password registration, repeat password sign-in, default email-code UI, existing-account recovery, profile password changes, and unverified-admin denial in Safari."
+      "Require targeted password tests, the full repository suite, zero-warning ESLint, TypeScript no-emit, verified production build, sensitive-data scan, D1 replay, layout contracts, and shared SmartLingo gates.",
+      "Deploy only through GitHub Actions to Cloudflare, then use an isolated test account to reveal fields, change to a generated strong password, sign out, sign in with the new password, and restore the test credential."
     ],
     "zh": [
-      "要求零告警 ESLint、TypeScript no-emit、已验证 Vinext 生产构建、敏感数据与 Cloudflare 产物扫描、全仓测试、D1 迁移重放及共享站点政策与架构合同全部通过。",
-      "仅通过 GitHub Actions 发布至 Cloudflare；随后在 Safari 真实验证首次假邮箱密码注册、再次密码登录、默认验证码界面、已有账户找回、资料页改密及未验证账户管理员拒绝。"
+      "要求密码定向测试、全仓测试、零告警 ESLint、TypeScript no-emit、已验证生产构建、敏感数据扫描、D1 重放、布局合同及 SmartLingo 共享检查通过。",
+      "仅通过 GitHub Actions 发布至 Cloudflare；随后使用隔离测试账户显示密码、改为随机强密码、退出、使用新密码重登并恢复测试凭据。"
     ]
   },
   "deferred": {
     "en": [
-      "A deliberately false or unreachable email can use password access but cannot self-recover; SmartLingo does not create temporary passwords or bypass ownership for recovery.",
-      "Phone verification is not part of this release."
+      "SmartLingo continues to reject passwords found in known breach data; this security control is intentionally not relaxed.",
+      "No personal password or recovery code is used, logged, stored, or included in release evidence."
     ],
     "zh": [
-      "刻意填写的虚假或不可收信邮箱可使用密码访问，但无法自行找回；SmartLingo 不创建临时密码，也不为找回流程绕过邮箱所有权。",
-      "本次发布不包含手机验证。"
+      "SmartLingo 继续拒绝已出现在已知泄露数据中的密码；该安全保护不会降低。",
+      "不使用、记录、保存或写入发布证据任何个人密码或找回验证码。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep SmartLingo's seven-day Clerk-linked app session and D1 member data while adding explicit verification provenance.",
-      "Preserve the isolated SmartLingo repository, bindings, Clerk keys, GitHub Actions-to-Cloudflare delivery, and the user's untracked output and temporary work files."
+      "Reuse the existing eye treatment already established for protected SmartLingo course entry while adapting contrast for light account and auth surfaces.",
+      "Preserve the isolated SmartLingo repository, Clerk application, bindings, GitHub Actions-to-Cloudflare delivery, and user-owned untracked files."
     ],
     "zh": [
-      "保留 SmartLingo 现有七天 Clerk 关联应用会话和 D1 会员数据，并增加明确的邮箱验证来源。",
-      "保留 SmartLingo 独立代码库、绑定、Clerk 密钥、GitHub Actions 至 Cloudflare 发布流程，以及用户未跟踪的输出与临时工作文件。"
+      "复用 SmartLingo 受保护课程入口既有眼睛交互，并为浅色账户与登录界面调整对比度。",
+      "保留 SmartLingo 独立代码库、Clerk 应用、绑定、GitHub Actions 至 Cloudflare 流程及用户未跟踪文件。"
     ]
   }
 }
