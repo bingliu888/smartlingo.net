@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-localized-password-reverification-20260826",
+  "releaseId": "smartlingo-server-localized-password-reverification-20260826",
   "site": "smartlingo.net",
   "title": {
     "en": "Complete localized password changes with secure Clerk reverification",
@@ -39,13 +39,13 @@
       "Wrap Clerk password changes with useReverification, which handles the session_reverification_required response and retries after secure confirmation.",
       "Pass currentPassword only in update mode; passwordless add mode still omits the current-password field entirely.",
       "Localize accurate confirmation, cancellation, and recovery guidance across all twelve interface languages while preserving eye controls and breached-password protection.",
-      "Load the matching official Clerk localization from the language segment in every SmartLingo URL, with a safe English fallback for non-language routes."
+      "Mount the official Clerk provider in the server-rendered language layout and pass its validated route language directly, keeping authentication hooks inside the provider boundary."
     ],
     "zh": [
       "使用 useReverification 包装 Clerk 密码更改，处理 session_reverification_required 并在安全确认后自动重试。",
       "仅在更新模式传递 currentPassword；无密码添加模式仍完全不显示当前密码字段。",
       "为全部十二种界面语言本地化准确的确认、取消与恢复提示，同时保留眼睛按钮和泄露密码保护。",
-      "按每个 SmartLingo URL 的语言段加载对应 Clerk 官方本地化，非语言路由安全回退至英语。"
+      "在服务器渲染的语言布局中挂载 Clerk 官方 Provider 并直接传入已验证的路由语言，让认证 Hooks 始终位于 Provider 边界内。"
     ]
   },
   "validation": {

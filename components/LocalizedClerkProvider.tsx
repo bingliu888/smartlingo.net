@@ -1,5 +1,3 @@
-"use client";
-
 import { ClerkProvider } from "@clerk/nextjs";
 import {
   arSA,
@@ -15,9 +13,7 @@ import {
   ruRU,
   zhCN,
 } from "@clerk/localizations";
-import { usePathname } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
-import { clerkLocalizationLanguage } from "../lib/clerk-localization-language";
 import type { SmartLingoCommunityLanguage } from "../lib/smartlingo-language-communities";
 
 type ClerkLocalization = NonNullable<ComponentProps<typeof ClerkProvider>["localization"]>;
@@ -37,7 +33,6 @@ const clerkLocalizations: Record<SmartLingoCommunityLanguage, ClerkLocalization>
   hi: hiIN,
 };
 
-export function LocalizedClerkProvider({ children }: { children: ReactNode }) {
-  const language = clerkLocalizationLanguage(usePathname());
+export function LocalizedClerkProvider({ children, language }: { children: ReactNode; language: SmartLingoCommunityLanguage }) {
   return <ClerkProvider localization={clerkLocalizations[language]}>{children}</ClerkProvider>;
 }

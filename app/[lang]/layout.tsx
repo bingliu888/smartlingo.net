@@ -3,6 +3,9 @@ import { LanguageSync, type SiteLanguage } from "../../components/LanguageMemory
 import { PersistentCallProvider } from "../../components/PersistentCallProvider";
 import { safeInterfaceLanguage } from "../../lib/interface-locale";
 import { LocaleRuntime } from "../../components/LocaleRuntime";
+import { LocalizedClerkProvider } from "../../components/LocalizedClerkProvider";
+import { NotificationBar } from "../../components/NotificationBar";
+import { FloatingAssistant } from "../../components/FloatingAssistant";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
@@ -21,5 +24,5 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function LanguageLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
   const safeLanguage: SiteLanguage = safeInterfaceLanguage(lang);
-  return <PersistentCallProvider lang={safeLanguage === "zh" ? "zh" : "en"}><LocaleRuntime locale={safeLanguage}/><LanguageSync lang={safeLanguage}/>{children}</PersistentCallProvider>;
+  return <LocalizedClerkProvider language={safeLanguage}><NotificationBar/><PersistentCallProvider lang={safeLanguage === "zh" ? "zh" : "en"}><LocaleRuntime locale={safeLanguage}/><LanguageSync lang={safeLanguage}/>{children}</PersistentCallProvider><FloatingAssistant/></LocalizedClerkProvider>;
 }

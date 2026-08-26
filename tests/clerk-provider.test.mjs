@@ -1,27 +1,31 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { clerkLocalizationLanguage, clerkLocalizationLanguages } from "../lib/clerk-localization-language.ts";
 
-test("the application shell always mounts inside the localized Clerk provider", async () => {
-  const [layout, provider] = await Promise.all([
+test("each language application shell mounts inside the server-localized Clerk provider", async () => {
+  const [rootLayout, languageLayout, provider] = await Promise.all([
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/[lang]/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/LocalizedClerkProvider.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(layout, /<LocalizedClerkProvider>/);
+  assert.doesNotMatch(provider, /"use client"|usePathname/);
+  assert.match(languageLayout, /<LocalizedClerkProvider language=\{safeLanguage\}>/);
   assert.match(provider, /<ClerkProvider localization=\{clerkLocalizations\[language\]\}>/);
-  assert.doesNotMatch(layout, /publishableKey\s*\?/);
+  assert.match(languageLayout, /<NotificationBar\/>/);
+  assert.match(languageLayout, /<FloatingAssistant\/>/);
+  assert.doesNotMatch(rootLayout, /publishableKey\s*\?/);
 });
 
-test("Clerk dialogs follow all twelve SmartLingo route languages", () => {
-  assert.equal(clerkLocalizationLanguages.length, 12);
-  for (const language of clerkLocalizationLanguages) {
-    assert.equal(clerkLocalizationLanguage(`/${language}/account`), language);
-  }
-  assert.equal(clerkLocalizationLanguage("/r/invitation"), "en");
-  assert.equal(clerkLocalizationLanguage("/xx/account"), "en");
-  assert.equal(clerkLocalizationLanguage(null), "en");
+test("Clerk dialogs follow all twelve SmartLingo route languages", async () => {
+  const [provider, languageCatalog] = await Promise.all([
+    readFile(new URL("../components/LocalizedClerkProvider.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/smartlingo-language-communities.ts", import.meta.url), "utf8"),
+  ]);
+  const configured = [...provider.matchAll(/^\s{2}([a-z]{2}):\s[a-zA-Z]+,$/gm)].map(match => match[1]).sort();
+  const supported = [...languageCatalog.matchAll(/\{ code: "([a-z]{2})",/g)].map(match => match[1]).sort();
+  assert.equal(configured.length, 12);
+  assert.deepEqual(configured, supported);
 });
 
 test("the Clerk session bridge can verify with the production secret key", async () => {
