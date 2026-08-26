@@ -42,7 +42,17 @@ export type PreparedEmailCodeFlow = {
   message: string;
 };
 
-export type ClerkAuthStep = "credentials" | "code" | "password-required";
+export type PasswordAuthDependencies<TSignIn, TSignUp> = {
+  createSignIn: (identifier: string, password: string) => Promise<TSignIn>;
+  createSignUp: (identifier: string, password: string) => Promise<TSignUp>;
+  isIdentifierNotFound: (issue: unknown) => boolean;
+};
+
+export type PasswordAuthResult<TSignIn, TSignUp> =
+  | { flow: "sign-in"; result: TSignIn }
+  | { flow: "sign-up"; result: TSignUp };
+
+export type ClerkAuthStep = "credentials" | "code" | "password-required" | "recovery-email" | "recovery-code";
 export type ClerkAuthMethod = "code" | "password";
 
 export function clerkAuthStepView(
@@ -52,21 +62,38 @@ export function clerkAuthStepView(
 ) {
   const zh = lang === "zh";
   return {
-    showCodeField: step === "code",
+    showCodeField: step === "code" || step === "recovery-code",
     captchaElementId: CLERK_CAPTCHA_ELEMENT_ID,
-    primaryAction: step === "code"
+    primaryAction: step === "recovery-email"
+      ? (zh ? "发送重置验证码" : "Send reset code")
+      : step === "recovery-code"
+        ? (zh ? "重置密码并登录" : "Reset password & sign in")
+        : step === "code"
       ? (zh ? "验证并继续" : "Verify & continue")
       : step === "password-required"
         ? (zh ? "设置密码并登录" : "Create password & sign in")
         : method === "code"
           ? (zh ? "发送安全验证码" : "Send secure code")
           : (zh ? "使用密码继续" : "Continue with password"),
-    secondaryAction: step === "code" || step === "password-required"
+    secondaryAction: step === "code" || step === "password-required" || step === "recovery-email" || step === "recovery-code"
       ? (zh ? "更换邮箱" : "Use another email")
       : method === "code"
         ? (zh ? "改用密码" : "Use password instead")
         : (zh ? "改用邮箱验证码" : "Use an email code instead"),
   };
+}
+
+export async function startPasswordSignInOrUp<TSignIn, TSignUp>(
+  identifier: string,
+  password: string,
+  dependencies: PasswordAuthDependencies<TSignIn, TSignUp>,
+): Promise<PasswordAuthResult<TSignIn, TSignUp>> {
+  try {
+    return { flow: "sign-in", result: await dependencies.createSignIn(identifier, password) };
+  } catch (issue) {
+    if (!dependencies.isIdentifierNotFound(issue)) throw issue;
+    return { flow: "sign-up", result: await dependencies.createSignUp(identifier, password) };
+  }
 }
 
 const requirementLabels: Record<AuthLanguage, Record<string, string>> = {

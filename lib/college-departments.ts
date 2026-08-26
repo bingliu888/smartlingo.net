@@ -1,4 +1,5 @@
 import { createId, getDatabase, type SessionUser } from "./auth";
+import { isPermanentAdmin } from "./admin-access";
 import { generateClassCode } from "./live-classrooms";
 import { departmentLanguagePair, isDepartmentLanguage, type DepartmentLanguage } from "./college-department-languages";
 export { DEPARTMENT_LANGUAGES, departmentLanguageName, isDepartmentLanguage, type DepartmentLanguage } from "./college-department-languages";
@@ -50,7 +51,7 @@ async function departmentCode(){for(let i=0;i<40;i++){const code=String(crypto.g
 export async function createDepartment(college:{id:string;ownerUserId:string;titleEn:string;titleZh:string},user:SessionUser,input:Record<string,unknown>){
   const source=input.sourceLanguage,target=input.targetLanguage;
   if(!isDepartmentLanguage(source)||!isDepartmentLanguage(target)||source===target)throw new Error("INVALID_LANGUAGE_PAIR");
-  const permanentAdmin=user.email.trim().toLowerCase()==="bingliu@cybeye.com";
+  const permanentAdmin=isPermanentAdmin(user);
   const license=await supervisorLicense(user.id);
   if(!permanentAdmin&&(!license||license.status!=="active"))throw new Error("SUPERVISOR_LICENSE_REQUIRED");
   if(!permanentAdmin&&license&&license.departmentCount>=license.maxDepartments)throw new Error("DEPARTMENT_LIMIT_REACHED");

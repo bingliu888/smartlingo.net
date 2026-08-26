@@ -111,6 +111,7 @@ test("the bridge verifies an inert Clerk token, trusts verified profile data, an
     "session",
     "user_inert",
     "member@example.com",
+    true,
     "Inert Member",
     "zh",
     "sess_inert",
@@ -181,23 +182,31 @@ test("the bridge rejects missing configuration, malformed bodies, and incomplete
   assert.equal(incompleteClaims.status, 401);
 });
 
-test("the bridge rejects unverified, banned, and locked Clerk users before creating an app session", async () => {
-  let appSessionCalls = 0;
-  const createAppSession = async () => {
-    appSessionCalls += 1;
-    return { cookie: "must-not-be-set" };
-  };
-
+test("the bridge accepts an unverified member by Clerk subject while rejecting banned and locked users", async () => {
+  const appSessionCalls = [];
   const unverified = await bridge.handleClerkSessionBridgeRequest(request(), dependencies({
     getClerkUser: async () => ({
+      firstName: "Unverified",
       primaryEmailAddress: {
         emailAddress: "member@example.com",
         verification: { status: "unverified" },
       },
     }),
-    createAppSession,
+    createAppSession: async (...args) => {
+      appSessionCalls.push(args);
+      return { cookie: "smartlingo_session=unverified; Path=/; HttpOnly; Secure; SameSite=Lax" };
+    },
   }));
-  assert.equal(unverified.status, 400);
+  assert.equal(unverified.status, 200);
+  assert.deepEqual(appSessionCalls[0], [
+    "user_inert",
+    "member@example.com",
+    false,
+    "Unverified",
+    "zh",
+    "sess_inert",
+    "LINGO_TEST",
+  ]);
 
   for (const state of [{ banned: true }, { locked: true }]) {
     const response = await bridge.handleClerkSessionBridgeRequest(request(), dependencies({
@@ -208,11 +217,11 @@ test("the bridge rejects unverified, banned, and locked Clerk users before creat
           verification: { status: "verified" },
         },
       }),
-      createAppSession,
+      createAppSession: async () => assert.fail("blocked Clerk users must not create app sessions"),
     }));
     assert.equal(response.status, 401);
   }
-  assert.equal(appSessionCalls, 0);
+  assert.equal(appSessionCalls.length, 1);
 });
 
 test("verification failures fail closed and log only bounded error details", async () => {

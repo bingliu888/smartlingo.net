@@ -6,7 +6,8 @@ import { tombstoneSmartLingoMedia } from "../../../lib/smartlingo-media";
 export const dynamic = "force-dynamic";
 type Row = Record<string, string | number | null>;
 const nowSeconds = () => Math.floor(Date.now() / 1000);
-const isAdmin = (email: string) => (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(value => value.trim()).includes(email.toLowerCase());
+const isAdmin = (user: { email: string; emailVerified: number }) => user.emailVerified === 1
+  && (process.env.ADMIN_EMAILS || "").toLowerCase().split(",").map(value => value.trim()).includes(user.email.toLowerCase());
 async function touchPresence(userId: string) { const db = getDatabase(); const now = nowSeconds(); await db.prepare("INSERT INTO user_presence (user_id, last_seen_at) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET last_seen_at = excluded.last_seen_at").bind(userId, now).run(); return now; }
 async function participant(threadId: string, userId: string) { return getDatabase().prepare("SELECT id FROM message_participants WHERE thread_id = ? AND user_id = ? AND deleted_at IS NULL").bind(threadId, userId).first(); }
 function messageBucket() { const value = (globalThis as unknown as { __SMARTLINGO_BUCKET__?: R2Bucket }).__SMARTLINGO_BUCKET__; if (!value) throw new Error("Message storage unavailable"); return value; }
@@ -82,7 +83,7 @@ export async function GET(request: Request) {
     FROM referrals r JOIN referral_codes code ON code.id = r.referral_code_id
     WHERE code.user_id = ? AND r.status IN ('attributed', 'active', 'converted')`)
     .bind(user.id).first<{ value: number }>();
-  return NextResponse.json({ currentUserId: user.id, unread, threads: normalizedThreads, members, canTeam: Number(teamCount?.value || 0) > 0, canGlobal: isAdmin(user.email) });
+  return NextResponse.json({ currentUserId: user.id, unread, threads: normalizedThreads, members, canTeam: Number(teamCount?.value || 0) > 0, canGlobal: isAdmin(user) });
 }
 
 export async function POST(request: Request) {
@@ -138,6 +139,6 @@ export async function POST(request: Request) {
     FROM referrals r JOIN referral_codes code ON code.id = r.referral_code_id
     WHERE code.user_id = ? AND r.status IN ('attributed', 'active', 'converted')`)
     .bind(user.id).run<{ id: string }>()).results || []; recipients = rows.map(row => row.id); if (!recipients.length) return NextResponse.json({ error: "Your direct-introduction group is empty" }, { status: 400 }); }
-  else { if (!isAdmin(user.email)) return NextResponse.json({ error: "Admin permission required" }, { status: 403 }); const rows = (await db.prepare("SELECT id FROM users WHERE id != ?").bind(user.id).run<{ id: string }>()).results || []; recipients = rows.map(row => row.id); }
+  else { if (!isAdmin(user)) return NextResponse.json({ error: "Admin permission required" }, { status: 403 }); const rows = (await db.prepare("SELECT id FROM users WHERE id != ?").bind(user.id).run<{ id: string }>()).results || []; recipients = rows.map(row => row.id); }
   const threadId = createId(); await db.prepare("INSERT INTO message_threads (id, kind, subject, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)").bind(threadId, kind, subject, user.id, now, now).run(); for (const id of [user.id, ...new Set(recipients)]) await db.prepare("INSERT INTO message_participants (id, thread_id, user_id, last_read_at) VALUES (?, ?, ?, ?)").bind(createId(), threadId, id, id === user.id ? now : 0).run(); await db.prepare("INSERT INTO messages (id, thread_id, sender_id, body, created_at) VALUES (?, ?, ?, ?, ?)").bind(createId(), threadId, user.id, body, now).run(); return NextResponse.json({ threadId });
 }

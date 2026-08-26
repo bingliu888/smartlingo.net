@@ -1,77 +1,79 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-class-timezone-eslint-zero-20260825",
+  "releaseId": "smartlingo-dual-clerk-email-password-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Lock classroom time to Los Angeles and enforce zero-warning source quality",
-    "zh": "锁定课堂洛杉矶时区并实施源码零告警质量门禁"
+    "en": "Add dual Clerk email-code and password access with subject-bound unverified accounts",
+    "zh": "增加 Clerk 邮箱验证码与密码双登录，并隔离未验证邮箱账户"
   },
   "purpose": {
-    "en": "Publish the shared classroom timezone correction on SmartLingo, remove retired or unused implementation paths, and prevent future releases when authored source has any ESLint error or warning.",
-    "zh": "在 SmartLingo 发布共享课堂时区修复，清除已退役或未使用的实现路径，并在作者源码出现任何 ESLint 错误或告警时阻止后续发布。"
+    "en": "Keep email verification code as the default SmartLingo entry while adding an explicit password path that can create a first-time account without email verification, safely recover an existing password, and manage passwords from the signed-in profile.",
+    "zh": "保留邮箱验证码作为 SmartLingo 默认入口，同时增加明确的密码路径，使首次用户无需验证邮箱即可创建账户，并可安全找回已有账户密码及在已登录资料页管理密码。"
   },
   "features": {
     "en": [
-      "Keep every class start time explicitly formatted in America/Los_Angeles instead of inheriting each visitor device timezone.",
-      "Run ESLint with a zero-warning threshold locally and in GitHub Actions before build and deployment.",
-      "Render first-party learning artwork, user avatars, chat attachments, and AI images through the maintained Next image component while retaining authenticated media support."
+      "Default to email-code sign-in and let the learner switch to email plus password without removing either method.",
+      "Sign in a known password account or create an unknown email account immediately with the submitted password and no verification-email dependency.",
+      "Offer one-time email-code password recovery only for an existing account, and let signed-in members set or change a password without another email-code challenge."
     ],
     "zh": [
-      "所有课堂开始时间明确使用 America/Los_Angeles 格式化，不再继承访客设备时区。",
-      "本地与 GitHub Actions 在构建和发布前均以零告警阈值运行 ESLint。",
-      "第一方学习图片、用户头像、聊天附件及 AI 图片改用维护中的 Next 图片组件，同时保留已登录媒体支持。"
+      "默认使用邮箱验证码登录，并允许学习者切换为邮箱加密码，两种方式长期并存。",
+      "已有密码账户直接登录；未知邮箱则使用所提交密码立即创建账户，不依赖邮箱验证。",
+      "仅为已存在账户提供一次性邮件验证码找回密码；已登录会员无需再次邮箱验证即可设置或更改密码。"
     ]
   },
   "affected": {
     "en": [
-      "Class detail time display, language-safe component boundaries, class screen sharing effects, roster and playlist effects, AI/community media, lint configuration, regression tests, and the Cloudflare deployment workflow.",
-      "SmartLingo learning, colleges, 48,000-word vocabulary catalog, Clerk authentication, Stripe and crypto payment behavior, private class media, and isolated production services remain unchanged."
+      "SmartLingo sign-in, sign-up, recovery, profile password settings, Clerk-to-D1 session bridge, administrator account creation, and permanent-administrator authorization.",
+      "Learning content, progress, colleges, payments, AI boundaries, media, Cloudflare isolation, and existing verified member records remain intact."
     ],
     "zh": [
-      "涉及课程详情时间显示、语言类型安全边界、课堂共享副作用、学员与播放列表副作用、AI/社区媒体、Lint 配置、回归测试及 Cloudflare 发布流程。",
-      "SmartLingo 学习功能、学院、48,000 词词库、Clerk 登录、Stripe 与加密支付行为、私有课堂媒体及独立生产服务保持不变。"
+      "涉及 SmartLingo 登录、注册、找回密码、资料页密码设置、Clerk 至 D1 会话桥、管理员建号及永久管理员授权。",
+      "学习内容与进度、学院、支付、AI 边界、媒体、Cloudflare 隔离及既有已验证会员记录保持不变。"
     ]
   },
   "changes": {
     "en": [
-      "Retain the explicit America/Los_Angeles classroom formatter and its regression contract for the cross-site timezone fix.",
-      "Remove an unused legacy playlist viewer, obsolete program copy, unused helpers/imports/types, and unsafe interface-language casts.",
-      "Stabilize client effects for class sharing, access managers, student rosters, crypto settings, challenge calendar timing, and playlist cleanup so state updates occur outside effect bodies.",
-      "Exclude only generated build/runtime assets and user-generated work directories from lint; authored app, component, library, script, and test source remains covered."
+      "Persist email_verified in D1, reconcile verified identities by email, and keep unverified identities bound only to their immutable Clerk subject.",
+      "Require verified email status for bootstrap and permanent-administrator privileges across pages, APIs, college controls, payment settings, and global messages.",
+      "Use Clerk's reset-password email-code strategy, return an explicit error for an unknown recovery email, and never issue or display temporary passwords.",
+      "Enable email-code and password account access in all production Clerk applications while disabling mandatory sign-up verification and Device Trust."
     ],
     "zh": [
-      "保留明确的 America/Los_Angeles 课堂时间格式化及其跨站时区修复回归合同。",
-      "删除未使用的旧播放列表查看器、过期课程文案、无用辅助函数/导入/类型及不安全的界面语言强制转换。",
-      "稳定课堂共享、访问管理员、学员名单、加密设置、挑战日历计时和播放列表清理的客户端副作用，避免在副作用主体内直接更新状态。",
-      "Lint 仅排除生成的构建/运行时资产与用户生成工作目录；应用、组件、库、脚本及测试作者源码继续全部受检。"
+      "在 D1 持久化 email_verified；仅已验证身份可按邮箱归并，未验证身份只绑定不可变的 Clerk subject。",
+      "页面、API、学院控制、支付设置和全局消息中的启动及永久管理员权限均要求邮箱已验证。",
+      "使用 Clerk 一次性邮件验证码重置密码；不存在的找回邮箱返回明确错误；绝不签发或展示临时密码。",
+      "所有生产 Clerk 应用均启用邮箱验证码与密码访问，同时关闭注册强制验证及 Device Trust。"
     ]
   },
   "validation": {
     "en": [
-      "Require ESLint 0 errors and 0 warnings, TypeScript no-emit typecheck, verified production build and artifact scan, complete repository tests, release-manifest validation, and shared site contracts.",
-      "Deploy through GitHub Actions to Cloudflare, verify production course and payment boundaries, and publish and re-read this exact bilingual Project release record."
+      "Require zero-warning ESLint, TypeScript no-emit, verified Vinext production build, sensitive-data and Cloudflare artifact scans, all repository tests, D1 migration replay, and shared site policy and architecture contracts.",
+      "Deploy only through GitHub Actions to Cloudflare, then exercise first-time fake-email password registration, repeat password sign-in, default email-code UI, existing-account recovery, profile password changes, and unverified-admin denial in Safari."
     ],
     "zh": [
-      "要求 ESLint 0 错误/0 告警、TypeScript no-emit 类型检查、已验证的生产构建与产物扫描、全仓测试、发布清单验证及共享站点合同全部通过。",
-      "通过 GitHub Actions 发布至 Cloudflare，核对线上课程与支付边界，并写入后重新读取本次精确的中英文 Project 发布记录。"
+      "要求零告警 ESLint、TypeScript no-emit、已验证 Vinext 生产构建、敏感数据与 Cloudflare 产物扫描、全仓测试、D1 迁移重放及共享站点政策与架构合同全部通过。",
+      "仅通过 GitHub Actions 发布至 Cloudflare；随后在 Safari 真实验证首次假邮箱密码注册、再次密码登录、默认验证码界面、已有账户找回、资料页改密及未验证账户管理员拒绝。"
     ]
   },
   "deferred": {
     "en": [
-      "The global migration does not repeat the dedicated four-user realtime report; SmartLingo's existing classroom realtime behavior and site-isolated credentials are intentionally preserved."
+      "A deliberately false or unreachable email can use password access but cannot self-recover; SmartLingo does not create temporary passwords or bypass ownership for recovery.",
+      "Phone verification is not part of this release."
     ],
     "zh": [
-      "本次全站迁移不重复专站四用户实时报告；SmartLingo 既有课堂实时行为与站点隔离凭据按要求保留。"
+      "刻意填写的虚假或不可收信邮箱可使用密码访问，但无法自行找回；SmartLingo 不创建临时密码，也不为找回流程绕过邮箱所有权。",
+      "本次发布不包含手机验证。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Use SmartLingo's course-detail classroom surface and keep its America/Los_Angeles display contract rather than importing SmartMeeting room UI.",
-      "Preserve the untracked tutorial output and temporary work directories, and keep SmartLingo's GitHub Actions-to-Cloudflare release boundary."
+      "Keep SmartLingo's seven-day Clerk-linked app session and D1 member data while adding explicit verification provenance.",
+      "Preserve the isolated SmartLingo repository, bindings, Clerk keys, GitHub Actions-to-Cloudflare delivery, and the user's untracked output and temporary work files."
     ],
     "zh": [
-      "使用 SmartLingo 自有课程详情课堂界面，并保持 America/Los_Angeles 显示合同，不导入 SmartMeeting 房间 UI。",
-      "保留未跟踪的教程输出与临时工作目录，并维持 SmartLingo 既有 GitHub Actions 至 Cloudflare 发布边界。"
+      "保留 SmartLingo 现有七天 Clerk 关联应用会话和 D1 会员数据，并增加明确的邮箱验证来源。",
+      "保留 SmartLingo 独立代码库、绑定、Clerk 密钥、GitHub Actions 至 Cloudflare 发布流程，以及用户未跟踪的输出与临时工作文件。"
     ]
   }
 }

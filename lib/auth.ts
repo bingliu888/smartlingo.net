@@ -25,6 +25,7 @@ export type SessionUser = {
   preferredLanguage: "en" | "zh";
   aiProviderPreference: "auto" | "openai" | "deepseek";
   role: "member" | "admin";
+  emailVerified: number;
 };
 
 export const BOOTSTRAP_ADMIN_EMAIL = "bingliu@cybeye.com";
@@ -115,15 +116,18 @@ type ClerkIdentityRow = {
   id: string;
   email: string;
   clerkUserId: string | null;
+  emailVerified: number;
 };
 
 function normalizedLanguage(language: string | null | undefined): "en" | "zh" {
   return language === "en" ? "en" : "zh";
 }
 
-async function applyBootstrapAdmin(userId: string, email: string) {
+async function applyBootstrapAdmin(userId: string, email: string, emailVerified: boolean) {
   if (email === BOOTSTRAP_ADMIN_EMAIL) {
-    await db().prepare("UPDATE users SET role = 'admin' WHERE id = ? AND role <> 'admin'").bind(userId).run();
+    await db().prepare("UPDATE users SET role = ? WHERE id = ? AND role <> ?")
+      .bind(emailVerified ? "admin" : "member", userId, emailVerified ? "admin" : "member")
+      .run();
   }
   return { id: userId };
 }
@@ -131,32 +135,37 @@ async function applyBootstrapAdmin(userId: string, email: string) {
 async function ensureClerkUser(
   clerkUserId: string,
   email: string,
+  emailVerified: boolean,
   name: string,
   language: string | null | undefined,
 ) {
   const normalizedEmail = email.trim().toLowerCase();
   let user = await db().prepare(
-    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
+    "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
   ).bind(clerkUserId).first<ClerkIdentityRow>();
 
   if (user) {
     if (user.email !== normalizedEmail) {
       const emailOwner = await db().prepare(
-        "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE email = ? LIMIT 1",
+        "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE email = ? LIMIT 1",
       ).bind(normalizedEmail).first<ClerkIdentityRow>();
       if (emailOwner && emailOwner.id !== user.id) {
         throw new Error("Verified email is already linked to another app account");
       }
-      await db().prepare("UPDATE users SET email = ? WHERE id = ? AND clerk_user_id = ?")
-        .bind(normalizedEmail, user.id, clerkUserId)
+      await db().prepare("UPDATE users SET email = ?, email_verified = ? WHERE id = ? AND clerk_user_id = ?")
+        .bind(normalizedEmail, emailVerified ? 1 : 0, user.id, clerkUserId)
+        .run();
+    } else if (user.emailVerified !== (emailVerified ? 1 : 0)) {
+      await db().prepare("UPDATE users SET email_verified = ? WHERE id = ? AND clerk_user_id = ?")
+        .bind(emailVerified ? 1 : 0, user.id, clerkUserId)
         .run();
     }
-    return applyBootstrapAdmin(user.id, normalizedEmail);
+    return applyBootstrapAdmin(user.id, normalizedEmail, emailVerified);
   }
 
-  const emailUser = await db().prepare(
-    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE email = ? LIMIT 1",
-  ).bind(normalizedEmail).first<ClerkIdentityRow>();
+  const emailUser = emailVerified ? await db().prepare(
+    "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE email = ? LIMIT 1",
+  ).bind(normalizedEmail).first<ClerkIdentityRow>() : null;
   if (emailUser) {
     if (emailUser.clerkUserId && emailUser.clerkUserId !== clerkUserId) {
       throw new Error("Verified email is already linked to another Clerk user");
@@ -165,9 +174,12 @@ async function ensureClerkUser(
       "UPDATE users SET clerk_user_id = ? WHERE id = ? AND (clerk_user_id IS NULL OR clerk_user_id = ?)",
     ).bind(clerkUserId, emailUser.id, clerkUserId).run();
     user = await db().prepare(
-      "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
+      "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
     ).bind(clerkUserId).first<ClerkIdentityRow>();
-    if (user) return applyBootstrapAdmin(user.id, normalizedEmail);
+    if (user) {
+      await db().prepare("UPDATE users SET email_verified = 1 WHERE id = ?").bind(user.id).run();
+      return applyBootstrapAdmin(user.id, normalizedEmail, true);
+    }
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -176,10 +188,11 @@ async function ensureClerkUser(
   // cookie. Both the Clerk subject and verified email are unique, so this is
   // safe and idempotent under concurrent requests.
   await db().prepare(
-    "INSERT OR IGNORE INTO users (id, email, display_name, password_hash, preferred_language, clerk_user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO users (id, email, email_verified, display_name, password_hash, preferred_language, clerk_user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   ).bind(
     clerkUserId,
     normalizedEmail,
+    emailVerified ? 1 : 0,
     displayName,
     `clerk$${await sha256(crypto.randomUUID())}`,
     normalizedLanguage(language),
@@ -187,29 +200,30 @@ async function ensureClerkUser(
     now,
   ).run();
   user = await db().prepare(
-    "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
+    "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
   ).bind(clerkUserId).first<ClerkIdentityRow>();
   if (!user) {
     const conflict = await db().prepare(
-      "SELECT id, email, clerk_user_id AS clerkUserId FROM users WHERE email = ? LIMIT 1",
+      "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE email = ? LIMIT 1",
     ).bind(normalizedEmail).first<ClerkIdentityRow>();
     if (conflict?.clerkUserId && conflict.clerkUserId !== clerkUserId) {
-      throw new Error("Verified email is already linked to another Clerk user");
+      throw new Error("Email is already linked to another Clerk user");
     }
   }
   if (!user) throw new Error("Unable to create or load Clerk user");
-  return applyBootstrapAdmin(user.id, normalizedEmail);
+  return applyBootstrapAdmin(user.id, normalizedEmail, emailVerified);
 }
 
 export async function createSessionForClerkUser(
   clerkUserId: string,
   email: string,
+  emailVerified: boolean,
   name: string,
   language: string | null | undefined,
   clerkSessionId: string,
   referralCode?: string | null,
 ) {
-  const user = await ensureClerkUser(clerkUserId, email, name, language);
+  const user = await ensureClerkUser(clerkUserId, email, emailVerified, name, language);
   if (referralCode) await claimPlatformReferral(user.id, referralCode);
   return createSession(user.id, clerkSessionId);
 }
@@ -258,7 +272,7 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
     try {
       const now = Math.floor(Date.now() / 1000);
       user = await db().prepare(
-        "SELECT u.id, u.email, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.ai_provider_preference AS aiProviderPreference, u.role FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN platform_member_access a ON a.user_id = u.id WHERE s.id = ? AND COALESCE(a.status, 'active') = 'active' AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
+        "SELECT u.id, u.email, u.email_verified AS emailVerified, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.ai_provider_preference AS aiProviderPreference, u.role FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN platform_member_access a ON a.user_id = u.id WHERE s.id = ? AND COALESCE(a.status, 'active') = 'active' AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
       ).bind(await sha256(token), now).first<SessionUser>();
     } catch {
       // A stale legacy session cookie must not turn a public page into an error page.
@@ -277,19 +291,19 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
       clerkUser = null;
     }
     const primaryEmail = clerkUser?.primaryEmailAddress;
-    const email = primaryEmail?.verification?.status === "verified"
-      ? primaryEmail.emailAddress.toLowerCase()
-      : "";
+    const email = primaryEmail?.emailAddress.toLowerCase() ?? "";
+    const emailVerified = primaryEmail?.verification?.status === "verified";
     if (clerkUser && email && !clerkUser.banned && !clerkUser.locked) {
       try {
         await ensureClerkUser(
           clerkUser.id,
           email,
+          emailVerified,
           clerkUser.fullName || clerkUser.firstName || email.split("@")[0] || "SmartLingo",
           "zh",
         );
         user = await db().prepare(
-          "SELECT id, email, display_name AS displayName, preferred_language AS preferredLanguage, ai_provider_preference AS aiProviderPreference, role FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
+          "SELECT id, email, email_verified AS emailVerified, display_name AS displayName, preferred_language AS preferredLanguage, ai_provider_preference AS aiProviderPreference, role FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
         ).bind(clerkUser.id).first<SessionUser>();
       } catch {
         // Identity conflicts fail closed and must be resolved by an Admin.

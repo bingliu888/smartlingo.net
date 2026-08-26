@@ -1,4 +1,5 @@
 import { createId, getDatabase, type SessionUser } from "./auth";
+import { isPermanentAdmin } from "./admin-access";
 import { normalizeCollegePricing, type CollegeAccessType } from "./smartlingo-college-policy";
 import { sortCollegesByCode } from "./smartlingo-college-sort";
 
@@ -91,12 +92,12 @@ export async function availableCollegeCourses(collegeId: string) {
 }
 
 export function canManageCollege(college: Pick<CollegeRow, "ownerUserId">, user: SessionUser | null) {
-  return Boolean(user && (college.ownerUserId === user.id || user.email.trim().toLowerCase() === "bingliu@cybeye.com"));
+  return Boolean(user && (college.ownerUserId === user.id || isPermanentAdmin(user)));
 }
 
 export async function canCreateCollege(user: SessionUser | null) {
   if (!user) return false;
-  if (user.email.trim().toLowerCase() === "bingliu@cybeye.com") return true;
+  if (isPermanentAdmin(user)) return true;
   return Boolean(await getDatabase().prepare(`SELECT 1 FROM smartlingo_college_supervisor_licenses
     WHERE user_id=? AND status='active' LIMIT 1`).bind(user.id).first());
 }

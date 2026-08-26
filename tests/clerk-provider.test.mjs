@@ -23,7 +23,7 @@ test("the Clerk session bridge can verify with the production secret key", async
   assert.doesNotMatch(bridge, /!jwtKey\)\s*return Response\.json/);
 });
 
-test("the Clerk session bridge trusts only verified Clerk identity claims and safe request metadata", async () => {
+test("the Clerk session bridge records email verification while trusting only Clerk subject and safe request metadata", async () => {
   const [route, bridge] = await Promise.all([
     readFile(new URL("../app/api/auth/clerk-session/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/clerk-session-bridge.ts", import.meta.url), "utf8"),
@@ -31,6 +31,7 @@ test("the Clerk session bridge trusts only verified Clerk identity claims and sa
 
   assert.match(route, /createClerkClient\(keys\)\.users\.getUser\(userId\)/);
   assert.match(bridge, /primaryEmail\?\.verification\?\.status === "verified"/);
+  assert.match(bridge, /createAppSession\([\s\S]*?emailVerified/);
   assert.match(bridge, /clerkUser\.banned \|\| clerkUser\.locked/);
   assert.doesNotMatch(bridge, /payload\.email|payload\.name/);
   assert.match(bridge, /entries\.length !== 1 \|\| entries\[0\]\[0\] !== "language"/);
@@ -61,8 +62,22 @@ test("parallel Clerk session initialization creates users idempotently", async (
   assert.equal(inserts.length, 1);
   assert.match(auth, /WHERE clerk_user_id = \? AND NOT EXISTS/);
   assert.match(auth, /UPDATE users SET clerk_user_id = \?/);
-  assert.match(auth, /preferred_language, clerk_user_id, created_at/);
+  assert.match(auth, /email_verified, display_name, password_hash, preferred_language, clerk_user_id, created_at/);
   assert.match(auth, /Unable to create or load Clerk user/);
+});
+
+test("unverified Clerk members stay subject-bound and cannot receive permanent-email privileges", async () => {
+  const [auth, access, migration] = await Promise.all([
+    readFile(new URL("../lib/auth.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/admin-access.ts", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0171_clerk_email_verification.sql", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(auth, /const emailUser = emailVerified \?/);
+  assert.match(auth, /emailVerified \? 1 : 0/);
+  assert.match(access, /user\.emailVerified === 1/);
+  assert.match(access, /isBootstrapAdminEmail\(user\.email\)/);
+  assert.match(migration, /ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1/);
 });
 
 test("app sessions are short-lived, Clerk-linked, and reject legacy cookies", async () => {

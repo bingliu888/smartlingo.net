@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
-import { isBootstrapAdminEmail } from "../../../../lib/admin-access";
+import { isPermanentAdmin } from "../../../../lib/admin-access";
 import { getDatabase, getSessionUser } from "../../../../lib/auth";
 import { certificateCourseName, certificateLanguageName, type SmartLingoCertificateRow } from "../../../../lib/smartlingo-certificates";
 import "../admin.css";
@@ -17,7 +17,7 @@ export default async function AdminCertificatesPage({ params, searchParams }: { 
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/certificates`);
-  if (!isBootstrapAdminEmail(user.email)) redirect(`/${lang}/dashboard`);
+  if (!isPermanentAdmin(user)) redirect(`/${lang}/dashboard`);
   const tab = queryParams.tab === "ranks" ? "ranks" : "recent";
   const query = (queryParams.q || "").trim().slice(0, 80);
   const filter = query ? "WHERE lower(u.email) LIKE ? ESCAPE '\\' OR lower(cert.member_name) LIKE ? ESCAPE '\\'" : "";

@@ -39,6 +39,7 @@ export type ClerkSessionBridgeDependencies = {
   createAppSession: (
     clerkUserId: string,
     email: string,
+    emailVerified: boolean,
     name: string,
     language: "en" | "zh",
     clerkSessionId: string,
@@ -132,12 +133,11 @@ export async function handleClerkSessionBridgeRequest(
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
     const primaryEmail = clerkUser.primaryEmailAddress;
-    const email = primaryEmail?.verification?.status === "verified"
-      ? primaryEmail.emailAddress.trim().toLowerCase()
-      : "";
-    if (!email) return Response.json({ error: "Verified email required" }, { status: 400 });
+    const email = primaryEmail?.emailAddress.trim().toLowerCase() ?? "";
+    const emailVerified = primaryEmail?.verification?.status === "verified";
+    if (!email) return Response.json({ error: "Email required" }, { status: 400 });
 
-    const name = email === "bingliu@cybeye.com"
+    const name = emailVerified && email === "bingliu@cybeye.com"
       ? "Admin"
       : /^bingliu\+([^@]+)@/i.exec(email)?.[1]
         || [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ")
@@ -147,6 +147,7 @@ export async function handleClerkSessionBridgeRequest(
     const session = await dependencies.createAppSession(
       userId,
       email,
+      emailVerified,
       name,
       language,
       clerkSessionId,

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AdminMemberActions, AdminRoleRemoveButton } from "../../../../components/AdminMemberActions";
 import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
-import { isBootstrapAdminEmail } from "../../../../lib/admin-access";
+import { isBootstrapAdminEmail, isPermanentAdmin } from "../../../../lib/admin-access";
 import { getDatabase, getSessionUser } from "../../../../lib/auth";
 import "../admin.css";
 
@@ -30,7 +30,7 @@ export default async function AdminMembersPage({ params, searchParams }: { param
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/members`);
-  if (!isBootstrapAdminEmail(user.email)) redirect(`/${lang}/dashboard`);
+  if (!isPermanentAdmin(user)) redirect(`/${lang}/dashboard`);
 
   const active: Tab = tab === "admins" ? "admins" : tab === "subscribers" ? "subscribers" : "members";
   const zh = lang === "zh";

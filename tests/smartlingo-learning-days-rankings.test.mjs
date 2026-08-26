@@ -58,7 +58,7 @@ test("Sprint, SmartCard, courses, rewards, score history, and rankings share the
   assert.match(courseRoute, /select_course_day/);
   assert.match(courseRoute, /Math\.min\(21/);
   assert.match(rewardRoute, /rules\.length>100/);
-  assert.match(rewardRoute, /isBootstrapAdminEmail/);
+  assert.match(rewardRoute, /isPermanentAdmin/);
   for (const category of ["sprint", "smartcard_challenge", "course_beginner", "course_intermediate", "course_advanced"]) assert.match(rankingPage, new RegExp(category));
   assert.match(scorePage, /每日记录/);
   assert.match(scorePage, /View rankings/);

@@ -1,4 +1,5 @@
 import { getDatabase, getSessionUser } from "@/lib/auth";
+import { isPermanentAdmin } from "@/lib/admin-access";
 
 const stableAmounts = { basic: "20", intermediate: "100", advanced: "300" };
 const glcAmounts = { basic: "20000000", intermediate: "100000000", advanced: "300000000" };
@@ -18,7 +19,7 @@ const rails = [
 export async function POST(request: Request) {
   try {
     const admin = await getSessionUser();
-    if (!admin || admin.email.trim().toLowerCase() !== "bingliu@cybeye.com") {
+    if (!isPermanentAdmin(admin)) {
       return Response.json({ error: "Permanent administrator access required" }, { status: 403 });
     }
     const profile = await getDatabase().prepare("SELECT wallet_address AS wallet FROM users WHERE id=? LIMIT 1").bind(admin.id).first<{ wallet: string | null }>();

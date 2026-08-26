@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 65);
-  assert.equal(result.firstRunApplied, 65);
+  assert.equal(result.migrationCount, 66);
+  assert.equal(result.firstRunApplied, 66);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0170_nearby_learning_partners");
+  assert.equal(result.newestMigration, "0171_clerk_email_verification");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -311,7 +311,8 @@ test("0026 adds durable admin roles and promotes only the bootstrap administrato
   assert.match(migration, /lower\(`email`\) = 'bingliu@cybeye\.com'/);
   assert.match(migration, /smartlingo_users_role_created_idx/);
   assert.match(auth, /BOOTSTRAP_ADMIN_EMAIL = "bingliu@cybeye\.com"/);
-  assert.match(auth, /UPDATE users SET role = 'admin'/);
+  assert.match(auth, /UPDATE users SET role = \?/);
+  assert.match(auth, /emailVerified \? "admin" : "member"/);
   assert.match(journal, /"tag": "0026_smartlingo_admin_roles"/);
 });
 

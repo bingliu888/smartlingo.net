@@ -40,5 +40,5 @@ test("direct admin console and management APIs enforce permanent identity", () =
   }
   const adminApis = Object.entries(source).filter(([path, value]) => /app\/api\/admin\/.+route\.ts$/.test(path) && !/cloudflare-migration|migration-(?:export|manifest|restore)/.test(path) && !/status:s*410|const (?:GET|POST) = retired|export const (?:GET|POST) = retired/.test(value));
   assert.ok(adminApis.length > 0, "admin management API must exist");
-  for (const [path, value] of adminApis) assert.match(value, /bingliu@cybeye\.com|getAdminUser|requirePermanentAdmin|isSmartAiCertAdminEmail|isBootstrapAdminEmail/, path);
+  for (const [path, value] of adminApis) assert.match(value, /bingliu@cybeye\.com|getAdminUser|requirePermanentAdmin|isPermanentAdmin|isSmartAiCertAdminEmail|isBootstrapAdminEmail/, path);
 });

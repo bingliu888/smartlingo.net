@@ -1,4 +1,4 @@
-import { isBootstrapAdminEmail } from "../../../../../lib/admin-access";
+import { isBootstrapAdminEmail, isPermanentAdmin } from "../../../../../lib/admin-access";
 import { getDatabase, getSessionUser } from "../../../../../lib/auth";
 
 type Target = { id: string; email: string; role: "member" | "admin" };
@@ -7,7 +7,7 @@ type RoleAction = "grant-admin" | "revoke-admin" | "grant-subscriber" | "revoke-
 async function context(request: Request, memberId: string) {
   const admin = await getSessionUser(request);
   if (!admin) return { response: Response.json({ error: "Authentication required" }, { status: 401 }) };
-  if (!isBootstrapAdminEmail(admin.email)) return { response: Response.json({ error: "Administrator access required" }, { status: 403 }) };
+  if (!isPermanentAdmin(admin)) return { response: Response.json({ error: "Administrator access required" }, { status: 403 }) };
   const target = await getDatabase().prepare("SELECT id,email,role FROM users WHERE id=? LIMIT 1").bind(memberId).first<Target>();
   if (!target) return { response: Response.json({ error: "Member not found" }, { status: 404 }) };
   return { admin, target };

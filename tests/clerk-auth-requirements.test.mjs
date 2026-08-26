@@ -79,6 +79,34 @@ test("prepares passwordless email-code registration only when Clerk reports an u
   );
 });
 
+test("password mode signs in existing accounts and creates unknown accounts with the submitted password", async () => {
+  const calls = [];
+  const existing = await requirements.startPasswordSignInOrUp("member@example.com", "member-secret", {
+    createSignIn: async (identifier, password) => {
+      calls.push(["sign-in", identifier, password]);
+      return { status: "complete" };
+    },
+    createSignUp: async () => assert.fail("an existing password account must not be registered again"),
+    isIdentifierNotFound: () => false,
+  });
+  assert.deepEqual(existing, { flow: "sign-in", result: { status: "complete" } });
+
+  const identifierNotFound = new Error("identifier_not_found");
+  const created = await requirements.startPasswordSignInOrUp("new@example.com", "new-member-secret", {
+    createSignIn: async () => { throw identifierNotFound; },
+    createSignUp: async (identifier, password) => {
+      calls.push(["sign-up", identifier, password]);
+      return { status: "complete", createdSessionId: "sess_new" };
+    },
+    isIdentifierNotFound: issue => issue === identifierNotFound,
+  });
+  assert.deepEqual(created, { flow: "sign-up", result: { status: "complete", createdSessionId: "sess_new" } });
+  assert.deepEqual(calls, [
+    ["sign-in", "member@example.com", "member-secret"],
+    ["sign-up", "new@example.com", "new-member-secret"],
+  ]);
+});
+
 test("completed Clerk sign-up activates exactly the created session", async () => {
   const activated = [];
   const result = await requirements.completeSignUpAttempt(
@@ -148,6 +176,13 @@ test("the executable auth view model owns code, password-compatibility, and CAPT
   });
   assert.equal(requirements.clerkAuthStepView("password-required", "code", "zh").primaryAction, "设置密码并登录");
   assert.equal(requirements.clerkAuthStepView("credentials", "code", "en").primaryAction, "Send secure code");
+  assert.deepEqual(requirements.clerkAuthStepView("recovery-email", "password", "en"), {
+    showCodeField: false,
+    captchaElementId: "clerk-captcha",
+    primaryAction: "Send reset code",
+    secondaryAction: "Use another email",
+  });
+  assert.equal(requirements.clerkAuthStepView("recovery-code", "password", "zh").primaryAction, "重置密码并登录");
 });
 
 test("the form delegates live transitions to tested helpers and mounts Clerk CAPTCHA", async () => {
@@ -158,8 +193,11 @@ test("the form delegates live transitions to tested helpers and mounts Clerk CAP
   assert.match(form, /setStep\("code"\)/);
   assert.match(form, /completeSignUpAttempt\(/);
   assert.match(form, /signUp\.update\(\{ password \}\)/);
+  assert.match(form, /startPasswordSignInOrUp\(identifier, password/);
+  assert.match(form, /createSignUp: \(value, secret\) => signUp\.create\(\{ emailAddress: value, password: secret \}\)/);
+  assert.match(form, /strategy: "reset_password_email_code"/);
+  assert.match(form, /No account exists with that email/);
   assert.match(form, /id=\{authView\.captchaElementId\}/);
-  assert.doesNotMatch(form, /signUp\.create\(\{\s*emailAddress:\s*identifier,\s*password/);
 });
 
 test("all completed Clerk sessions navigate through the deterministic app bridge", async () => {
@@ -179,12 +217,13 @@ test("all completed Clerk sessions navigate through the deterministic app bridge
   assert.match(completePage, /<ClerkSessionBridge lang=\{lang\} returnTo=\{returnTo\}\/>/);
 });
 
-test("password sign-in never turns an unknown email into password registration", async () => {
+test("the form keeps email code as the default while exposing password sign-in-or-up", async () => {
   const form = await read("../components/ClerkAuthForm.tsx");
 
-  assert.doesNotMatch(form, /signUp\.create\(\{\s*emailAddress:\s*identifier,\s*password/);
+  assert.match(form, /useState<"code" \| "password">\("code"\)/);
   assert.match(form, /createSignUp: value => signUp\.create\(\{ emailAddress: value \}\)/);
+  assert.match(form, /createSignUp: \(value, secret\) => signUp\.create\(\{ emailAddress: value, password: secret \}\)/);
   assert.match(form, /async function finishSignIn/);
   assert.match(form, /result\.status === "needs_second_factor" \|\| result\.status === "needs_client_trust"/);
-  assert.match(form, /const result = await signIn\.create\(\{ identifier, password \}\);\s*await finishSignIn\(result, identifier\)/);
+  assert.match(form, /if \(result\.flow === "sign-in"\) await finishSignIn\(result\.result, identifier\)/);
 });

@@ -456,6 +456,13 @@
       "when": 1787572800000,
       "tag": "0170_nearby_learning_partners",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "6",
+      "when": 1787666400000,
+      "tag": "0171_clerk_email_verification",
+      "breakpoints": true
     }
   ]
 }
