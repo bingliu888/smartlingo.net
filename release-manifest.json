@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-password-add-update-modes-20260826",
+  "releaseId": "smartlingo-password-reverification-recovery-20260826",
   "site": "smartlingo.net",
   "title": {
-    "en": "Distinguish password adding from password updating",
-    "zh": "明确区分添加密码与更新密码"
+    "en": "Complete password changes with secure Clerk reverification",
+    "zh": "通过 Clerk 安全身份确认完成密码更改"
   },
   "purpose": {
-    "en": "Ensure a passwordless member can add a password without a current-password field, while a password-enabled member must confirm the current password before updating it.",
-    "zh": "确保无密码会员添加密码时不显示当前密码字段，而已有密码的会员必须验证当前密码后才能更新。"
+    "en": "Ensure password adding and updating complete from both recent and older signed-in sessions instead of failing when Clerk requires a fresh identity confirmation.",
+    "zh": "确保添加与更新密码在近期及较早的登录会话中都能完成，避免 Clerk 要求新的身份确认时直接失败。"
   },
   "features": {
     "en": [
       "Detect Clerk password capability before rendering the signed-in Account security form.",
       "Hide the current-password field completely for passwordless accounts and label the action Add password.",
-      "Require the current password for password-enabled accounts and keep the action labeled Update password."
+      "Complete Clerk's secure reverification flow when the current session is no longer recent, then retry the original password change automatically."
     ],
     "zh": [
       "在渲染已登录账户安全表单前检测 Clerk 账户是否已有密码。",
       "无密码账户完全隐藏当前密码字段，并将操作明确标为“添加密码”。",
-      "已有密码账户必须输入当前密码，并将操作保持为“更新密码”。"
+      "当前会话不够新时完成 Clerk 安全身份确认，并自动重试原密码更改。"
     ]
   },
   "affected": {
@@ -34,34 +34,34 @@
   },
   "changes": {
     "en": [
-      "Use an executable add/update mode model derived from Clerk's passwordEnabled state.",
-      "Pass currentPassword to Clerk only in update mode; add mode submits only the new password from the authenticated session.",
-      "Localize Add password and its explanatory copy across all twelve interface languages while preserving the existing eye controls and breached-password protection."
+      "Wrap Clerk password changes with useReverification, which handles the session_reverification_required response and retries after secure confirmation.",
+      "Pass currentPassword only in update mode; passwordless add mode still omits the current-password field entirely.",
+      "Localize accurate confirmation, cancellation, and recovery guidance across all twelve interface languages while preserving eye controls and breached-password protection."
     ],
     "zh": [
-      "使用由 Clerk passwordEnabled 状态驱动的可执行添加／更新模式模型。",
-      "仅在更新模式向 Clerk 传递 currentPassword；添加模式从已登录会话仅提交新密码。",
-      "为全部十二种界面语言本地化“添加密码”及说明文案，同时保留眼睛按钮和泄露密码保护。"
+      "使用 useReverification 包装 Clerk 密码更改，处理 session_reverification_required 并在安全确认后自动重试。",
+      "仅在更新模式传递 currentPassword；无密码添加模式仍完全不显示当前密码字段。",
+      "为全部十二种界面语言本地化准确的确认、取消与恢复提示，同时保留眼睛按钮和泄露密码保护。"
     ]
   },
   "validation": {
     "en": [
       "Require executable add/update mode tests, the full repository suite, zero-warning ESLint, TypeScript no-emit, verified production build, sensitive-data scan, D1 replay, and the 260-case WebKit layout matrix.",
-      "Deploy only through GitHub Actions to Cloudflare, then create an isolated random password account, update it to a second generated strong password, sign out, and sign in with the updated password."
+      "Deploy only through GitHub Actions to Cloudflare, then create an isolated random password account, exercise the post-sign-up reverification path, update to a second generated strong password, sign out, and sign in with the updated password."
     ],
     "zh": [
       "要求可执行的添加／更新模式测试、全仓测试、零告警 ESLint、TypeScript no-emit、已验证生产构建、敏感数据扫描、D1 重放及 260 项 WebKit 布局矩阵通过。",
-      "仅通过 GitHub Actions 发布至 Cloudflare；随后创建隔离的随机密码账户，更新为第二个随机强密码，退出并使用更新后的密码重登。"
+      "仅通过 GitHub Actions 发布至 Cloudflare；随后创建隔离的随机密码账户，覆盖注册后身份确认路径，更新为第二个随机强密码，退出并使用更新后的密码重登。"
     ]
   },
   "deferred": {
     "en": [
       "SmartLingo continues to reject passwords found in known breach data; this security control is intentionally not relaxed.",
-      "No personal password or recovery code is used, logged, stored, or included in release evidence; the random QA account remains an ordinary unverified member."
+      "No personal password or recovery code is used, logged, stored, or included in release evidence; isolated random QA accounts remain ordinary unverified members."
     ],
     "zh": [
       "SmartLingo 继续拒绝已出现在已知泄露数据中的密码；该安全保护不会降低。",
-      "不使用、记录、保存或写入发布证据任何个人密码或找回验证码；随机 QA 账户始终只是未验证普通会员。"
+      "不使用、记录、保存或写入发布证据任何个人密码或找回验证码；隔离随机 QA 账户始终只是未验证普通会员。"
     ]
   },
   "siteAdaptations": {
