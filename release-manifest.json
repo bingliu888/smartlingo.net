@@ -1,77 +1,13 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-smartcard-audio-20260827-r2",
+  "releaseId": "smartlingo-direct-wallet-pay-20260827",
   "site": "smartlingo.net",
-  "title": {
-    "en": "Keep SmartCard audio available with repeat-after-me off",
-    "zh": "跟读关闭时仍提供 SmartCard 双速音频"
-  },
-  "purpose": {
-    "en": "Repair the SmartCard Practice defect found during the 2026-08-27 real-user recovery run: normal and slow target-language audio must remain available during answering while optional three-turn repeat-after-me stays off.",
-    "zh": "修复 2026-08-27 真实用户恢复验收发现的智慧卡练习缺陷：可选三次跟读保持关闭时，答题阶段仍须提供正常与慢速目标语言音频。"
-  },
-  "features": {
-    "en": [
-      "Show distinct normal-speed and slow-speed target-language playback controls on every SmartCard answer step.",
-      "Keep the repeat-after-me checkbox off by default and preserve the existing optional three-turn pronunciation workflow without requesting microphone access during scheduled QA."
-    ],
-    "zh": [
-      "在每个智慧卡答题步骤显示独立的正常语速与慢速目标语言播放控件。",
-      "保持跟读复选框默认关闭，并保留既有可选三次发音流程，使定时 QA 无需请求麦克风权限。"
-    ]
-  },
-  "affected": {
-    "en": [
-      "SmartCard Practice and Challenge rendering through PublicSmartCardChallenge on localized /{lang}/smartcards/{token} and challenge routes.",
-      "No score formula, progress API, challenge timer, microphone permission behavior, database schema, payment, referral, or certificate ledger changes."
-    ],
-    "zh": [
-      "涉及由 PublicSmartCardChallenge 渲染的本地化 /{lang}/smartcards/{token} 练习与挑战路线。",
-      "本次不修改评分公式、进度 API、挑战计时器、麦克风权限行为、数据库结构、付款、推荐或证书账本。"
-    ]
-  },
-  "changes": {
-    "en": [
-      "Reuse the audited target-language speech helper and the same .84 normal and .58 slow rates already used by optional pronunciation practice.",
-      "Place an accessible target-language audio navigation before answer choices so playback never depends on enabling repeat-after-me.",
-      "Add responsive controls that remain full-width on phones and retain the existing answer, feedback, Continue, and persistence flow."
-    ],
-    "zh": [
-      "复用已审计的目标语言语音函数，以及可选发音练习既有的 .84 正常速率与 .58 慢速速率。",
-      "在答案选项前加入带无障碍名称的目标语言音频导航，使播放不再依赖开启跟读。",
-      "加入手机端全宽响应式控件，并保持既有答题、反馈、继续与持久化流程。"
-    ]
-  },
-  "validation": {
-    "en": [
-      "Require a regression assertion that answer-step audio appears before options with both speed controls and an accessible target-language label.",
-      "Require all repository behavior tests, sentence and 21-day QA contracts, zero-warning lint, TypeScript, D1 migration validation, sensitive-data scan, shared site gates, verified build, and production boundary probes.",
-      "After deployment, resume the saved English SmartCard session in real Chrome, verify repeat-after-me remains unchecked, activate both playback controls without a microphone prompt, and complete another answer-feedback-Continue cycle."
-    ],
-    "zh": [
-      "要求回归断言验证答题步骤在选项前显示双速音频，并带有目标语言无障碍标签。",
-      "要求全仓库行为测试、句库与 21 天 QA 合同、零告警 lint、TypeScript、D1 迁移验证、敏感数据扫描、共享站点门禁、验证构建及生产边界探测通过。",
-      "部署后在真实 Chrome 恢复已保存的英语智慧卡进度，确认跟读仍未选中、两种播放均不触发麦克风提示，并再完成一个答案—反馈—继续周期。"
-    ]
-  },
-  "deferred": {
-    "en": [
-      "Scheduled QA does not enable repeat-after-me, request microphone permission, record audio, or evaluate acoustic pronunciation quality.",
-      "No camera or realtime classroom media session is started."
-    ],
-    "zh": [
-      "定时 QA 不开启跟读、不请求麦克风权限、不录音，也不评估声学发音质量。",
-      "本次不启动摄像头或实时课程教室媒体会话。"
-    ]
-  },
-  "siteAdaptations": {
-    "en": [
-      "Use SmartLingo’s existing bilingual labels, target-language speech locale, card imagery, difficulty/frequency display, and saved signed-in progress.",
-      "Preserve the normal no-microphone path required by SmartLingo’s unattended 21-day learner acceptance campaign."
-    ],
-    "zh": [
-      "沿用 SmartLingo 既有双语标签、目标语言 speech locale、卡片图片、难度/常用度显示及登录进度保存。",
-      "保留 SmartLingo 无人值守 21 天学习者验收所要求的正常无麦克风路径。"
-    ]
-  }
+  "title": {"en": "Send validated crypto payments directly to the wallet", "zh": "加密付款校验后直接进入钱包"},
+  "purpose": {"en": "Remove the redundant browser confirmation using SmartLingo's localized checkout structure while preserving all payment safety checks.", "zh": "按 SmartLingo 本地化结账结构移除重复浏览器确认，同时保留全部付款安全检查。"},
+  "features": {"en": ["Proceed directly to wallet approval or payment after preflight.", "Keep wallet-native authorization.", "Keep guidance inside the site translation helper."], "zh": ["预检通过后直接请求钱包授权或付款。", "保留钱包原生授权。", "继续通过站点翻译函数提供说明。"]},
+  "affected": {"en": ["Localized crypto checkout, safety tests, deployment, and Project history"], "zh": ["本地化加密结账、安全测试、发布及 Project 历史"]},
+  "changes": {"en": ["Remove localized window.confirm and USER_CANCELLED from ordinary payment.", "Update localized direct-wallet guidance and preserve lookup, RefID, balances, gas, simulation, approvals, receipts, and reconciliation."], "zh": ["从普通付款中移除本地化 window.confirm 与 USER_CANCELLED。", "更新本地化直达钱包说明，并保留查找、RefID、余额、Gas、模拟、授权、回执及核对。"]},
+  "validation": {"en": ["Run zero-warning lint, SmartPay3 compilation, production build, complete multilingual tests, deployment gates, and production verification."], "zh": ["执行零警告 lint、SmartPay3 编译、生产构建、完整多语言测试、发布门禁及生产核验。"]},
+  "deferred": {"en": ["No real wallet transaction or purchase is executed."], "zh": ["本次不执行真实钱包交易或购买。"]},
+  "siteAdaptations": {"en": ["Preserve SmartLingo branding, language courses and prices, locale runtime, entitlements, authentication, data, media, and Cloudflare resources."], "zh": ["保留 SmartLingo 品牌、语言课程与价格、语言运行层、权益、身份验证、数据、媒体及 Cloudflare 资源。"]}
 }

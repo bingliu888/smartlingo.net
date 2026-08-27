@@ -368,20 +368,6 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         if (!preflight.eligibilityMet) throw new Error("INSUFFICIENT_GLC_BALANCE");
         if (preflight.gasEnough === false) throw new Error("INSUFFICIENT_NATIVE_BALANCE");
         if (preflight.simulationError || !preflight.gasLimit) throw new Error("PAYMENT_SIMULATION_FAILED");
-        const primaryBalance = displayAtomic(preflight.primaryBalanceAtomic, offer.primaryTokenDecimals);
-        const secondaryBalance = displayAtomic(preflight.secondaryBalanceAtomic, offer.secondaryTokenDecimals);
-        const payParts = [
-          primaryRequired > 0n ? `${displayAtomic(primaryRequired.toString(), offer.primaryTokenDecimals)} ${offer.primaryTokenSymbol}` : "",
-          secondaryRequired > 0n ? `${displayAtomic(secondaryRequired.toString(), offer.secondaryTokenDecimals)} ${offer.secondaryTokenSymbol}` : ""
-        ].filter(Boolean).join(" + ");
-        const balanceParts = [
-          primaryRequired > 0n ? `${primaryBalance} ${offer.primaryTokenSymbol}` : "",
-          secondaryRequired > 0n ? `${secondaryBalance} ${offer.secondaryTokenSymbol}` : ""
-        ].filter(Boolean).join(t(" and ", "，"));
-        if (!window.confirm(t(
-          "You have {balance}. This payment will use {payment}. Do you want to continue?",
-          "您的钱包有 {balance}。本次将支付 {payment}。是否继续？",
-        ).replace("{balance}", balanceParts).replace("{payment}", payParts))) throw new Error("USER_CANCELLED");
         for (let approvals = 0; preflight.nextAction !== "pay" && approvals < 2; approvals += 1) {
           const primary = preflight.nextAction === "approve-primary";
           const tokenAddress = (primary ? offer.primaryTokenAddress : offer.secondaryTokenAddress) as Address;
@@ -430,8 +416,6 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
             ? t("The wallet does not have enough {token}. No approval or payment was sent.", "钱包 {token} 余额不足，未发送授权或付款交易。").replace("{token}", selectedOption.tokenSymbol)
             : reason === "INSUFFICIENT_GLC_BALANCE"
               ? t("The wallet lacks the required GLC balance or 1-billion-GLC threshold. No approval or payment was sent.", "钱包 GLC 余额或 10 亿 GLC 门槛不足，未发送授权或付款交易。")
-              : reason === "USER_CANCELLED"
-                ? t("Payment cancelled. No approval or payment transaction was sent.", "付款已取消；没有发送授权或付款交易。")
             : reason === "INSUFFICIENT_NATIVE_BALANCE"
               ? t("The wallet does not have enough {token} for gas. No transaction was sent.", "钱包 {token} Gas 余额不足，未发送交易。").replace("{token}", walletChain(selected).nativeCurrency.symbol)
               : reason === "PAYMENT_SIMULATION_FAILED"
@@ -578,7 +562,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       <h2>{t("Step 3: Connect or enter a payer wallet", "步骤 3：连接或填写付款钱包")}</h2>
       <div className="payment-summary"><strong>{subscriptionTerm(selectedPlan.months, t)}</strong><span>{selectedDisplayAmount} · {selectedOption.chainName}</span></div>
       <dl><div><dt>{t("Payment contract", "付款合约")}</dt><dd><a className="chain-link" href={explorerUrl(selectedOption.chainId, "address", selectedOption.contractAddress) || "#"} target="_blank" rel="noreferrer">{selectedOption.contractAddress}</a></dd></div><div><dt>{t("Primary token contract", "主代币合约")}</dt><dd><a className="chain-link" href={explorerUrl(selectedOption.chainId, "token", selectedOption.tokenAddress) || "#"} target="_blank" rel="noreferrer">{selectedOption.tokenAddress}</a></dd></div>{selectedOption.smartPay3Offer?.mode === "dual" ? <div><dt>{t("GLC contract", "GLC 合约")}</dt><dd><a className="chain-link" href={explorerUrl(selectedOption.chainId, "token", selectedOption.smartPay3Offer.secondaryTokenAddress) || "#"} target="_blank" rel="noreferrer">{selectedOption.smartPay3Offer.secondaryTokenAddress}</a></dd></div> : null}</dl>
-      <p className="flow-intro">{t("The server rereads the current rule and actual token balances first. Only after you confirm the balance prompt will the wallet request required approvals and payment. The TransactionID then updates the subscription automatically.", "服务器先重新读取当前规则和实际代币余额；您确认余额提示后，钱包才会请求必要授权和付款。成功后自动读取 TransactionID 并更新订阅。")}</p>
+      <p className="flow-intro">{t("The server rereads the current rule, token balances, and gas first. After validation passes, the wallet directly requests any required approval or payment. The TransactionID then updates the subscription automatically.", "服务器会重新读取当前规则、实际代币余额和 Gas；校验通过后会直接请求钱包完成必要授权或付款。成功后自动读取 TransactionID 并更新订阅。")}</p>
       {!direct ? <>
         {connected ? <div className="direct-payment">
           <p className="connected-wallet-line">{t("Connected {wallet}", "已连接 {wallet}").replace("{wallet}", wallet)}</p>

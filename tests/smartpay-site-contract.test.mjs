@@ -94,6 +94,8 @@ test("user pages hide contract implementation names and admin identifiers", asyn
   const setting = { id: "polygon-usdt", enabled: 1, chainId: 137, smartPay3Contract: "0x2222222222222222222222222222222222222222" };
   assert.deepEqual(configuredSmartPay3CheckoutScopes([setting]), [{ chainId: 137, contractAddress: setting.smartPay3Contract }]);
   assert.doesNotMatch(checkout, />[^<{\n]*(SmartPay3|mainID|secondID|\bOPC\b)[^<{\n]*</i);
+  assert.doesNotMatch(checkout, /window\.confirm|USER_CANCELLED|confirm the balance prompt|确认余额提示/);
+  assert.match(checkout, /wallet directly requests any required approval or payment/);
   assert.doesNotMatch(account, />[^<{\n]*(SmartPay3|mainID|secondID|\bOPC\b)[^<{\n]*</i);
   assert.match(profile, /profile-copy-button/);
   assert.match(checkout, /prepared\.refId/);
