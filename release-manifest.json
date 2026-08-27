@@ -1,95 +1,83 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-zero-warning-release-closeout-20260826",
+  "releaseId": "smartlingo-voice-conversation-20260826-r1",
   "site": "smartlingo.net",
   "title": {
-    "en": "Clear deployment warnings and stale release work",
-    "zh": "清理部署告警与陈旧发布任务"
+    "en": "Make Guru voice turns send and speak automatically",
+    "zh": "让智能导师语音轮次自动发送并朗读"
   },
   "purpose": {
-    "en": "Close the current SmartLingo release cycle with no active deployment error, warning annotation, or stale queued release while preserving immutable audit history.",
-    "zh": "在保留不可变审计历史的同时，完成当前 SmartLingo 发布周期，清除活动中的部署错误、告警注释与陈旧排队发布。"
+    "en": "Turn SmartLingo's existing text-and-microphone composer into a reliable conversational loop: typed messages remain silent text chat, while a microphone turn shows its transcript, sends one final result automatically, clears the submitted draft, and reads the visible AI reply aloud.",
+    "zh": "将 SmartLingo 现有文字与麦克风编辑框升级为可靠的对话闭环：键盘消息继续作为静音文字聊天；麦克风轮次会显示转写、仅自动发送一次最终结果、清除已提交草稿，并朗读屏幕上可见的 AI 回答。"
   },
   "features": {
     "en": [
-      "Move both SmartLingo workflows to the current Node 24-native GitHub Actions majors.",
-      "Remove the repeated attempt to create an R2 bucket that already exists and previously printed a tolerated red Cloudflare error on every deployment.",
-      "Keep dependency installation, D1 validation, production builds, and Project release writes free of known non-actionable warning output while retaining fail-closed behavior.",
-      "Update the production framework, React runtime, Vinext/Vite toolchain, Cloudflare integration, webinar SDK, spreadsheet parser, and vulnerable transitive implementations so dependency advisories are removed.",
-      "Add an executable workflow contract that prevents the removed warning and tolerated-error patterns from returning."
+      "Keep typed chat explicit and silent: the learner types, selects Send, sees the text reply, and may still use the existing manual read-aloud control.",
+      "Show interim microphone transcription in the composer, automatically submit exactly one non-empty final transcript, and immediately move that submitted text into the visible conversation.",
+      "Keep the composer empty after an accepted send and after the AI reply without deleting a genuinely new draft typed while the answer is pending.",
+      "Automatically read an AI reply only when its request came from a microphone turn, while always displaying the same reply as text and preserving pause, resume, and stop controls."
     ],
     "zh": [
-      "把两个 SmartLingo 工作流升级到当前原生使用 Node 24 的 GitHub Actions 主版本。",
-      "移除每次部署都重复创建既有 R2 bucket、并输出被容忍的 Cloudflare 红色错误的步骤。",
-      "清除依赖安装、D1 验证、生产构建与 Project 发布写入中的已知非操作性告警输出，同时继续保持失败即停止。",
-      "更新生产框架、React 运行时、Vinext/Vite 工具链、Cloudflare 集成、网络研讨会 SDK、表格解析器与存在漏洞的传递式实现，清除依赖安全告警。",
-      "新增可执行工作流契约，防止已移除的告警与容忍错误模式回归。"
+      "保留明确且静音的键盘聊天：学习者输入后点击发送、查看文字回答，并可继续使用原有手动朗读控件。",
+      "在编辑框中显示麦克风临时转写，仅自动提交一次非空最终转写，并立即把已提交文字移入可见对话。",
+      "接受发送后及 AI 回答到达后保持编辑框为空，同时不会删除等待回答期间真正新输入的草稿。",
+      "仅当请求来自麦克风轮次时自动朗读 AI 回答；同一回答始终同步显示为文字，并保留暂停、继续和停止控件。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo GitHub Actions, the reviewed Vite client-chunk ceiling, the pinned Wrangler toolchain, release metadata, and continuous route preflight.",
-      "Learning behavior, member records, Clerk configuration, D1 schemas and content, R2 objects, colleges, commerce, AI providers, and other sites remain unchanged."
+      "The localized /{lang}/assistant experience, including the Leo partner path /zh/assistant?language=en&mode=conversation&partner=leo, the assistant voice-turn controller, production route checks, and Project release evidence.",
+      "No D1 schema, stored learning content, membership, payment, classroom, AI-provider selection, or other site is changed by this release."
     ],
     "zh": [
-      "涉及 SmartLingo GitHub Actions、经审核的 Vite 客户端分块上限、固定 Wrangler 工具链、发布元数据与持续路由预检。",
-      "学习行为、会员记录、Clerk 配置、D1 结构与内容、R2 对象、学院、交易、AI 提供方及其他站点保持不变。"
+      "涉及本地化 /{lang}/assistant 体验，包括 Leo 伙伴路径 /zh/assistant?language=en&mode=conversation&partner=leo、助手语音轮次控制器、生产路由检查及 Project 发布证据。",
+      "本次不修改 D1 结构、已存学习内容、会员、付款、课程教室、AI 提供方选择或其他站点。"
     ]
   },
   "changes": {
     "en": [
-      "Upgrade checkout, setup-node, and route-evidence upload actions to v7 and pin Wrangler 4.126.0.",
-      "Upgrade Next.js to 16.3.3, React to 19.2.8, Vinext to 1.0.0-beta.8, Vite to 8.2.2, Cloudflare's Vite plugin to 1.54.0, RealtimeKit to 2.0.2, and SheetJS to the official 0.20.3 distribution; force vulnerable legacy UUID, esbuild, and tmp transitive dependencies to compatible fixed releases.",
-      "Make npm install output error-only in CI and suppress only Node's expected experimental SQLite notice during the dedicated migration replay step.",
-      "Set the runner's Git default branch before checkout so repository initialization is deterministic and does not emit the legacy branch-name hint.",
-      "Write the small Project release statement through Wrangler's command path instead of the bulk-file path that emits a database-availability warning.",
-      "Set a reviewed 2,500 kB client-chunk warning ceiling; the existing route-scoped semantic vocabulary catalog remains below it and future growth above it still warns. Disable only Rolldown's non-actionable per-plugin timing notice while retaining the bounded-build timeout.",
-      "Document SmartLingo's intentional full-page navigation boundary after authentication, payment, enrollment, and realtime-session mutations so the new framework advisory does not misclassify required session refreshes.",
-      "Use native-loader-compatible Vite imports and replace the legacy ambiguous middleware matcher with explicit twelve-language and API route matchers; static assets remain outside Clerk middleware."
+      "Track typed and voice request origins per submitted turn so a later typed message can never inherit automatic speech from a prior microphone turn.",
+      "Use a one-shot recognition lifecycle with final-result consumption, in-flight protection, and detached terminal handlers so one utterance cannot send twice or repopulate a cleared composer.",
+      "Track user draft revisions independently from programmatic transcript updates so answer completion clears only the submitted draft and preserves newer learner input.",
+      "Preserve SmartLingo's image attachment path, AI-partner disclosure and prompt, target-language speech locale, public typed assistant, and Clerk sign-in requirement for microphone access."
     ],
     "zh": [
-      "将 checkout、setup-node 与路由证据上传 action 升级至 v7，并固定 Wrangler 4.126.0。",
-      "将 Next.js 升级到 16.3.3、React 升级到 19.2.8、Vinext 升级到 1.0.0-beta.8、Vite 升级到 8.2.2、Cloudflare Vite 插件升级到 1.54.0、RealtimeKit 升级到 2.0.2，并使用 SheetJS 官方 0.20.3 发行包；把存在漏洞的旧传递式 UUID、esbuild 与 tmp 依赖锁定到兼容修复版本。",
-      "在 CI 中只输出 npm 安装错误，并且仅在专用迁移重放步骤关闭 Node 预期的实验性 SQLite 提示。",
-      "在检出代码前设置运行器的 Git 默认分支，使仓库初始化保持确定性且不再输出旧分支命名提示。",
-      "通过 Wrangler command 路径写入小型 Project 发布语句，不再使用会输出数据库可用性告警的批量文件路径。",
-      "设置经审核的 2,500 kB 客户端分块告警上限；现有路由专用语义词汇目录低于该值，未来超出仍会触发告警。仅关闭 Rolldown 不具可操作性的逐插件计时提示，并继续保留有界构建超时。",
-      "记录 SmartLingo 在认证、支付、选课与实时会话变更后必须进行完整页面跳转的边界，避免新框架建议规则把必要的会话刷新误判为告警。",
-      "采用兼容原生加载器的 Vite 导入格式，并把旧式歧义 middleware matcher 替换为明确的十二语言与 API 路由匹配；静态资源继续不经过 Clerk middleware。"
+      "按每次提交分别记录键盘或语音来源，确保之后的键盘消息绝不会继承前一个麦克风轮次的自动朗读。",
+      "采用单次识别生命周期、最终结果消费、请求中保护及终态回调解绑，避免同一句话重复发送或把已清空编辑框重新填回。",
+      "把用户草稿修订与程序写入的转写分开记录，使回答完成时只清除已提交草稿并保留学习者的新输入。",
+      "保留 SmartLingo 图片附件、AI 伙伴身份披露与提示、目标语言 speechLocale、公开文字助手，以及麦克风访问的 Clerk 登录要求。"
     ]
   },
   "validation": {
     "en": [
-      "Require zero-warning ESLint, TypeScript no-emit, the verified production build, sensitive-data and artifact checks, all repository tests, D1 replay, and shared site policy and architecture contracts.",
-      "Require the complete production-and-build dependency audit to report zero advisories and enforce the moderate-or-higher audit gate in every deployment.",
-      "Inspect the terminal GitHub run annotations and logs, production route preflight, production Project record, exact deployed commit, and public localized routes after deployment.",
-      "Confirm no SmartLingo QA or Recovery task is actively running and reconcile the daily QA automation to the exact new production version."
+      "Require behavior-focused voice-turn tests for interim display, one final submission, duplicate and late-event suppression, submitted-draft clearing, preservation of newer drafts, visible AI text, voice-only automatic speech, typed silence, and unsupported-browser fallback.",
+      "Require zero-warning lint, TypeScript checking, the verified production build and artifact checks, the repository's selected identity, classroom, payment, voice, release, and deployment contracts, D1 validation, and shared site gates.",
+      "Probe the production Chinese Leo partner URL and its AI disclosure before writing the Project record, then require post-deploy real-Chrome acceptance with injected recognition and synthesis events for the changed interaction."
     ],
     "zh": [
-      "要求零告警 ESLint、TypeScript no-emit、经验证的生产构建、敏感信息与产物检查、全仓测试、D1 重放及共享站点政策与架构契约通过。",
-      "要求生产与构建依赖的完整安全审计为零告警，并在每次部署中强制执行中危及以上审计门禁。",
-      "部署后核对终态 GitHub 运行注释与日志、生产路由预检、生产 Project 记录、精确部署提交及公开本地化路由。",
-      "确认没有 SmartLingo QA 或 Recovery 任务正在运行，并把每日 QA 自动化校准到新的精确生产版本。"
+      "要求面向行为的语音轮次测试覆盖：临时转写显示、一次最终提交、重复与迟到事件抑制、已提交草稿清除、新草稿保留、AI 文字可见、仅语音来源自动朗读、键盘静音及不支持浏览器的降级。",
+      "要求零告警 lint、TypeScript 检查、经验证的生产构建与产物检查、仓库选定的身份、课程教室、付款、语音、发布和部署合同、D1 校验及共享站点门禁通过。",
+      "在写入 Project 记录前探测生产中文 Leo 伙伴 URL 及 AI 身份披露，并在部署后以真实 Chrome 注入识别和朗读事件验收本次交互。"
     ]
   },
   "deferred": {
     "en": [
-      "Historical failed, cancelled, blocked, and warning records remain intact as audit evidence; they are not current release blockers.",
-      "The daily 03:00 QA schedule remains intentionally active as continuous monitoring and is not an unfinished release task."
+      "No physical production microphone is opened and no audible device speech is played during deterministic injected-event acceptance; actual recognition quality, installed voices, permission prompts, connectivity, and background behavior remain browser and operating-system dependent.",
+      "No production camera or multi-party realtime audio/video session is started."
     ],
     "zh": [
-      "历史失败、取消、受阻及告警记录作为审计证据完整保留；它们不是当前发布阻塞项。",
-      "每天 03:00 的 QA 计划按设计继续启用，属于持续监控，不是未完成的发布任务。"
+      "确定性注入事件验收不会打开生产设备的实体麦克风，也不会实际播放有声设备朗读；真实识别质量、已安装语音、权限提示、联网及后台行为仍取决于浏览器与操作系统。",
+      "本次不启动生产摄像头或多人实时音视频会话。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep SmartLingo's isolated GitHub-to-Cloudflare deployment, D1-before-build ordering, Project evidence contract, and 21-day route preflight.",
-      "Preserve the user's untracked local files and every Clerk, Cloudflare, AI, media, data, and external-service boundary."
+      "Keep text Ask Guru and AI partners public while requiring the existing Clerk member session before the microphone starts; preserve the selected interface language and the target language's speechLocale independently.",
+      "Keep Mika, Leo, and Aya clearly disclosed as AI study partners, preserve partner-specific conversation prompts and image attachments, and verify the Chinese-interface English-practice Leo route used in the reported iPad flow."
     ],
     "zh": [
-      "保留 SmartLingo 独立的 GitHub 至 Cloudflare 发布、D1 先于构建顺序、Project 证据契约与 21 天路由预检。",
-      "保留用户本地未跟踪文件，以及所有 Clerk、Cloudflare、AI、媒体、数据与外部服务边界。"
+      "继续公开提供文字智能导师与 AI 学习伙伴，同时沿用现有 Clerk 会员会话门槛后才启动麦克风；界面语言与目标语言 speechLocale 继续分别保留。",
+      "继续明确披露 Mika、Leo 与 Aya 为 AI 学习伙伴，保留伙伴专属会话提示及图片附件，并核验本次 iPad 反馈所使用的中文界面、英语练习 Leo 路径。"
     ]
   }
 }

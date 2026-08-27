@@ -3,7 +3,14 @@
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { assistantComposerCopy, type InterfaceLanguage } from "../lib/interface-locale";
+import {
+  assistantReplyShouldSpeak,
+  clearStaleAssistantDraft,
+  createAssistantVoiceTurn,
+  type AssistantTurnSource,
+  type AssistantVoiceTurn,
+} from "../lib/assistant-voice-turn";
+import { assistantComposerCopy, interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
 import { smartLingoAiStudyPartner, type SmartLingoAiStudyPartnerId } from "../lib/smartlingo-ai-study-partners";
 
 type ChatMessage = { role: "user" | "assistant"; content: string; imageUrl?: string };
@@ -56,6 +63,15 @@ function recognitionConstructor(): RecognitionConstructor | undefined {
   return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 }
 
+function silenceRecognition(instance: Recognition, stop: boolean) {
+  instance.onresult = null;
+  instance.onerror = null;
+  instance.onend = null;
+  if (stop) {
+    try { instance.stop(); } catch { /* The browser may already have ended this one-shot session. */ }
+  }
+}
+
 export function AssistantClient({ lang, targetLanguage, speechLocale, mode, partner: partnerId }: { lang: InterfaceLanguage; targetLanguage?: string; speechLocale?: string; mode?: string; partner?: SmartLingoAiStudyPartnerId }) {
   const zh = lang === "zh";
   const composerCopy = assistantComposerCopy[lang];
@@ -86,11 +102,42 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   const composer = useRef<HTMLTextAreaElement | null>(null);
   const faqMenu = useRef<HTMLDivElement | null>(null);
   const recognition = useRef<Recognition | null>(null);
-  const recognitionBase = useRef("");
+  const voiceTurn = useRef<AssistantVoiceTurn | null>(null);
+  const messagesRef = useRef(messages);
+  const draftRef = useRef(draft);
+  const draftRevision = useRef(0);
+  const busyRef = useRef(false);
+  const pendingImageRef = useRef<PendingImage | null>(null);
   const speechTimer = useRef<number | null>(null);
   const speechSession = useRef(0);
   const cameraInput = useRef<HTMLInputElement | null>(null);
   const photoInput = useRef<HTMLInputElement | null>(null);
+
+  function writeDraft(value: string) {
+    draftRef.current = value;
+    draftRevision.current += 1;
+    setDraft(value);
+  }
+
+  function replacePendingImage(value: PendingImage | null) {
+    pendingImageRef.current = value;
+    setPendingImage(value);
+  }
+
+  function detachRecognition(instance: Recognition, stop: boolean) {
+    if (recognition.current === instance) recognition.current = null;
+    silenceRecognition(instance, stop);
+  }
+
+  function cancelVoiceInput() {
+    voiceTurn.current?.cancel();
+    voiceTurn.current = null;
+    const instance = recognition.current;
+    recognition.current = null;
+    if (instance) silenceRecognition(instance, true);
+    setListening(false);
+    setVoiceStatus("");
+  }
 
   useEffect(() => {
     composer.current?.setAttribute("placeholder", partner ? (zh ? `给 ${partner.name} 发消息…` : `Message ${partner.name}…`) : composerCopy.placeholder);
@@ -115,7 +162,11 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   }, []);
 
   useEffect(() => () => {
-    recognition.current?.stop();
+    voiceTurn.current?.cancel();
+    voiceTurn.current = null;
+    const instance = recognition.current;
+    recognition.current = null;
+    if (instance) silenceRecognition(instance, true);
     speechSession.current += 1;
     if (speechTimer.current) window.clearInterval(speechTimer.current);
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -153,7 +204,7 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   }, [faqOpen]);
 
   function chooseQuestion(question: string) {
-    setDraft(question);
+    writeDraft(question);
     setFaqOpen(false);
     requestAnimationFrame(() => composer.current?.focus());
   }
@@ -190,11 +241,14 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   }
 
   function readAnswer(content: string, messageIndex: number) {
-    if (!("speechSynthesis" in window)) { setError(zh ? "此浏览器不支持文字朗读。" : "Text-to-speech is not supported in this browser."); return; }
+    if (!("speechSynthesis" in window)) {
+      setError(interfaceText(lang, "Text-to-speech is not supported in this browser.", "此浏览器不支持文字朗读。"));
+      return;
+    }
     stopReading();
     const synth = window.speechSynthesis;
     const session = ++speechSession.current;
-    const isChinese = /[\u3400-\u9fff]/.test(content);
+    const preferredLocale = speechLocale || (zh ? "zh-CN" : "en-US");
     setError("");
     setSpeechMessage(messageIndex);
     setSpeechPaused(false);
@@ -213,19 +267,21 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
       if (remaining) chunks.push(remaining);
     }
     const voices = synth.getVoices();
-    const voice = voices.find(candidate => isChinese ? /^(zh|cmn)/i.test(candidate.lang) : /^en/i.test(candidate.lang)) || null;
     let index = 0;
     const speakNext = () => {
       if (session !== speechSession.current) return;
       if (index >= chunks.length) { finishReading(session); return; }
-      const utterance = new SpeechSynthesisUtterance(chunks[index++]);
-      utterance.lang = isChinese ? "zh-CN" : "en-US";
-      utterance.rate = isChinese ? 0.92 : 1;
-      utterance.voice = voice;
+      const text = chunks[index++];
+      const chunkLocale = /[\u3400-\u9fff]/.test(text) ? "zh-CN" : preferredLocale;
+      const language = chunkLocale.slice(0, 2).toLowerCase();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = chunkLocale;
+      utterance.rate = language === "zh" ? 0.92 : 1;
+      utterance.voice = voices.find(candidate => candidate.lang.toLowerCase().startsWith(language)) || null;
       utterance.onend = speakNext;
       utterance.onerror = event => {
         if (event.error !== "interrupted" && event.error !== "canceled") {
-          setError(isChinese ? "无法启动中文朗读，请检查设备是否已安装中文语音。" : "Unable to start speech. Please check this device's voice settings.");
+          setError(interfaceText(lang, "Unable to start speech. Please check this device's voice settings.", "无法启动朗读，请检查设备语音设置。"));
           stopReading();
         }
       };
@@ -240,15 +296,24 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
     else await navigator.clipboard.writeText(content);
   }
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    const content = draft.trim();
-    if ((!content && !pendingImage) || busy) return;
-    if (listening) recognition.current?.stop();
-    const visibleContent = content || (zh ? "请分析这张图片。" : "Please analyze this image.");
-    const attachment = pendingImage;
-    const next = [...messages, { role: "user" as const, content: visibleContent, imageUrl: attachment?.dataUrl }].slice(-12);
-    setMessages(next); setDraft(""); setPendingImage(null); setAttachOpen(false); setComposerFocused(false); composer.current?.blur(); setBusy(true); setError("");
+  async function sendTurn(rawContent: string, source: AssistantTurnSource) {
+    const content = rawContent.trim();
+    const attachment = pendingImageRef.current;
+    if ((!content && !attachment) || busyRef.current) return;
+    cancelVoiceInput();
+    const visibleContent = content || interfaceText(lang, "Please analyze this image.", "请分析这张图片。");
+    const next = [...messagesRef.current, { role: "user" as const, content: visibleContent, imageUrl: attachment?.dataUrl }].slice(-12);
+    messagesRef.current = next;
+    setMessages(next);
+    writeDraft("");
+    const clearedDraftRevision = draftRevision.current;
+    replacePendingImage(null);
+    setAttachOpen(false);
+    setComposerFocused(false);
+    composer.current?.blur();
+    busyRef.current = true;
+    setBusy(true);
+    setError("");
     try {
       const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({
         feature: "public_guru",
@@ -261,12 +326,25 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
       }) });
       const data = await response.json() as { reply?: string; error?: string };
       if (!response.ok || !data.reply) throw new Error(zh ? "助手暂时不可用，请稍后重试。" : data.error || "The assistant is temporarily unavailable.");
-      setMessages(current => [...current, { role: "assistant", content: data.reply! }]);
+      const withReply = [...messagesRef.current, { role: "assistant" as const, content: data.reply }];
+      messagesRef.current = withReply;
+      setMessages(withReply);
+      const nextDraft = clearStaleAssistantDraft(draftRef.current, content, clearedDraftRevision, draftRevision.current);
+      if (nextDraft !== draftRef.current) writeDraft(nextDraft);
+      if (assistantReplyShouldSpeak(source)) readAnswer(data.reply, withReply.length - 1);
     } catch (cause) {
       const detail = cause instanceof Error ? cause.message : String(cause);
       setError(zh && !/[\u3400-\u9fff]/.test(detail) ? "助手暂时不可用，请稍后重试。" : detail);
     }
-    finally { setBusy(false); }
+    finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void sendTurn(draftRef.current, listening ? "voice" : "typed");
   }
 
   function chooseImage(file?: File) {
@@ -278,10 +356,8 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result !== "string") return;
-      setPendingImage(current => {
-        if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
-        return { file, dataUrl: reader.result as string, previewUrl: URL.createObjectURL(file) };
-      });
+      if (pendingImageRef.current?.previewUrl) URL.revokeObjectURL(pendingImageRef.current.previewUrl);
+      replacePendingImage({ file, dataUrl: reader.result as string, previewUrl: URL.createObjectURL(file) });
       setAttachOpen(false);
       setError("");
       requestAnimationFrame(() => composer.current?.focus());
@@ -291,10 +367,8 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   }
 
   function removeImage() {
-    setPendingImage(current => {
-      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
-      return null;
-    });
+    if (pendingImageRef.current?.previewUrl) URL.revokeObjectURL(pendingImageRef.current.previewUrl);
+    replacePendingImage(null);
   }
 
   function toggleVoiceInput() {
@@ -302,8 +376,9 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
       recognition.current?.stop();
       return;
     }
+    if (busyRef.current) return;
     if (!identityLoaded) {
-      setError(zh ? "正在检查登录状态，请稍候。" : "Checking your sign-in status. Please wait.");
+      setError(interfaceText(lang, "Checking your sign-in status. Please wait.", "正在检查登录状态，请稍候。"));
       return;
     }
     if (!isSignedIn) {
@@ -312,51 +387,69 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
     }
     const Constructor = recognitionConstructor();
     if (!Constructor) {
-      setError(zh ? "此浏览器不支持语音输入。" : "Voice input is not supported in this browser.");
+      setError(interfaceText(lang, "Voice input is not supported in this browser.", "此浏览器不支持语音输入。"));
       return;
     }
+    stopReading();
     const instance = new Constructor();
-    recognitionBase.current = draft.trim() ? `${draft.trim()} ` : "";
+    const turn = createAssistantVoiceTurn(draftRef.current);
+    voiceTurn.current = turn;
     instance.lang = speechLocale || (zh ? "zh-CN" : "en-US");
-    instance.continuous = true;
+    instance.continuous = false;
     instance.interimResults = true;
     instance.onresult = event => {
-      let finalText = "";
-      let interimText = "";
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const result = event.results[index];
-        if (result.isFinal) finalText += `${result[0].transcript.trim()} `;
-        else interimText += result[0].transcript;
+      if (recognition.current !== instance || voiceTurn.current !== turn) return;
+      const results = Array.from({ length: event.results.length }, (_, index) => ({
+        transcript: event.results[index][0].transcript,
+        isFinal: event.results[index].isFinal,
+      }));
+      const update = turn.applyResults(results);
+      if (!update) return;
+      writeDraft(update.draft);
+      if (update.finalContent) {
+        voiceTurn.current = null;
+        detachRecognition(instance, true);
+        setListening(false);
+        setVoiceStatus("");
+        void sendTurn(update.finalContent, "voice");
       }
-      recognitionBase.current += finalText;
-      setDraft(`${recognitionBase.current}${interimText}`.trimStart());
     };
     instance.onerror = event => {
+      if (recognition.current !== instance || voiceTurn.current !== turn) return;
+      turn.fail();
+      voiceTurn.current = null;
+      detachRecognition(instance, false);
       if (event.error !== "aborted") {
         setError(event.error === "no-speech"
-          ? (zh ? "未检测到语音，请重试。" : "No speech was detected. Please try again.")
-          : (zh ? "麦克风出现错误，请重试。" : `Microphone error: ${event.error}.`));
+          ? interfaceText(lang, "No speech was detected. Please try again.", "未检测到语音，请重试。")
+          : interfaceText(lang, `Microphone error: ${event.error}.`, "麦克风出现错误，请重试。"));
       }
       setListening(false);
       setVoiceStatus("");
     };
     instance.onend = () => {
-      recognition.current = null;
+      if (recognition.current !== instance || voiceTurn.current !== turn) return;
+      const content = turn.finish();
+      voiceTurn.current = null;
+      detachRecognition(instance, false);
       setListening(false);
       setVoiceStatus("");
+      if (content) void sendTurn(content, "voice");
     };
     try {
       recognition.current = instance;
       instance.start();
       setError("");
       setListening(true);
-      setVoiceStatus(zh ? "正在聆听…" : "Listening…");
+      setVoiceStatus(interfaceText(lang, "Listening…", "正在聆听…"));
       composer.current?.focus();
     } catch {
-      recognition.current = null;
+      turn.fail();
+      voiceTurn.current = null;
+      detachRecognition(instance, false);
       setListening(false);
       setVoiceStatus("");
-      setError(zh ? "无法启动麦克风。" : "Unable to start the microphone.");
+      setError(interfaceText(lang, "Unable to start the microphone.", "无法启动麦克风。"));
     }
   }
 
@@ -368,5 +461,5 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
       ? ["我应该从哪个职业英语阶段开始？", "如何练习英语面试和客户沟通？", "专业英语与岗位技能证书有什么区别？", "雇主如何在人才库联系候选人？"]
       : ["Which Career English stage should I start with?", "How can I practice an English interview or customer conversation?", "How are Professional English and Job Skills certificates different?", "How do employers contact candidates in Talent?"]);
 
-  return <>{speechMessage !== null && <div className="speech-player" role="region" aria-label={zh ? "朗读控制" : "Read-aloud controls"}><button type="button" onClick={toggleReading} aria-label={speechPaused ? (zh ? "继续朗读" : "Resume reading") : (zh ? "暂停朗读" : "Pause reading")} title={speechPaused ? (zh ? "继续" : "Resume") : (zh ? "暂停" : "Pause")}><PlaybackIcon name={speechPaused ? "play" : "pause"}/></button><time>{formatElapsed(speechElapsed)}</time><span>{zh ? "正在朗读" : "Reading aloud"}</span><button className="speech-player-close" type="button" onClick={stopReading} aria-label={zh ? "停止朗读" : "Stop reading"} title={zh ? "停止并关闭" : "Stop and close"}><PlaybackIcon name="close"/></button></div>}<section className="assistant-main assistant-chat-only"><section className="chat-panel" data-layout-fill="assistant-chat-panel"><div className="chat-log" data-layout-fill="assistant-chat-log" aria-live="polite" ref={chatLog}>{messages.map((message, index) => <article className={message.role} key={`${message.role}-${index}`}><strong>{message.role === "user" ? (zh ? "您" : "You") : assistantLabel}</strong>{message.imageUrl ? <Image className="assistant-message-image" src={message.imageUrl} alt={zh ? "用户提供给智能导师分析的图片" : "Image supplied by the user for Guru analysis"} width={1200} height={900} unoptimized/> : null}<p data-layout-text-fit={`assistant-message-${index}`}>{message.content}</p>{message.role === "assistant" && <div className="answer-tools" aria-label={zh ? "回答工具" : "Answer tools"}><button type="button" onClick={() => copyAnswer(message.content, index)} aria-label={zh ? "复制回答" : "Copy answer"} title={zh ? "复制" : "Copy"}><ToolIcon name="copy"/></button><button type="button" className={speechMessage === index ? "active" : ""} onClick={() => readAnswer(message.content, index)} aria-label={zh ? "朗读回答" : "Read answer aloud"} title={zh ? "朗读" : "Listen"}><ToolIcon name="listen"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "up" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "up" })} aria-label={zh ? "有帮助" : "Helpful"} title={zh ? "有帮助" : "Helpful"}><ToolIcon name="up"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "down" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "down" })} aria-label={zh ? "没有帮助" : "Not helpful"} title={zh ? "没有帮助" : "Not helpful"}><ToolIcon name="down"/></button><button type="button" onClick={() => shareAnswer(message.content)} aria-label={zh ? "分享回答" : "Share answer"} title={zh ? "分享" : "Share"}><ToolIcon name="share"/></button><span aria-live="polite">{copiedMessage === index ? (zh ? "已复制" : "Copied") : ""}</span></div>}</article>)}{busy && <article className="assistant"><strong>{assistantLabel}</strong><p>{zh ? "正在思考…" : "Thinking…"}</p></article>}</div><form className={`chat-compose chat-compose-stacked${composerFocused || draft || pendingImage ? " expanded" : " compact"}`} data-layout-fill="assistant-composer" onSubmit={submit} onFocus={() => setComposerFocused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setComposerFocused(false); }}>{pendingImage ? <div className="assistant-image-preview"><Image src={pendingImage.previewUrl} alt={zh ? "待发送图片" : "Image ready to send"} width={1200} height={900} unoptimized/><span>{pendingImage.file.name}</span><button type="button" onClick={removeImage} aria-label={zh ? "移除图片" : "Remove image"}>×</button></div> : null}<label className="chat-compose-field" data-readable-copy="assistant-composer-copy"><span className="sr-only">{zh ? "输入问题" : "Your question"}</span><textarea ref={composer} value={draft} onChange={event => setDraft(event.target.value)} maxLength={2000} rows={1} placeholder={partner ? (zh ? `给 ${partner.name} 发消息…` : `Message ${partner.name}…`) : (zh ? "给智能导师发消息…" : "Message Guru…")}/></label><div className="chat-toolbar"><div className="assistant-attach-control"><button className="icon-button assistant-add-button" type="button" aria-label={zh ? "添加图片" : "Add image"} aria-expanded={attachOpen} onClick={() => setAttachOpen(value => !value)}>+</button>{attachOpen ? <div className="assistant-attach-menu"><button type="button" onClick={() => cameraInput.current?.click()}>{zh ? "拍照" : "Camera"}</button><button type="button" onClick={() => photoInput.current?.click()}>{zh ? "照片" : "Photos"}</button></div> : null}<input ref={cameraInput} hidden type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={event => { chooseImage(event.target.files?.[0]); event.target.value = ""; }}/><input ref={photoInput} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { chooseImage(event.target.files?.[0]); event.target.value = ""; }}/></div><div className="faq-control" ref={faqMenu}><button className="icon-button faq-button" type="button" aria-label={zh ? "常见问题" : "Frequently asked questions"} aria-expanded={faqOpen} onClick={() => setFaqOpen(value => !value)}>?</button>{faqOpen && <div className="faq-popover" role="menu"><strong>{zh ? "常见问题" : "Try asking"}</strong>{questions.map(question => <button type="button" role="menuitem" key={question} onClick={() => chooseQuestion(question)}>{question}</button>)}</div>}</div>{voiceStatus && <span className="composer-status" aria-live="polite">{voiceStatus}</span>}<div className="toolbar-actions"><button className={`icon-button mic-button${listening ? " active" : ""}`} type="button" aria-label={listening ? (zh ? "停止语音输入" : "Stop voice input") : (zh ? "开始语音输入" : "Start voice input")} title={listening ? (zh ? "停止语音输入" : "Stop voice input") : (zh ? "开始语音输入" : "Start voice input")} onClick={toggleVoiceInput}><span aria-hidden="true"/></button><button className="icon-button send-button" aria-label={zh ? "发送消息" : "Send message"} disabled={busy || (!draft.trim() && !pendingImage)}><span aria-hidden="true">↑</span></button></div></div></form></section>{error && <p className="assistant-error" role="alert">{error}</p>}</section></>;
+  return <>{speechMessage !== null && <div className="speech-player" role="region" aria-label={zh ? "朗读控制" : "Read-aloud controls"}><button type="button" onClick={toggleReading} aria-label={speechPaused ? (zh ? "继续朗读" : "Resume reading") : (zh ? "暂停朗读" : "Pause reading")} title={speechPaused ? (zh ? "继续" : "Resume") : (zh ? "暂停" : "Pause")}><PlaybackIcon name={speechPaused ? "play" : "pause"}/></button><time>{formatElapsed(speechElapsed)}</time><span>{zh ? "正在朗读" : "Reading aloud"}</span><button className="speech-player-close" type="button" onClick={stopReading} aria-label={zh ? "停止朗读" : "Stop reading"} title={zh ? "停止并关闭" : "Stop and close"}><PlaybackIcon name="close"/></button></div>}<section className="assistant-main assistant-chat-only"><section className="chat-panel" data-layout-fill="assistant-chat-panel"><div className="chat-log" data-layout-fill="assistant-chat-log" aria-live="polite" ref={chatLog}>{messages.map((message, index) => <article className={message.role} key={`${message.role}-${index}`}><strong>{message.role === "user" ? (zh ? "您" : "You") : assistantLabel}</strong>{message.imageUrl ? <Image className="assistant-message-image" src={message.imageUrl} alt={zh ? "用户提供给智能导师分析的图片" : "Image supplied by the user for Guru analysis"} width={1200} height={900} unoptimized/> : null}<p data-layout-text-fit={`assistant-message-${index}`}>{message.content}</p>{message.role === "assistant" && <div className="answer-tools" aria-label={zh ? "回答工具" : "Answer tools"}><button type="button" onClick={() => copyAnswer(message.content, index)} aria-label={zh ? "复制回答" : "Copy answer"} title={zh ? "复制" : "Copy"}><ToolIcon name="copy"/></button><button type="button" className={speechMessage === index ? "active" : ""} onClick={() => readAnswer(message.content, index)} aria-label={zh ? "朗读回答" : "Read answer aloud"} title={zh ? "朗读" : "Listen"}><ToolIcon name="listen"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "up" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "up" })} aria-label={zh ? "有帮助" : "Helpful"} title={zh ? "有帮助" : "Helpful"}><ToolIcon name="up"/></button><button className={ratedMessage?.index === index && ratedMessage.value === "down" ? "active" : ""} type="button" onClick={() => setRatedMessage({ index, value: "down" })} aria-label={zh ? "没有帮助" : "Not helpful"} title={zh ? "没有帮助" : "Not helpful"}><ToolIcon name="down"/></button><button type="button" onClick={() => shareAnswer(message.content)} aria-label={zh ? "分享回答" : "Share answer"} title={zh ? "分享" : "Share"}><ToolIcon name="share"/></button><span aria-live="polite">{copiedMessage === index ? (zh ? "已复制" : "Copied") : ""}</span></div>}</article>)}{busy && <article className="assistant"><strong>{assistantLabel}</strong><p>{zh ? "正在思考…" : "Thinking…"}</p></article>}</div><form className={`chat-compose chat-compose-stacked${composerFocused || draft || pendingImage ? " expanded" : " compact"}`} data-layout-fill="assistant-composer" onSubmit={submit} onFocus={() => setComposerFocused(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setComposerFocused(false); }}>{pendingImage ? <div className="assistant-image-preview"><Image src={pendingImage.previewUrl} alt={zh ? "待发送图片" : "Image ready to send"} width={1200} height={900} unoptimized/><span>{pendingImage.file.name}</span><button type="button" onClick={removeImage} aria-label={zh ? "移除图片" : "Remove image"}>×</button></div> : null}<label className="chat-compose-field" data-readable-copy="assistant-composer-copy"><span className="sr-only">{composerCopy.question}</span><textarea ref={composer} value={draft} onChange={event => writeDraft(event.target.value)} maxLength={2000} rows={1} placeholder={partner ? (zh ? `给 ${partner.name} 发消息…` : `Message ${partner.name}…`) : composerCopy.placeholder}/></label><div className="chat-toolbar"><div className="assistant-attach-control"><button className="icon-button assistant-add-button" type="button" aria-label={zh ? "添加图片" : "Add image"} aria-expanded={attachOpen} onClick={() => setAttachOpen(value => !value)}>+</button>{attachOpen ? <div className="assistant-attach-menu"><button type="button" onClick={() => cameraInput.current?.click()}>{zh ? "拍照" : "Camera"}</button><button type="button" onClick={() => photoInput.current?.click()}>{zh ? "照片" : "Photos"}</button></div> : null}<input ref={cameraInput} hidden type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={event => { chooseImage(event.target.files?.[0]); event.target.value = ""; }}/><input ref={photoInput} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { chooseImage(event.target.files?.[0]); event.target.value = ""; }}/></div><div className="faq-control" ref={faqMenu}><button className="icon-button faq-button" type="button" aria-label={composerCopy.faq} aria-expanded={faqOpen} onClick={() => setFaqOpen(value => !value)}>?</button>{faqOpen && <div className="faq-popover" role="menu"><strong>{zh ? "常见问题" : "Try asking"}</strong>{questions.map(question => <button type="button" role="menuitem" key={question} onClick={() => chooseQuestion(question)}>{question}</button>)}</div>}</div>{voiceStatus && <span className="composer-status" aria-live="polite">{voiceStatus}</span>}<div className="toolbar-actions"><button className={`icon-button mic-button${listening ? " active" : ""}`} type="button" aria-label={listening ? composerCopy.stopVoice : composerCopy.startVoice} title={listening ? composerCopy.stopVoice : composerCopy.startVoice} onClick={toggleVoiceInput} disabled={busy}><span aria-hidden="true"/></button><button className="icon-button send-button" aria-label={composerCopy.send} disabled={busy || (!draft.trim() && !pendingImage)}><span aria-hidden="true">↑</span></button></div></div></form></section>{error && <p className="assistant-error" role="alert">{error}</p>}</section></>;
 }

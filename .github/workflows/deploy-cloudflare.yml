@@ -20,6 +20,8 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -39,8 +41,8 @@ jobs:
       - name: Validate detailed release manifest
         run: node scripts/release-manifest.mjs --require-current-commit
 
-      - name: Verify session, course rooms, and payment contracts
-        run: node --test tests/subscription-crypto-contract.test.mjs tests/course-student-management.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs
+      - name: Verify session, course rooms, payment, voice, and release contracts
+        run: node --test tests/subscription-crypto-contract.test.mjs tests/course-student-management.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs tests/voice-input-consistency.test.mjs tests/release-report-contract.test.mjs tests/deployment-report-contract.test.mjs
 
       - name: Validate D1 migrations
         run: npm run db:validate
@@ -116,10 +118,13 @@ jobs:
           home="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en)"
           disclaimer="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/disclaimer)"
           programs="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/programs)"
+          assistant="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS 'https://smartlingo.net/zh/assistant?language=en&mode=conversation&partner=leo')"
           grep -F 'Beginner' <<<"$home"
           grep -F 'All payments are final and non-refundable' <<<"$disclaimer"
           grep -F '/en/programs' <<<"$disclaimer"
           grep -F 'Build usable vocabulary, reading, writing, listening, and dialogue.' <<<"$programs"
+          grep -F 'Leo · AI' <<<"$assistant"
+          grep -F 'SmartLingo AI 学习伙伴，不是真人' <<<"$assistant"
           if grep -F '/en/pricing' <<<"$home"; then exit 1; fi
           pricing_code="$(curl -sS -o /tmp/pricing-redirect.html -w '%{http_code}' https://smartlingo.net/en/pricing)"
           test "$pricing_code" = "307"
