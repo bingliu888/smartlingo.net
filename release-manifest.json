@@ -1,83 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-voice-conversation-20260826-r1",
+  "releaseId": "smartlingo-play-language-continuity-20260827-r1",
   "site": "smartlingo.net",
   "title": {
-    "en": "Make Guru voice turns send and speak automatically",
-    "zh": "让智能导师语音轮次自动发送并朗读"
+    "en": "Restore the Play language picker and target-language continuity",
+    "zh": "恢复 Play 语言选择器与目标语言连续性"
   },
   "purpose": {
-    "en": "Turn SmartLingo's existing text-and-microphone composer into a reliable conversational loop: typed messages remain silent text chat, while a microphone turn shows its transcript, sends one final result automatically, clears the submitted draft, and reads the visible AI reply aloud.",
-    "zh": "将 SmartLingo 现有文字与麦克风编辑框升级为可靠的对话闭环：键盘消息继续作为静音文字聊天；麦克风轮次会显示转写、仅自动发送一次最终结果、清除已提交草稿，并朗读屏幕上可见的 AI 回答。"
+    "en": "Repair the production Play hub found during the 2026-08-27 real-user recovery run so its twelve-language picker is visible below all six activity tiles and one selected target language is preserved across every language-dependent entry.",
+    "zh": "修复 2026-08-27 真实用户恢复验收发现的生产 Play 中心缺陷：在六个活动卡片下方显示十二语言选择器，并让所有依赖语言的入口保持同一个目标语言。"
   },
   "features": {
     "en": [
-      "Keep typed chat explicit and silent: the learner types, selects Send, sees the text reply, and may still use the existing manual read-aloud control.",
-      "Show interim microphone transcription in the composer, automatically submit exactly one non-empty final transcript, and immediately move that submitted text into the visible conversation.",
-      "Keep the composer empty after an accepted send and after the AI reply without deleting a genuinely new draft typed while the answer is pending.",
-      "Automatically read an AI reply only when its request came from a microphone turn, while always displaying the same reply as text and preserving pause, resume, and stop controls."
+      "Render the existing shared twelve-language picker below all six Play activity tiles and visibly mark the selected language.",
+      "Carry the selected target language into Today’s Sprint, SmartCard Practice, SmartCard Challenge, Rankings, and Free Trial without changing the Chinese interface locale."
     ],
     "zh": [
-      "保留明确且静音的键盘聊天：学习者输入后点击发送、查看文字回答，并可继续使用原有手动朗读控件。",
-      "在编辑框中显示麦克风临时转写，仅自动提交一次非空最终转写，并立即把已提交文字移入可见对话。",
-      "接受发送后及 AI 回答到达后保持编辑框为空，同时不会删除等待回答期间真正新输入的草稿。",
-      "仅当请求来自麦克风轮次时自动朗读 AI 回答；同一回答始终同步显示为文字，并保留暂停、继续和停止控件。"
+      "在全部六个 Play 活动卡片下方渲染既有共享十二语言选择器，并清楚标记当前选择。",
+      "将所选目标语言传入今日速成、智慧卡练习、智慧卡挑战、排行榜和免费试学，同时保持中文界面语言不变。"
     ]
   },
   "affected": {
     "en": [
-      "The localized /{lang}/assistant experience, including the Leo partner path /zh/assistant?language=en&mode=conversation&partner=leo, the assistant voice-turn controller, production route checks, and Project release evidence.",
-      "No D1 schema, stored learning content, membership, payment, classroom, AI-provider selection, or other site is changed by this release."
+      "The localized /{lang}/play hub and its links to /{lang}/smartcards, /{lang}/play/challenge, /{lang}/play/rankings, Sprint, and Free Trial.",
+      "No database schema, learning score, payment, referral, certificate, membership, authentication, or other site is changed."
     ],
     "zh": [
-      "涉及本地化 /{lang}/assistant 体验，包括 Leo 伙伴路径 /zh/assistant?language=en&mode=conversation&partner=leo、助手语音轮次控制器、生产路由检查及 Project 发布证据。",
-      "本次不修改 D1 结构、已存学习内容、会员、付款、课程教室、AI 提供方选择或其他站点。"
+      "涉及本地化 /{lang}/play 中心，以及通往 /{lang}/smartcards、/{lang}/play/challenge、/{lang}/play/rankings、Sprint 和免费试学的入口。",
+      "本次不修改数据库结构、学习成绩、付款、推荐、证书、会员、身份认证或其他站点。"
     ]
   },
   "changes": {
     "en": [
-      "Track typed and voice request origins per submitted turn so a later typed message can never inherit automatic speech from a prior microphone turn.",
-      "Use a one-shot recognition lifecycle with final-result consumption, in-flight protection, and detached terminal handlers so one utterance cannot send twice or repopulate a cleared composer.",
-      "Track user draft revisions independently from programmatic transcript updates so answer completion clears only the submitted draft and preserves newer learner input.",
-      "Preserve SmartLingo's image attachment path, AI-partner disclosure and prompt, target-language speech locale, public typed assistant, and Clerk sign-in requirement for microphone access."
+      "Validate the language query against SmartLingo’s canonical twelve-language catalog before using it as the Play selection.",
+      "Generate the three link-based activity URLs through one behavior-tested helper and pass the same valid selection into both dialog-based activities.",
+      "Update bilingual Play guidance and activity copy to explain that the chosen target language stays consistent."
     ],
     "zh": [
-      "按每次提交分别记录键盘或语音来源，确保之后的键盘消息绝不会继承前一个麦克风轮次的自动朗读。",
-      "采用单次识别生命周期、最终结果消费、请求中保护及终态回调解绑，避免同一句话重复发送或把已清空编辑框重新填回。",
-      "把用户草稿修订与程序写入的转写分开记录，使回答完成时只清除已提交草稿并保留学习者的新输入。",
-      "保留 SmartLingo 图片附件、AI 伙伴身份披露与提示、目标语言 speechLocale、公开文字助手，以及麦克风访问的 Clerk 登录要求。"
+      "先按 SmartLingo 权威十二语言目录验证 language 查询参数，再将其用作 Play 当前选择。",
+      "通过一个行为测试覆盖的共享函数生成三个链接型活动网址，并把同一有效选择传给两个弹窗型活动。",
+      "更新双语 Play 指引与活动文案，说明所选目标语言会保持一致。"
     ]
   },
   "validation": {
     "en": [
-      "Require behavior-focused voice-turn tests for interim display, one final submission, duplicate and late-event suppression, submitted-draft clearing, preservation of newer drafts, visible AI text, voice-only automatic speech, typed silence, and unsupported-browser fallback.",
-      "Require zero-warning lint, TypeScript checking, the verified production build and artifact checks, the repository's selected identity, classroom, payment, voice, release, and deployment contracts, D1 validation, and shared site gates.",
-      "Probe the production Chinese Leo partner URL and its AI disclosure before writing the Project record, then require post-deploy real-Chrome acceptance with injected recognition and synthesis events for the changed interaction."
+      "Require regression tests for selected and unselected activity URL mappings, picker placement after all six tiles, and selected-language handoff into Sprint and Free Trial.",
+      "Require the sentence catalog and 21-day QA contracts, shared portfolio policy and architecture gates, zero-warning lint, TypeScript, D1 migration validation, sensitive-data scan, full repository tests, verified build, and artifact checks.",
+      "After deployment, repeat the exact real-Chrome /zh/play?language=en step and verify the twelve choices, six tiles, target-language URLs, and Chinese interface before resuming daily learning acceptance."
     ],
     "zh": [
-      "要求面向行为的语音轮次测试覆盖：临时转写显示、一次最终提交、重复与迟到事件抑制、已提交草稿清除、新草稿保留、AI 文字可见、仅语音来源自动朗读、键盘静音及不支持浏览器的降级。",
-      "要求零告警 lint、TypeScript 检查、经验证的生产构建与产物检查、仓库选定的身份、课程教室、付款、语音、发布和部署合同、D1 校验及共享站点门禁通过。",
-      "在写入 Project 记录前探测生产中文 Leo 伙伴 URL 及 AI 身份披露，并在部署后以真实 Chrome 注入识别和朗读事件验收本次交互。"
+      "要求回归测试覆盖已选与未选语言的活动网址映射、选择器位于六个卡片之后，以及所选语言传入 Sprint 与免费试学。",
+      "要求句库与 21 天 QA 合同、共享站点策略和架构门禁、零告警 lint、TypeScript、D1 迁移验证、敏感数据扫描、全仓库测试、验证构建和产物检查通过。",
+      "部署后在真实 Chrome 重复原始 /zh/play?language=en 步骤，核验十二个选择、六个卡片、目标语言网址和中文界面，再继续每日学习验收。"
     ]
   },
   "deferred": {
     "en": [
-      "No physical production microphone is opened and no audible device speech is played during deterministic injected-event acceptance; actual recognition quality, installed voices, permission prompts, connectivity, and background behavior remain browser and operating-system dependent.",
-      "No production camera or multi-party realtime audio/video session is started."
+      "This focused release does not alter or directly write any learner score, progress, reward, challenge, leaderboard, payment, referral, or certificate record.",
+      "Microphone permission remains outside the scheduled QA flow; repeat-after-me stays off."
     ],
     "zh": [
-      "确定性注入事件验收不会打开生产设备的实体麦克风，也不会实际播放有声设备朗读；真实识别质量、已安装语音、权限提示、联网及后台行为仍取决于浏览器与操作系统。",
-      "本次不启动生产摄像头或多人实时音视频会话。"
+      "本次聚焦修复不修改或直接写入任何学习者成绩、进度、奖励、挑战、排行榜、付款、推荐或证书记录。",
+      "麦克风权限仍不属于定时 QA 流程；跟读保持关闭。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep text Ask Guru and AI partners public while requiring the existing Clerk member session before the microphone starts; preserve the selected interface language and the target language's speechLocale independently.",
-      "Keep Mika, Leo, and Aya clearly disclosed as AI study partners, preserve partner-specific conversation prompts and image attachments, and verify the Chinese-interface English-practice Leo route used in the reported iPad flow."
+      "Reuse SmartLingo’s existing GameLanguagePicker and canonical language community catalog rather than introducing a second language taxonomy.",
+      "Preserve the SmartLingo Play card design, Chinese locale routes, official course IDs, server-graded learning flows, and independent Redeem destination."
     ],
     "zh": [
-      "继续公开提供文字智能导师与 AI 学习伙伴，同时沿用现有 Clerk 会员会话门槛后才启动麦克风；界面语言与目标语言 speechLocale 继续分别保留。",
-      "继续明确披露 Mika、Leo 与 Aya 为 AI 学习伙伴，保留伙伴专属会话提示及图片附件，并核验本次 iPad 反馈所使用的中文界面、英语练习 Leo 路径。"
+      "复用 SmartLingo 既有 GameLanguagePicker 与权威语言社区目录，不引入第二套语言分类。",
+      "保留 SmartLingo Play 卡片设计、中文界面路由、官方课程编号、服务器评分学习流程和独立兑换入口。"
     ]
   }
 }

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { buildSprintPlan, gradeSprintPlan, sanitizeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
 import { isPublicBeginnerSprintClassId, requirePublicBeginnerSprintCourse } from "../lib/smartlingo-learning-access.ts";
 import { ANONYMOUS_SPRINT_COOKIE, anonymousSprintCookie, parseAnonymousSprintCookie, resumeAnonymousSprintState } from "../lib/smartlingo-anonymous-sprint.ts";
+import { playLanguageLinks } from "../lib/play-language-links.ts";
 
 const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   id: `word-${index + 1}`,
@@ -91,20 +92,26 @@ test("course and anonymous Play expose six isolated learning activities", () => 
   assert.match(play, /PlayFreeTrialPicker/);
   assert.match(freeTrialPicker, /免费试学/);
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
-  assert.match(play, /href=\{`\/\$\{lang\}\/smartcards`\}/);
+  assert.deepEqual(playLanguageLinks("zh", "en"), {
+    smartcards: "/zh/smartcards?language=en",
+    challenge: "/zh/play/challenge?language=en",
+    rankings: "/zh/play/rankings?language=en",
+  });
+  assert.match(play, /href=\{links\.smartcards\}/);
   assert.match(play, /href=\{`\/\$\{lang\}\/play\/redeem`\}/);
   const redeem = readFileSync(new URL("../app/[lang]/play/redeem/page.tsx", import.meta.url), "utf8");
   assert.match(redeem, /GameLanguagePicker/);
   assert.match(redeem, /searchParams/);
   assert.match(redeem, /isSmartLingoCommunityLanguage/);
-  assert.doesNotMatch(play, /searchParams|query\.language|initialLanguage=/);
+  assert.match(play, /isSmartLingoCommunityLanguage\(requestedLanguage\)/);
+  assert.match(play, /initialLanguage=\{selectedLanguage\}/);
   assert.match(playPicker, /今日速成/);
   assert.match(playPicker, /useState<\(typeof DURATIONS\)\[number\]>\(10\)/);
   assert.match(playPicker, /selection\.source === initialTarget \? selection\.value : initialTarget/);
   assert.match(playPicker, /setSelection\(\{ source: initialTarget, value: item\.code \}\)/);
   assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
   assert.match(playPicker, /source=play/);
-  assert.match(play, /play\/rankings/);
+  assert.match(play, /href=\{links\.rankings\}/);
   assert.match(dashboard, /DashboardDailySprint/);
   assert.match(dashboardSprint, /添加语言/);
   assert.equal((dashboardSprint.match(/Add language/g) || []).length, 1);

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { buildSmartCardChallenge, gradeSmartCardChallenge, scoreSmartCardPronunciation, smartCardMicrophoneFailure } from "../lib/smartlingo-smartcards.ts";
+import { playLanguageLinks } from "../lib/play-language-links.ts";
 import { applyTrackedMigrations, readMigrationManifest } from "../scripts/validate-d1-migrations.mjs";
 
 const cards = Array.from({ length: 12 }, (_, index) => ({
@@ -226,8 +227,13 @@ test("game navigation keeps target language, progress, local-time art, and score
   const leaderboard = readFileSync(new URL("../app/api/smartcards/leaderboard/route.ts", import.meta.url), "utf8");
   assert.match(course, /play\?language=\$\{language\}/);
   assert.match(course, /免费游戏/);
-  assert.match(play, /href=\{`\/\$\{lang\}\/smartcards`\}/);
-  assert.match(play, /href=\{`\/\$\{lang\}\/play\/challenge`\}/);
+  assert.deepEqual(playLanguageLinks("zh", "it"), {
+    smartcards: "/zh/smartcards?language=it",
+    challenge: "/zh/play/challenge?language=it",
+    rankings: "/zh/play/rankings?language=it",
+  });
+  assert.match(play, /href=\{links\.smartcards\}/);
+  assert.match(play, /href=\{links\.challenge\}/);
   assert.doesNotMatch(play, /smartcards\/starter-\$\{language\}/);
   assert.match(play, /PlayFreeTrialPicker/);
   assert.match(freeTrialPicker, /course_\$\{language\}_basic\/trial\/\$\{skill\.id\}/);
