@@ -242,6 +242,8 @@ test("game navigation keeps target language, progress, local-time art, and score
   assert.match(calendar, /leaderboard\?month=\$\{month\}&language=/);
   assert.match(calendar, /mode=challenge&language=\$\{targetLanguage\}/);
   assert.match(game, /card-count/);
+  assert.match(game, /answer-step[\s\S]*answer-audio[\s\S]*正常语速[\s\S]*慢速[\s\S]*options\.map/);
+  assert.match(game, /answer-audio[^>]*aria-label=\{zh \? "目标语言发音"/);
   assert.match(game, /index \+ 1\} \/ \{cards\.length/);
   assert.match(game, /learning-world-\$\{timeScene\}\.jpg/);
   assert.match(game, /getHours\(\)/);
