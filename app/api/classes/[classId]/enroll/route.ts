@@ -12,8 +12,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
   const classId = cleanText((await params).classId, 100);
   const database = getDatabase();
-  const body=await request.json().catch(()=>null) as {departmentId?:string}|null;
-  const departmentId=cleanText(body?.departmentId||"",100);
   const course = await database.prepare(`SELECT c.id,c.price_cents AS priceCents,c.trial_days AS trialDays,c.capacity,
     c.target_language AS targetLanguage,c.package_tier AS packageTier,c.class_kind AS classKind,
     COALESCE(SUM(CASE WHEN m.role='student' AND m.status='active' THEN 1 ELSE 0 END),0) AS enrollmentCount
@@ -21,7 +19,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
     WHERE c.id=? AND c.class_kind IN ('official_course','subject') AND c.status='open' AND c.visibility='public'
     GROUP BY c.id LIMIT 1`).bind(classId).first<Course>();
   if (!course) return Response.json({ error: "Course not found" }, { status: 404 });
-  if(departmentId&&!await database.prepare("SELECT 1 FROM smartlingo_college_department_courses WHERE department_id=? AND course_id=? LIMIT 1").bind(departmentId,classId).first())return Response.json({error:"Department course not found"},{status:404});
   if (Number(course.enrollmentCount) >= course.capacity) return Response.json({ error: "This course is full" }, { status: 409 });
 
   const existing = await database.prepare(`SELECT status,trial_ends_at AS trialEndsAt,current_period_ends_at AS currentPeriodEndsAt
@@ -58,15 +55,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   const trialEndsAt = now + course.trialDays * 86_400;
   await database.batch([
     database.prepare(`INSERT INTO smartlingo_course_subscriptions
-      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,department_id,created_at,updated_at)
-      VALUES(?,?,?,'trialing',?,?,?,?,?,?)`).bind(createId(), classId, user.id, course.priceCents, now, trialEndsAt, departmentId||null, now, now),
+      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,created_at,updated_at)
+      VALUES(?,?,?,'trialing',?,?,?,?,?)`).bind(createId(), classId, user.id, course.priceCents, now, trialEndsAt, now, now),
     database.prepare(`INSERT INTO smartlingo_language_class_members
       (id,class_id,user_id,role,status,joined_at,updated_at) VALUES(?,?,?,'student','active',?,?)
       ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status='active',updated_at=excluded.updated_at`)
       .bind(createId(), classId, user.id, now, now),
-    ...(departmentId?[database.prepare(`INSERT INTO smartlingo_department_enrollments(id,department_id,course_id,user_id,status,created_at,updated_at)
-      VALUES(?,?,?,?,'trialing',?,?) ON CONFLICT(department_id,course_id,user_id) DO UPDATE SET status='trialing',updated_at=excluded.updated_at`)
-      .bind(createId(),departmentId,classId,user.id,now,now)]:[]),
   ]);
   let learningEnrollmentId: string;
   try {

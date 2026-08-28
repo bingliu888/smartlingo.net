@@ -8,7 +8,7 @@ type CheckoutSession = {
   id: string; status: string; payment_status?: string; mode: string; client_reference_id: string;
   amount_total?: number | null; currency?: string | null; payment_intent?: string | { id?: string } | null;
   metadata?: { scope?: string; class_id?: string; user_id?: string; package_tier?: string; target_language?: string;
-    duration_months?: string; package_id?: string; department_id?: string };
+    duration_months?: string; package_id?: string };
 };
 
 export async function POST(request: Request) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Checkout does not match this signed-in course package" }, { status: 403 });
     }
     const result=await recordCoursePackagePurchase({userId:user.id,classId,targetLanguage,packageTier:tier,durationMonths:months!,
-      priceCents:selectedPackage.priceCents,provider:"stripe",providerReference:paymentIntentId,departmentId:metadata.department_id});
+      priceCents:selectedPackage.priceCents,provider:"stripe",providerReference:paymentIntentId});
     return Response.json({ synced: true, classId,targetLanguage,package:selectedPackage,currentPeriodEnd:result.accessEndsAt,alreadyRecorded:result.alreadyRecorded });
   } catch (error) {
     const unavailable = error instanceof Error && error.message === "STRIPE_NOT_CONFIGURED";

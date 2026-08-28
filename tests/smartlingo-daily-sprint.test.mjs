@@ -128,10 +128,10 @@ test("Primary navigation exposes the four learning choices and the task image op
   assert.ok(header.indexOf('data-nav="learn"') < header.indexOf('data-nav="practice"'));
   assert.ok(header.indexOf('data-nav="practice"') < header.indexOf('data-nav="speak"'));
   assert.ok(header.indexOf('data-nav="speak"') < header.indexOf('data-nav="community"'));
-  assert.ok(home.indexOf('href={`/${locale}/programs`}') < home.indexOf('href={`/${locale}/colleges`}'));
-  for (const path of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(path));
+  assert.ok(home.indexOf('href={`/${locale}/play/everyday`}') < home.indexOf('href={`/${locale}/programs`}'));
+  for (const path of ["play/everyday", "programs", "assistant"]) assert.match(home, new RegExp(path));
   assert.match(home, /play\?language=\$\{locale\}/);
-  assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
+  assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-ai/);
   assert.match(home, /PlayDailySprintPicker lang=\{locale\} initialLanguage=\{locale\}/);
   assert.match(home, /triggerClassName="lingo-hero-visual"/);
   assert.match(home, /triggerLabel=\{ui\.openSprint\}/);

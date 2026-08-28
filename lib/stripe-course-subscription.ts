@@ -6,7 +6,7 @@ export type StripeSubscription = {
   trial_start?: number | null;
   trial_end?: number | null;
   current_period_end?: number | null;
-  metadata?: { class_id?: string; user_id?: string; cadence?: string; scope?: string; department_id?: string };
+  metadata?: { class_id?: string; user_id?: string; cadence?: string; scope?: string };
 };
 
 export async function runtimeValue(name: string) {
@@ -37,22 +37,17 @@ export async function syncStripeCourseSubscription(userId: string, classId: stri
   const trialEndsAt = Number(subscription.trial_end || trialStartedAt);
   const currentPeriodEndsAt = Number(subscription.current_period_end || subscription.trial_end || now);
   const memberStatus = status === "trialing" || status === "active" ? "active" : "paused";
-  const departmentId=String(subscription.metadata?.department_id||"");
-  if(departmentId&&!await database.prepare("SELECT 1 FROM smartlingo_college_department_courses WHERE department_id=? AND course_id=? LIMIT 1").bind(departmentId,classId).first())throw new Error("DEPARTMENT_SCOPE_MISMATCH");
   await database.batch([
     database.prepare(`INSERT INTO smartlingo_course_subscriptions
-      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,department_id,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?)
       ON CONFLICT(class_id,user_id) DO UPDATE SET status=excluded.status,monthly_price_cents=excluded.monthly_price_cents,
       trial_started_at=excluded.trial_started_at,trial_ends_at=excluded.trial_ends_at,current_period_ends_at=excluded.current_period_ends_at,
-      provider_subscription_id=excluded.provider_subscription_id,department_id=COALESCE(excluded.department_id,smartlingo_course_subscriptions.department_id),updated_at=excluded.updated_at`)
-      .bind(crypto.randomUUID(), classId, userId, status, course.priceCents, trialStartedAt, trialEndsAt, currentPeriodEndsAt, subscription.id, departmentId||null, now, now),
+      provider_subscription_id=excluded.provider_subscription_id,updated_at=excluded.updated_at`)
+      .bind(crypto.randomUUID(), classId, userId, status, course.priceCents, trialStartedAt, trialEndsAt, currentPeriodEndsAt, subscription.id, now, now),
     database.prepare(`INSERT INTO smartlingo_language_class_members(id,class_id,user_id,role,status,joined_at,updated_at)
       VALUES(?,?,?,'student',?,?,?) ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status=excluded.status,updated_at=excluded.updated_at`)
       .bind(crypto.randomUUID(), classId, userId, memberStatus, now, now),
-    ...(departmentId?[database.prepare(`INSERT INTO smartlingo_department_enrollments(id,department_id,course_id,user_id,status,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?) ON CONFLICT(department_id,course_id,user_id) DO UPDATE SET status=excluded.status,updated_at=excluded.updated_at`)
-      .bind(crypto.randomUUID(),departmentId,classId,userId,status,now,now)]:[]),
   ]);
   return { status, trialEndsAt, currentPeriodEndsAt };
 }

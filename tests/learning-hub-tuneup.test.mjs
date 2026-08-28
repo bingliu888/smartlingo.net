@@ -36,8 +36,8 @@ test("home and dashboard use canonical feature routes without duplicate home pan
     assert.match(locale, new RegExp(label));
   }
   assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
-  for (const route of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(route));
-  assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
+  for (const route of ["play/everyday", "programs", "assistant"]) assert.match(home, new RegExp(route));
+  assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-ai/);
   assert.match(dashboard, /DashboardLearningHub/);
   assert.match(dashboard, /smartlingo_language_class_members/);
   for (const path of ["play/everyday", "play/challenge", "classes", "smartcards", "programs"]) assert.match(dashboardHub, new RegExp(path));

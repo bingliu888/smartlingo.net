@@ -172,7 +172,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               <Link className="primary-button" href={`/${locale}/play/everyday`}>{ui.everyday} →</Link>
               <Link className="secondary-button" href={`/${locale}/play?language=${locale}`}>{ui.play}</Link>
               <Link className="secondary-button" href={`/${locale}/programs`}>{ui.courses}</Link>
-              <Link className="secondary-button" href={`/${locale}/colleges`}>{ui.colleges}</Link>
               <Link className="text-link" href={`/${locale}/assistant`}>{ui.askAi}</Link>
             </div>
             <div className="lingo-trust">{t.trust.map(item => <span key={item}>✓ {item}</span>)}</div>

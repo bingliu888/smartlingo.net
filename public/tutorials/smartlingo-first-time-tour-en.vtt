@@ -4,7 +4,7 @@ WEBVTT
 Welcome to the SmartLingo first-time tour. In about ten minutes, you will see the experience designed for a new visitor and the full workflow available after sign-in. The first half requires no account. The second half uses a dedicated test member. No real email address, password, or verification code appears anywhere in this recording.
 
 00:00:24.000 --> 00:00:48.000
-Part one begins as a signed-out visitor. The home page offers four clear destinations: Learn, Practice, Speak, and Community. You can try Everyday speaking, Learn through play, browse courses and colleges, or ask the AI Guru before creating an account. Anonymous practice stays outside the member database, so you can explore first and decide when you are ready.
+Part one begins as a signed-out visitor. The home page offers four clear destinations: Learn, Practice, Speak, and Community. You can try Everyday speaking, Learn through play, browse courses, or ask the AI Guru before creating an account. Anonymous practice stays outside the member database, so you can explore first and decide when you are ready.
 
 00:00:48.000 --> 00:01:13.011
 On the Learn page, choose the language and learning path that fit your goal. SmartLingo connects vocabulary, reading, writing, listening, and speaking instead of isolating them. Beginner content starts with easier and more frequent words, then considers school grade and difficulty. New sentences reuse words from the current and previous rounds, so the experience does not suddenly jump beyond your vocabulary.
@@ -28,13 +28,13 @@ SmartCard Challenge is a timed game, so it does not stop for a Continue button. 
 Everyday speaking starts with real places such as an airport, hotel, restaurant, cafe, grocery store, hospital, bank, and school. Each place offers Beginner, Intermediate, and Advanced material. Lessons use connected question-and-answer conversations, not isolated phrases. Repeat after me is off by default, so the page does not request microphone access until you intentionally enable speaking and scoring.
 
 00:03:43.437 --> 00:04:07.559
-Community remains useful before sign-in. Visitors can understand language discussions, Nearby learning, colleges, and rankings without hitting a blank page or forced login. Nearby is adult opt-in and uses only a broad city or region, never precise GPS coordinates. When no real learner is available, clearly labeled AI classmates are ready to practice without pretending to be human.
+Community remains useful before sign-in. Visitors can understand language discussions, Nearby learning, and rankings without hitting a blank page or forced login. Nearby is adult opt-in and uses only a broad city or region, never precise GPS coordinates. When no real learner is available, clearly labeled AI classmates are ready to practice without pretending to be human.
 
 00:04:07.559 --> 00:04:35.130
 The course catalog lists administrator-managed language programs at three levels. Beginner develops core vocabulary, pronunciation, listening, and guided speech. Intermediate expands real-life conversation and writing. Advanced adds accent work, presentations, and expression coaching. The platform sets course pricing consistently and the first month is free. Browsing is public; secure account access begins only when you subscribe.
 
 00:04:35.130 --> 00:04:59.276
-Colleges are SmartLingo's organization layer. Visitors can browse by college number, name, and language. A supervisor chooses a teaching language and a learning language, and the platform adds the matching courses, Today's Sprint, Everyday speaking, SmartCards, and Challenge to that department. The college focuses on enrollment and learning rooms instead of recreating the core curriculum.
+All courses are built into SmartLingo and maintained by the platform administrator. Choose a learning language, then select Beginner, Intermediate, or Advanced access for three, six, or twelve months. Members do not create separate course catalogs, so learning content, prices, progress, and certificates remain consistent.
 
 00:04:59.276 --> 00:05:23.276
 When you are ready to save progress, select Sign in or join. Password is the default method; you can switch to an email verification code on the same page. If a requested code does not arrive in the inbox, check Spam or Junk. The code applies only to that sign-in attempt, and this tour never enters or reveals a real code.
@@ -61,7 +61,7 @@ The learning calendar places completed practice, planned work, and needs-review 
 My courses shows only the programs joined or subscribed by the current member. Each course separates vocabulary, reading, writing, listening, and speaking while sharing the same vocabulary ordering, review feedback, and Continue behavior. To add another language or level, choose Course to return to the public catalog. Existing progress remains intact when a new course is added.
 
 00:08:14.501 --> 00:08:40.648
-Members can find real learners who explicitly opt in, or begin immediately with an AI classmate. AI participants are always labeled and never impersonate people. Community provides discussions, shared missions, rankings, and college language departments. Real-member cards include block and report controls. Social activity supports practice, but it can never alter verified course scores or payment records.
+Members can find real learners who explicitly opt in, or begin immediately with an AI classmate. AI participants are always labeled and never impersonate people. Community provides discussions, shared missions, and rankings. Real-member cards include block and report controls. Social activity supports practice, but it can never alter verified course scores or payment records.
 
 00:08:40.648 --> 00:09:05.561
 The Message Center supports private conversations, group chat, and course communication. You can enter a conversation from Community or a course, then use replies, attachments, notifications, and safety reports. Guru can polish a draft before you send it. Live voice and microphone access begin only after you intentionally open a compatible speaking activity and accept the device permission.

@@ -86,7 +86,7 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
     <section className="member-panel">
       <div className="member-heading">
         <div><p className="section-kicker">{zh ? "平台方案与推荐" : "PLATFORM PLANS & REFERRALS"}</p><h2>{zh ? "管理方案、推荐关系和会员偏好。" : "Manage your plan, referrals, and member preferences."}</h2></div>
-        <Link className="primary-button" href={`/${lang}/colleges/mine`}>{zh ? "打开我的学院" : "Open My colleges"}</Link>
+        <Link className="primary-button" href={`/${lang}/classes?mine=1`}>{zh ? "打开我的课程" : "Open My Courses"}</Link>
       </div>
 
       <div className="member-grid membership-tier-grid">

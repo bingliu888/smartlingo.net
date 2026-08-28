@@ -1069,7 +1069,6 @@ export const lingoCoursePackagePurchases = sqliteTable("smartlingo_course_packag
   currency: text("currency").notNull().default("USD"),
   provider: text("provider").notNull(),
   providerReference: text("provider_reference").notNull(),
-  departmentId: text("department_id"),
   accessStartsAt: integer("access_starts_at").notNull(),
   accessEndsAt: integer("access_ends_at").notNull(),
   status: text("status").notNull().default("paid"),

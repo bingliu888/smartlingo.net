@@ -70,8 +70,8 @@ test("home feature buttons and Choose course use canonical destination pages", a
     read("../app/globals.css"),
   ]);
 
-  assert.doesNotMatch(home, /<HomeLearningChoices|home-everyday|home-courses|home-colleges|home-ai/);
-  for (const route of ["play/everyday", "programs", "colleges", "assistant"]) assert.match(home, new RegExp(route));
+  assert.doesNotMatch(home, /<HomeLearningChoices|home-everyday|home-courses|home-ai/);
+  for (const route of ["play/everyday", "programs", "assistant"]) assert.match(home, new RegExp(route));
   assert.match(home, /play\?language=\$\{locale\}/);
   assert.equal((home.match(/<h1/g) || []).length, 0);
   assert.match(home, /<h2 data-layout-text-fit="home-hero-title">\{t\.title\}<\/h2>/);

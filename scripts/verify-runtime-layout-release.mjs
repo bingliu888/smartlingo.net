@@ -13,7 +13,6 @@ const wrangler = join(projectRoot, "node_modules", "wrangler", "bin", "wrangler.
 const verifier = join(projectRoot, "scripts", "verify-runtime-layout-webkit.mjs");
 const protectedPages = [
   "/zh/classes",
-  "/zh/college/create",
   "/zh/classes/course_en_basic/learn",
   "/zh/classes/course_en_basic/vocabulary",
   "/zh/dashboard",

@@ -48,20 +48,16 @@ test("Community always offers clearly disclosed AI classmates and keeps real mat
   assert.match(assistantRoute, /Take one short turn at a time/);
 });
 
-test("the dashboard places learning, practice, speaking, community, and two-level schools coherently", async () => {
-  const [header, dashboard, hub, communityHub, colleges] = await Promise.all([
+test("the dashboard places learning, practice, speaking, and community coherently", async () => {
+  const [header, dashboard, hub, communityHub] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
     read("../components/DashboardLearningHub.tsx"),
     read("../components/DashboardCommunityHub.tsx"),
-    read("../app/[lang]/colleges/mine/page.tsx"),
   ]);
   for (const key of ["learn", "practice", "speak", "community"]) assert.match(header, new RegExp(`data-nav=\"${key}\"`));
   assert.match(dashboard, /DashboardCommunityHub/);
   for (const domain of ["Learn", "Practice", "Speak"]) assert.match(hub, new RegExp(domain));
   assert.match(communityHub, /Nearby learning/);
-  assert.match(communityHub, /My colleges/);
-  assert.match(colleges, /TWO-LEVEL LEARNING SCHOOL/);
-  assert.match(colleges, /3, 9, or 15 language departments/);
-  assert.match(colleges, /70% to the college\/department and 30% to the platform/);
+  assert.match(communityHub, /Community/);
 });

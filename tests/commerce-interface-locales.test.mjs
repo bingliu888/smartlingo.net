@@ -16,25 +16,21 @@ const legitimateSharedTerms = new Set([
 ]);
 
 test("signed-in menu pages and every wallet-checkout step use complete interface translations", async () => {
-  const [menu, checkout, messages, colleges, collegeCard, collegePlans, collegePayouts, generated] = await Promise.all([
+  const [menu, checkout, messages, generated] = await Promise.all([
     read("components/HeaderAccount.tsx"),
     read("components/CryptoCheckout.tsx"),
     read("components/MessageCenter.tsx"),
-    read("app/[lang]/colleges/mine/page.tsx"),
-    read("components/CollegeCard.tsx"),
-    read("components/CollegeCoordinatorUpgradeButton.tsx"),
-    read("components/CollegePayoutOnboardingButton.tsx"),
     read("lib/home-interface-translations.generated.ts"),
   ]);
   const payload = generated.slice(generated.indexOf("= ") + 2, generated.lastIndexOf(";"));
   const translations = JSON.parse(payload);
   const englishKeys = new Set();
-  for (const source of [menu, checkout, messages, colleges, collegeCard, collegePlans, collegePayouts]) {
+  for (const source of [menu, checkout, messages]) {
     for (const match of source.matchAll(/\bt\(\s*("(?:\\.|[^"\\])*")\s*,\s*("(?:\\.|[^"\\])*")\s*,?\s*\)/g)) {
       englishKeys.add(JSON.parse(match[1]));
     }
   }
-  assert.ok(englishKeys.size >= 130, `expected broad signed-in and checkout coverage, found ${englishKeys.size}`);
+  assert.ok(englishKeys.size >= 85, `expected broad signed-in and checkout coverage, found ${englishKeys.size}`);
   assert.doesNotMatch(menu, /lang === "zh"\s*\?/);
   assert.doesNotMatch(checkout, /\bzh\s*\?/);
   assert.doesNotMatch(messages, /\bzh\s*\?/);

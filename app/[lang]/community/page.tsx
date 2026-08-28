@@ -29,14 +29,13 @@ export default async function CommunityPage({ params }: { params: Promise<{ lang
   return <main className="community-page" data-layout-page="community" data-layout-ready="true">
     <SiteHeader lang={lang}/>
     <section className="community-hero" data-layout-fill="community-hero">
-      <div><p className="section-kicker">COMMUNITY · LEARN TOGETHER</p><h1>{text("Practice with people, AI classmates, and your own learning school.", "和真人、AI 同学以及自己的学习学院一起练。")}</h1><p>{text("Find a partner, complete a shared mission, join a live study conversation, or learn through a college language department. Social activity supports practice; it never changes verified course scores or payment records.", "找伙伴、完成共同任务、加入实时学习会话，或通过学院语言部门学习。社交活动用于陪练，不会改写已验证课程成绩或付款记录。")}</p></div>
+      <div><p className="section-kicker">COMMUNITY · LEARN TOGETHER</p><h1>{text("Practice with people and clearly labeled AI classmates.", "和真人以及明确标注的 AI 同学一起练习。")}</h1><p>{text("Find a partner, complete a shared mission, or join a live study conversation. Social activity supports practice; it never changes verified course scores or payment records.", "找伙伴、完成共同任务或加入实时学习会话。社交活动用于陪练，不会改写已验证课程成绩或付款记录。")}</p></div>
       <aside><strong>{text("Designed for trust", "以信任为前提")}</strong><span>{text("Nearby is opt-in, adult-only, and coarse-region only. AI partners are always labeled AI. Every real-member card includes block and report controls.", "Nearby 仅限成年会员主动开启，只显示大区域；AI 伙伴始终标注为 AI；每张真人卡片都提供屏蔽和举报。")}</span></aside>
     </section>
     <nav className="community-entry-grid" aria-label={text("Community areas", "社区区域")}>
       <a href="#nearby"><small>01 · NEARBY</small><strong>{text("Learn together", "一起边玩边学")}</strong><span>{text("AI classmates plus optional real-member matching", "AI 同学与可选真人匹配")}</span></a>
       <a href="#discussions"><small>02 · DISCUSS</small><strong>{text("Learning discussions", "学习讨论")}</strong><span>{text("Questions, reflections, and useful practice notes", "问题、复盘与实用练习心得")}</span></a>
-      <Link href={`/${lang}/colleges`}><small>03 · COLLEGES</small><strong>{text("Learning schools", "学习学院")}</strong><span>{text("College → language department → platform courses", "学院 → 语言部门 → 平台课程")}</span></Link>
-      <Link href={`/${lang}/play/rankings`}><small>04 · RANKINGS</small><strong>{text("Fair rankings", "公平排行榜")}</strong><span>{text("Compare verified learning days by category and language", "按类别和语言比较已验证学习日")}</span></Link>
+      <Link href={`/${lang}/play/rankings`}><small>03 · RANKINGS</small><strong>{text("Fair rankings", "公平排行榜")}</strong><span>{text("Compare verified learning days by category and language", "按类别和语言比较已验证学习日")}</span></Link>
     </nav>
     <NearbyLearning lang={lang} signedIn={signedIn}/>
     <CommunityMeetings lang={lang} signedIn={signedIn}/>

@@ -68,6 +68,8 @@ test("Course Studio lists only subscribed courses and routes discovery to Choose
   assert.match(studio, /\$\{lang\}\/programs/);
   assert.match(studio, /CourseClassroomTile/);
   assert.doesNotMatch(studio, /70 \/ 30|Stripe Connect|我创建的课程/);
+  assert.doesNotMatch(studio, /joinedTitle|class-catalog|class-section-heading/);
+  assert.match(studio, /class-card-grid class-card-grid-list/);
 });
 
 test("each subscribed course exposes five direct training entries tied to its course id", async () => {

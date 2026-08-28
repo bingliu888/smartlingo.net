@@ -1,79 +1,73 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-language-crypto-checkout-20260828-r4",
+  "releaseId": "smartlingo-net-built-in-courses-20260828-r1",
   "site": "smartlingo.net",
   "title": {
-    "en": "Complete language-scoped card and crypto course checkout",
-    "zh": "完成按学习语言限定的银行卡与加密课程结账"
+    "en": "Simplify My Courses and keep courses platform-built",
+    "zh": "精简我的课程并统一使用平台内置课程"
   },
   "purpose": {
-    "en": "Let a learner choose one language, compare all nine fixed-term packages, and continue into either card checkout or only the currently enabled SmartPay3 three-month payment options without losing the selected language.",
-    "zh": "让学习者先选择一种学习语言，再比较九个固定期限套餐，并在不丢失已选语言的前提下进入银行卡结账或仅查看当前已启用的 SmartPay3 三个月付款选项。"
+    "en": "Make My Courses a direct list of the signed-in member's subscriptions and retire the former organization layer so every course remains created and maintained by the platform administrator.",
+    "zh": "让“我的课程”直接展示登录会员已订阅的课程，并退役原有组织层，使所有课程统一由平台管理员创建和维护。"
   },
   "features": {
     "en": [
-      "Present exactly nine direct package choices for the already-selected learning language: Beginner, Intermediate, and Advanced for 3, 6, or 12 months.",
-      "Give every package a direct card action and one separate SmartMeeting-style crypto entry that reads only enabled three-month SmartPay3 products.",
-      "Show the enabled Japanese Beginner three-month product first when it is the only enabled level, then let the learner choose the GLC or USDT/GLC on-chain option.",
-      "Convert the payment language and product IDs into the exact official course entitlement so Dashboard and My Courses open the paid course."
+      "Remove the duplicate My Courses subsection and large empty-state panel while preserving subscribed course cards and the Choose courses action.",
+      "Remove the former organization directory, management surfaces, supervisor packages, payout setup, and account or community entrances.",
+      "Keep card and crypto course purchases scoped directly to one platform-built language course without an intermediary organization or revenue split.",
+      "Keep historical database migrations intact while removing every active route, API, component, permission branch, and interface string for the retired module."
     ],
     "zh": [
-      "为已经选定的学习语言直接展示九个套餐：初期、中级、高级课程各提供 3、6、12 个月。",
-      "每个套餐提供直接银行卡入口，并增加一个与 SmartMeeting 风格一致的独立加密付款入口，只读取已启用的 SmartPay3 三个月产品。",
-      "当前仅启用初期课程时，日语流程只显示日语初期 3 个月产品，下一步可选择 GLC 或 USDT/GLC 链上付款项目。",
-      "根据付款中的语言与产品 ID 准确生成官方课程学习权利，使 Dashboard 与我的课程都能显示并打开已付款课程。"
+      "删除重复的“我的课程”子标题与大型空状态框，同时保留已订阅课程卡片和“选择课程”入口。",
+      "删除原有组织目录、管理页面、主管套餐、收款设置，以及账户和社区中的相关入口。",
+      "银行卡与加密课程付款直接绑定一门平台内置语言课程，不再经过中间组织或分成路径。",
+      "保留历史数据库迁移，同时移除退役模块的所有活动路由、API、组件、权限分支和界面文案。"
     ]
   },
   "affected": {
     "en": [
-      "Public language package pages, direct card checkout entry, language-scoped crypto checkout, SmartPay3 payment reconciliation and account recovery, Dashboard, and My Courses entitlement visibility."
+      "My Courses, home, Community, Dashboard, account menu, membership panel, administrator dashboard, card checkout, course entitlement synchronization, classroom access, tutorial captions, and runtime layout validation."
     ],
     "zh": [
-      "公开语言套餐页、银行卡直接结账入口、按语言限定的加密结账、SmartPay3 付款核对与账户恢复、用户面板及我的课程学习权利展示。"
+      "我的课程、首页、社区、用户面板、账户菜单、会员面板、管理员面板、银行卡结账、课程权益同步、教室权限、新手教程字幕及运行时布局验证。"
     ]
   },
   "changes": {
     "en": [
-      "Replace passive price cards with an interactive language package catalog that launches card checkout directly and keeps one separate crypto-payment call to action.",
-      "Add a public language-scoped crypto route and reuse the audited course checkout without exposing payment rules from another language.",
-      "Allow generic language checkout to display every enabled level while retaining the locked single-course behavior on existing course routes.",
-      "Carry the route-validated twelve-language type into the interactive package catalog so strict CI type checking and runtime authorization use the same boundary.",
-      "Map SmartPay3 mainId and language secondId back to the official course ID during both immediate claim and delayed account recovery.",
-      "Keep all on-chain amounts authoritative and preserve user, course, wallet, Clerk, Stripe, D1, Cloudflare, and other site boundaries."
+      "Render subscribed course cards immediately below the My Courses introduction and use a short unboxed message when there are no subscriptions.",
+      "Remove obsolete pages, APIs, UI components, helper libraries, translations, CSS, and layout routes for the retired organization product.",
+      "Remove intermediary identifiers from card checkout, webhook reconciliation, course purchases, enrollment, and private classroom authorization.",
+      "Update Community and the first-time tutorial to focus on people, clearly labeled AI classmates, rankings, and platform-built courses."
     ],
     "zh": [
-      "将静态价格卡升级为可操作的语言套餐目录，可直接启动银行卡结账，并保留一个独立的加密付款入口。",
-      "新增公开且按学习语言限定的加密付款路由，复用已经审计的课程结账流程，不显示其他语言的付款规则。",
-      "通用语言结账显示当前已启用的全部等级，同时保留现有课程路由锁定单门课程的行为。",
-      "将路由已经验证的十二语言类型传入交互式套餐目录，使严格 CI 类型检查与运行时授权采用同一边界。",
-      "立即核对与延迟账户恢复都会将 SmartPay3 的 mainId 和语言 secondId 映射回准确的官方课程 ID。",
-      "链上金额继续以合约为准，并保留用户、课程、钱包、Clerk、Stripe、D1、Cloudflare 及其他站点边界。"
+      "已订阅课程卡片直接显示在“我的课程”介绍之后；没有订阅时只显示简短、无外框提示。",
+      "移除退役组织产品的旧页面、API、界面组件、辅助库、翻译、CSS 和布局验证路由。",
+      "从银行卡结账、回调核对、课程购买、报名及专属教室权限中移除中间组织标识。",
+      "社区与新手教程改为聚焦真人、明确标注的 AI 学伴、排行榜和平台内置课程。"
     ]
   },
   "validation": {
     "en": [
-      "Passed the production build, zero-warning lint, 410 site tests, migration replay and idempotency checks, sensitive-data scan, and required shared site-policy contracts.",
-      "Verified the Chinese-interface Japanese package catalog and its language-scoped crypto entry in a real browser; production verification confirms that Beginner three-month currently exposes the two administrator-enabled payment options."
+      "Passed the production build, strict TypeScript, zero-warning lint, all 400 site tests, 68-migration replay and idempotency, sensitive-data scanning, and every required shared portfolio policy check. Production browser regression follows the GitHub Actions to Cloudflare release."
     ],
     "zh": [
-      "通过生产构建、零警告 lint、410 项站点测试、迁移重放与幂等检查、敏感数据扫描及规定的共享站点策略契约。",
-      "使用真实浏览器验证中文界面的日语套餐目录及按语言限定的加密入口；生产验证确认初期 3 个月当前显示管理员已启用的两个付款选项。"
+      "已通过生产构建、严格 TypeScript、零警告 lint、全部 400 项站点测试、68 个迁移的重放与幂等检查、敏感数据扫描及所有必需的共享站点策略检查；GitHub Actions 发布到 Cloudflare 后继续执行生产环境浏览器回归。"
     ]
   },
   "deferred": {
     "en": [
-      "Automated validation does not submit a real card or token payment. The final wallet approval, token transfer, and production entitlement confirmation require the authorized payer to approve an actual transaction."
+      "Historical database tables and columns are intentionally preserved because deleting deployed data requires a separate reviewed data-retention decision."
     ],
     "zh": [
-      "自动验证不会提交真实银行卡或代币付款；最后的钱包授权、代币转账及生产学习权利确认需要付款人在钱包中批准一笔真实交易。"
+      "历史数据库表和字段有意保留；删除已部署数据需要另行进行经过审查的数据保留决策。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep SmartLingo's twelve learning languages, Clerk identity, D1 data, Stripe, SmartPay3, wallets, college revenue sharing, and GitHub Actions to Cloudflare deployment isolated from every other site."
+      "Keep SmartLingo's twelve learning languages, Clerk identity, D1 data, Stripe, SmartPay3, wallets, and GitHub Actions to Cloudflare deployment isolated from every other site."
     ],
     "zh": [
-      "继续保持 SmartLingo 的十二种学习语言、Clerk 身份、D1 数据、Stripe、SmartPay3、钱包、学院分成及 GitHub Actions 到 Cloudflare 发布流程与其他站点完全隔离。"
+      "继续保持 SmartLingo 的十二种学习语言、Clerk 身份、D1 数据、Stripe、SmartPay3、钱包及 GitHub Actions 到 Cloudflare 发布流程与其他站点完全隔离。"
     ]
   },
   "dataMigration": {
