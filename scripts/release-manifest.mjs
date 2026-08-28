@@ -29,6 +29,11 @@ export function loadReleaseManifest(path = "release-manifest.json") {
     text(manifest.purpose?.[language], `purpose.${language}`);
     for (const section of REQUIRED_SECTIONS) list(manifest[section]?.[language], `${section}.${language}`);
   }
+  if (manifest.dataMigration?.included) {
+    list(manifest.dataMigration.migrations, "dataMigration.migrations");
+    text(manifest.dataMigration.rollback?.en, "dataMigration.rollback.en");
+    text(manifest.dataMigration.rollback?.zh, "dataMigration.rollback.zh");
+  }
   return manifest;
 }
 

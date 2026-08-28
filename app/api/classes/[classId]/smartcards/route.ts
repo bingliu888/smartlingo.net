@@ -29,7 +29,7 @@ async function courseAccess(request: Request, classId: string) {
   const member = await database.prepare(`SELECT 1 FROM smartlingo_language_class_members member
     LEFT JOIN smartlingo_course_subscriptions subscription ON subscription.class_id=member.class_id AND subscription.user_id=member.user_id
     WHERE member.class_id=? AND member.user_id=? AND member.status='active'
-      AND (member.role IN ('owner','teacher','coordinator') OR subscription.status='active'
+      AND (member.role IN ('owner','teacher','coordinator') OR (subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
         OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch())) LIMIT 1`)
     .bind(classId, user.id).first();
   if (!member) return { error: Response.json({ error: "Active course access is required" }, { status: 403 }) } as const;

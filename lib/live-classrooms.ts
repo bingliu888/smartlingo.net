@@ -67,7 +67,7 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
     LEFT JOIN smartlingo_language_class_members m ON m.class_id=c.id AND m.user_id=?
     LEFT JOIN smartlingo_course_subscriptions s ON s.class_id=c.id AND s.user_id=?
     WHERE linked.room_id=? AND (c.owner_user_id=? OR (m.status='active' AND
-      (s.status='active' OR (s.status='trialing' AND s.trial_ends_at>unixepoch())))) LIMIT 1`).bind(user.id,user.id,room.id,user.id).first();
+      ((s.status='active' AND s.current_period_ends_at>unixepoch()) OR (s.status='trialing' AND s.trial_ends_at>unixepoch())))) LIMIT 1`).bind(user.id,user.id,room.id,user.id).first();
   if(courseMember)return {allowed:true,admin:false,host,manager};
   const departmentMember=await getDatabase().prepare(`SELECT enrollment.id FROM smartlingo_department_classrooms mapping
     JOIN smartlingo_department_enrollments enrollment ON enrollment.department_id=mapping.department_id

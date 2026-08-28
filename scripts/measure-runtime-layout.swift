@@ -94,19 +94,34 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
          HTTPCookiePropertyKey("HttpOnly"): "TRUE",
        ]) {
       let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
-      cookieStore.setCookie(cookie) { [weak self] in
-        cookieStore.getAllCookies { cookies in
-          guard cookies.contains(where: {
-            $0.name == "smartlingo_session" && $0.value == sessionCookieValue && !$0.isSecure
-          }) else {
-            self?.fail("loopback layout session cookie was not stored as a non-secure cookie")
-            return
-          }
-          self?.loadCurrentPage()
-        }
-      }
+      storeSessionCookie(cookie, value: sessionCookieValue, cookieStore: cookieStore, remainingAttempts: 5)
     } else {
       loadCurrentPage()
+    }
+  }
+
+  private func storeSessionCookie(
+    _ cookie: HTTPCookie,
+    value: String,
+    cookieStore: WKHTTPCookieStore,
+    remainingAttempts: Int
+  ) {
+    cookieStore.setCookie(cookie) { [weak self] in
+      cookieStore.getAllCookies { cookies in
+        if cookies.contains(where: {
+          $0.name == "smartlingo_session" && $0.value == value && !$0.isSecure
+        }) {
+          DispatchQueue.main.async { self?.loadCurrentPage() }
+          return
+        }
+        guard remainingAttempts > 0 else {
+          self?.fail("loopback layout session cookie was not stored as a non-secure cookie")
+          return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
+          self?.storeSessionCookie(cookie, value: value, cookieStore: cookieStore, remainingAttempts: remainingAttempts - 1)
+        }
+      }
     }
   }
 

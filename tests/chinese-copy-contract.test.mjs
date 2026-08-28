@@ -16,7 +16,7 @@ test("Chinese shared controls and account notices remain localized", async () =>
   assert.match(interfaceLocale, /主导航/);
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(interfaceLocale, new RegExp(label));
   assert.match(interfaceLocale, /页脚导航/);
-  assert.match(interfaceLocale, /从第一天开口 · 人工智能导师 · 三级课程 · 首月免费/);
+  assert.match(interfaceLocale, /从第一天开口 · 人工智能导师 · 三级课程 · 九个固定期限套餐/);
   assert.match(language, /interfaceLanguages/);
   assert.match(account, /条未读消息/);
   assert.match(assistant, /打开智能助手/);
@@ -76,7 +76,7 @@ test("Chinese My Courses, catalog, pricing, and retired Admin UI are truthful", 
     source("app/[lang]/auth/[mode]/page.tsx"),
   ]);
 
-  for (const label of ["这里只显示您已订阅的课程", "选择课程", "第一个月免费", "Webinar 课程教室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
+  for (const label of ["这里只显示您已订阅的课程", "选择课程", "固定期限课程学习权利", "Webinar 课程教室", "Group Audio 练习室"]) assert.match(classes, new RegExp(label));
   assert.match(packages, /初期课程/);
   assert.match(packages, /中级课程/);
   assert.match(packages, /高级课程/);

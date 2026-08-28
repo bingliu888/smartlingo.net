@@ -1,5 +1,8 @@
 import { stripeRequest, runtimeValue, syncStripeCourseSubscription, type StripeSubscription } from "@/lib/stripe-course-subscription";
 import { markSupervisorPaymentStatus, syncStripeCollegeSupervisorLicense, type SupervisorCheckoutSession } from "@/lib/stripe-platform-subscription";
+import { markCoursePackagePaymentStatus, recordCoursePackagePurchase } from "@/lib/course-package-purchase";
+import { courseSubscriptionPackage, normalizeCourseDurationMonths, type SmartLingoPackageTier } from "@/lib/smartlingo-course-packages";
+import { isSmartLingoCommunityLanguage } from "@/lib/smartlingo-language-communities";
 
 function hex(bytes: ArrayBuffer) {
   return Array.from(new Uint8Array(bytes), value => value.toString(16).padStart(2, "0")).join("");
@@ -33,15 +36,32 @@ export async function POST(request: Request) {
   try {
     if(event.type==="charge.refunded"||event.type==="charge.dispute.created"){
       const object=event.data?.object as{payment_intent?:string}|undefined;
-      if(object?.payment_intent)await markSupervisorPaymentStatus(object.payment_intent,event.type==="charge.refunded"?"refunded":"disputed");
+      if(object?.payment_intent){const status=event.type==="charge.refunded"?"refunded":"disputed";await Promise.all([
+        markSupervisorPaymentStatus(object.payment_intent,status),markCoursePackagePaymentStatus(object.payment_intent,status),
+      ]);}
       return Response.json({received:true});
     }
     let subscription: StripeSubscription | null = null;
     if (event.type === "checkout.session.completed") {
-      const object = event.data?.object as (SupervisorCheckoutSession & { subscription?: string }) | undefined;
+      const object = event.data?.object as (SupervisorCheckoutSession & { subscription?: string;payment_intent?:string|{id?:string};amount_total?:number;currency?:string;
+        metadata?:{user_id?:string;tier?:string;scope?:string;class_id?:string;package_tier?:string;target_language?:string;duration_months?:string;package_id?:string;department_id?:string} }) | undefined;
       if (object?.mode === "payment" && object.metadata?.scope === "college_supervisor" && object.metadata.user_id) {
         await syncStripeCollegeSupervisorLicense(object.metadata.user_id, object);
         return Response.json({ received: true });
+      }
+      if(object?.mode==="payment"&&object.status==="complete"&&object.payment_status==="paid"&&object.metadata?.scope==="course_package"
+        &&object.metadata.user_id&&object.metadata.class_id){
+        const tier=object.metadata.package_tier as SmartLingoPackageTier;
+        const months=normalizeCourseDurationMonths(object.metadata.duration_months);
+        const language=String(object.metadata.target_language||"");
+        const selectedPackage=months&&["basic","intermediate","advanced"].includes(tier)?courseSubscriptionPackage(tier,months):null;
+        const paymentIntentId=typeof object.payment_intent==="string"?object.payment_intent:object.payment_intent?.id||"";
+        if(!selectedPackage||!isSmartLingoCommunityLanguage(language)||object.metadata.package_id!==selectedPackage.id
+          ||object.amount_total!==selectedPackage.priceCents||String(object.currency||"").toLowerCase()!=="usd"||!paymentIntentId)throw new Error("STRIPE_SCOPE_MISMATCH");
+        await recordCoursePackagePurchase({userId:object.metadata.user_id,classId:object.metadata.class_id,targetLanguage:language,
+          packageTier:tier,durationMonths:months!,priceCents:selectedPackage.priceCents,provider:"stripe",providerReference:paymentIntentId,
+          departmentId:object.metadata.department_id});
+        return Response.json({received:true});
       }
       if (object?.subscription) subscription = await stripeRequest<StripeSubscription>(`/subscriptions/${encodeURIComponent(object.subscription)}`);
     } else if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(String(event.type))) {

@@ -12,9 +12,7 @@ type Area = "everyday" | "courses" | "ai";
 type Choice = { id: string; titleZh: string; titleEn: string; bodyZh: string; bodyEn: string; image?: string; icon?: string };
 
 const COURSE_CHOICES: Choice[] = [
-  { id: "basic", icon: "A1", titleZh: "初期课程", titleEn: "Beginner", bodyZh: "核心词汇、发音、听力与引导口语。", bodyEn: "Core vocabulary, pronunciation, listening, and guided speaking." },
-  { id: "intermediate", icon: "A2", titleZh: "中级课程", titleEn: "Intermediate", bodyZh: "增加生活对话与实用写作。", bodyEn: "Adds everyday dialogue and practical writing." },
-  { id: "advanced", icon: "B1+", titleZh: "高级课程", titleEn: "Advanced", bodyZh: "增加发音修正、演讲与深度表达。", bodyEn: "Adds pronunciation refinement, speeches, and independent expression." },
+  { id: "packages", icon: "9", titleZh: "九个固定期限套餐", titleEn: "Nine fixed-term packages", bodyZh: "先选择学习语言，再选初期、中级或高级以及 3、6、12 个月。", bodyEn: "Choose the learning language first, then a level and 3, 6, or 12 months." },
 ];
 const AI_CHOICES: Choice[] = [
   { id: "conversation", icon: "●", titleZh: "生活对话", titleEn: "Everyday conversation", bodyZh: "围绕真实场景问答与角色练习。", bodyEn: "Questions and role-play around real situations." },
@@ -24,17 +22,17 @@ const AI_CHOICES: Choice[] = [
 
 export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
   const zh = lang === "zh";
-  const [selected, setSelected] = useState<Partial<Record<Area, string>>>({});
+  const [selected, setSelected] = useState<Partial<Record<Area, string>>>({courses:"packages"});
   const rails = useRef<Partial<Record<Area, HTMLDivElement | null>>>({});
   const sections: { area: Area; kicker: string; titleZh: string; titleEn: string; introZh: string; introEn: string; choices: Choice[] }[] = [
     { area: "everyday", kicker: "REAL LIFE", titleZh: "生活口语", titleEn: "Everyday speaking", introZh: "先选生活场景，再选想练习的语言。", introEn: "Choose a situation first, then the language to practice.", choices: SMARTLINGO_EVERYDAY_SCENARIOS.map(item => ({ id: item.id, titleZh: item.nameZh, titleEn: item.nameEn, bodyZh: item.goalZh, bodyEn: item.goalEn, image: item.image, icon: item.icon })) },
-    { area: "courses", kicker: "COURSES", titleZh: "选择课程", titleEn: "Choose a course", introZh: "先选课程等级，再选语言查看并加入。", introEn: "Choose a course level, then a language to view and join.", choices: COURSE_CHOICES },
+    { area: "courses", kicker: "COURSES", titleZh: "选择课程", titleEn: "Choose a course", introZh: "先选择学习语言，再在下一页选择课程等级与期限。", introEn: "Choose the learning language first; choose the level and access period on the next page.", choices: COURSE_CHOICES },
     { area: "ai", kicker: "AI", titleZh: "咨询AI", titleEn: "Ask AI", introZh: "先选练习目标，再告诉 AI 您想使用的语言。", introEn: "Choose a practice goal, then the language for your AI session.", choices: AI_CHOICES },
   ];
 
   function href(area: Area, choice: string, language: string) {
     if (area === "everyday") return `/${lang}/play/everyday?language=${language}&scene=${choice}`;
-    if (area === "courses") return `/${lang}/classes/course_${language}_${choice}`;
+    if (area === "courses") return `/${lang}/programs/${language}`;
     return `/${lang}/assistant?language=${language}&mode=${choice}`;
   }
 

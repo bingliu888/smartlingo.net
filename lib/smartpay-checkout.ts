@@ -2,7 +2,7 @@ import type { CryptoSubscriptionPlan } from "./crypto-subscription";
 import type { CryptoPaymentSetting } from "./crypto-settings";
 
 export type SmartPayCheckoutOption = {
-  key: string; settingId: string; plan: CryptoSubscriptionPlan; months: 12; languageCode: string; classId: string;
+  key: string; settingId: string; plan: CryptoSubscriptionPlan; months: 3; languageCode: string; classId: string;
   chainId: number; chainName: string; contractAddress: string; tokenAddress: string; tokenSymbol: string;
   tokenDecimals: number; tokenAmountAtomic: string; tokenAmount: string; mainId: string; secondId: string; minConfirmations: number;
   smartPay3Offer: {

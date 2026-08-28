@@ -90,7 +90,7 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
       </div>
 
       <div className="member-grid membership-tier-grid">
-        <article className={plan === (zh ? "免费方案" : "Free") ? "active" : ""}><small>{zh ? "课程预览" : "COURSE PREVIEW"}</small><strong>{zh ? "选择课程" : "Choose course"}</strong><p>{zh ? "浏览十二种语言与三级固定月费课程；每门课程首月免费。" : "Browse twelve languages and three fixed monthly levels; every course starts with a free month."}</p></article>
+        <article className={plan === (zh ? "免费方案" : "Free") ? "active" : ""}><small>{zh ? "课程预览" : "COURSE PREVIEW"}</small><strong>{zh ? "选择课程" : "Choose course"}</strong><p>{zh ? "先选择学习语言，再浏览三级课程的 3、6、12 个月固定期限套餐。" : "Choose a learning language first, then browse 3, 6, and 12-month fixed-term packages across three course levels."}</p></article>
         <article className={plan === (zh ? "进阶方案" : "Plus") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "进阶方案" : "Plus"}</strong><p>{zh ? "更多复习、实时语音额度和个人进度分析。" : "Expanded review, live-audio allowance, and personal progress insights."}</p></article>
       </div>
 

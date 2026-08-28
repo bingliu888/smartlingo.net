@@ -3,8 +3,17 @@ import vm from "node:vm";
 
 const sourcePath = new URL("../app/[lang]/page.tsx", import.meta.url);
 const outputPath = new URL("../lib/home-interface-translations.generated.ts", import.meta.url);
+const extraSourcePaths = [
+  "../app/[lang]/programs/[language]/page.tsx",
+  "../components/CoursePaymentActions.tsx",
+  "../components/ClassStudio.tsx",
+  "../components/CardCheckoutComplete.tsx",
+  "../components/CryptoCheckout.tsx",
+].map(value => new URL(value, import.meta.url));
 const requested = process.argv.slice(2);
-const targets = requested.length ? requested : ["ja", "ko", "es", "fr", "de", "ru", "it", "pt", "ar", "hi"];
+const normalizeOnly = requested.includes("--normalize-only");
+const requestedLocales = requested.filter(value => value !== "--normalize-only");
+const targets = normalizeOnly ? [] : requestedLocales.length ? requestedLocales : ["ja", "ko", "es", "fr", "de", "ru", "it", "pt", "ar", "hi"];
 
 const source = await fs.readFile(sourcePath, "utf8");
 const start = source.indexOf("const copy = ") + "const copy = ".length;
@@ -20,6 +29,15 @@ function collect(value) {
   else if (value && typeof value === "object") Object.values(value).forEach(collect);
 }
 collect(copy.en);
+for (const path of extraSourcePaths) {
+  const extraSource = await fs.readFile(path, "utf8");
+  for (const pattern of [
+    /interfaceText\(\s*[^,]+,\s*"((?:\\.|[^"\\])*)"\s*,/g,
+    /\b(?:t|tx)\(\s*"((?:\\.|[^"\\])*)"\s*,/g,
+  ]) {
+    for (const match of extraSource.matchAll(pattern)) strings.push(JSON.parse(`"${match[1]}"`));
+  }
+}
 const unique = [...new Set(strings)].filter(value => !/^\d+$/.test(value));
 
 async function translateBatch(batch, target) {
@@ -50,6 +68,17 @@ async function translateBatchWithRetry(batch, target) {
   }
 }
 
+function restorePlaceholders(source, translated) {
+  const expected = source.match(/\{[a-z]+\}/g) ?? [];
+  if (!expected.length) return translated;
+  let restored = translated;
+  for (const placeholder of expected) {
+    if (restored.includes(placeholder)) continue;
+    restored = restored.replace(/\{[^{}]+\}/, placeholder);
+  }
+  return restored;
+}
+
 function batches(values, maximumCharacters = 420) {
   const result = []; let current = []; let size = 0;
   for (const value of values) {
@@ -67,11 +96,20 @@ try {
   if (json) existing = JSON.parse(json);
 } catch {}
 
+for (const translations of Object.values(existing)) {
+  for (const [english, translated] of Object.entries(translations)) {
+    translations[english] = restorePlaceholders(english, translated);
+  }
+}
+if (normalizeOnly) process.stdout.write("Normalized translation placeholders\n");
+
 for (const target of targets) {
-  const translated = {};
+  const translated = { ...(existing[target] || {}) };
   for (const batch of batches(unique)) {
     const results = await translateBatchWithRetry(batch, target);
-    batch.forEach((value, index) => { translated[value] = results[index]; });
+    batch.forEach((value, index) => {
+      translated[value] = restorePlaceholders(value, results[index]);
+    });
     await wait(350);
   }
   existing[target] = translated;

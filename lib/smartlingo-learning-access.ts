@@ -55,7 +55,7 @@ export async function requireOfficialClassMembership(
       ON subscription.class_id=c.id AND subscription.user_id=member.user_id
     WHERE c.id = ? AND c.class_kind IN ('official_language','official_course')
       AND c.status = 'open' AND c.visibility = 'public'
-      AND (c.class_kind='official_language' OR subscription.status='active'
+      AND (c.class_kind='official_language' OR (subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
         OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch()))
       AND path.status = 'published'
     LIMIT 1`).bind(user.id, classId).first<OfficialClassAccess>();

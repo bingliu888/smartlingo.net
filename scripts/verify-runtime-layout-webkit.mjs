@@ -632,6 +632,21 @@ async function run(command, args, options = {}) {
   });
 }
 
+async function runWebKitBatch(executable, configPath) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await run(executable, [configPath]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      const transientCookieStoreFailure = message.includes("loopback layout session cookie was not stored as a non-secure cookie")
+        && message.includes("Connection Invalid error for service");
+      if (!transientCookieStoreFailure || attempt === 2) throw error;
+      await new Promise(resolvePromise => setTimeout(resolvePromise, 1_000 * (attempt + 1)));
+    }
+  }
+  throw new Error("runtime-layout WebKit batch retry exhausted");
+}
+
 export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
   if (options.sessionCookieFile) options.sessionCookie = (await readFile(options.sessionCookieFile, "utf8")).trim();
@@ -698,8 +713,9 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
         settleMilliseconds: 700,
         sessionCookieValue: options.sessionCookie,
       }));
-      const { stdout } = await run(executable, [configPath]);
+      const { stdout } = await runWebKitBatch(executable, configPath);
       reports.push(...stdout.split("\n").filter(line => line.startsWith("{")).map(line => JSON.parse(line)));
+      await new Promise(resolvePromise => setTimeout(resolvePromise, 500));
     }
     const expectedCount = selectedRoutes.length * SMARTLINGO_LAYOUT_LANGUAGES.length * SMARTLINGO_VIEWPORTS.length;
     if (reports.length !== expectedCount) fail(`expected ${expectedCount} WebKit reports, received ${reports.length}`);

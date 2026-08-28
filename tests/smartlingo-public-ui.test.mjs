@@ -34,8 +34,8 @@ test("SmartLingo branding exposes the four primary learning choices", async () =
   assert.match(layout, /"smartlingo\.net"/);
   assert.match(layout, /smartlingo-language-community-1600\.png/);
   assert.match(layout, /<html lang="zh-CN"/);
-  assert.match(languageLayout, /十二种语言、三级固定月费课程、首月免费/);
-  assert.match(languageLayout, /twelve languages with three fixed monthly course levels/);
+  assert.match(languageLayout, /十二种语言、三级课程、九个固定期限套餐/);
+  assert.match(languageLayout, /twelve languages with three course levels, nine fixed-term packages/);
   assert.doesNotMatch(`${header}\n${footer}\n${layout}`, /SmartAICert|SmartCert\.pro|BingAcademy certificate/i);
 });
 
@@ -80,7 +80,7 @@ test("member-led courses and commerce follow the approved boundaries", async () 
   assert.doesNotMatch(joined, /开班权限从黄金会员开始|铂金会员|管理员签发的授权码|license key|PayPal|BACC/);
 });
 
-test("course activation starts with a free month and no immediate charge", async () => {
+test("course purchase presents nine fixed-term packages with no automatic renewal", async () => {
   const [home, pricing, programs, terms, refund] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/pricing/page.tsx"),
@@ -90,12 +90,16 @@ test("course activation starts with a free month and no immediate charge", async
   ]);
   const joined = [home, pricing, programs, terms, refund].join("\n");
 
-  assert.match(home, /30 天后按固定月费续订/);
+  assert.match(home, /九个套餐，不自动续费/);
+  assert.match(home, /初期 · 30 \/ 50 \/ 80 美元/);
+  assert.match(home, /中级 · 60 \/ 100 \/ 160 美元/);
+  assert.match(home, /高级 · 120 \/ 200 \/ 320 美元/);
   assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
-  assert.match(home, /第一个月免费/);
+  assert.match(programs, /LearningPathPlanner/);
+  assert.match(terms, /一次性支付的 3、6 或 12 个月套餐/);
   assert.match(terms, /付款启用条件/);
-  assert.match(refund, /真实付款保持关闭/);
-  assert.doesNotMatch(joined, /当前已启用真实收费|charged:\s*true/);
+  assert.match(refund, /不会自动续费/);
+  assert.doesNotMatch(joined, /第一个月免费|30 天后按固定月费续订|first month is free/);
 });
 
 test("privacy, terms, and refund policy remain visibly labeled legal drafts", async () => {
@@ -112,7 +116,7 @@ test("privacy, terms, and refund policy remain visibly labeled legal drafts", as
   assert.match(terms, /不是官方语言考试/);
   assert.match(privacy, /语音与人工智能训练/);
   assert.match(privacy, /会员创建课程的购买与班主收款不产生介绍人奖励/);
-  assert.match(refund, /退款必须同步冲正使用权和课程分账/);
+  assert.match(refund, /退款必须同步冲正固定期限使用权和课程分账/);
 });
 
 test("public assets are local and the responsive system contains text at desktop, tablet, and phone widths", async () => {

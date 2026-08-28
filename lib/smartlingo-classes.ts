@@ -1,7 +1,7 @@
 /**
  * Small, side-effect-free sanitizers shared by the language-class APIs.
  *
- * Course eligibility and fixed monthly pricing are server-authoritative.
+ * Course eligibility and fixed-term package pricing are server-authoritative.
  * MVP members may subscribe to platform courses but cannot create courses.
  */
 export function cleanText(value: unknown, maximum: number) {

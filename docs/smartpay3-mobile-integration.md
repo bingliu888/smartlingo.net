@@ -1,6 +1,6 @@
 # SmartPay3 mobile price reads and RefID checkout
 
-The site database is the product catalog: it identifies the subscription term, token metadata, and the current USDT/GLC mix percentage. The deployed SmartPay3 contract is the payment authority. A checkout must call `paymentRule(...)` immediately before displaying a payable option and again before preparing the wallet transaction.
+The site database is the product catalog: it identifies the three-month course package, learning language, token metadata, and the current USDT/GLC mix percentage. The deployed SmartPay3 contract is the payment authority. A checkout must call `paymentRule(...)` immediately before displaying a payable option and again before preparing the wallet transaction. SmartPay is available only for the three-month Beginner, Intermediate, and Advanced packages on Polygon; six- and twelve-month packages use card payment.
 
 The function is a free `eth_call`:
 
@@ -53,8 +53,8 @@ async function readSubscriptionPrice(input: {
   smartPay3: Address;
   primaryToken: Address;
   secondaryToken?: Address;
-  mainId: "smartlingo_course_annual";
-  secondId?: string;
+  mainId: "smartlingo_course_basic_3m" | "smartlingo_course_intermediate_3m" | "smartlingo_course_advanced_3m";
+  secondId: "zh" | "en" | "es" | "ja" | "ko" | "fr" | "de" | "ru" | "it" | "pt" | "ar" | "hi";
   primaryDecimals: number;
   secondaryDecimals?: number;
 }) {
@@ -67,7 +67,7 @@ async function readSubscriptionPrice(input: {
         input.primaryToken,
         input.secondaryToken ?? ZERO,
         input.mainId,
-        input.secondId ?? ""
+        input.secondId
       ]
     });
 
@@ -199,8 +199,8 @@ final rule = await readSmartPay3Rule(
   smartPay3Address: smartPay3Address,
   primaryTokenAddress: polygonUsdtAddress,
   secondaryTokenAddress: polygonGlcAddress,
-  mainId: 'smartlingo_course_annual',
-  secondId: 'course_es_basic',
+  mainId: 'smartlingo_course_basic_3m',
+  secondId: 'es',
 );
 
 if (!rule.enabled || rule.primaryAmount == BigInt.zero) {

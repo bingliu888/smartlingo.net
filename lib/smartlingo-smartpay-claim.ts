@@ -5,8 +5,11 @@ import { cryptoPaymentSettingById } from "./crypto-payments";
 import { currentSmartPayCheckoutOption } from "./smartpay-checkout-server";
 import { ensureSmartPayRefId, normalizeSmartPayRefId } from "./smartpay-refid";
 import { smartPay3TransactionById, verifySmartPay3Identity } from "./smartpay3-server";
+import { cryptoSubscriptionPlanForIds, SMARTLINGO_CRYPTO_MONTHS } from "./crypto-subscription";
+import { courseSubscriptionPackage, fixedCourseId } from "./smartlingo-course-packages";
+import { isSmartLingoCommunityLanguage } from "./smartlingo-language-communities";
+import { recordCoursePackagePurchase } from "./course-package-purchase";
 
-const YEAR_SECONDS = 365 * 24 * 60 * 60;
 const sameAddress = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
 export async function smartPayUserIdentity(userId: string) {
@@ -45,7 +48,10 @@ export async function claimSmartLingoCoursePayment(input: {
   if (!record.timestamp || !sameAddress(record.wallet, identity.wallet) || normalizeSmartPayRefId(record.refId) !== normalizeSmartPayRefId(identity.refId)) {
     throw new Error("PAYMENT_RECIPIENT_MISMATCH");
   }
-  const classId = record.secondId;
+  const languageCode = record.secondId;
+  const plan = cryptoSubscriptionPlanForIds(record.mainId, languageCode);
+  if (!plan || !isSmartLingoCommunityLanguage(languageCode)) throw new Error("PAYMENT_PACKAGE_MISMATCH");
+  const classId = fixedCourseId(languageCode, plan);
   if (input.classId && input.classId !== classId) throw new Error("PAYMENT_COURSE_MISMATCH");
   const option = await currentSmartPayCheckoutOption(setting.id, classId);
   if (!option || option.mainId !== record.mainId || option.secondId !== record.secondId) throw new Error("PAYMENT_RULE_MISMATCH");
@@ -56,30 +62,34 @@ export async function claimSmartLingoCoursePayment(input: {
   const mixed = actualPrimary === BigInt(offer.primaryTokenAmountAtomic) && actualSecondary === BigInt(offer.secondaryTokenAmountAtomic);
   const fullPrimary = actualPrimary === BigInt(option.tokenAmountAtomic) && actualSecondary === 0n;
   if (!(mixed || fullPrimary)) throw new Error("PAYMENT_AMOUNT_MISMATCH");
-  const course = await database.prepare(`SELECT target_language AS languageCode,package_tier AS packageTier,price_cents AS monthlyPriceCents
+  const course = await database.prepare(`SELECT target_language AS languageCode,package_tier AS packageTier
     FROM smartlingo_language_classes WHERE id=? AND class_kind='official_course' AND status='open' LIMIT 1`)
-    .bind(classId).first<{ languageCode: string; packageTier: "basic"|"intermediate"|"advanced"; monthlyPriceCents: number }>();
+    .bind(classId).first<{ languageCode: string; packageTier: "basic"|"intermediate"|"advanced" }>();
   if (!course || course.packageTier !== option.plan || course.languageCode !== option.languageCode) throw new Error("COURSE_UNAVAILABLE");
-  const current = await database.prepare(`SELECT trial_ends_at AS trialEnds,current_period_ends_at AS periodEnds
-    FROM smartlingo_course_subscriptions WHERE class_id=? AND user_id=? LIMIT 1`).bind(classId,targetUserId)
-    .first<{ trialEnds: number; periodEnds: number | null }>();
+  const selectedPackage = courseSubscriptionPackage(course.packageTier, SMARTLINGO_CRYPTO_MONTHS);
+  if (!selectedPackage) throw new Error("PAYMENT_PACKAGE_MISMATCH");
   const now = Math.floor(Date.now()/1000);
-  const periodStart = Math.max(now, current?.trialEnds || 0, current?.periodEnds || 0);
-  const periodEnd = periodStart + YEAR_SECONDS;
+  const purchase = await recordCoursePackagePurchase({
+    userId: targetUserId,
+    classId,
+    targetLanguage: course.languageCode,
+    packageTier: course.packageTier,
+    durationMonths: selectedPackage.months,
+    priceCents: selectedPackage.priceCents,
+    provider: "smartpay3",
+    providerReference: `${setting.smartPay3Contract.toLowerCase()}:${transactionId}`,
+    paidAt: now,
+  });
   const claimId = crypto.randomUUID();
-  await database.batch([
-    database.prepare(`INSERT INTO smartpay3_payment_claims
-      (id,user_id,setting_id,contract_address,transaction_id,payer_wallet,ref_id,main_id,second_id,language_code,package_tier,class_id,primary_token_symbol,primary_token_address,primary_atomic_amount,secondary_token_symbol,secondary_token_address,secondary_atomic_amount,entitlement_status,current_period_ends_at,verified_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'synced',?,?)`)
-      .bind(claimId,targetUserId,setting.id,setting.smartPay3Contract,transactionId,identity.wallet,identity.refId,record.mainId,record.secondId,course.languageCode,course.packageTier,classId,setting.tokenSymbol,record.primaryTokenAddress,record.primaryTokenAmount,actualSecondary>0n?offer.secondaryTokenSymbol:null,actualSecondary>0n?record.secondaryTokenAddress:null,record.secondaryTokenAmount,periodEnd,now),
-    database.prepare(`INSERT INTO smartlingo_course_subscriptions
-      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,created_at,updated_at)
-      VALUES(?,?,?,'active',?,?,?,?,?,?,?)
-      ON CONFLICT(class_id,user_id) DO UPDATE SET status='active',monthly_price_cents=excluded.monthly_price_cents,current_period_ends_at=excluded.current_period_ends_at,provider_subscription_id=excluded.provider_subscription_id,updated_at=excluded.updated_at`)
-      .bind(crypto.randomUUID(),classId,targetUserId,course.monthlyPriceCents,now,now,periodEnd,`smartpay3:${setting.smartPay3Contract}:${transactionId}`,now,now),
-    database.prepare(`INSERT INTO smartlingo_language_class_members(id,class_id,user_id,role,status,joined_at,updated_at)
-      VALUES(?,?,?,'student','active',?,?) ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status='active',updated_at=excluded.updated_at`)
-      .bind(crypto.randomUUID(),classId,targetUserId,now,now),
-  ]);
-  return { verified: true, alreadyRecorded: false, classId, currentPeriodStart: periodStart, currentPeriodEnd: periodEnd, paymentId: transactionId };
+  await database.prepare(`INSERT INTO smartpay3_payment_claims
+    (id,user_id,setting_id,contract_address,transaction_id,payer_wallet,ref_id,main_id,second_id,language_code,package_tier,class_id,
+     primary_token_symbol,primary_token_address,primary_atomic_amount,secondary_token_symbol,secondary_token_address,secondary_atomic_amount,
+     entitlement_status,current_period_ends_at,verified_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'synced',?,?)`)
+    .bind(claimId,targetUserId,setting.id,setting.smartPay3Contract,transactionId,identity.wallet,identity.refId,record.mainId,record.secondId,
+      course.languageCode,course.packageTier,classId,setting.tokenSymbol,record.primaryTokenAddress,record.primaryTokenAmount,
+      actualSecondary>0n?offer.secondaryTokenSymbol:null,actualSecondary>0n?record.secondaryTokenAddress:null,record.secondaryTokenAmount,
+      purchase.accessEndsAt,now).run();
+  return { verified: true, alreadyRecorded: false, classId, languageCode: course.languageCode, packageTier: course.packageTier,
+    months: selectedPackage.months, currentPeriodStart: purchase.accessStartsAt, currentPeriodEnd: purchase.accessEndsAt, paymentId: transactionId };
 }

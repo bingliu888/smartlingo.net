@@ -85,7 +85,8 @@ test("supervisor tiers, departments, free products, webinar audio, and 70/30 che
   assert.match(departments,/class_kind='official_course'/);assert.match(departments,/package_tier IN \('basic','intermediate','advanced'\)/);
   assert.match(departments,/'private','audio','webinar'/);assert.match(manager,/sourceLanguage/);assert.match(manager,/targetLanguage/);
   for(const product of ["Today’s Sprint","Everyday Speaking","SmartCard","SmartCard Challenge"])assert.match(detail,new RegExp(product));
-  assert.match(checkout,/subscription_data\[application_fee_percent\]","30"/);assert.match(checkout,/subscription_data\[transfer_data\]\[destination\]/);
+  assert.match(checkout,/payment_intent_data\[application_fee_amount\]/);assert.match(checkout,/payment_intent_data\[transfer_data\]\[destination\]/);
+  assert.match(checkout,/Math\.floor\(selectedPackage\.priceCents\*7_000\/10_000\)/);
   assert.match(subscription,/smartlingo_department_enrollments/);assert.match(room,/departmentWebinarLocked/);
   assert.match(migration,/owner_share_cents=\(gross_cents\*7000\)\/10000/);
 });

@@ -37,6 +37,7 @@ test("account supports setting and updating a Clerk password", async () => {
   assert.match(passwordInput, /aria-pressed=\{revealed\}/);
   assert.match(passwordInput, /aria-label=\{view\.label\}/);
   assert.match(passwordInput, /<input[^>]+\/>\s*<button/s);
+  assert.match(passwordInput, /data-layout-allow-overlap="intentional"/);
   assert.match(form, /At least 8 characters/);
   assert.match(form, /至少 8 个字符/);
   assert.doesNotMatch(form, /form_password_pwned|已知数据泄露|12 个字符/);

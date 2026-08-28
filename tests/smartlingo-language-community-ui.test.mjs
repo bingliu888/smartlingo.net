@@ -76,7 +76,7 @@ test("home feature buttons and Choose course use canonical destination pages", a
   assert.match(choices, /先选择想做什么，再选择语言/);
   assert.match(choices, /Choose what to do, then choose a language/);
   assert.match(choices, /SMARTLINGO_LANGUAGE_COMMUNITIES\.map/);
-  assert.match(choices, /course_\$\{language\}_\$\{choice\}/);
+  assert.match(choices, /\/programs\/\$\{language\}/);
   assert.doesNotMatch(choices, /\/enroll|\/placement|auth\/login\?returnTo=/);
   assert.match(programs, /<LearningPathPlanner lang=\{locale\} catalogOnly\/>/);
   assert.match(programs, /interfaceText\(locale, "Build usable vocabulary/);
@@ -88,9 +88,11 @@ test("home feature buttons and Choose course use canonical destination pages", a
   assert.match(planner, /joined[\s\S]*?\/classes\/\$\{encodeURIComponent\(joined\.id\)\}/);
   assert.match(planner, /\/programs\/\$\{encodeURIComponent\(language\)\}/);
   assert.match(detail, /SMARTLINGO_COURSE_PACKAGES/);
-  assert.match(detail, /首月免费/);
-  assert.match(detail, /fixedCourseId\(language, course\.tier\)/);
-  assert.match(detail, /interfaceText\(locale, "Choose your course level", "选择课程等级"\)/);
+  assert.match(detail, /SMARTLINGO_COURSE_DURATIONS/);
+  assert.match(detail, /9 个固定期限套餐/);
+  assert.match(detail, /Polygon USDT 和 GLC 仅用于三个月套餐/);
+  assert.match(detail, /fixedCourseId\(language,course\.tier\)/);
+  assert.match(detail, /interfaceText\(locale, "Choose a level and access period", "选择等级和学习期限"\)/);
   assert.match(detail, /course\.features\.en\.map/);
   assert.match(detail, /<h1>\{item\.nativeName\}<\/h1>/);
   assert.doesNotMatch(detail, /lang === "zh"/);

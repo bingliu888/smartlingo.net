@@ -19,7 +19,7 @@ export function PasswordInput({ label, lang, hint, id, ...inputProps }: Password
 
   return <div className={styles.group}>
     <label htmlFor={fieldId}>{label}</label>
-    <span className={styles.field}>
+    <span className={styles.field} data-layout-allow-overlap="intentional">
       <input {...inputProps} id={fieldId} type={view.type} aria-describedby={hintId || inputProps["aria-describedby"]} />
       <button
         type="button"

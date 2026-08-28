@@ -54,11 +54,12 @@ test("renders the SmartLingo language-learning foundation", async () => {
   }
   for (const skill of ["词汇", "阅读", "写作", "听力", "对话"]) assert.match(html, new RegExp(skill));
   assert.match(html, /三级课程/);
-  assert.match(html, /初期 · 每月 20 美元/);
-  assert.match(html, /高级 · 每月 300 美元/);
+  assert.match(html, /初期 · 30 \/ 50 \/ 80 美元/);
+  assert.match(html, /中级 · 60 \/ 100 \/ 160 美元/);
+  assert.match(html, /高级 · 120 \/ 200 \/ 320 美元/);
   assert.match(html, /三类积分独立记账、可追溯/);
-  assert.match(html, /SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
-  assert.match(html, /第一个月免费/);
+  assert.match(html, /SmartCard 挑战积分只能抵符合条件的 SmartLingo 课程套餐/);
+  assert.match(html, /九个套餐，不自动续费/);
   assert.match(html, /href="\/zh\/programs"[^>]*>立即行动(?:<!-- -->)? →<\/a>/);
   assert.match(html, /社区/);
   assert.match(html, /href="\/zh\/community"/);
@@ -138,8 +139,8 @@ test("renders the bilingual Clerk login shell with inert bindings", async () => 
   workerUrl.searchParams.set("test", `clerk-login-shell-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
   const expected = new Map([
-    ["/zh/auth/login", ["登录或加入", "电子邮箱", "发送安全验证码", "改用密码"]],
-    ["/en/auth/login", ["Sign in or join", "Email address", "Send secure code", "Use password instead"]],
+    ["/zh/auth/login", ["登录或加入", "电子邮箱", "使用密码继续", "改用邮箱验证码"]],
+    ["/en/auth/login", ["Sign in or join", "Email address", "Continue with password", "Use an email code instead"]],
   ]);
 
   for (const [pathname, copy] of expected) {

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SMARTLINGO_COURSE_PACKAGES, type SmartLingoPackageTier } from "../lib/smartlingo-course-packages";
+import { SMARTLINGO_COURSE_PACKAGES, courseSubscriptionPackage, type SmartLingoCourseDurationMonths, type SmartLingoPackageTier } from "../lib/smartlingo-course-packages";
+import { interfaceText } from "../lib/interface-locale";
+import type { SiteLanguage } from "../lib/site-locale";
 import { CourseClassroomTile } from "./CourseClassroomTile";
 import { CoursePaymentActions } from "./CoursePaymentActions";
 import { CourseStudentManager } from "./CourseStudentManager";
 
-type Lang = "en" | "zh";
+type Lang = SiteLanguage;
 type LanguageClass = {
   id: string; ownerName: string; pathTitleEn: string; pathTitleZh: string;
   title: string; summary: string; targetLanguage: string; level: string; schedule: string;
@@ -32,8 +34,8 @@ const COPY = {
     intro: "Only courses you have subscribed to appear here. Use Choose courses whenever you want to explore another language or level.",
     signIn: "Sign in to view courses", joinedTitle: "My courses", noJoined: "You have not started a course yet.",
     chooseCourses: "Choose courses", joined: "Subscribed",
-    open: "Open course", learners: "learners", firstMonth: "First month free", perMonth: "per month",
-    back: "All courses", courseAdmin: "SmartLingo course", schedule: "Schedule", price: "Monthly price",
+    open: "Open course", learners: "learners", packageFrom: "Packages from", months: "months",
+    back: "All courses", courseAdmin: "SmartLingo course", schedule: "Schedule", price: "Selected package",
     package: "Course package", classroom: "Two course rooms", classroomCopy: "Use the Webinar teaching room for administrator and co-host lessons, and the free group-audio practice room for student speaking discussion.",
     fiveSkillsTitle: "Learn five skills", fiveSkillsBody: "Open Vocabulary, Speaking, Listening, Writing, or Quiz for this course directly—no language or placement selection required.",
     dailyLearning: "Continue guided learning", calendar: "Learning calendar",
@@ -44,8 +46,8 @@ const COPY = {
     intro: "这里只显示您已订阅的课程。如需学习其他语言或等级，可随时前往“选择课程”。",
     signIn: "登录后查看课程", joinedTitle: "我的课程", noJoined: "您尚未开始任何课程。",
     chooseCourses: "选择课程", joined: "已订阅",
-    open: "进入课程", learners: "位学员", firstMonth: "第一个月免费", perMonth: "每月",
-    back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "每月价格",
+    open: "进入课程", learners: "位学员", packageFrom: "套餐起价", months: "个月",
+    back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "已选套餐",
     package: "课程内容", classroom: "两个课程教室", classroomCopy: "管理员和协办主持在 Webinar 课程教室授课；学员可在免费的 Group Audio 练习室讨论和练习口语。",
     fiveSkillsTitle: "学习五项技能", fiveSkillsBody: "直接进入本课程的词汇、口语、听力、写作或测验，无需再次选择语言或参加分级测试。",
     dailyLearning: "继续综合学习", calendar: "学习日历",
@@ -57,8 +59,9 @@ function money(cents: number, currency = "USD") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100);
 }
 
-export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initialDepartmentId }: { lang: Lang; initialClassId?: string; initialInviteCode?: string; initialTargetLanguage?: string; initialDepartmentId?: string }) {
-  const t = COPY[lang];
+export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initialDurationMonths=3, initialDepartmentId }: { lang: Lang; initialClassId?: string; initialInviteCode?: string; initialTargetLanguage?: string; initialDurationMonths?: SmartLingoCourseDurationMonths; initialDepartmentId?: string }) {
+  const t = COPY[lang === "zh" ? "zh" : "en"];
+  const tx=(english:string,chinese:string)=>interfaceText(lang,english,chinese);
   const [context, setContext] = useState<Context | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -106,8 +109,8 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
     return <article className="official" key={item.id}>
       <div className="class-card-meta"><span>{item.targetLanguage.toUpperCase()} · {item.level}</span><b>{t.joined}</b></div>
       <h3>{item.title}</h3><p>{item.summary}</p>
-      {plan && <ul>{plan.features[lang].map(feature => <li key={feature}>✓ {feature}</li>)}</ul>}
-      <small>{money(item.priceCents, item.currency)} {t.perMonth} · {t.firstMonth} · {item.enrollmentCount}/{item.capacity} {t.learners}</small>
+      {plan && <ul>{plan.features.en.map((feature,index) => <li key={feature}>✓ {tx(feature,plan.features.zh[index])}</li>)}</ul>}
+      <small>{t.packageFrom} {money(plan?.startingPriceCents || item.priceCents, item.currency)} / 3 {t.months} · {item.enrollmentCount}/{item.capacity} {t.learners}</small>
       <Link className="secondary-button" href={`/${lang}/classes/${item.id}`}>{t.open} →</Link>
     </article>;
   }
@@ -130,20 +133,21 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
   if (detail) {
     const item = detail.class;
     const plan = SMARTLINGO_COURSE_PACKAGES.find(value => value.tier === item.packageTier);
+    const selectedPackage=item.packageTier?courseSubscriptionPackage(item.packageTier,initialDurationMonths):null;
     const joined = detail.membership?.status === "active";
     return <section className="smartlingo-class-studio">
       <Link className="class-back" href={`/${lang}/classes`}>← {t.back}</Link>
       <div className="class-detail-hero"><div><p className="section-kicker">{item.targetLanguage.toUpperCase()} · {item.level}</p><h1>{item.title}</h1><p>{item.summary}</p></div>
-        <dl><div><dt>{t.courseAdmin}</dt><dd>{item.ownerName}</dd></div><div><dt>{t.schedule}</dt><dd>{item.schedule}</dd></div><div><dt>{t.price}</dt><dd>{money(item.priceCents)} / {lang === "zh" ? "月" : "month"}</dd></div><div><dt>{t.firstMonth}</dt><dd>{item.trialDays} {lang === "zh" ? "天" : "days"}</dd></div></dl></div>
+        <dl><div><dt>{t.courseAdmin}</dt><dd>{item.ownerName}</dd></div><div><dt>{t.schedule}</dt><dd>{item.schedule}</dd></div><div><dt>{t.price}</dt><dd>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:"—"}</dd></div><div><dt>{tx("Renewal","续费")}</dt><dd>{tx("Manual only","仅手动续购")}</dd></div></dl></div>
       {detail.canManage && <button className="secondary-button class-edit-course" onClick={() => setEditing(true)}>✎ {t.edit}</button>}
       {editing && <form className="course-edit-form" onSubmit={saveCourse}><label>{lang === "zh" ? "课程名称" : "Course title"}<input name="title" defaultValue={item.title}/></label><label>{t.summary}<textarea name="summary" defaultValue={item.summary}/></label><label>{t.schedule}<input name="schedule" defaultValue={item.schedule}/></label><div><button disabled={busy}>{t.save}</button><button type="button" onClick={() => setEditing(false)}>{t.cancel}</button></div></form>}
       <div className="class-detail-grid">
-        <article><span>{plan?.name[lang] || item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features[lang].map(feature => <li key={feature}>✓ {feature}</li>)}</ul></article>
+        <article><span>{plan?tx(plan.name.en,plan.name.zh):item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features.en.map((feature,index) => <li key={feature}>✓ {tx(feature,plan.features.zh[index])}</li>)}</ul></article>
         <article><span>WEBINAR + GROUP AUDIO</span><h2>{t.classroom}</h2><p>{t.classroomCopy}</p></article>
-        {!joined && !detail.canManage && <article className="class-subscribe-card"><span>{item.priceCents===0?(lang==="zh"?"公开课程":"Open course"):item.classKind==="official_course"?t.firstMonth:(lang==="zh"?"推荐课程":"Referred course")}</span><h2>{item.priceCents===0?(lang==="zh"?"免费":"Free"):`${money(item.priceCents)} / ${t.perMonth}`}</h2><p>{initialDepartmentId?(lang==="zh"?"课程价格由管理员统一设置；本部门获得每笔实付课程费用的 70%。":"The admin-set price is unchanged; this department receives 70% of each paid course charge."):item.priceCents===0?(lang==="zh"?"免费加入本课程并进入学院课程表中的学习路径。":"Join this Open course for free and continue through its college learning path."):(lang === "zh" ? "选择推荐体验或信用卡订阅，也可以使用加密货币购买本课程一个月。" : "Choose referred access or a card subscription, or purchase one month of this course with crypto.")}</p><CoursePaymentActions lang={lang} classId={item.id} priceCents={item.priceCents} firstMonthFree={item.classKind==="official_course"} trialDays={item.trialDays} departmentId={initialDepartmentId}/></article>}
+        {!joined && !detail.canManage && item.packageTier && <article className="class-subscribe-card"><span>{tx("FIXED-TERM COURSE ACCESS","固定期限课程学习权利")}</span><h2>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:tx("Choose a package","选择套餐")}</h2><p>{initialDepartmentId?tx("The administrator sets the same course price everywhere; this department receives 70% of each paid package.","课程价格由管理员统一设置；本部门获得每笔实付套餐费用的 70%。"):tx("Choose 3, 6, or 12 months. Card payment is available for all nine packages; Polygon USDT and GLC are available only for three months.","选择 3、6 或 12 个月。九个套餐均可使用信用卡；Polygon USDT 和 GLC 仅用于三个月套餐。")}</p><CoursePaymentActions lang={lang} classId={item.id} targetLanguage={item.targetLanguage} packageTier={item.packageTier} initialMonths={initialDurationMonths} departmentId={initialDepartmentId}/></article>}
         {joined && <article className="class-placement-card"><span>5 SKILLS</span><h2>{t.fiveSkillsTitle}</h2><p>{t.fiveSkillsBody}</p><nav className="class-skill-launcher" aria-label={t.fiveSkillsTitle}>{learningLinks(item).map(skill => <Link href={skill.href} key={skill.key}><i aria-hidden="true">{skill.icon}</i><strong>{skill.label}</strong><small>{lang === "zh" ? "直接开始" : "Start now"} →</small></Link>)}</nav><div className="class-learning-actions"><Link className="primary-button" href={`/${lang}/classes/${encodeURIComponent(item.id)}/learn/session`}>{t.dailyLearning} →</Link><Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
-        {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang}/>}
-        {detail.canManage && <CourseStudentManager classId={item.id} lang={lang}/>}
+        {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang==="zh"?"zh":"en"}/>}
+        {detail.canManage && <CourseStudentManager classId={item.id} lang={lang==="zh"?"zh":"en"}/>}
       </div>{notice && <p className="class-notice">{notice}</p>}<Styles/>
     </section>;
   }

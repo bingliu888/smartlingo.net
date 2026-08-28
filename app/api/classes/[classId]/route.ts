@@ -69,7 +69,7 @@ export async function GET(
     LEFT JOIN smartlingo_course_subscriptions subscription
       ON subscription.class_id=member.class_id AND subscription.user_id=member.user_id
     WHERE member.class_id=? AND member.user_id=? AND member.status IN ('active','invited','paused')
-      AND (? NOT IN ('official_course','subject') OR ?=0 OR subscription.status='active'
+      AND (? NOT IN ('official_course','subject') OR ?=0 OR (subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
         OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch())) LIMIT 1`)
     .bind(classId, user.id, detail.classKind, detail.priceCents).first<{ role: string; status: string }>();
   const isOwner = detail.ownerUserId === user.id;
@@ -99,8 +99,8 @@ export async function GET(
     canManage,
     membership,
     placement,
-    paymentPolicy: { trialDays: detail.trialDays, billingInterval: detail.billingInterval, firstMonthFree: detail.classKind === "official_course" },
-    paymentMode: "monthly_subscription",
+    paymentPolicy: { durationsMonths: [3,6,12], automaticRenewal: false, cryptoDurationMonths: 3 },
+    paymentMode: "fixed_term_package",
   });
 }
 

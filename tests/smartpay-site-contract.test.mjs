@@ -11,46 +11,40 @@ import { smartPay3SourceVerificationPayload } from "../lib/smartpay-source-verif
 import { configuredSmartPay3CheckoutScopes, smartPayCheckoutDisplayAmount } from "../lib/smartpay-checkout.ts";
 import { smartPayWithdrawalPreflight } from "../lib/crypto-amount.ts";
 import { verifyCryptoPaymentWithConfirmations } from "../lib/crypto-payment-verification.ts";
-import { smartPayRecipientMatches, smartPayTransactionNeedsReconciliation } from "../lib/smartpay-reconciliation.ts";
 
 const root = new URL("..", import.meta.url);
 const read = path => readFile(new URL(path, root), "utf8");
 const owner = "0x1111111111111111111111111111111111111111";
 
-test("course recipient matching is wallet-normalized and RefID case-insensitive", () => {
-  const record = {
-    wallet: "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    refId: "AbC234",
-    mainId: "smartlingo_course_annual",
-    secondId: "course_es_basic",
-    subscriptionRecorded: false,
-  };
-  assert.equal(smartPayRecipientMatches(record, "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "ABC234"), true);
-  assert.equal(smartPayTransactionNeedsReconciliation(record, "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "abc234"), true);
-  assert.equal(smartPayTransactionNeedsReconciliation({ ...record, secondId: "bad" }, record.wallet, record.refId), false);
+test("course reconciliation requires normalized payer identity and a language-scoped three-month package", async () => {
+  const source = await read("lib/smartpay-reconciliation.ts");
+  assert.match(source, /record\.wallet\.trim\(\)\.toLowerCase\(\) === wallet/);
+  assert.match(source, /record\.refId\.trim\(\)\.toUpperCase\(\) === refId/);
+  assert.match(source, /cryptoSubscriptionPlanForIds\(record\.mainId, record\.secondId\)/);
+  assert.doesNotMatch(source, /smartlingo_course_annual|secondId:\s*classId/);
 });
 
 test("checkout shows the full on-chain price before connection and the eligible split afterward", () => {
   const option = {
-    key: "polygon-usdt:course_es_basic", settingId: "polygon-usdt", plan: "basic", months: 12,
+    key: "polygon-usdt:course_es_basic", settingId: "polygon-usdt", plan: "basic", months: 3,
     languageCode: "es", classId: "course_es_basic", chainId: 137, chainName: "Polygon",
     contractAddress: "0x2222222222222222222222222222222222222222",
     tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", tokenSymbol: "USDT", tokenDecimals: 6,
-    tokenAmountAtomic: "240000000", tokenAmount: "240", mainId: "smartlingo_course_annual",
-    secondId: "course_es_basic", minConfirmations: 12,
+    tokenAmountAtomic: "30000000", tokenAmount: "30", mainId: "smartlingo_course_basic_3m",
+    secondId: "es", minConfirmations: 12,
     smartPay3Offer: {
       mode: "dual", contractAddress: "0x2222222222222222222222222222222222222222",
       primaryTokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", primaryTokenSymbol: "USDT",
-      primaryTokenDecimals: 6, primaryTokenAmountAtomic: "120000000", primaryTokenAmount: "120", primaryPercent: 50,
+      primaryTokenDecimals: 6, primaryTokenAmountAtomic: "15000000", primaryTokenAmount: "15", primaryPercent: 50,
       secondaryTokenAddress: "0x6aa3a471765e8a9884e0e6edcb0f796bf9f0b325", secondaryTokenSymbol: "GLC",
-      secondaryTokenDecimals: 18, secondaryTokenAmountAtomic: "120000000000000000000000000",
-      secondaryTokenAmount: "120000000", secondaryPercent: 50,
+      secondaryTokenDecimals: 18, secondaryTokenAmountAtomic: "15000000000000000000000000",
+      secondaryTokenAmount: "15000000", secondaryPercent: 50,
       minimumSecondaryBalanceAtomic: "1000000000000000000000000000", minimumSecondaryBalance: "1000000000",
-      mainId: "smartlingo_course_annual", secondId: "course_es_basic", minConfirmations: 12,
+      mainId: "smartlingo_course_basic_3m", secondId: "es", minConfirmations: 12,
     },
   };
-  assert.equal(smartPayCheckoutDisplayAmount(option), "240 USDT");
-  assert.equal(smartPayCheckoutDisplayAmount(option, true), "120 USDT + 120000000 GLC");
+  assert.equal(smartPayCheckoutDisplayAmount(option), "30 USDT");
+  assert.equal(smartPayCheckoutDisplayAmount(option, true), "15 USDT + 15000000 GLC");
 });
 
 test("payment verification waits 6 seconds and retries three more times at 10 seconds", async () => {

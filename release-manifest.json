@@ -1,63 +1,79 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-password-first-signin-20260827-r1",
+  "releaseId": "smartlingo-net-language-course-packages-20260828-r1",
   "site": "smartlingo.net",
   "title": {
-    "en": "Make password sign-in the production default",
-    "zh": "将生产登录默认方式改为密码"
+    "en": "Launch nine language-scoped fixed-term course packages",
+    "zh": "上线九个按语言授权的固定期限课程套餐"
   },
   "purpose": {
-    "en": "Align SmartLingo's sign-in behavior with the portfolio Clerk password-first baseline.",
-    "zh": "将 SmartLingo 登录行为对齐全站 Clerk 密码优先基线。"
+    "en": "Replace the former recurring-course assumptions with a language-first catalog of nine fixed-term packages and grant access only to the selected language course.",
+    "zh": "以先选学习语言、再选九个固定期限套餐的新目录替换旧的周期订阅假设，并只开通用户所选语言课程。"
   },
   "features": {
     "en": [
-      "Open sign-in and sign-up pages in password mode while retaining email code as an optional user-selected method.",
-      "Show password-default guidance in every supported interface language."
+      "Offer Beginner, Intermediate, and Advanced courses for 3, 6, or 12 months at $30/$50/$80, $60/$100/$160, and $120/$200/$320.",
+      "Offer Polygon USDT and GLC checkout only for the three-month package of each course level.",
+      "Encode the selected learning language as SmartPay3 secondId and grant the matching language-course access period."
     ],
     "zh": [
-      "登录与注册页默认打开密码模式，同时保留由用户主动选择的邮箱验证码方式。",
-      "所有受支持界面语言均显示密码优先说明。"
+      "初期、中级、高级课程分别提供 3、6、12 个月套餐，价格为 $30/$50/$80、$60/$100/$160、$120/$200/$320。",
+      "仅三个等级的三个月套餐提供 Polygon USDT 与 GLC 支付。",
+      "将所选学习语言写入 SmartPay3 secondId，并为对应语言课程开通学习期限。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo authentication form, localized sign-in copy, and shared authentication regression contracts."
+      "Course catalog and detail pages, card and SmartPay3 checkout, payment reconciliation, course access, college revenue sharing, admin crypto rails, and course-credit redemption."
     ],
     "zh": [
-      "SmartLingo 身份验证表单、多语言登录文案及共享身份回归契约。"
+      "课程目录与详情页、信用卡与 SmartPay3 结账、付款对账、课程权限、学院分成、管理员加密支付通道及课程积分兑换。"
     ]
   },
   "changes": {
     "en": [
-      "Switch the initial authentication state to password and remove rendered copy that claims an email code is the default."
+      "Add an authoritative nine-row package catalog and immutable payment-purchase evidence with language, level, duration, price, and access dates.",
+      "Use one-time Stripe payments for all nine packages and calendar-month access extension without automatic renewal.",
+      "Normalize existing Polygon USDT and GLC token amounts to the three-month prices while preserving legacy constrained columns as non-authoritative compatibility data."
     ],
     "zh": [
-      "将身份验证初始状态改为密码，并移除声称邮箱验证码为默认方式的渲染文案。"
+      "新增权威九行套餐目录及不可混用的付款记录，保存语言、等级、期限、价格和学习起止日期。",
+      "九个套餐全部使用 Stripe 一次性付款，按自然月延长学习期限且不自动续费。",
+      "将现有 Polygon USDT 与 GLC 代币数量统一为三个月价格，同时保留旧约束字段作为非权威兼容数据。"
     ]
   },
   "validation": {
     "en": [
-      "Pass the portfolio password-first audit, repository authentication contracts, deployment workflow, and basic production availability check."
+      "Pass the production build, zero-warning lint, TypeScript, 68-migration replay and idempotency checks, payment and language-scope contracts, and anonymous browser package-selection checks."
     ],
     "zh": [
-      "通过全站密码优先审计、仓库身份契约、部署工作流及生产基本可用性检查。"
+      "通过生产构建、零警告 lint、TypeScript、68 个迁移的重放与幂等检查、付款和语言范围契约，以及匿名浏览器套餐选择检查。"
     ]
   },
   "deferred": {
     "en": [
-      "Email-code authentication remains available only when the user explicitly selects it."
+      "No real card or token transaction is submitted by automated testing; Polygon checkout remains unavailable until matching SmartPay3 rules are published by the authorized wallet owner."
     ],
     "zh": [
-      "用户主动选择时仍可使用邮箱验证码登录。"
+      "自动测试不会提交真实信用卡或代币交易；在授权钱包所有者发布匹配的 SmartPay3 规则前，Polygon 结账保持不可用。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo branding, product behavior, and this site's independent Clerk, user, payment, and data boundaries."
+      "Preserve SmartLingo's independent Clerk, D1, Stripe, SmartPay3, college, user, and course-data boundaries and the existing GitHub Actions to Cloudflare release path."
     ],
     "zh": [
-      "保留 SmartLingo 品牌与产品行为，以及本站独立的 Clerk、用户、支付和数据边界。"
+      "保留 SmartLingo 独立的 Clerk、D1、Stripe、SmartPay3、学院、用户与课程数据边界，以及既有 GitHub Actions 到 Cloudflare 发布流程。"
     ]
+  },
+  "dataMigration": {
+    "included": true,
+    "migrations": [
+      "0173_course_subscription_packages"
+    ],
+    "rollback": {
+      "en": "This release includes additive D1 migration 0173. It does not delete historical data. A code rollback restores the prior Worker while the additive tables remain; any schema correction must use a new forward migration.",
+      "zh": "本次包含前向追加 D1 迁移 0173，不删除历史数据。代码回退只恢复上一版 Worker，追加表继续保留；任何结构修正必须使用新的前向迁移。"
+    }
   }
 }

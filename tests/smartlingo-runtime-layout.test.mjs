@@ -186,6 +186,9 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
 
 test("full release matrix uses bounded fresh-WebKit batches and one merged count", () => {
   assert.match(runnerSource, /selectedRoutes\.slice\(index, index \+ 5\)/);
+  assert.match(runnerSource, /runWebKitBatch\(executable, configPath\)/);
+  assert.match(runnerSource, /attempt < 3/);
+  assert.match(runnerSource, /Connection Invalid error for service/);
   assert.match(runnerSource, /reports\.push\(\.\.\.stdout\.split/);
   assert.match(runnerSource, /expectedCount = selectedRoutes\.length \* SMARTLINGO_LAYOUT_LANGUAGES\.length \* SMARTLINGO_VIEWPORTS\.length/);
   assert.match(runnerSource, /code: "path-mismatch"/);

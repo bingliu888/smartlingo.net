@@ -14,8 +14,8 @@ export async function generateMetadata({
   return {
     title: lang === "zh" ? "SmartLingo 课程" : "SmartLingo Courses",
     description: lang === "zh"
-      ? "选择固定月费语言课程，首月免费，并进入课程专属音视频网络研讨会教室。"
-      : "Choose a fixed-price monthly language course with a free first month and a dedicated A/V webinar classroom.",
+      ? "先选择学习语言，再从三级课程的 3、6、12 个月固定期限套餐中选择，并进入课程专属音视频网络研讨会教室。"
+      : "Choose a learning language first, then a 3, 6, or 12-month fixed-term package across three course levels and a dedicated A/V webinar classroom.",
   };
 }
 
@@ -41,7 +41,7 @@ export default async function ClassesPage({
     <main className="classes-page" data-layout-page="courses" data-layout-overlap-check="courses-page">
       <SiteHeader lang={lang} />
       <span data-layout-overlap-check="classes-start" style={{ display: "block", height: 1 }} />
-      <ClassStudio lang={lang === "zh" ? "zh" : "en"} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
+      <ClassStudio lang={lang} initialInviteCode={query.invite} initialTargetLanguage={query.target} />
       <span data-layout-overlap-check="classes-end" style={{ display: "block", height: 1 }} />
       <SiteFooter lang={lang} />
     </main>

@@ -125,7 +125,9 @@ test("public game and redemption routes keep scores and balances server-authorit
   assert.doesNotMatch(publicRoute, /body\.(?:score|points|rewardPoints|balancePoints)/);
   assert.match(publicRoute, /HttpOnly; Secure; SameSite=Lax/);
   assert.match(redemptionRoute, /COALESCE\(SUM\(points\),0\)/);
-  assert.match(redemptionRoute, /-value\.course\.priceCents/);
+  assert.match(redemptionRoute, /-value\.selectedPackage\.priceCents/);
+  assert.match(redemptionRoute, /courseSubscriptionPackage\(course\.packageTier,3\)/);
+  assert.match(redemptionRoute, /addCourseSubscriptionMonths\(periodStart,3\)/);
   assert.match(redemptionRoute, /provider_subscription_id[^]*credit:/);
 });
 

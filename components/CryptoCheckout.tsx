@@ -38,11 +38,8 @@ const displayAtomic = (value: string, decimals: number, maximumFractionDigits = 
   return trimmed ? `${whole}.${trimmed}` : whole;
 };
 
-const subscriptionTerm = (months: number, t: (english: string, chinese: string) => string) => months === 12
-  ? t("12-month subscription", "12 个月订阅")
-  : months === 6
-    ? t("6-month subscription", "6 个月订阅")
-    : t("1-month subscription", "1 个月订阅");
+const subscriptionTerm = (_months: number, t: (english: string, chinese: string) => string) =>
+  t("3-month fixed-term access", "3 个月固定期限学习权利");
 
 export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode, lockedCourseId }: { lang: SiteLanguage; initialPlan: Plan; initialLanguageCode: string; lockedCourseId: string }) {
   const t = useCallback((english: string, chinese: string) => interfaceText(locale, english, chinese), [locale]);
@@ -119,7 +116,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
   const planOptions = useMemo(() => smartPayOptionsForPlan(options, plan), [options, plan]);
   const selectedOption = planOptions.find(option => option.settingId === settingId) || planOptions[0] || null;
   const selected = (status.cryptoSettings || []).find(item => item.id === selectedOption?.settingId) || null;
-  const selectedPlan = plans.find(item => item.id === plan) || { id: plan, months: 12, price: "—", amountCents: 0 };
+  const selectedPlan = plans.find(item => item.id === plan) || { id: plan, months: 3, price: "—", amountCents: 0 };
   const nativeTokenSymbol = selected ? walletChain(selected).nativeCurrency.symbol : "Gas";
   const smartPay3Offer = selectedOption?.smartPay3Offer || null;
   const smartPay3ShowsPrimary = Boolean(smartPay3Offer) && (smartPay3Preflight

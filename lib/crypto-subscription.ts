@@ -1,21 +1,24 @@
-import type { SmartLingoPackageTier } from "./smartlingo-course-packages";
+import {
+  courseSubscriptionMainId,
+  courseSubscriptionPackageForMainId,
+  type SmartLingoPackageTier,
+} from "./smartlingo-course-packages";
+import { isSmartLingoCommunityLanguage } from "./smartlingo-language-communities";
 
-export const SMARTLINGO_CRYPTO_COURSE_MAIN_ID = "smartlingo_course_annual";
 export type CryptoSubscriptionPlan = SmartLingoPackageTier;
+export const SMARTLINGO_CRYPTO_MONTHS = 3 as const;
 
 export function normalizeCryptoSubscriptionPlan(value: unknown): CryptoSubscriptionPlan {
   return value === "intermediate" || value === "advanced" ? value : "basic";
 }
 
-export function cryptoSubscriptionIdsForCourse(classId: string) {
-  if (!/^course_(zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)_(basic|intermediate|advanced)$/.test(classId)) {
-    throw new Error("INVALID_SMARTLINGO_COURSE_ID");
-  }
-  return { mainId: SMARTLINGO_CRYPTO_COURSE_MAIN_ID, secondId: classId };
+export function cryptoSubscriptionIdsForCourse(languageCode: string, plan: CryptoSubscriptionPlan) {
+  if (!isSmartLingoCommunityLanguage(languageCode)) throw new Error("INVALID_SMARTLINGO_LANGUAGE");
+  return { mainId: courseSubscriptionMainId(plan, SMARTLINGO_CRYPTO_MONTHS), secondId: languageCode };
 }
 
 export function cryptoSubscriptionPlanForIds(mainId: string, secondId: string): CryptoSubscriptionPlan | null {
-  if (mainId !== SMARTLINGO_CRYPTO_COURSE_MAIN_ID) return null;
-  const match = /^course_(?:zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)_(basic|intermediate|advanced)$/.exec(secondId);
-  return match?.[1] as CryptoSubscriptionPlan | undefined || null;
+  if (!isSmartLingoCommunityLanguage(secondId)) return null;
+  const item = courseSubscriptionPackageForMainId(mainId);
+  return item?.months === SMARTLINGO_CRYPTO_MONTHS ? item.tier : null;
 }

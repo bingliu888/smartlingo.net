@@ -63,6 +63,6 @@ test("legacy talent route and API point safely to language courses", async () =>
   assert.match(api, /status: 410/);
   assert.match(api, /redirect: "\/classes"/);
   assert.match(compatibility, /进入课程中心/);
-  assert.match(compatibility, /浏览固定三级课程/);
+  assert.match(compatibility, /浏览三级课程的九个固定期限套餐/);
   assert.doesNotMatch(`${page}\n${api}\n${compatibility}`, /求职|招聘|雇主|候选人|Gold|Platinum|BACC/i);
 });

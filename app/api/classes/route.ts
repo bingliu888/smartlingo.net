@@ -14,13 +14,15 @@ type LanguageClassRow = {
   membershipRole: "owner" | "teacher" | "coordinator" | "student" | null;
   membershipStatus: "invited" | "active" | "paused" | "left" | "removed" | null;
   subscriptionStatus: "trialing" | "active" | "past_due" | "cancelled" | "expired" | null;
-  trialEndsAt: number | null; createdAt: number;
+  trialEndsAt: number | null; currentPeriodEndsAt: number | null; createdAt: number;
 };
 
 function classView(row: LanguageClassRow, userId: string) {
   const isOwner = row.ownerUserId === userId || row.membershipRole === "owner";
+  const now=Math.floor(Date.now()/1000);
   const isJoined = !isOwner && row.membershipStatus === "active"
-    && (row.subscriptionStatus === "active" || (row.subscriptionStatus === "trialing" && Number(row.trialEndsAt || 0) > Math.floor(Date.now() / 1000)));
+    && ((row.subscriptionStatus === "active" && Number(row.currentPeriodEndsAt||0)>now)
+      || (row.subscriptionStatus === "trialing" && Number(row.trialEndsAt || 0) > now));
   return {
     ...row,
     enrollmentCount: Number(row.enrollmentCount || 0),
@@ -46,6 +48,7 @@ export async function GET(request: Request) {
       c.billing_interval AS billingInterval,c.trial_days AS trialDays,c.created_at AS createdAt,
       mine.role AS membershipRole,mine.status AS membershipStatus,
       subscription.status AS subscriptionStatus,subscription.trial_ends_at AS trialEndsAt,
+      subscription.current_period_ends_at AS currentPeriodEndsAt,
       COALESCE(SUM(CASE WHEN members.role='student' AND members.status='active' THEN 1 ELSE 0 END),0) AS enrollmentCount
       FROM smartlingo_language_classes c
       JOIN users u ON u.id=c.owner_user_id JOIN smartlingo_language_paths p ON p.id=c.path_id
@@ -64,8 +67,8 @@ export async function GET(request: Request) {
     paths: pathResult.results || [], classes,
     availableClasses: classes.filter(item => !item.isOwner && !item.isJoined),
     joinedClasses: classes.filter(item => item.isJoined), createdClasses: [],
-    paymentPolicy: { trialDays: 30, billingInterval: "month", fixedPlatformPricing: true },
-    paymentMode: "monthly_subscription",
+    paymentPolicy: { durationsMonths: [3,6,12], fixedPlatformPricing: true, automaticRenewal: false },
+    paymentMode: "fixed_term_package",
   });
 }
 

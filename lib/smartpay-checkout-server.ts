@@ -30,7 +30,7 @@ export async function currentSmartPayCheckoutOptions(inputSettings?: readonly Cr
       if (!primarySetting || (preset.mode === "dual" && !secondarySetting)) return [];
       const minConfirmations = secondarySetting ? Math.max(primarySetting.minConfirmations, secondarySetting.minConfirmations) : primarySetting.minConfirmations;
       return [{
-        key: `smartpay3:${preset.key}`, settingId: primarySetting.id, plan: preset.plan, months: 12,
+        key: `smartpay3:${preset.key}`, settingId: primarySetting.id, plan: preset.plan, months: 3,
         languageCode: preset.languageCode, classId: preset.classId, chainId: primarySetting.chainId, chainName: primarySetting.chainName,
         contractAddress, tokenAddress: preset.primaryTokenAddress, tokenSymbol: preset.primaryTokenSymbol,
         tokenDecimals: preset.primaryTokenDecimals, tokenAmountAtomic: fullPrimary.toString(),

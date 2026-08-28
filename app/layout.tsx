@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
   const origin = new URL(`${protocol}://${host}`);
   const title = "SmartLingo — 从第一天开口，与课程一起进步";
-  const description = "人工智能原生语言学习：十二种语言、三级固定月费课程、首月免费、五项技能、Webinar 课程教室与小组语音练习室。";
+  const description = "人工智能原生语言学习：十二种语言、三级课程、九个固定期限套餐、五项技能、Webinar 课程教室与小组语音练习室。";
   return {
     metadataBase: origin,
     title: { default: title, template: "%s | SmartLingo" },

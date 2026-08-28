@@ -1621,7 +1621,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0172_smartpay3_course_refid");
+  assert.equal(migrations.at(-1)?.tag, "0173_course_subscription_packages");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1688,6 +1688,8 @@ export function validateD1Migrations() {
       "smartlingo_smartcard_attempt_identity_uq",
       "smartlingo_smartcard_reward_once_uq",
       "smartlingo_course_credit_source_uq",
+      "smartlingo_course_package_tier_duration_uq",
+      "smartlingo_course_package_purchase_provider_uq",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1742,6 +1744,8 @@ export function validateD1Migrations() {
       "smartlingo_learning_reward_rules",
       "smartlingo_learning_score_history",
       "smartlingo_smartcard_daily_question_sets",
+      "smartlingo_course_packages",
+      "smartlingo_course_package_purchases",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_curriculum_levels").get().count, 3);
@@ -1749,6 +1753,13 @@ export function validateD1Migrations() {
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_decks WHERE owner_user_id='smartlingo-language-admin'").get().count, 36);
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_items WHERE deck_id LIKE 'starter_%'").get().count, 144);
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_learning_reward_rules WHERE status='active'").get().count, 36);
+    assert.deepEqual(database.prepare(`SELECT package_tier AS tier,duration_months AS months,price_cents AS priceCents
+      FROM smartlingo_course_packages WHERE status='active'
+      ORDER BY CASE package_tier WHEN 'basic' THEN 1 WHEN 'intermediate' THEN 2 ELSE 3 END,duration_months`).all().map(row=>({...row})),[
+      {tier:"basic",months:3,priceCents:3000},{tier:"basic",months:6,priceCents:5000},{tier:"basic",months:12,priceCents:8000},
+      {tier:"intermediate",months:3,priceCents:6000},{tier:"intermediate",months:6,priceCents:10000},{tier:"intermediate",months:12,priceCents:16000},
+      {tier:"advanced",months:3,priceCents:12000},{tier:"advanced",months:6,priceCents:20000},{tier:"advanced",months:12,priceCents:32000},
+    ]);
 
     const smoke = runD1Smoke(database);
     return {

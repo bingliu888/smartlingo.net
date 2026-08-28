@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
 
-test("deployment SQL records the exact full commit and Actions run without migration rollback claims", async () => {
+test("deployment SQL records the exact full commit, Actions run, and additive migration boundary", async () => {
   const commit = "0123456789abcdef0123456789abcdef01234567";
   const runId = "31999999999";
   const script = resolve("scripts/deployment-report-sql.mjs");
@@ -16,8 +16,8 @@ test("deployment SQL records the exact full commit and Actions run without migra
   assert.match(output, new RegExp(commit));
   assert.match(output, /"runId":"31999999999"/);
   assert.match(output, /https:\/\/github\.com\/bingliu888\/smartlingo\.net\/actions\/runs\/31999999999/);
-  assert.match(output, /This release has no data migration/);
-  assert.doesNotMatch(output, /payment tables|支付表/);
+  assert.match(output, /additive D1 migration 0173/);
+  assert.match(output, /does not delete historical data/);
   assert.throws(() => execFileSync(process.execPath, [script], {
     stdio: "pipe",
     env: { ...process.env, GITHUB_SHA: commit.slice(0, 12), GITHUB_RUN_ID: runId },
@@ -33,8 +33,8 @@ test("production evidence is probed before Project publication and verified exac
 
   assert.ok(assistantProbe >= 0 && assistantProbe < projectPublication);
   assert.match(reporter, /commit,\s*runId/);
-  assert.match(reporter, /no data migration/);
-  assert.doesNotMatch(reporter, /additive payment tables|新增支付表/);
+  assert.match(reporter, /manifest\.dataMigration\?\.included/);
+  assert.match(reporter, /manifest\.dataMigration\.rollback/);
   assert.match(verifier, /entry\.commit === commit/);
   assert.match(verifier, /String\(entry\.runId \|\| ""\) === runId/);
   assert.doesNotMatch(verifier, /startsWith/);

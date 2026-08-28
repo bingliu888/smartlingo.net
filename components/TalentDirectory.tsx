@@ -35,8 +35,8 @@ export function TalentDirectory({ lang }: { lang: "en" | "zh" }) {
           <h1>{zh ? "旧入口已迁移到课程中心。" : "This legacy entry now points to Courses."}</h1>
           <p>
             {zh
-              ? "从同一个入口浏览固定三级课程、开始免费首月并查看自己的课程。"
-              : "Use one place to browse the three fixed levels, start a free first month, and view your courses."}
+              ? "从同一个入口先选择学习语言，再浏览三级课程的九个固定期限套餐并查看自己的课程。"
+              : "Use one place to choose a learning language, browse nine fixed-term packages across three levels, and view your courses."}
           </p>
         </div>
         <Link className="primary-button" href={`/${lang}/classes`}>

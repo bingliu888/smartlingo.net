@@ -2,9 +2,9 @@ import type { SmartLingoPackageTier } from "./smartlingo-course-packages";
 
 export type CryptoPlanId = SmartLingoPackageTier;
 export const CRYPTO_PLANS = [
-  { id: "basic", months: 12, priceCents: 24_000, name: "Basic · 12 months" },
-  { id: "intermediate", months: 12, priceCents: 120_000, name: "Intermediate · 12 months" },
-  { id: "advanced", months: 12, priceCents: 360_000, name: "Advanced · 12 months" },
+  { id: "basic", months: 3, priceCents: 3_000, name: "Beginner · 3 months" },
+  { id: "intermediate", months: 3, priceCents: 6_000, name: "Intermediate · 3 months" },
+  { id: "advanced", months: 3, priceCents: 12_000, name: "Advanced · 3 months" },
 ] as const;
 
 export type CryptoPaymentSetting = {

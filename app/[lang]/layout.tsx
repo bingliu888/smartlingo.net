@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
       template: "%s | SmartLingo",
     },
     description: zh
-      ? "人工智能原生语言学习：十二种语言、三级固定月费课程、首月免费、五项技能与课程网络研讨会。"
-      : "AI-native language learning across twelve languages with three fixed monthly course levels, a free first month, five-skill practice, Webinar teaching rooms, and group-audio practice rooms.",
+      ? "人工智能原生语言学习：十二种语言、三级课程、九个固定期限套餐、五项技能与课程网络研讨会。"
+      : "AI-native language learning across twelve languages with three course levels, nine fixed-term packages, five-skill practice, Webinar teaching rooms, and group-audio practice rooms.",
   };
 }
 

@@ -18,6 +18,10 @@ const editionDate = `${part("year")}-${part("month")}-${part("day")}`;
 const timestamp = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZoneName: "short" }).format(now);
 const exactEvidenceZh = `精确部署 commit ${commit}；GitHub Actions ${runId}（${runUrl}）`;
 const exactEvidenceEn = `Exact deployment commit ${commit}; GitHub Actions ${runId} (${runUrl})`;
+const rollback = manifest.dataMigration?.included ? manifest.dataMigration.rollback : {
+  zh: "本次没有数据迁移；如需回退，只需恢复上一版 Cloudflare Worker。",
+  en: "This release has no data migration; rollback only requires restoring the prior Cloudflare Worker.",
+};
 const report = {
   date: editionDate,
   title: { zh: `${titleZh} · ${timestamp}`, en: `${titleEn} · ${timestamp}` },
@@ -25,10 +29,7 @@ const report = {
   completed: Math.max(notesZh.length, notesEn.length),
   summary: { zh: notesZh.join("；"), en: notesEn.join("; ") },
   validation: { zh: [...notesZh, exactEvidenceZh], en: [...notesEn, exactEvidenceEn] },
-  rollback: {
-    zh: "本次没有数据迁移；如需回退，只需恢复上一版 Cloudflare Worker。",
-    en: "This release has no data migration; rollback only requires restoring the prior Cloudflare Worker.",
-  },
+  rollback,
   next: {
     zh: "真实设备麦克风识别、有声朗读及多人实时音视频仍待单独验收。",
     en: "Physical-device microphone recognition, audible speech, and multi-party realtime audio/video remain deferred for separate acceptance.",

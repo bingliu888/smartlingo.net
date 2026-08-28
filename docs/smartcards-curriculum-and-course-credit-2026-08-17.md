@@ -13,9 +13,9 @@ The public entry loop is:
 3. complete a server-scored mixed-mode challenge;
 4. retain provisional points on the device;
 5. sign in only when the learner wants to keep progress or claim points;
-6. use verified points toward up to 100% of one monthly course fee.
+6. use verified points toward up to 100% of one three-month course package.
 
-Opening a deck, registering, or claiming points never starts a free trial or subscription. Checkout requires a separate, explicit choice and clearly states the renewal price and cancellation path.
+Opening a deck, registering, or claiming points never purchases a course package. Checkout requires a separate, explicit language, level, and 3-, 6-, or 12-month term selection; packages never renew automatically.
 
 ## Evidence translated into product rules
 
@@ -68,12 +68,12 @@ The learner can study freely and retry practice. Practice credit is awarded once
 - 100 points = USD $1 of course credit.
 - Each completed public round starts at 100 provisional points; correct meanings add 10, wrong meanings subtract 5, and pronunciation passes add 5.
 - Guest results become spendable only after the full round is complete and a verified account claims them.
-- Up to 100% of one monthly course fee may be paid with points.
+- Up to 100% of one three-month course package may be paid with points.
 - Points have no cash-out, transfer, peer-sale, or owner-payout value.
 - Course credit is separate from learning XP and direct-introducer rewards.
 - Every balance change is an append-only, idempotent ledger entry.
 - A reservation is created before checkout. Failed or abandoned checkout releases it; a refund or dispute reverses the corresponding settlement according to the published refund policy.
-- A credit-only month grants exactly one course period and never silently creates an auto-renewing subscription.
+- A credit-only redemption grants exactly three calendar months of the selected language course and never silently creates an auto-renewing subscription.
 
 Server reconstruction, one-claim uniqueness, self-deck exclusion, immutable deck versions, and anomaly review protect the course-credit economy without blocking ordinary practice.
 
@@ -94,4 +94,4 @@ The primary metric is not clicks or points. Measure:
 - guest-to-account conversion without forced subscription;
 - challenge invitations that create a completed learning session;
 - credit earned per verified learning hour and abuse-review rate;
-- paid retention after the first explicitly chosen paid month.
+- paid retention after the first explicitly chosen fixed-term package.

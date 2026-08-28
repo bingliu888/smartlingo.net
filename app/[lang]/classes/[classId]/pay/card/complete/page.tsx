@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { requestUser } from "@/lib/request-user";
 
-export const metadata: Metadata = { title: "Card subscription · SmartLingo" };
+export const metadata: Metadata = { title: "Course package payment · SmartLingo" };
 
 export default async function CardCompletePage({ params, searchParams }: { params: Promise<{ lang: string; classId: string }>; searchParams: Promise<{ session_id?: string }> }) {
   const { lang, classId } = await params;
@@ -15,5 +15,5 @@ export default async function CardCompletePage({ params, searchParams }: { param
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}/pay/card/complete?session_id=${encodeURIComponent(sessionId)}`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
-  return <main className="billing-page"><SiteHeader lang={lang}/><CardCheckoutComplete lang={lang === "zh" ? "zh" : "en"} classId={classId} sessionId={sessionId}/><SiteFooter lang={lang}/></main>;
+  return <main className="billing-page"><SiteHeader lang={lang}/><CardCheckoutComplete lang={lang} classId={classId} sessionId={sessionId}/><SiteFooter lang={lang}/></main>;
 }

@@ -1,4 +1,4 @@
-const SMARTLINGO_CRYPTO_COURSE_MAIN_ID = "smartlingo_course_annual";
+import { cryptoSubscriptionPlanForIds } from "./crypto-subscription";
 
 export type SmartPayReconciliationRecord = {
   wallet: string;
@@ -26,7 +26,6 @@ export function smartPayTransactionNeedsReconciliation(
   memberRefId: string,
 ) {
   return smartPayRecipientMatches(record, payerWalletAddress, memberRefId)
-    && record.mainId === SMARTLINGO_CRYPTO_COURSE_MAIN_ID
-    && /^course_(zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)_(basic|intermediate|advanced)$/.test(record.secondId)
+    && cryptoSubscriptionPlanForIds(record.mainId, record.secondId) !== null
     && !record.subscriptionRecorded;
 }

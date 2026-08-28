@@ -19,8 +19,8 @@ test("English and Chinese routes use matching content", async () => {
   assert.match(home, /三级课程/);
   assert.match(home, /Three point types stay separate and auditable/);
   assert.match(home, /三类积分独立记账、可追溯/);
-  assert.match(home, /Verified SmartCard challenge points can offset only a SmartLingo course month/);
-  assert.match(home, /经验证的 SmartCard 挑战积分只能抵 SmartLingo 课程月费/);
+  assert.match(home, /Verified SmartCard challenge points can offset only an eligible SmartLingo course package/);
+  assert.match(home, /经验证的 SmartCard 挑战积分只能抵符合条件的 SmartLingo 课程套餐/);
   for (const label of ["Everyday speaking", "生活口语", "Choose a course", "选择课程", "Ask AI", "咨询AI"]) assert.match(choices, new RegExp(label));
   const interfaceLocale = await readFile(new URL("../lib/interface-locale.ts", import.meta.url), "utf8");
   for (const label of ["Learn through play", "边玩边学", "遊んで学ぶ", "놀면서 배우기"]) assert.match(interfaceLocale, new RegExp(label));
@@ -28,8 +28,8 @@ test("English and Chinese routes use matching content", async () => {
   assert.match(home, /Messages & Live Chat/);
   assert.match(home, /AI Guru & live audio/);
   assert.match(home, /人工智能导师与实时语音/);
-  assert.match(home, /Your first month is free/);
-  assert.match(home, /第一个月免费/);
+  assert.match(home, /Nine packages\. No automatic renewal/);
+  assert.match(home, /九个套餐，不自动续费/);
   assert.match(assistant, /Chinese, English, Spanish, Japanese, Korean, French, German, Russian, Italian, Portuguese, Arabic, and Hindi/);
   for (const skill of ["vocabulary", "reading", "writing", "listening", "dialogue"]) {
     assert.match(assistant, new RegExp(skill));

@@ -4,20 +4,25 @@ import test from "node:test";
 
 const source = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("SmartLingo starts a server-recorded free month without charging", async () => {
-  const [classes, enrollment, component] = await Promise.all([
+test("SmartLingo requires an explicit language-scoped fixed-term package", async () => {
+  const [classes, enrollment, component, checkout] = await Promise.all([
     source("app/api/classes/route.ts"),
     source("app/api/classes/[classId]/enroll/route.ts"),
-    source("components/ClassStudio.tsx"),
+    source("components/CoursePaymentActions.tsx"),
+    source("app/api/billing/card/checkout/route.ts"),
   ]);
 
-  assert.match(classes, /paymentMode: "monthly_subscription"/);
+  assert.match(classes, /paymentMode: "fixed_term_package"/);
+  assert.match(classes, /durationsMonths: \[3,6,12\]/);
   assert.match(classes, /fixedPlatformPricing: true/);
-  assert.match(enrollment, /charged: false/);
-  assert.match(enrollment, /firstMonthFree: true/);
-  assert.match(enrollment, /smartlingo_course_subscriptions/);
-  assert.match(component, /第一个月免费/);
-  assert.doesNotMatch(`${classes}\n${enrollment}`, /stripe\.checkout|PaymentIntent|destination_charge/i);
+  assert.match(enrollment, /PACKAGE_PAYMENT_REQUIRED/);
+  assert.match(component, /SMARTLINGO_COURSE_DURATIONS\.map/);
+  assert.match(component, /targetLanguage/);
+  assert.match(component, /Pay once by card/);
+  assert.match(checkout, /mode: "payment"/);
+  assert.match(checkout, /metadata\[target_language\]/);
+  assert.match(checkout, /metadata\[duration_months\]/);
+  assert.doesNotMatch(`${classes}\n${enrollment}\n${component}\n${checkout}`, /firstMonthFree|trial_period_days|mode: "subscription"/);
 });
 
 test("member-created course orders cannot produce introducer points", async () => {
