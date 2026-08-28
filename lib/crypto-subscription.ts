@@ -18,7 +18,7 @@ export function cryptoSubscriptionIdsForCourse(languageCode: string, plan: Crypt
 }
 
 export function cryptoSubscriptionRuleIds(plan: CryptoSubscriptionPlan) {
-  return { mainId: courseSubscriptionMainId(plan, SMARTLINGO_CRYPTO_MONTHS), secondId: "" };
+  return { mainId: courseSubscriptionMainId(plan, SMARTLINGO_CRYPTO_MONTHS), secondId: "" } as const;
 }
 
 export function cryptoSubscriptionPlanForIds(mainId: string, secondId: string): CryptoSubscriptionPlan | null {

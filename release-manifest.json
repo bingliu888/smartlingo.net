@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-nine-price-products-20260828",
+  "releaseId": "smartlingo-net-nine-price-products-20260828-r2",
   "site": "smartlingo.net",
   "title": {
     "en": "Consolidate course pricing into nine products",
@@ -35,12 +35,14 @@
       "Replace the raw language-class table on the price administration route with three level cards containing the canonical nine products and prices.",
       "Store three shared three-month SmartPay3 price rules and validate the twelve supported language codes only when a student pays.",
       "Require a supported language on the crypto-options API and generate checkout choices only for that selected language.",
+      "Keep the shared empty SmartPay3 rule secondId as a TypeScript literal so CI and runtime use the same product-rule contract.",
       "Preserve all operational language courses, course content, user access records, and existing site-specific service boundaries."
     ],
     "zh": [
       "将价格管理路由上的原始语言课程表替换为三个等级卡片，列出权威九个产品与价格。",
       "SmartPay3 只保存三个共享的 3 个月价格规则，并仅在学生付款时验证十二种受支持语言。",
       "加密付款选项 API 必须收到受支持语言，并且只为该语言生成结账选项。",
+      "将共享 SmartPay3 价格规则的空 secondId 固定为 TypeScript 字面量，让 CI 与运行时采用同一产品规则契约。",
       "保留全部实际语言课程、课程内容、用户权限记录及现有站点专属服务边界。"
     ]
   },
