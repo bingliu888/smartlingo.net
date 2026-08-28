@@ -8,7 +8,7 @@ import {
   smartPay3DeploymentGasLimit,
 } from "../lib/smartpay-deployment.ts";
 import { smartPay3SourceVerificationPayload } from "../lib/smartpay-source-verification.ts";
-import { configuredSmartPay3CheckoutScopes, smartPayCheckoutDisplayAmount } from "../lib/smartpay-checkout.ts";
+import { configuredSmartPay3CheckoutScopes, smartPayCheckoutDisplayAmount, smartPayOptionsForLanguage } from "../lib/smartpay-checkout.ts";
 import { smartPayWithdrawalPreflight } from "../lib/crypto-amount.ts";
 import { verifyCryptoPaymentWithConfirmations } from "../lib/crypto-payment-verification.ts";
 
@@ -45,6 +45,14 @@ test("checkout shows the full on-chain price before connection and the eligible 
   };
   assert.equal(smartPayCheckoutDisplayAmount(option), "30 USDT");
   assert.equal(smartPayCheckoutDisplayAmount(option, true), "15 USDT + 15000000 GLC");
+});
+
+test("language checkout shows every enabled tier while course checkout remains locked", () => {
+  const option = (languageCode, plan) => ({ languageCode, plan, classId: `course_${languageCode}_${plan}` });
+  const options = [option("ja", "basic"), option("ja", "intermediate"), option("it", "basic")];
+  assert.deepEqual(smartPayOptionsForLanguage(options, "ja").map(item => item.plan), ["basic", "intermediate"]);
+  assert.deepEqual(smartPayOptionsForLanguage(options, "ja", "course_ja_basic").map(item => item.plan), ["basic"]);
+  assert.deepEqual(smartPayOptionsForLanguage(options, "it").map(item => item.classId), ["course_it_basic"]);
 });
 
 test("payment verification waits 6 seconds and retries three more times at 10 seconds", async () => {

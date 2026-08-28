@@ -11,7 +11,7 @@ import { existingPaymentAction, includeClaimedPaymentForLookup, type PaymentLook
 import { assertProviderChain, connectEvmWallet, waitForTransactionReceipt, walletChain, type EthereumProvider } from "../lib/evm-wallet-client";
 import { interfaceText } from "../lib/interface-locale";
 import type { SiteLanguage } from "../lib/site-locale";
-import { smartPayAvailablePlans, smartPayCheckoutDisplayAmount, smartPayOptionsForPlan, type SmartPayCheckoutOption } from "../lib/smartpay-checkout";
+import { smartPayAvailablePlans, smartPayCheckoutDisplayAmount, smartPayOptionsForLanguage, smartPayOptionsForPlan, type SmartPayCheckoutOption } from "../lib/smartpay-checkout";
 import { SMARTLINGO_WALLET_CONNECT } from "../lib/smartlingo-commerce-wallet";
 import type { CryptoSubscriptionPlan } from "../lib/crypto-subscription";
 import type { SubscriptionPlan } from "../lib/subscription-plans";
@@ -38,10 +38,16 @@ const displayAtomic = (value: string, decimals: number, maximumFractionDigits = 
   return trimmed ? `${whole}.${trimmed}` : whole;
 };
 
-const subscriptionTerm = (_months: number, t: (english: string, chinese: string) => string) =>
-  t("3-month fixed-term access", "3 个月固定期限学习权利");
+const subscriptionTerm = (plan: Plan, _months: number, t: (english: string, chinese: string) => string) => {
+  const level = plan === "basic"
+    ? t("Beginner", "初期课程")
+    : plan === "intermediate"
+      ? t("Intermediate", "中级课程")
+      : t("Advanced", "高级课程");
+  return `${level} · ${t("3-month fixed-term access", "3 个月固定期限学习权利")}`;
+};
 
-export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode, lockedCourseId }: { lang: SiteLanguage; initialPlan: Plan; initialLanguageCode: string; lockedCourseId: string }) {
+export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode, lockedCourseId }: { lang: SiteLanguage; initialPlan: Plan; initialLanguageCode: string; lockedCourseId?: string }) {
   const t = useCallback((english: string, chinese: string) => interfaceText(locale, english, chinese), [locale]);
   const [status, setStatus] = useState<Status>({ signedIn: false });
   const [options, setOptions] = useState<SmartPayCheckoutOption[]>([]);
@@ -74,7 +80,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     const response = await fetch(`/api/billing/crypto/smartpay/options?language=${encodeURIComponent(initialLanguageCode)}`, { cache: "no-store" });
     const data = await response.json().catch(() => ({})) as CheckoutOptionsResponse;
     if (!response.ok) throw new Error(data.error || "OPTIONS_UNAVAILABLE");
-    const availableOptions = (data.options || []).filter(option => option.classId === lockedCourseId && option.languageCode === initialLanguageCode);
+    const availableOptions = smartPayOptionsForLanguage(data.options || [], initialLanguageCode, lockedCourseId);
     const nextPlan = availableOptions.some(option => option.plan === plan) ? plan : availableOptions[0]?.plan || initialPlan;
     setOptions(availableOptions);
     setPlan(nextPlan);
@@ -90,7 +96,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       fetch(`/api/billing/crypto/smartpay/options?language=${encodeURIComponent(initialLanguageCode)}`, { cache: "no-store" }).then(async response => {
         const data = await response.json().catch(() => ({})) as CheckoutOptionsResponse;
         if (!response.ok) throw new Error(data.error || "OPTIONS_UNAVAILABLE");
-        return (data.options || []).filter(option => option.classId === lockedCourseId && option.languageCode === initialLanguageCode);
+        return smartPayOptionsForLanguage(data.options || [], initialLanguageCode, lockedCourseId);
       })
     ]).then(([billingStatus, availableOptions]) => {
       if (!active) return;
@@ -115,6 +121,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
   const availablePlans = useMemo(() => plans.filter(item => availablePlanIds.includes(item.id)), [availablePlanIds, plans]);
   const planOptions = useMemo(() => smartPayOptionsForPlan(options, plan), [options, plan]);
   const selectedOption = planOptions.find(option => option.settingId === settingId) || planOptions[0] || null;
+  const activeCourseId = selectedOption?.classId || lockedCourseId || "";
   const selected = (status.cryptoSettings || []).find(item => item.id === selectedOption?.settingId) || null;
   const selectedPlan = plans.find(item => item.id === plan) || { id: plan, months: 3, price: "—", amountCents: 0 };
   const nativeTokenSymbol = selected ? walletChain(selected).nativeCurrency.symbol : "Gas";
@@ -132,7 +139,10 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
 
   const ensureLogin = () => {
     if (!status.signedIn) {
-      window.location.assign(`/${locale}/auth/login?returnTo=${encodeURIComponent(`/${locale}/classes/${lockedCourseId}/pay/crypto`)}`);
+      const returnTo = lockedCourseId
+        ? `/${locale}/classes/${lockedCourseId}/pay/crypto?language=${initialLanguageCode}&months=3`
+        : `/${locale}/programs/${initialLanguageCode}/pay/crypto?level=${plan}`;
+      window.location.assign(`/${locale}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
       return false;
     }
     return true;
@@ -186,7 +196,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     const response = await fetch("/api/billing/crypto/smartpay/prepare", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ settingId: selectedOption.settingId, classId: lockedCourseId })
+      body: JSON.stringify({ settingId: selectedOption.settingId, classId: activeCourseId })
     });
     const data = await response.json().catch(() => ({})) as { option?: SmartPayCheckoutOption; refId?: string; error?: string };
     if (!response.ok || !data.option || !/^[A-HJ-NP-Z2-9]{6}$/.test(data.refId || "")) {
@@ -200,7 +210,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     const response = await fetch("/api/billing/crypto/find-payment", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ classId: lockedCourseId, settingId: selectedOption.settingId, includeClaimed: includeClaimedPaymentForLookup(context) })
+      body: JSON.stringify({ classId: activeCourseId, settingId: selectedOption.settingId, includeClaimed: includeClaimedPaymentForLookup(context) })
     });
     const data = await response.json().catch(() => ({})) as ExistingPayment & { error?: string };
     if (response.status === 404) return null;
@@ -224,7 +234,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         ? await fetch("/api/billing/crypto/smartpay/claim", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ settingId: selectedOption.settingId, paymentId: payment.paymentId, classId: lockedCourseId })
+          body: JSON.stringify({ settingId: selectedOption.settingId, paymentId: payment.paymentId, classId: activeCourseId })
         })
         : null;
       const directResult = response
@@ -234,7 +244,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         ? directResult
         : (await verifyCryptoPaymentWithConfirmations({
           plan,
-          classId: lockedCourseId,
+          classId: activeCourseId,
           settingId: selectedOption.settingId,
           txHash: payment.txHash,
           onRetry: ({ retryNumber }) => setMessage(t(
@@ -468,7 +478,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     setMessage(t("Transaction found. Waiting for confirmations and updating your subscription…", "交易已找到，正在等待链上确认并更新订阅…"));
     const { data } = await verifyCryptoPaymentWithConfirmations({
       plan,
-      classId: lockedCourseId,
+      classId: activeCourseId,
       settingId: selectedOption.settingId,
       txHash: hash,
       initialDelayMs: afterSuccessfulPayment ? 6_000 : 0,
@@ -533,14 +543,14 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
   }
 
   return <div className="crypto-flow">
-    <Link className="back-link" href={`/${locale}/classes/${lockedCourseId}`}>← {t("Back to course", "返回课程")}</Link>
+    <Link className="back-link" href={lockedCourseId ? `/${locale}/classes/${lockedCourseId}` : `/${locale}/programs/${initialLanguageCode}`}>← {t("Back to course", "返回课程套餐")}</Link>
     <div className="page-heading centered"><p className="eyebrow"><span/> {t("CRYPTO PAYMENT", "加密货币付款")}</p><h1>{t("Subscribe to this course with crypto", "使用加密货币订阅课程")}</h1><p>{t("The course, tokens, and amounts come only from this site's available on-chain payment rules. We never request a private key or seed phrase.", "课程、代币和金额全部来自本站当前可用的链上付款规则。不会要求私钥或助记词。")}</p></div>
     <ol className="payment-steps"><li className={step >= 1 ? "active" : ""}>1. {t("Product", "选择服务期")}</li><li className={step >= 2 ? "active" : ""}>2. {t("Crypto", "选择代币")}</li><li className={step >= 3 ? "active" : ""}>3. {t("Wallet", "付款钱包")}</li></ol>
 
     {step === 1 ? <section className="crypto-box flow-card">
       <h2>{t("Step 1: Choose a subscription term", "步骤 1：选择订阅服务期")}</h2>
       <p className="flow-intro">{t("Only terms with at least one available on-chain payment option are shown.", "这里只显示至少有一个可用链上付款项目的服务期。")}</p>
-      {!optionsLoaded ? <p>{t("Loading on-chain payment options…", "正在读取链上付款项目…")}</p> : availablePlans.length ? <div className="radio-list">{availablePlans.map(item => <label key={item.id}><input type="radio" checked={plan === item.id} onChange={() => choosePlan(item.id)}/><span className="plan-option-copy"><strong>{subscriptionTerm(item.months, t)}</strong><small>{t("Available on-chain", "链上可付款")}</small></span><span className="plan-option-price"><b>{item.price}</b><small>{t("Payment options available", "有可用付款选项")}</small></span></label>)}</div> : <p className="billing-message">{t("There is no available subscription payment option right now. Wait for an administrator to confirm the on-chain payment rules.", "当前没有可用的订阅付款项目。请等待管理员确认链上付款规则。")}</p>}
+      {!optionsLoaded ? <p>{t("Loading on-chain payment options…", "正在读取链上付款项目…")}</p> : availablePlans.length ? <div className="radio-list">{availablePlans.map(item => <label key={item.id}><input type="radio" checked={plan === item.id} onChange={() => choosePlan(item.id)}/><span className="plan-option-copy"><strong>{subscriptionTerm(item.id, item.months, t)}</strong><small>{t("Available on-chain", "链上可付款")}</small></span><span className="plan-option-price"><b>{item.price}</b><small>{t("Payment options available", "有可用付款选项")}</small></span></label>)}</div> : <p className="billing-message">{t("There is no available subscription payment option right now. Wait for an administrator to confirm the on-chain payment rules.", "当前没有可用的订阅付款项目。请等待管理员确认链上付款规则。")}</p>}
       <button className="button primary" disabled={!availablePlans.length} onClick={() => setStep(2)}>{t("Next: choose crypto", "下一步：选择代币")} →</button>
     </section> : null}
 
@@ -557,7 +567,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     {step === 3 && selected && selectedOption ? <section className="crypto-box flow-card">
       <button className="text-button" onClick={() => setStep(2)}>← {t("Back", "上一步")}</button>
       <h2>{t("Step 3: Connect or enter a payer wallet", "步骤 3：连接或填写付款钱包")}</h2>
-      <div className="payment-summary"><strong>{subscriptionTerm(selectedPlan.months, t)}</strong><span>{selectedDisplayAmount} · {selectedOption.chainName}</span></div>
+      <div className="payment-summary"><strong>{subscriptionTerm(plan, selectedPlan.months, t)}</strong><span>{selectedDisplayAmount} · {selectedOption.chainName}</span></div>
       <dl><div><dt>{t("Payment contract", "付款合约")}</dt><dd><a className="chain-link" href={explorerUrl(selectedOption.chainId, "address", selectedOption.contractAddress) || "#"} target="_blank" rel="noreferrer">{selectedOption.contractAddress}</a></dd></div><div><dt>{t("Primary token contract", "主代币合约")}</dt><dd><a className="chain-link" href={explorerUrl(selectedOption.chainId, "token", selectedOption.tokenAddress) || "#"} target="_blank" rel="noreferrer">{selectedOption.tokenAddress}</a></dd></div>{selectedOption.smartPay3Offer?.mode === "dual" ? <div><dt>{t("GLC contract", "GLC 合约")}</dt><dd><a className="chain-link" href={explorerUrl(selectedOption.chainId, "token", selectedOption.smartPay3Offer.secondaryTokenAddress) || "#"} target="_blank" rel="noreferrer">{selectedOption.smartPay3Offer.secondaryTokenAddress}</a></dd></div> : null}</dl>
       <p className="flow-intro">{t("The server rereads the current rule, token balances, and gas first. After validation passes, the wallet directly requests any required approval or payment. The TransactionID then updates the subscription automatically.", "服务器会重新读取当前规则、实际代币余额和 Gas；校验通过后会直接请求钱包完成必要授权或付款。成功后自动读取 TransactionID 并更新订阅。")}</p>
       {!direct ? <>

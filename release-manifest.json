@@ -1,67 +1,69 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-nine-price-products-20260828-r2",
+  "releaseId": "smartlingo-net-language-crypto-checkout-20260828-r3",
   "site": "smartlingo.net",
   "title": {
-    "en": "Consolidate course pricing into nine products",
-    "zh": "课程价格统一为九个产品"
+    "en": "Complete language-scoped card and crypto course checkout",
+    "zh": "完成按学习语言限定的银行卡与加密课程结账"
   },
   "purpose": {
-    "en": "Remove language-expanded price rows from the administrator and SmartPay3 flows so SmartLingo has exactly nine course-price products while students still choose the language they want to learn.",
-    "zh": "从管理员与 SmartPay3 流程中移除按语言重复展开的价格行，让 SmartLingo 只保留九个课程价格产品，同时仍由学生选择要学习的语言。"
+    "en": "Let a learner choose one language, compare all nine fixed-term packages, and continue into either card checkout or only the currently enabled SmartPay3 three-month payment options without losing the selected language.",
+    "zh": "让学习者先选择一种学习语言，再比较九个固定期限套餐，并在不丢失已选语言的前提下进入银行卡结账或仅查看当前已启用的 SmartPay3 三个月付款选项。"
   },
   "features": {
     "en": [
-      "Show exactly nine price products: Beginner, Intermediate, and Advanced for 3, 6, or 12 months.",
-      "Keep card checkout on all nine products and Polygon USDT/GLC checkout only on the three three-month products.",
-      "Carry the selected learning language into SmartPay3 as the payment secondId without duplicating the on-chain price rule."
+      "Present exactly nine direct package choices for the already-selected learning language: Beginner, Intermediate, and Advanced for 3, 6, or 12 months.",
+      "Give every package a direct card action and one separate SmartMeeting-style crypto entry that reads only enabled three-month SmartPay3 products.",
+      "Show the enabled Japanese Beginner three-month product first when it is the only enabled level, then let the learner choose the GLC or USDT/GLC on-chain option.",
+      "Convert the payment language and product IDs into the exact official course entitlement so Dashboard and My Courses open the paid course."
     ],
     "zh": [
-      "仅显示九个价格产品：初期、中级、高级课程各提供 3、6、12 个月。",
-      "九个产品全部支持银行卡付款，Polygon USDT/GLC 仅用于三个 3 个月产品。",
-      "将学生选择的学习语言作为付款 secondId 写入 SmartPay3，同时不再重复创建链上价格规则。"
+      "为已经选定的学习语言直接展示九个套餐：初期、中级、高级课程各提供 3、6、12 个月。",
+      "每个套餐提供直接银行卡入口，并增加一个与 SmartMeeting 风格一致的独立加密付款入口，只读取已启用的 SmartPay3 三个月产品。",
+      "当前仅启用初期课程时，日语流程只显示日语初期 3 个月产品，下一步可选择 GLC 或 USDT/GLC 链上付款项目。",
+      "根据付款中的语言与产品 ID 准确生成官方课程学习权利，使 Dashboard 与我的课程都能显示并打开已付款课程。"
     ]
   },
   "affected": {
     "en": [
-      "Administrator course-price page and dashboard, public course package pages, SmartPay3 rule administration, crypto checkout options, payment reconciliation, contract ABI, and integration documentation."
+      "Public language package pages, direct card checkout entry, language-scoped crypto checkout, SmartPay3 payment reconciliation and account recovery, Dashboard, and My Courses entitlement visibility."
     ],
     "zh": [
-      "管理员课程价格页与仪表板、公开课程套餐页、SmartPay3 规则管理、加密付款选项、付款对账、合约 ABI 及集成文档。"
+      "公开语言套餐页、银行卡直接结账入口、按语言限定的加密结账、SmartPay3 付款核对与账户恢复、用户面板及我的课程学习权利展示。"
     ]
   },
   "changes": {
     "en": [
-      "Replace the raw language-class table on the price administration route with three level cards containing the canonical nine products and prices.",
-      "Store three shared three-month SmartPay3 price rules and validate the twelve supported language codes only when a student pays.",
-      "Require a supported language on the crypto-options API and generate checkout choices only for that selected language.",
-      "Keep the shared empty SmartPay3 rule secondId as a TypeScript literal so CI and runtime use the same product-rule contract.",
-      "Preserve all operational language courses, course content, user access records, and existing site-specific service boundaries."
+      "Replace passive price cards with an interactive language package catalog that launches card checkout directly and keeps one separate crypto-payment call to action.",
+      "Add a public language-scoped crypto route and reuse the audited course checkout without exposing payment rules from another language.",
+      "Allow generic language checkout to display every enabled level while retaining the locked single-course behavior on existing course routes.",
+      "Map SmartPay3 mainId and language secondId back to the official course ID during both immediate claim and delayed account recovery.",
+      "Keep all on-chain amounts authoritative and preserve user, course, wallet, Clerk, Stripe, D1, Cloudflare, and other site boundaries."
     ],
     "zh": [
-      "将价格管理路由上的原始语言课程表替换为三个等级卡片，列出权威九个产品与价格。",
-      "SmartPay3 只保存三个共享的 3 个月价格规则，并仅在学生付款时验证十二种受支持语言。",
-      "加密付款选项 API 必须收到受支持语言，并且只为该语言生成结账选项。",
-      "将共享 SmartPay3 价格规则的空 secondId 固定为 TypeScript 字面量，让 CI 与运行时采用同一产品规则契约。",
-      "保留全部实际语言课程、课程内容、用户权限记录及现有站点专属服务边界。"
+      "将静态价格卡升级为可操作的语言套餐目录，可直接启动银行卡结账，并保留一个独立的加密付款入口。",
+      "新增公开且按学习语言限定的加密付款路由，复用已经审计的课程结账流程，不显示其他语言的付款规则。",
+      "通用语言结账显示当前已启用的全部等级，同时保留现有课程路由锁定单门课程的行为。",
+      "立即核对与延迟账户恢复都会将 SmartPay3 的 mainId 和语言 secondId 映射回准确的官方课程 ID。",
+      "链上金额继续以合约为准，并保留用户、课程、钱包、Clerk、Stripe、D1、Cloudflare 及其他站点边界。"
     ]
   },
   "validation": {
     "en": [
-      "Passed the production build, zero-warning lint, 409 site tests, 68-migration replay and idempotency checks, sensitive-data scan, shared architecture contracts, and 270/270 WebKit responsive-layout checks.",
-      "Verified Chinese-learning-Japanese and English-learning-Italian package flows in a real browser, including prices, language-scoped links, and the three crypto-enabled products."
+      "Passed the production build, zero-warning lint, 410 site tests, migration replay and idempotency checks, sensitive-data scan, and required shared site-policy contracts.",
+      "Verified the Chinese-interface Japanese package catalog and its language-scoped crypto entry in a real browser; production verification confirms that Beginner three-month currently exposes the two administrator-enabled payment options."
     ],
     "zh": [
-      "通过生产构建、零警告 lint、409 项站点测试、68 个迁移重放与幂等检查、敏感数据扫描、共享架构契约及 270/270 WebKit 响应式版面检查。",
-      "使用真实浏览器验证中文学日语与英文学意大利语套餐流程，包括价格、按语言限定的链接及三个可用加密付款产品。"
+      "通过生产构建、零警告 lint、410 项站点测试、迁移重放与幂等检查、敏感数据扫描及规定的共享站点策略契约。",
+      "使用真实浏览器验证中文界面的日语套餐目录及按语言限定的加密入口；生产验证确认初期 3 个月当前显示管理员已启用的两个付款选项。"
     ]
   },
   "deferred": {
     "en": [
-      "Automated validation does not submit a real card or token payment. An authorized wallet owner must deploy the updated SmartPay3 contract and publish its three product rules before Polygon checkout can be enabled."
+      "Automated validation does not submit a real card or token payment. The final wallet approval, token transfer, and production entitlement confirmation require the authorized payer to approve an actual transaction."
     ],
     "zh": [
-      "自动验证不会提交真实银行卡或代币付款；Polygon 结账启用前，必须由授权钱包所有者部署更新后的 SmartPay3 合约并发布三个产品规则。"
+      "自动验证不会提交真实银行卡或代币付款；最后的钱包授权、代币转账及生产学习权利确认需要付款人在钱包中批准一笔真实交易。"
     ]
   },
   "siteAdaptations": {

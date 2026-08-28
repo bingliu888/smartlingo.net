@@ -59,12 +59,14 @@ test("the shared header uses one accessible twelve-language text dropdown withou
 });
 
 test("home feature buttons and Choose course use canonical destination pages", async () => {
-  const [home, choices, planner, programs, detail, css] = await Promise.all([
+  const [home, choices, planner, programs, detail, subscriptionCatalog, cryptoPage, css] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../components/HomeLearningChoices.tsx"),
     read("../components/LearningPathPlanner.tsx"),
     read("../app/[lang]/programs/page.tsx"),
     read("../app/[lang]/programs/[language]/page.tsx"),
+    read("../components/LanguageSubscriptionCatalog.tsx"),
+    read("../app/[lang]/programs/[language]/pay/crypto/page.tsx"),
     read("../app/globals.css"),
   ]);
 
@@ -87,13 +89,16 @@ test("home feature buttons and Choose course use canonical destination pages", a
   assert.match(planner, /openCatalogLanguage/);
   assert.match(planner, /joined[\s\S]*?\/classes\/\$\{encodeURIComponent\(joined\.id\)\}/);
   assert.match(planner, /\/programs\/\$\{encodeURIComponent\(language\)\}/);
-  assert.match(detail, /SMARTLINGO_COURSE_PACKAGES/);
-  assert.match(detail, /SMARTLINGO_COURSE_DURATIONS/);
-  assert.match(detail, /9 个固定期限套餐/);
-  assert.match(detail, /Polygon USDT 和 GLC 仅用于三个月套餐/);
-  assert.match(detail, /fixedCourseId\(language,course\.tier\)/);
-  assert.match(detail, /interfaceText\(locale, "Choose a level and access period", "选择等级和学习期限"\)/);
-  assert.match(detail, /course\.features\.en\.map/);
+  assert.match(detail, /LanguageSubscriptionCatalog/);
+  assert.match(subscriptionCatalog, /SMARTLINGO_COURSE_PACKAGES/);
+  assert.match(subscriptionCatalog, /SMARTLINGO_COURSE_DURATIONS/);
+  assert.match(subscriptionCatalog, /9 个固定期限套餐/);
+  assert.match(subscriptionCatalog, /SmartPay3 合约当前已启用/);
+  assert.match(subscriptionCatalog, /fixedCourseId\(language, tier\)/);
+  assert.match(subscriptionCatalog, /billing\/card\/checkout/);
+  assert.match(subscriptionCatalog, /programs\/\$\{language\}\/pay\/crypto/);
+  assert.match(subscriptionCatalog, /course\.features\.en\.map/);
+  assert.match(cryptoPage, /<CryptoCheckout initialPlan=\{initialPlan\} initialLanguageCode=\{language\}/);
   assert.match(detail, /<h1>\{item\.nativeName\}<\/h1>/);
   assert.doesNotMatch(detail, /lang === "zh"/);
   assert.doesNotMatch(choices, /lingo-training-menu|>Vocab<|>Speaking</);

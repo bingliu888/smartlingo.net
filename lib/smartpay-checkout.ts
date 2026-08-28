@@ -19,6 +19,8 @@ export type SmartPayCheckoutOption = {
 const PLAN_ORDER: CryptoSubscriptionPlan[] = ["basic", "intermediate", "advanced"];
 export const smartPayAvailablePlans = (options: readonly SmartPayCheckoutOption[]) => PLAN_ORDER.filter(plan => options.some(option => option.plan === plan));
 export const smartPayOptionsForPlan = (options: readonly SmartPayCheckoutOption[], plan: CryptoSubscriptionPlan) => options.filter(option => option.plan === plan);
+export const smartPayOptionsForLanguage = (options: readonly SmartPayCheckoutOption[], languageCode: string, lockedCourseId?: string) =>
+  options.filter(option => option.languageCode === languageCode && (!lockedCourseId || option.classId === lockedCourseId));
 
 export function smartPayCheckoutDisplayAmount(option: SmartPayCheckoutOption, walletOfferEligible = false) {
   const offer = option.smartPay3Offer;
