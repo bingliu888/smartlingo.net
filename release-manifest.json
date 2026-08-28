@@ -1,81 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-language-course-packages-20260828-r2",
+  "releaseId": "smartlingo-net-nine-price-products-20260828",
   "site": "smartlingo.net",
   "title": {
-    "en": "Launch nine language-scoped fixed-term course packages",
-    "zh": "上线九个按语言授权的固定期限课程套餐"
+    "en": "Consolidate course pricing into nine products",
+    "zh": "课程价格统一为九个产品"
   },
   "purpose": {
-    "en": "Replace the former recurring-course assumptions with a language-first catalog of nine fixed-term packages and grant access only to the selected language course.",
-    "zh": "以先选学习语言、再选九个固定期限套餐的新目录替换旧的周期订阅假设，并只开通用户所选语言课程。"
+    "en": "Remove language-expanded price rows from the administrator and SmartPay3 flows so SmartLingo has exactly nine course-price products while students still choose the language they want to learn.",
+    "zh": "从管理员与 SmartPay3 流程中移除按语言重复展开的价格行，让 SmartLingo 只保留九个课程价格产品，同时仍由学生选择要学习的语言。"
   },
   "features": {
     "en": [
-      "Offer Beginner, Intermediate, and Advanced courses for 3, 6, or 12 months at $30/$50/$80, $60/$100/$160, and $120/$200/$320.",
-      "Offer Polygon USDT and GLC checkout only for the three-month package of each course level.",
-      "Encode the selected learning language as SmartPay3 secondId and grant the matching language-course access period."
+      "Show exactly nine price products: Beginner, Intermediate, and Advanced for 3, 6, or 12 months.",
+      "Keep card checkout on all nine products and Polygon USDT/GLC checkout only on the three three-month products.",
+      "Carry the selected learning language into SmartPay3 as the payment secondId without duplicating the on-chain price rule."
     ],
     "zh": [
-      "初期、中级、高级课程分别提供 3、6、12 个月套餐，价格为 $30/$50/$80、$60/$100/$160、$120/$200/$320。",
-      "仅三个等级的三个月套餐提供 Polygon USDT 与 GLC 支付。",
-      "将所选学习语言写入 SmartPay3 secondId，并为对应语言课程开通学习期限。"
+      "仅显示九个价格产品：初期、中级、高级课程各提供 3、6、12 个月。",
+      "九个产品全部支持银行卡付款，Polygon USDT/GLC 仅用于三个 3 个月产品。",
+      "将学生选择的学习语言作为付款 secondId 写入 SmartPay3，同时不再重复创建链上价格规则。"
     ]
   },
   "affected": {
     "en": [
-      "Course catalog and detail pages, card and SmartPay3 checkout, payment reconciliation, course access, college revenue sharing, admin crypto rails, and course-credit redemption."
+      "Administrator course-price page and dashboard, public course package pages, SmartPay3 rule administration, crypto checkout options, payment reconciliation, contract ABI, and integration documentation."
     ],
     "zh": [
-      "课程目录与详情页、信用卡与 SmartPay3 结账、付款对账、课程权限、学院分成、管理员加密支付通道及课程积分兑换。"
+      "管理员课程价格页与仪表板、公开课程套餐页、SmartPay3 规则管理、加密付款选项、付款对账、合约 ABI 及集成文档。"
     ]
   },
   "changes": {
     "en": [
-      "Add an authoritative nine-row package catalog and immutable payment-purchase evidence with language, level, duration, price, and access dates.",
-      "Use one-time Stripe payments for all nine packages and calendar-month access extension without automatic renewal.",
-      "Replace the legacy monthly and first-month-free schedule label on official course pages with fixed-term, no-auto-renewal language.",
-      "Normalize existing Polygon USDT and GLC token amounts to the three-month prices while preserving legacy constrained columns as non-authoritative compatibility data."
+      "Replace the raw language-class table on the price administration route with three level cards containing the canonical nine products and prices.",
+      "Store three shared three-month SmartPay3 price rules and validate the twelve supported language codes only when a student pays.",
+      "Require a supported language on the crypto-options API and generate checkout choices only for that selected language.",
+      "Preserve all operational language courses, course content, user access records, and existing site-specific service boundaries."
     ],
     "zh": [
-      "新增权威九行套餐目录及不可混用的付款记录，保存语言、等级、期限、价格和学习起止日期。",
-      "九个套餐全部使用 Stripe 一次性付款，按自然月延长学习期限且不自动续费。",
-      "将官方课程页遗留的按月与首月免费安排文案替换为固定期限、无自动续费说明。",
-      "将现有 Polygon USDT 与 GLC 代币数量统一为三个月价格，同时保留旧约束字段作为非权威兼容数据。"
+      "将价格管理路由上的原始语言课程表替换为三个等级卡片，列出权威九个产品与价格。",
+      "SmartPay3 只保存三个共享的 3 个月价格规则，并仅在学生付款时验证十二种受支持语言。",
+      "加密付款选项 API 必须收到受支持语言，并且只为该语言生成结账选项。",
+      "保留全部实际语言课程、课程内容、用户权限记录及现有站点专属服务边界。"
     ]
   },
   "validation": {
     "en": [
-      "Pass the production build, zero-warning lint, TypeScript, 68-migration replay and idempotency checks, payment and language-scope contracts, and anonymous browser package-selection checks."
+      "Passed the production build, zero-warning lint, 409 site tests, 68-migration replay and idempotency checks, sensitive-data scan, shared architecture contracts, and 270/270 WebKit responsive-layout checks.",
+      "Verified Chinese-learning-Japanese and English-learning-Italian package flows in a real browser, including prices, language-scoped links, and the three crypto-enabled products."
     ],
     "zh": [
-      "通过生产构建、零警告 lint、TypeScript、68 个迁移的重放与幂等检查、付款和语言范围契约，以及匿名浏览器套餐选择检查。"
+      "通过生产构建、零警告 lint、409 项站点测试、68 个迁移重放与幂等检查、敏感数据扫描、共享架构契约及 270/270 WebKit 响应式版面检查。",
+      "使用真实浏览器验证中文学日语与英文学意大利语套餐流程，包括价格、按语言限定的链接及三个可用加密付款产品。"
     ]
   },
   "deferred": {
     "en": [
-      "No real card or token transaction is submitted by automated testing; Polygon checkout remains unavailable until matching SmartPay3 rules are published by the authorized wallet owner."
+      "Automated validation does not submit a real card or token payment. An authorized wallet owner must deploy the updated SmartPay3 contract and publish its three product rules before Polygon checkout can be enabled."
     ],
     "zh": [
-      "自动测试不会提交真实信用卡或代币交易；在授权钱包所有者发布匹配的 SmartPay3 规则前，Polygon 结账保持不可用。"
+      "自动验证不会提交真实银行卡或代币付款；Polygon 结账启用前，必须由授权钱包所有者部署更新后的 SmartPay3 合约并发布三个产品规则。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo's independent Clerk, D1, Stripe, SmartPay3, college, user, and course-data boundaries and the existing GitHub Actions to Cloudflare release path."
+      "Keep SmartLingo's twelve learning languages, Clerk identity, D1 data, Stripe, SmartPay3, wallets, college revenue sharing, and GitHub Actions to Cloudflare deployment isolated from every other site."
     ],
     "zh": [
-      "保留 SmartLingo 独立的 Clerk、D1、Stripe、SmartPay3、学院、用户与课程数据边界，以及既有 GitHub Actions 到 Cloudflare 发布流程。"
+      "继续保持 SmartLingo 的十二种学习语言、Clerk 身份、D1 数据、Stripe、SmartPay3、钱包、学院分成及 GitHub Actions 到 Cloudflare 发布流程与其他站点完全隔离。"
     ]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": [
-      "0173_course_subscription_packages"
-    ],
-    "rollback": {
-      "en": "This release includes additive D1 migration 0173. It does not delete historical data. A code rollback restores the prior Worker while the additive tables remain; any schema correction must use a new forward migration.",
-      "zh": "本次包含前向追加 D1 迁移 0173，不删除历史数据。代码回退只恢复上一版 Worker，追加表继续保留；任何结构修正必须使用新的前向迁移。"
-    }
+    "included": false,
+    "migrations": []
   }
 }

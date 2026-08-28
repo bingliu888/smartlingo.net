@@ -16,5 +16,6 @@ test("SmartPay3 admin layout matches SmartMeeting and uses the connected wallet 
   assert.match(consoleSource, /setConnectedWallet\(result\.address\)/);
   assert.match(consoleSource, /setOwnerWallet\(result\.address\)/);
   assert.match(consoleSource, /const initialOwner = active\.address/);
+  assert.match(consoleSource, /Only the three 3-month Beginner, Intermediate, and Advanced price products are stored on-chain/);
+  assert.doesNotMatch(consoleSource, /classId: record\.secondId/);
 });
-

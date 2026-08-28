@@ -43,12 +43,14 @@ test("course prices, public catalog, and course-scoped wallet checkout stay alig
 });
 
 test("site-isolated rails grant only the selected language and three-month crypto package", async () => {
-  const [migration, packageMigration, admin, settings, presets, claim, purchase, records, status] = await Promise.all([
+  const [migration, packageMigration, admin, settings, presets, optionsRoute, checkout, claim, purchase, records, status] = await Promise.all([
     read("../drizzle/0172_smartpay3_course_refid.sql"),
     read("../drizzle/0173_course_subscription_packages.sql"),
     read("../components/SmartPayAdminConsole.tsx"),
     read("../app/api/admin/crypto-settings/route.ts"),
     read("../lib/smartpay3-presets.ts"),
+    read("../app/api/billing/crypto/smartpay/options/route.ts"),
+    read("../components/CryptoCheckout.tsx"),
     read("../lib/smartlingo-smartpay-claim.ts"),
     read("../lib/course-package-purchase.ts"),
     read("../app/api/billing/crypto/smartpay/records/route.ts"),
@@ -63,9 +65,13 @@ test("site-isolated rails grant only the selected language and three-month crypt
   assert.match(settings, /crypto_payment_admin_audit/);
   assert.match(settings, /2000,10000,30000/);
   assert.doesNotMatch(settings, /basic_amount_cents=3000/);
-  assert.match(presets, /cryptoSubscriptionIdsForCourse/);
+  assert.match(presets, /cryptoSubscriptionRuleIds/);
   assert.match(presets, /months: 3/);
   assert.match(presets, /chainId !== 137/);
+  assert.doesNotMatch(presets, /for \(const languageCode|LANGUAGES|classId/);
+  assert.match(optionsRoute, /isSmartLingoCommunityLanguage/);
+  assert.match(optionsRoute, /currentSmartPayCheckoutOptions\(undefined, language\)/);
+  assert.match(checkout, /smartpay\/options\?language=\$\{encodeURIComponent\(initialLanguageCode\)\}/);
   assert.match(claim, /record\.secondId/);
   assert.match(claim, /fixedCourseId\(languageCode, plan\)/);
   assert.match(claim, /recordCoursePackagePurchase/);
@@ -76,7 +82,7 @@ test("site-isolated rails grant only the selected language and three-month crypt
   for (const tokenAmount of ["'30'", "'60'", "'120'", "'30000000'", "'60000000'", "'120000000'"]) assert.match(packageMigration, new RegExp(tokenAmount));
   assert.match(records, /smartPay3LatestTransactions/);
   assert.match(status, /smartpay3_payment_claims/);
-  for (const source of [migration, packageMigration, admin, settings, presets, claim, purchase, records, status]) {
+  for (const source of [migration, packageMigration, admin, settings, presets, optionsRoute, checkout, claim, purchase, records, status]) {
     assert.doesNotMatch(source, /SmartMeeting|smartmeeting\.club|SmartAICert/);
   }
 });

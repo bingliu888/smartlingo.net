@@ -77,6 +77,24 @@ test("deployment bundle is reproducible and site-specific", async () => {
   assert.equal(payload.sourcify.contractIdentifier, "contracts/SmartPay3.sol:SmartPay3");
 });
 
+test("SmartPay3 stores three shared price products and records the selected learning language on payment", async () => {
+  const [contract, presets, server, optionsRoute] = await Promise.all([
+    read("contracts/SmartPay3.sol"),
+    read("lib/smartpay3-presets.ts"),
+    read("lib/smartpay-checkout-server.ts"),
+    read("app/api/billing/crypto/smartpay/options/route.ts"),
+  ]);
+  for (const mainId of ["smartlingo_course_basic_3m", "smartlingo_course_intermediate_3m", "smartlingo_course_advanced_3m"]) {
+    assert.match(contract, new RegExp(mainId));
+  }
+  assert.doesNotMatch(contract, /opc_3_month|opc_6_month|opc_12_month/);
+  assert.match(contract, /_ruleKey\(primaryTokenAddress, secondaryTokenAddress, mainId, SUBSCRIPTION_SECOND_ID\)/);
+  assert.match(contract, /_isSupportedLanguage\(secondId\)/);
+  assert.match(presets, /cryptoSubscriptionRuleIds/);
+  assert.match(server, /cryptoSubscriptionIdsForCourse\(languageCode, preset\.plan\)/);
+  assert.match(optionsRoute, /Choose a supported learning language/);
+});
+
 test("user pages hide contract implementation names and admin identifiers", async () => {
   const [checkout, account, profile, admin, migration] = await Promise.all([
     read("components/CryptoCheckout.tsx"),

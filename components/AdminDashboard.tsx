@@ -4,6 +4,7 @@ import { AdminCollegeTags } from "./CollegeAdminForms";
 import { activeCollegeTags } from "../lib/smartlingo-colleges";
 import { AdminLearningRewards } from "./AdminLearningRewards";
 import AdminCryptoSettings from "./AdminCryptoSettings";
+import { SMARTLINGO_COURSE_SUBSCRIPTION_PACKAGES } from "../lib/smartlingo-course-packages";
 
 type CountRow = { count: number };
 
@@ -12,11 +13,9 @@ async function count(sql: string) {
 }
 
 export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: SessionUser }) {
-  const [members, subscribers, classes, openClasses, certificates, colleges, collegeTags] = await Promise.all([
+  const [members, subscribers, certificates, colleges, collegeTags] = await Promise.all([
     count("SELECT COUNT(*) AS count FROM users"),
     count("SELECT COUNT(DISTINCT u.id) AS count FROM users u LEFT JOIN platform_member_access a ON a.user_id=u.id WHERE COALESCE(a.status,'active')='active' AND COALESCE(a.subscriber_override,0)<>-1 AND (COALESCE(a.subscriber_override,0)=1 OR EXISTS (SELECT 1 FROM smartlingo_platform_subscription_payments p WHERE p.subscriber_user_id=u.id AND p.status='paid'))"),
-    count("SELECT COUNT(*) AS count FROM smartlingo_language_classes"),
-    count("SELECT COUNT(*) AS count FROM smartlingo_language_classes WHERE status = 'open'"),
     count("SELECT COUNT(*) AS count FROM smartlingo_course_certificates_v2"),
     count("SELECT COUNT(*) AS count FROM smartlingo_colleges WHERE status='active'"),
     activeCollegeTags(true),
@@ -39,8 +38,8 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
           <nav><a href={`/${lang}/admin/members?tab=members`}>{zh ? "全部会员" : "All members"} →</a><a href={`/${lang}/admin/members?tab=admins`}>{zh ? "管理员" : "Administrators"} →</a><a href={`/${lang}/admin/members?tab=subscribers`}>{zh ? "订阅者" : "Subscribers"} →</a></nav>
         </article>
         <article className="admin-overview-card">
-          <div><p>{zh ? "语言课程" : "Language courses"}</p><strong>{classes.toLocaleString()}</strong><span>{zh ? `${openClasses.toLocaleString()} 个开放课程` : `${openClasses.toLocaleString()} open classes`}</span></div>
-          <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "管理课程" : "Manage courses"} →</a></nav>
+          <div><p>{zh ? "课程价格" : "Course prices"}</p><strong>{SMARTLINGO_COURSE_SUBSCRIPTION_PACKAGES.length}</strong><span>{zh ? "3 个等级 × 3 种固定期限" : "3 levels × 3 fixed terms"}</span></div>
+          <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "查看价格套餐" : "View price packages"} →</a></nav>
         </article>
         <article className="admin-overview-card">
           <div><p>{zh ? "结业证书" : "Certificates"}</p><strong>{certificates.toLocaleString()}</strong><span>{zh ? "由真实课程成绩生成" : "Issued from recorded course scores"}</span></div>

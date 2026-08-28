@@ -1,8 +1,7 @@
 import { atomicTokenAmountToDisplay, tokenAmountToAtomic } from "./crypto-amount";
 import type { CryptoPaymentSetting } from "./crypto-settings";
-import { cryptoSubscriptionIdsForCourse, type CryptoSubscriptionPlan } from "./crypto-subscription";
+import { cryptoSubscriptionRuleIds, type CryptoSubscriptionPlan } from "./crypto-subscription";
 
-const LANGUAGES = ["zh","en","es","ja","ko","fr","de","ru","it","pt","ar","hi"] as const;
 const TIERS: CryptoSubscriptionPlan[] = ["basic", "intermediate", "advanced"];
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const SMARTPAY3_MINIMUM_GLC_DISPLAY = "1000000000";
@@ -13,7 +12,7 @@ const amountKey = (tier: CryptoSubscriptionPlan): "basicTokenAmount" | "intermed
 
 export type SmartPay3RulePreset = {
   key: string; mode: "dual" | "single"; chainId: 137; plan: CryptoSubscriptionPlan; months: 3;
-  languageCode: typeof LANGUAGES[number]; classId: string; mainId: string; secondId: string;
+  mainId: string; secondId: "";
   primarySettingId: string; primarySettingLabel: string; primaryTokenAddress: string; primaryTokenSymbol: string;
   primaryTokenDecimals: number; primaryTokenAmount: string; primaryTokenAmountAtomic: string;
   secondarySettingId: string; secondarySettingLabel: string; secondaryTokenAddress: string; secondaryTokenSymbol: string;
@@ -42,9 +41,8 @@ export function smartPay3RulePresets(settings: readonly CryptoPaymentSetting[], 
   for (const setting of active) {
     const isUsdt = setting.tokenSymbol.toUpperCase() === "USDT";
     if (isUsdt && !glc) continue;
-    for (const languageCode of LANGUAGES) for (const plan of TIERS) {
-      const classId = `course_${languageCode}_${plan}`;
-      const ids = cryptoSubscriptionIdsForCourse(languageCode, plan);
+    for (const plan of TIERS) {
+      const ids = cryptoSubscriptionRuleIds(plan);
       const fullPrimary = tokenAmountToAtomic(setting[amountKey(plan)], setting.tokenDecimals);
       const percent = Number.isInteger(setting.smartPay3UsdtPercent) ? setting.smartPay3UsdtPercent : 50;
       if (percent < 0 || percent > 100) throw new Error("SMARTPAY3_INVALID_USDT_PERCENT");
@@ -56,8 +54,8 @@ export function smartPay3RulePresets(settings: readonly CryptoPaymentSetting[], 
         fullSecondary = numerator / denominator;
       }
       rows.push({
-        key: `${setting.id}:${glc?.id || "single"}:${classId}`, mode: isUsdt ? "dual" : "single", chainId: 137, plan, months: 3,
-        languageCode, classId, mainId: ids.mainId, secondId: ids.secondId,
+        key: `${setting.id}:${glc?.id || "single"}:${plan}`, mode: isUsdt ? "dual" : "single", chainId: 137, plan, months: 3,
+        mainId: ids.mainId, secondId: ids.secondId,
         primarySettingId: setting.id, primarySettingLabel: setting.label, primaryTokenAddress: setting.tokenContract,
         primaryTokenSymbol: setting.tokenSymbol, primaryTokenDecimals: setting.tokenDecimals,
         primaryTokenAmount: atomicTokenAmountToDisplay(fullPrimary, setting.tokenDecimals), primaryTokenAmountAtomic: fullPrimary.toString(),

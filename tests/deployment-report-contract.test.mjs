@@ -3,8 +3,9 @@ import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
+import { loadReleaseManifest } from "../scripts/release-manifest.mjs";
 
-test("deployment SQL records the exact full commit, Actions run, and additive migration boundary", async () => {
+test("deployment SQL records the exact full commit, Actions run, and declared migration boundary", async () => {
   const commit = "0123456789abcdef0123456789abcdef01234567";
   const runId = "31999999999";
   const script = resolve("scripts/deployment-report-sql.mjs");
@@ -16,8 +17,13 @@ test("deployment SQL records the exact full commit, Actions run, and additive mi
   assert.match(output, new RegExp(commit));
   assert.match(output, /"runId":"31999999999"/);
   assert.match(output, /https:\/\/github\.com\/bingliu888\/smartlingo\.net\/actions\/runs\/31999999999/);
-  assert.match(output, /additive D1 migration 0173/);
-  assert.match(output, /does not delete historical data/);
+  const manifest = loadReleaseManifest();
+  if (manifest.dataMigration?.included) {
+    for (const migration of manifest.dataMigration.migrations) assert.match(output, new RegExp(migration));
+    assert.match(output, new RegExp(manifest.dataMigration.rollback.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  } else {
+    assert.match(output, /This release has no data migration/);
+  }
   assert.throws(() => execFileSync(process.execPath, [script], {
     stdio: "pipe",
     env: { ...process.env, GITHUB_SHA: commit.slice(0, 12), GITHUB_RUN_ID: runId },

@@ -1,6 +1,6 @@
 # SmartPay3 mobile price reads and RefID checkout
 
-The site database is the product catalog: it identifies the three-month course package, learning language, token metadata, and the current USDT/GLC mix percentage. The deployed SmartPay3 contract is the payment authority. A checkout must call `paymentRule(...)` immediately before displaying a payable option and again before preparing the wallet transaction. SmartPay is available only for the three-month Beginner, Intermediate, and Advanced packages on Polygon; six- and twelve-month packages use card payment.
+The site database is the product catalog: it identifies the three-month course package, learning language, token metadata, and the current USDT/GLC mix percentage. The deployed SmartPay3 contract is the payment authority. A checkout must call the shared product rule with an empty rule `secondId` immediately before displaying a payable option and again before preparing the wallet transaction. SmartPay is available only for the three-month Beginner, Intermediate, and Advanced packages on Polygon; six- and twelve-month packages use card payment. The later `pay(...)` call records the student's selected learning-language code as its transaction `secondId`.
 
 The function is a free `eth_call`:
 
@@ -54,7 +54,6 @@ async function readSubscriptionPrice(input: {
   primaryToken: Address;
   secondaryToken?: Address;
   mainId: "smartlingo_course_basic_3m" | "smartlingo_course_intermediate_3m" | "smartlingo_course_advanced_3m";
-  secondId: "zh" | "en" | "es" | "ja" | "ko" | "fr" | "de" | "ru" | "it" | "pt" | "ar" | "hi";
   primaryDecimals: number;
   secondaryDecimals?: number;
 }) {
@@ -67,7 +66,7 @@ async function readSubscriptionPrice(input: {
         input.primaryToken,
         input.secondaryToken ?? ZERO,
         input.mainId,
-        input.secondId
+        ""
       ]
     });
 
@@ -147,7 +146,6 @@ Future<SmartPay3Rule> readSmartPay3Rule({
   String secondaryTokenAddress =
       '0x0000000000000000000000000000000000000000',
   required String mainId,
-  required String secondId,
 }) async {
   final client = Web3Client(rpcUrl, http.Client());
   try {
@@ -166,7 +164,7 @@ Future<SmartPay3Rule> readSmartPay3Rule({
         EthereumAddress.fromHex(primaryTokenAddress),
         EthereumAddress.fromHex(secondaryTokenAddress),
         mainId,
-        secondId,
+        '',
       ],
     );
 
@@ -200,7 +198,6 @@ final rule = await readSmartPay3Rule(
   primaryTokenAddress: polygonUsdtAddress,
   secondaryTokenAddress: polygonGlcAddress,
   mainId: 'smartlingo_course_basic_3m',
-  secondId: 'es',
 );
 
 if (!rule.enabled || rule.primaryAmount == BigInt.zero) {
@@ -211,7 +208,7 @@ print('${formatAtomic(rule.primaryAmount, 6)} USDT');
 print('${formatAtomic(rule.secondaryAmount, 18)} GLC');
 ```
 
-To prepare a Flutter wallet request, encode the same rule fields and the payer-entered RefID. The wallet connector must send the transaction; the app must never receive a private key or seed phrase.
+To prepare a Flutter wallet request, encode the same package `mainId`, the student's selected learning-language code as payment `secondId`, and the payer-entered RefID. The wallet connector must send the transaction; the app must never receive a private key or seed phrase.
 
 ```dart
 final refIdPattern = RegExp(r'^[A-HJ-NP-Z2-9]{6}$', caseSensitive: false);
@@ -240,6 +237,6 @@ Uint8List encodeSmartPay3Payment({
 }
 ```
 
-Use `paymentRuleCount()` plus paged `paymentRules(offset, limit)` reads to build the app's available product list directly from enabled contract rules. The app can translate the internal course `secondId` to a friendly language-and-tier label; the payer should never type `mainId` or `secondId`.
+Use `paymentRuleCount()` plus paged `paymentRules(offset, limit)` reads to build the three eligible package products directly from enabled contract rules. The app separately lets the student choose one of SmartLingo's 12 learning languages and passes that code only to `pay(...)`; the payer should never type `mainId` or `secondId`.
 
 The mobile app should obtain the active SmartPay3 contract address and supported token addresses from the authenticated site API, then verify that the returned chain ID matches the wallet's network. Do not hard-code a private RPC key, wallet private key, or seed phrase in the app.

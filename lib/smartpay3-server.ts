@@ -120,17 +120,19 @@ export async function verifySmartPay3Identity(rpcUrl: string, contract: Address)
   if (!code || code === "0x") throw new Error("CONTRACT_CODE_NOT_FOUND");
   const expectedCode = String((smartPay3ArtifactJson as { deployedBytecode?: string }).deployedBytecode || "");
   if (!expectedCode || code.toLowerCase() !== expectedCode.toLowerCase()) throw new Error("CONTRACT_IDENTITY_MISMATCH");
-  const [ownership, threeData, sixData, twelveData] = await Promise.all([
+  const [ownership, basicData, intermediateData, advancedData] = await Promise.all([
     smartPay3Ownership(rpcUrl, contract),
-    ethCall(rpcUrl, contract, "MAIN_ID_3_MONTH"),
-    ethCall(rpcUrl, contract, "MAIN_ID_6_MONTH"),
-    ethCall(rpcUrl, contract, "MAIN_ID_12_MONTH")
+    ethCall(rpcUrl, contract, "MAIN_ID_BASIC_3_MONTH"),
+    ethCall(rpcUrl, contract, "MAIN_ID_INTERMEDIATE_3_MONTH"),
+    ethCall(rpcUrl, contract, "MAIN_ID_ADVANCED_3_MONTH")
   ]);
   const ids = [
-    decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "MAIN_ID_3_MONTH", data: threeData }) as string,
-    decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "MAIN_ID_6_MONTH", data: sixData }) as string,
-    decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "MAIN_ID_12_MONTH", data: twelveData }) as string
+    decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "MAIN_ID_BASIC_3_MONTH", data: basicData }) as string,
+    decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "MAIN_ID_INTERMEDIATE_3_MONTH", data: intermediateData }) as string,
+    decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "MAIN_ID_ADVANCED_3_MONTH", data: advancedData }) as string
   ];
-  if (ids.join("|") !== "opc_3_month|opc_6_month|opc_12_month") throw new Error("CONTRACT_IDENTITY_MISMATCH");
+  if (ids.join("|") !== "smartlingo_course_basic_3m|smartlingo_course_intermediate_3m|smartlingo_course_advanced_3m") {
+    throw new Error("CONTRACT_IDENTITY_MISMATCH");
+  }
   return { ...ownership, mainIds: ids, upgradeRequired: false };
 }

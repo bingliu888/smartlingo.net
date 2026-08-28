@@ -4,17 +4,19 @@
 
 ## Course-payment identifiers
 
-- Annual course access: `mainId = smartlingo_course_annual`
-- Concrete course: `secondId = course_<language>_<tier>`
-- Example: `course_es_basic`
+- Three-month Beginner: `mainId = smartlingo_course_basic_3m`
+- Three-month Intermediate: `mainId = smartlingo_course_intermediate_3m`
+- Three-month Advanced: `mainId = smartlingo_course_advanced_3m`
+- Price-rule `secondId`: the empty string, so all languages share one price
+- Payment `secondId`: one supported learning-language code, such as `es`
 
-The website maintains 12 target languages and three course tiers. Every successful claim adds one year to that exact course. Credit-card monthly course billing remains a separate existing flow.
+The public catalog has exactly nine fixed-term packages: three levels at 3, 6, and 12 months. Card payment supports all nine. SmartPay3 supports only the three 3-month packages on Polygon. A successful claim grants the selected 3-month level for the language recorded in the transaction `secondId`.
 
 These identifiers are implementation details shown only in the administrator console. Customer pages display the subscription duration and token amounts.
 
 ## Authoritative price rule
 
-The admin database supplies candidate products, labels, token decimals, and the desired SmartPay3 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the deployed contract with `paymentRule(primaryToken, secondaryToken, mainId, secondId)`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment.
+The admin database supplies the three eligible product labels, token decimals, and desired SmartPay3 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call supplies the selected learning language as `secondId` and the contract validates it against SmartLingo's 12 supported language codes.
 
 `paymentRule` and all other view functions use `eth_call`: no connected wallet, signature, or gas is required.
 
@@ -24,11 +26,11 @@ A rule stores:
 
 1. primary token address and full primary price;
 2. optional secondary token address and full equivalent secondary price;
-3. `mainId` and `secondId`;
+3. the 3-month package `mainId` and an empty rule `secondId`;
 4. minimum secondary-token balance; and
 5. enabled state.
 
-For a single-token rule, the secondary address and amounts are zero. For a dual-token rule, the site chooses a primary-token percentage from 0–100 after the payer connects. `pay(...)` derives the exact secondary amount from the two full on-chain prices and rejects every invalid ratio. Historical records keep the amounts actually paid, so later database percentage changes do not change old transactions.
+For a single-token rule, the secondary address and amounts are zero. For a dual-token rule, the site chooses a primary-token percentage from 0–100 after the payer connects. `pay(...)` resolves the shared product rule, validates the package and language, derives the exact secondary amount from the two full on-chain prices, and rejects every invalid ratio. Historical records keep the selected language and amounts actually paid, so later database percentage changes do not change old transactions.
 
 ## Public reads and transaction records
 

@@ -8,8 +8,11 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title SmartPay3
-/// @notice Site-specific flexible ERC-20 checkout for an independently deployed product.
-/// @dev A rule can be dual-token (USDT plus GLC) or primary-token-only. Dual
+/// @notice Site-specific flexible ERC-20 checkout for SmartLingo course packages.
+/// @dev SmartLingo stores one rule per three-month level and token mode. The
+///      payer supplies one supported learning-language code as secondId; it is
+///      recorded in the transaction but does not duplicate the price rule.
+///      A rule can be dual-token (USDT plus GLC) or primary-token-only. Dual
 ///      rules store both 100% prices so pay() can derive the only valid
 ///      complement. Single-token rules use address(0) and zero values for the
 ///      secondary token and require the full primary amount. Every payment also
@@ -19,9 +22,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 contract SmartPay3 is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    string public constant MAIN_ID_3_MONTH = "opc_3_month";
-    string public constant MAIN_ID_6_MONTH = "opc_6_month";
-    string public constant MAIN_ID_12_MONTH = "opc_12_month";
+    string public constant MAIN_ID_BASIC_3_MONTH = "smartlingo_course_basic_3m";
+    string public constant MAIN_ID_INTERMEDIATE_3_MONTH = "smartlingo_course_intermediate_3m";
+    string public constant MAIN_ID_ADVANCED_3_MONTH = "smartlingo_course_advanced_3m";
     string public constant SUBSCRIPTION_SECOND_ID = "";
 
     uint256 public constant MAX_ID_BYTES = 96;
@@ -70,6 +73,8 @@ contract SmartPay3 is Ownable, Pausable, ReentrancyGuard {
     error SecondaryBalanceEligibilityNotMet();
     error TokenTransferAmountMismatch();
     error OwnershipRenunciationDisabled();
+    error UnsupportedPaymentProduct();
+    error UnsupportedLearningLanguage();
 
     event PaymentRuleUpdated(
         address indexed primaryTokenAddress,
@@ -176,9 +181,11 @@ contract SmartPay3 is Ownable, Pausable, ReentrancyGuard {
         uint256 primaryTokenAmount,
         string calldata refId
     ) external whenNotPaused nonReentrant returns (bytes32 transactionId) {
-        _validateIds(mainId, secondId);
+        _validatePurchaseIds(mainId, secondId);
         _validateRefId(refId);
-        PaymentRule memory rule = _paymentRules[_ruleKey(primaryTokenAddress, secondaryTokenAddress, mainId, secondId)];
+        PaymentRule memory rule = _paymentRules[
+            _ruleKey(primaryTokenAddress, secondaryTokenAddress, mainId, SUBSCRIPTION_SECOND_ID)
+        ];
         if (!rule.enabled || rule.primaryTokenAmount == 0) {
             revert PaymentRuleDisabled();
         }
@@ -300,7 +307,7 @@ contract SmartPay3 is Ownable, Pausable, ReentrancyGuard {
         } else if (secondaryTokenAmount != 0 || minimumSecondaryBalance != 0) {
             revert InvalidAmount();
         }
-        _validateIds(mainId, secondId);
+        _validateRuleIds(mainId, secondId);
         if (enabled && primaryTokenAmount == 0) revert InvalidAmount();
         if (
             enabled && secondaryTokenAddress != address(0)
@@ -339,6 +346,41 @@ contract SmartPay3 is Ownable, Pausable, ReentrancyGuard {
         uint256 mainLength = bytes(mainId).length;
         if (mainLength == 0) revert EmptyMainId();
         if (mainLength > MAX_ID_BYTES || bytes(secondId).length > MAX_ID_BYTES) revert IdTooLong();
+    }
+
+    function _validateRuleIds(string memory mainId, string memory secondId) private pure {
+        _validateIds(mainId, secondId);
+        if (!_isSupportedMainId(mainId)) revert UnsupportedPaymentProduct();
+        if (bytes(secondId).length != 0) revert UnsupportedLearningLanguage();
+    }
+
+    function _validatePurchaseIds(string memory mainId, string memory secondId) private pure {
+        _validateIds(mainId, secondId);
+        if (!_isSupportedMainId(mainId)) revert UnsupportedPaymentProduct();
+        if (!_isSupportedLanguage(secondId)) revert UnsupportedLearningLanguage();
+    }
+
+    function _isSupportedMainId(string memory mainId) private pure returns (bool) {
+        bytes32 value = keccak256(bytes(mainId));
+        return value == keccak256(bytes(MAIN_ID_BASIC_3_MONTH))
+            || value == keccak256(bytes(MAIN_ID_INTERMEDIATE_3_MONTH))
+            || value == keccak256(bytes(MAIN_ID_ADVANCED_3_MONTH));
+    }
+
+    function _isSupportedLanguage(string memory language) private pure returns (bool) {
+        bytes32 value = keccak256(bytes(language));
+        return value == keccak256(bytes("zh"))
+            || value == keccak256(bytes("en"))
+            || value == keccak256(bytes("es"))
+            || value == keccak256(bytes("ja"))
+            || value == keccak256(bytes("ko"))
+            || value == keccak256(bytes("fr"))
+            || value == keccak256(bytes("de"))
+            || value == keccak256(bytes("ru"))
+            || value == keccak256(bytes("it"))
+            || value == keccak256(bytes("pt"))
+            || value == keccak256(bytes("ar"))
+            || value == keccak256(bytes("hi"));
     }
 
     function _validateRefId(string memory refId) private pure {

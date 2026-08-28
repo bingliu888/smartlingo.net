@@ -71,7 +71,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
   }
 
   async function loadOptions() {
-    const response = await fetch("/api/billing/crypto/smartpay/options", { cache: "no-store" });
+    const response = await fetch(`/api/billing/crypto/smartpay/options?language=${encodeURIComponent(initialLanguageCode)}`, { cache: "no-store" });
     const data = await response.json().catch(() => ({})) as CheckoutOptionsResponse;
     if (!response.ok) throw new Error(data.error || "OPTIONS_UNAVAILABLE");
     const availableOptions = (data.options || []).filter(option => option.classId === lockedCourseId && option.languageCode === initialLanguageCode);
@@ -87,7 +87,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     let active = true;
     void Promise.all([
       fetch("/api/billing/status", { cache: "no-store" }).then(response => response.json() as Promise<Status>),
-      fetch("/api/billing/crypto/smartpay/options", { cache: "no-store" }).then(async response => {
+      fetch(`/api/billing/crypto/smartpay/options?language=${encodeURIComponent(initialLanguageCode)}`, { cache: "no-store" }).then(async response => {
         const data = await response.json().catch(() => ({})) as CheckoutOptionsResponse;
         if (!response.ok) throw new Error(data.error || "OPTIONS_UNAVAILABLE");
         return (data.options || []).filter(option => option.classId === lockedCourseId && option.languageCode === initialLanguageCode);

@@ -17,6 +17,10 @@ export function cryptoSubscriptionIdsForCourse(languageCode: string, plan: Crypt
   return { mainId: courseSubscriptionMainId(plan, SMARTLINGO_CRYPTO_MONTHS), secondId: languageCode };
 }
 
+export function cryptoSubscriptionRuleIds(plan: CryptoSubscriptionPlan) {
+  return { mainId: courseSubscriptionMainId(plan, SMARTLINGO_CRYPTO_MONTHS), secondId: "" };
+}
+
 export function cryptoSubscriptionPlanForIds(mainId: string, secondId: string): CryptoSubscriptionPlan | null {
   if (!isSmartLingoCommunityLanguage(secondId)) return null;
   const item = courseSubscriptionPackageForMainId(mainId);

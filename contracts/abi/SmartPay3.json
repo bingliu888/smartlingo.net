@@ -139,6 +139,16 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "UnsupportedLearningLanguage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedPaymentProduct",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -413,7 +423,7 @@
   },
   {
     "inputs": [],
-    "name": "MAIN_ID_12_MONTH",
+    "name": "MAIN_ID_ADVANCED_3_MONTH",
     "outputs": [
       {
         "internalType": "string",
@@ -426,7 +436,7 @@
   },
   {
     "inputs": [],
-    "name": "MAIN_ID_3_MONTH",
+    "name": "MAIN_ID_BASIC_3_MONTH",
     "outputs": [
       {
         "internalType": "string",
@@ -439,7 +449,7 @@
   },
   {
     "inputs": [],
-    "name": "MAIN_ID_6_MONTH",
+    "name": "MAIN_ID_INTERMEDIATE_3_MONTH",
     "outputs": [
       {
         "internalType": "string",
