@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-language-course-packages-20260828-r1",
+  "releaseId": "smartlingo-net-language-course-packages-20260828-r2",
   "site": "smartlingo.net",
   "title": {
     "en": "Launch nine language-scoped fixed-term course packages",
@@ -34,11 +34,13 @@
     "en": [
       "Add an authoritative nine-row package catalog and immutable payment-purchase evidence with language, level, duration, price, and access dates.",
       "Use one-time Stripe payments for all nine packages and calendar-month access extension without automatic renewal.",
+      "Replace the legacy monthly and first-month-free schedule label on official course pages with fixed-term, no-auto-renewal language.",
       "Normalize existing Polygon USDT and GLC token amounts to the three-month prices while preserving legacy constrained columns as non-authoritative compatibility data."
     ],
     "zh": [
       "新增权威九行套餐目录及不可混用的付款记录，保存语言、等级、期限、价格和学习起止日期。",
       "九个套餐全部使用 Stripe 一次性付款，按自然月延长学习期限且不自动续费。",
+      "将官方课程页遗留的按月与首月免费安排文案替换为固定期限、无自动续费说明。",
       "将现有 Polygon USDT 与 GLC 代币数量统一为三个月价格，同时保留旧约束字段作为非权威兼容数据。"
     ]
   },

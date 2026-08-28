@@ -134,11 +134,14 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
     const item = detail.class;
     const plan = SMARTLINGO_COURSE_PACKAGES.find(value => value.tier === item.packageTier);
     const selectedPackage=item.packageTier?courseSubscriptionPackage(item.packageTier,initialDurationMonths):null;
+    const scheduleLabel=item.classKind==="official_course"
+      ? tx("Fixed-term access · no automatic renewal","固定期限学习权利 · 不自动续费")
+      : item.schedule;
     const joined = detail.membership?.status === "active";
     return <section className="smartlingo-class-studio">
       <Link className="class-back" href={`/${lang}/classes`}>← {t.back}</Link>
       <div className="class-detail-hero"><div><p className="section-kicker">{item.targetLanguage.toUpperCase()} · {item.level}</p><h1>{item.title}</h1><p>{item.summary}</p></div>
-        <dl><div><dt>{t.courseAdmin}</dt><dd>{item.ownerName}</dd></div><div><dt>{t.schedule}</dt><dd>{item.schedule}</dd></div><div><dt>{t.price}</dt><dd>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:"—"}</dd></div><div><dt>{tx("Renewal","续费")}</dt><dd>{tx("Manual only","仅手动续购")}</dd></div></dl></div>
+        <dl><div><dt>{t.courseAdmin}</dt><dd>{item.ownerName}</dd></div><div><dt>{t.schedule}</dt><dd>{scheduleLabel}</dd></div><div><dt>{t.price}</dt><dd>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:"—"}</dd></div><div><dt>{tx("Renewal","续费")}</dt><dd>{tx("Manual only","仅手动续购")}</dd></div></dl></div>
       {detail.canManage && <button className="secondary-button class-edit-course" onClick={() => setEditing(true)}>✎ {t.edit}</button>}
       {editing && <form className="course-edit-form" onSubmit={saveCourse}><label>{lang === "zh" ? "课程名称" : "Course title"}<input name="title" defaultValue={item.title}/></label><label>{t.summary}<textarea name="summary" defaultValue={item.summary}/></label><label>{t.schedule}<input name="schedule" defaultValue={item.schedule}/></label><div><button disabled={busy}>{t.save}</button><button type="button" onClick={() => setEditing(false)}>{t.cancel}</button></div></form>}
       <div className="class-detail-grid">

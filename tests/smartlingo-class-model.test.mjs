@@ -46,6 +46,10 @@ test("fixed-term purchases create durable learning access scoped to one language
   assert.match(classroom, /currentPeriodEndsAt\|\|0\)>now/);
   assert.match(learning, /current_period_ends_at>unixepoch\(\)/);
   assert.doesNotMatch(`${enrollment}\n${paymentActions}\n${purchase}`, /firstMonthFree|Start free first month|开始免费首月/);
+  const studio = await read("../components/ClassStudio.tsx");
+  assert.match(studio, /item\.classKind==="official_course"/);
+  assert.match(studio, /Fixed-term access · no automatic renewal/);
+  assert.match(studio, /固定期限学习权利 · 不自动续费/);
 });
 
 test("admins and course co-hosts can edit while fixed price remains immutable", async () => {
