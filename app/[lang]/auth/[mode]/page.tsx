@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ClerkAuthForm } from "../../../../components/ClerkAuthForm";
+import { AuthPolicyIntro } from "../../../../components/portfolio-auth/AuthPolicyIntro";
 import { LanguageLink } from "../../../../components/LanguageMemory";
 import { interfaceText, isInterfaceLanguage, safeInterfaceLanguage } from "../../../../lib/interface-locale";
 
@@ -42,10 +43,7 @@ export default async function AuthPage({ params, searchParams }: {
       <div className="auth-box" data-readable-copy="auth-copy">
         <p className="eyebrow">{t("SECURE ACCOUNT ACCESS", "安全账户访问")}</p>
         <h1 data-layout-text-fit="auth-title">{t("Sign in or join", "登录或加入")}</h1>
-        <p>{t(
-          "Use an email code, or choose a password. In password mode, a new email creates an account immediately without another email check.",
-          "可使用邮箱验证码，或切换为密码。密码模式下，新邮箱会立即创建账户，无需再次验证邮箱。",
-        )}</p>
+        <AuthPolicyIntro locale={lang}/>
         <ClerkAuthForm lang={lang} returnTo={returnTo}/>
       </div>
     </section>

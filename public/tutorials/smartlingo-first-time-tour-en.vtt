@@ -37,7 +37,7 @@ The course catalog lists administrator-managed language programs at three levels
 Colleges are SmartLingo's organization layer. Visitors can browse by college number, name, and language. A supervisor chooses a teaching language and a learning language, and the platform adds the matching courses, Today's Sprint, Everyday speaking, SmartCards, and Challenge to that department. The college focuses on enrollment and learning rooms instead of recreating the core curriculum.
 
 00:04:59.276 --> 00:05:23.276
-When you are ready to save progress, select Sign in or join. Email code is the default method. Enter a reachable address, request the six-digit one-time code, and verify it on the same page. If it does not arrive in the inbox, check Spam or Junk. The code applies only to that sign-in attempt, and this tour never enters or reveals a real code.
+When you are ready to save progress, select Sign in or join. Password is the default method; you can switch to an email verification code on the same page. If a requested code does not arrive in the inbox, check Spam or Junk. The code applies only to that sign-in attempt, and this tour never enters or reveals a real code.
 
 00:05:23.276 --> 00:05:47.454
 If email codes are inconvenient, choose Use password instead. Enter an email and a password of at least eight characters. A new address creates an ordinary member account immediately, while an existing password account signs in. The eye control lets you inspect what you typed. Forgot password sends a one-time reset code; SmartLingo never emails or silently assigns a temporary password.

@@ -217,10 +217,10 @@ test("all completed Clerk sessions navigate through the deterministic app bridge
   assert.match(completePage, /<ClerkSessionBridge lang=\{lang\} returnTo=\{returnTo\}\/>/);
 });
 
-test("the form keeps email code as the default while exposing password sign-in-or-up", async () => {
+test("the form keeps password as the default while exposing optional email-code sign-in", async () => {
   const form = await read("../components/ClerkAuthForm.tsx");
 
-  assert.match(form, /useState<"code" \| "password">\("code"\)/);
+  assert.match(form, /useState<"code" \| "password">\("password"\)/);
   assert.match(form, /createSignUp: value => signUp\.create\(\{ emailAddress: value \}\)/);
   assert.match(form, /createSignUp: \(value, secret\) => signUp\.create\(\{ emailAddress: value, password: secret \}\)/);
   assert.match(form, /async function finishSignIn/);
