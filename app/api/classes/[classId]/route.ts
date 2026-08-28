@@ -1,6 +1,7 @@
 import { getDatabase, getSessionUser } from "../../../../lib/auth";
 import { isAdminUser } from "../../../../lib/admin-access";
 import { cleanMultiline, cleanText } from "../../../../lib/smartlingo-classes";
+import { courseSupervisorIdentity } from "../../../../lib/course-supervisors";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,7 @@ export async function GET(
   const coAdmin = room ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
     .bind(room.roomId, user.id).first() : null;
   const canManage = isOwner || await isAdminUser(user) || Boolean(coAdmin);
+  const supervisor = await courseSupervisorIdentity(user.id, true);
   if (!isOwner && !membership && detail.visibility !== "public") {
     return Response.json({ error: "This private course is available by invitation only." }, { status: 403 });
   }
@@ -97,6 +99,8 @@ export async function GET(
     currentUserId: user.id,
     isOwner,
     canManage,
+    canSupervise: Boolean(supervisor),
+    supervisorRefId: supervisor?.refId || null,
     membership,
     placement,
     paymentPolicy: { durationsMonths: [3,6,12], automaticRenewal: false, cryptoDurationMonths: 3 },

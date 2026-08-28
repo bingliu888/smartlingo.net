@@ -11,6 +11,7 @@ import {
   isSmartLingoCommunityLanguage,
   type SmartLingoCommunityLanguage,
 } from "./smartlingo-language-communities";
+import { eligibleCourseSupervisorByRefId } from "./course-supervisors";
 
 export type CoursePackagePaymentProvider = "stripe" | "smartpay3";
 
@@ -41,6 +42,7 @@ export async function recordCoursePackagePurchase(input: {
   provider: CoursePackagePaymentProvider;
   providerReference: string;
   paidAt?: number;
+  supervisorRefId?: string | null;
 }) {
   const database = getDatabase();
   const providerReference = input.providerReference.trim();
@@ -50,6 +52,9 @@ export async function recordCoursePackagePurchase(input: {
   if (!selectedPackage || selectedPackage.priceCents !== input.priceCents) throw new Error("PACKAGE_PRICE_MISMATCH");
   const expectedClassId = fixedCourseId(input.targetLanguage, input.packageTier);
   if (input.classId !== expectedClassId) throw new Error("COURSE_LANGUAGE_MISMATCH");
+  const supervisor = input.supervisorRefId ? await eligibleCourseSupervisorByRefId(input.supervisorRefId) : null;
+  if (input.supervisorRefId && !supervisor) throw new Error("INVALID_SUPERVISOR");
+  if (supervisor?.userId === input.userId) throw new Error("SELF_SUPERVISION_NOT_ALLOWED");
 
   const existing = await database.prepare(`SELECT user_id AS userId,class_id AS classId,target_language AS targetLanguage,
     package_tier AS packageTier,duration_months AS durationMonths,access_starts_at AS accessStartsAt,
@@ -84,16 +89,23 @@ export async function recordCoursePackagePurchase(input: {
       .bind(purchaseId,input.userId,input.classId,input.targetLanguage,selectedPackage.id,input.packageTier,input.durationMonths,
         input.priceCents,input.provider,providerReference,accessStartsAt,accessEndsAt,now,now),
     database.prepare(`INSERT INTO smartlingo_course_subscriptions
-      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,created_at,updated_at)
-      VALUES(?,?,?,'active',?,?,?,?,?,?)
+      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,supervisor_user_id,supervisor_ref_id,created_at,updated_at)
+      VALUES(?,?,?,'active',?,?,?,?,?,?,?,?)
       ON CONFLICT(class_id,user_id) DO UPDATE SET status='active',monthly_price_cents=excluded.monthly_price_cents,
         trial_started_at=excluded.trial_started_at,trial_ends_at=excluded.trial_ends_at,
-        current_period_ends_at=excluded.current_period_ends_at,updated_at=excluded.updated_at`)
-      .bind(createId(),input.classId,input.userId,input.priceCents,now,now,accessEndsAt,now,now),
+        current_period_ends_at=excluded.current_period_ends_at,
+        supervisor_user_id=COALESCE(smartlingo_course_subscriptions.supervisor_user_id,excluded.supervisor_user_id),
+        supervisor_ref_id=COALESCE(smartlingo_course_subscriptions.supervisor_ref_id,excluded.supervisor_ref_id),
+        updated_at=excluded.updated_at`)
+      .bind(createId(),input.classId,input.userId,input.priceCents,now,now,accessEndsAt,supervisor?.userId||null,supervisor?.refId||null,now,now),
     database.prepare(`INSERT INTO smartlingo_language_class_members(id,class_id,user_id,role,status,joined_at,updated_at)
       VALUES(?,?,?,'student','active',?,?) ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status='active',updated_at=excluded.updated_at`)
       .bind(createId(),input.classId,input.userId,now,now),
   ];
+  if (supervisor) statements.push(database.prepare(`INSERT INTO smartlingo_course_supervisor_reward_events
+    (id,purchase_id,supervisor_user_id,subscriber_user_id,class_id,reward_basis_cents,reward_amount_cents,status,created_at,updated_at)
+    VALUES(?,?,?,?,?,?,NULL,'eligible',?,?) ON CONFLICT(purchase_id) DO NOTHING`)
+    .bind(createId(),purchaseId,supervisor.userId,input.userId,input.classId,input.priceCents,now,now));
 
   try {
     await database.batch(statements);
@@ -117,6 +129,11 @@ export async function recordCoursePackagePurchase(input: {
 export async function markCoursePackagePaymentStatus(providerReference: string, status: "refunded" | "disputed") {
   const now = Math.floor(Date.now() / 1000);
   const database = getDatabase();
-  await database.prepare(`UPDATE smartlingo_course_package_purchases SET status=?,updated_at=?
-    WHERE provider='stripe' AND provider_reference=?`).bind(status, now, providerReference).run();
+  const purchase=await database.prepare(`SELECT id FROM smartlingo_course_package_purchases WHERE provider='stripe' AND provider_reference=? LIMIT 1`)
+    .bind(providerReference).first<{id:string}>();
+  if(!purchase)return;
+  await database.batch([
+    database.prepare(`UPDATE smartlingo_course_package_purchases SET status=?,updated_at=? WHERE id=?`).bind(status,now,purchase.id),
+    database.prepare(`UPDATE smartlingo_course_supervisor_reward_events SET status='reversed',updated_at=? WHERE purchase_id=? AND status<>'reversed'`).bind(now,purchase.id),
+  ]);
 }

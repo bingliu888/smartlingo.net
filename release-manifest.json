@@ -1,77 +1,85 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-built-in-courses-20260828-r1",
+  "releaseId": "smartlingo-net-course-supervisors-20260828-r1",
   "site": "smartlingo.net",
   "title": {
-    "en": "Simplify My Courses and keep courses platform-built",
-    "zh": "精简我的课程并统一使用平台内置课程"
+    "en": "Add immutable course Supervisors and My Students",
+    "zh": "新增不可改绑的课程 Supervisor 与我的学生"
   },
   "purpose": {
-    "en": "Make My Courses a direct list of the signed-in member's subscriptions and retire the former organization layer so every course remains created and maintained by the platform administrator.",
-    "zh": "让“我的课程”直接展示登录会员已订阅的课程，并退役原有组织层，使所有课程统一由平台管理员创建和维护。"
+    "en": "Let a learner assign one eligible VIP or administrator RefID to a course subscription, preserve that attribution through shared links and checkout, and give eligible Supervisors a private language-filtered student view.",
+    "zh": "允许学员为课程订阅绑定一名符合资格的 VIP 或管理员 RefID，在分享链接与结账链路中保留归属，并为符合资格的 Supervisor 提供按语言筛选的私有学生视图。"
   },
   "features": {
     "en": [
-      "Remove the duplicate My Courses subsection and large empty-state panel while preserving subscribed course cards and the Choose courses action.",
-      "Remove the former organization directory, management surfaces, supervisor packages, payout setup, and account or community entrances.",
-      "Keep card and crypto course purchases scoped directly to one platform-built language course without an intermediary organization or revenue split.",
-      "Keep historical database migrations intact while removing every active route, API, component, permission branch, and interface string for the retired module."
+      "Show an optional Supervisor RefID on each signed-in learner's subscribed course card and validate the RefID against active VIP or administrator eligibility.",
+      "Add a localized My Students account destination for eligible VIP members and administrators, with learning-language filtering, learner, course, status, expiry, and reward eligibility.",
+      "Give eligible Supervisors a shareable course URL whose immutable attribution survives sign-in, card checkout, Stripe reconciliation, Polygon USDT, and GLC reconciliation.",
+      "Auto-assign an eligible VIP or administrator actor when that actor manually enables a learner's built-in course subscription."
     ],
     "zh": [
-      "删除重复的“我的课程”子标题与大型空状态框，同时保留已订阅课程卡片和“选择课程”入口。",
-      "删除原有组织目录、管理页面、主管套餐、收款设置，以及账户和社区中的相关入口。",
-      "银行卡与加密课程付款直接绑定一门平台内置语言课程，不再经过中间组织或分成路径。",
-      "保留历史数据库迁移，同时移除退役模块的所有活动路由、API、组件、权限分支和界面文案。"
+      "在登录学员的已订阅课程卡片显示可选 Supervisor RefID，并按有效 VIP 或管理员资格验证该 RefID。",
+      "为符合资格的 VIP 与管理员新增多语言“我的学生”账户入口，可按学习语言筛选并查看学员、课程、状态、到期时间与奖励资格。",
+      "为符合资格的 Supervisor 提供课程分享链接；不可改绑的归属可跨登录、信用卡结账、Stripe 对账、Polygon USDT 与 GLC 对账保留。",
+      "符合资格的 VIP 或管理员手动启用学员内置课程订阅时，自动将操作者设为 Supervisor。"
     ]
   },
   "affected": {
     "en": [
-      "My Courses, home, Community, Dashboard, account menu, membership panel, administrator dashboard, card checkout, course entitlement synchronization, classroom access, tutorial captions, and runtime layout validation."
+      "My Courses, course details, account menu, My Students, card checkout and webhook reconciliation, SmartPay3 checkout and claim reconciliation, administrator student controls, D1 subscriptions, and release reporting."
     ],
     "zh": [
-      "我的课程、首页、社区、用户面板、账户菜单、会员面板、管理员面板、银行卡结账、课程权益同步、教室权限、新手教程字幕及运行时布局验证。"
+      "我的课程、课程详情、账户菜单、我的学生、信用卡结账与回调核对、SmartPay3 结账与领取核对、管理员学生控制、D1 订阅及发布报告。"
     ]
   },
   "changes": {
     "en": [
-      "Render subscribed course cards immediately below the My Courses introduction and use a short unboxed message when there are no subscriptions.",
-      "Remove obsolete pages, APIs, UI components, helper libraries, translations, CSS, and layout routes for the retired organization product.",
-      "Remove intermediary identifiers from card checkout, webhook reconciliation, course purchases, enrollment, and private classroom authorization.",
-      "Update Community and the first-time tutorial to focus on people, clearly labeled AI classmates, rankings, and platform-built courses."
+      "Add Supervisor user and RefID columns, database-level self-assignment and reassignment guards, indexed private lookups, and an independent purchase-scoped VIP reward-eligibility ledger.",
+      "Preserve the first valid Supervisor with conflict-safe subscription writes; reject unknown, ineligible, or self-owned RefIDs before checkout and again when payment is recorded.",
+      "Reverse a Supervisor reward-eligibility event when the related Stripe purchase is refunded or disputed without changing the learner's immutable attribution history.",
+      "Keep Supervisor rewards separate from the existing direct-introducer points ledger, whose published platform-subscription-only boundary is unchanged."
     ],
     "zh": [
-      "已订阅课程卡片直接显示在“我的课程”介绍之后；没有订阅时只显示简短、无外框提示。",
-      "移除退役组织产品的旧页面、API、界面组件、辅助库、翻译、CSS 和布局验证路由。",
-      "从银行卡结账、回调核对、课程购买、报名及专属教室权限中移除中间组织标识。",
-      "社区与新手教程改为聚焦真人、明确标注的 AI 学伴、排行榜和平台内置课程。"
+      "新增 Supervisor 用户与 RefID 字段、数据库级自我绑定和改绑保护、私有查询索引，以及独立且按购买记录限定的 VIP 奖励资格账本。",
+      "通过冲突安全的订阅写入保留首个有效 Supervisor；结账前与付款入账时都拒绝未知、无资格或属于学员自己的 RefID。",
+      "Stripe 课程购买发生退款或争议时冲正相应 Supervisor 奖励资格事件，但不改写学员不可变的归属历史。",
+      "Supervisor 奖励与现有直接介绍人积分账本保持独立；后者只适用于平台订阅付款的公开边界不变。"
     ]
   },
   "validation": {
     "en": [
-      "Passed the production build, strict TypeScript, zero-warning lint, all 400 site tests, 68-migration replay and idempotency, sensitive-data scanning, and every required shared portfolio policy check. Production browser regression follows the GitHub Actions to Cloudflare release."
+      "Passed the verified production build, strict TypeScript, zero-warning lint, all 404 site tests, SmartPay3 contract tests, 69-migration replay and idempotency, foreign-key validation, sensitive-data scanning, and authored-diff checks.",
+      "Migration 0174_course_subscription_supervisor.sql is additive; runtime tests prove that one valid Supervisor is accepted while reassignment and self-supervision are rejected by D1-compatible SQLite constraints."
     ],
     "zh": [
-      "已通过生产构建、严格 TypeScript、零警告 lint、全部 400 项站点测试、68 个迁移的重放与幂等检查、敏感数据扫描及所有必需的共享站点策略检查；GitHub Actions 发布到 Cloudflare 后继续执行生产环境浏览器回归。"
+      "已通过经验证的生产构建、严格 TypeScript、零警告 lint、全部 404 项站点测试、SmartPay3 合约测试、69 个迁移的重放与幂等检查、外键检查、敏感数据扫描及作者改动格式检查。",
+      "0174_course_subscription_supervisor.sql 为增量迁移；运行时测试证明首个有效 Supervisor 可写入，而改绑和自我监督会被 D1 兼容的 SQLite 约束拒绝。"
     ]
   },
   "deferred": {
     "en": [
-      "Historical database tables and columns are intentionally preserved because deleting deployed data requires a separate reviewed data-retention decision."
+      "The release records purchase price as the reward basis and an auditable eligibility state, but does not invent a payout amount or rate; an administrator-published VIP reward rule is required before an eligible event can become earned or payable."
     ],
     "zh": [
-      "历史数据库表和字段有意保留；删除已部署数据需要另行进行经过审查的数据保留决策。"
+      "本次发布记录购买价格作为奖励基数及可审计的资格状态，但不会擅自设定奖励金额或比例；资格事件转为已赚取或可支付之前，需要管理员发布 VIP 奖励规则。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep SmartLingo's twelve learning languages, Clerk identity, D1 data, Stripe, SmartPay3, wallets, and GitHub Actions to Cloudflare deployment isolated from every other site."
+      "Keep SmartLingo's twelve interface and learning languages, platform-built course model, Clerk identity, D1 data, Stripe, SmartPay3, wallets, and GitHub Actions to Cloudflare deployment isolated from every other site."
     ],
     "zh": [
-      "继续保持 SmartLingo 的十二种学习语言、Clerk 身份、D1 数据、Stripe、SmartPay3、钱包及 GitHub Actions 到 Cloudflare 发布流程与其他站点完全隔离。"
+      "继续保持 SmartLingo 的十二种界面与学习语言、平台内置课程模型、Clerk 身份、D1 数据、Stripe、SmartPay3、钱包及 GitHub Actions 到 Cloudflare 发布流程与其他站点完全隔离。"
     ]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": []
+    "included": true,
+    "migrations": [
+      "0174_course_subscription_supervisor.sql"
+    ],
+    "rollback": {
+      "en": "Roll back application code to the prior Worker release while leaving additive Supervisor columns, indexes, triggers, and audit events intact; destructive database rollback requires a separately reviewed retention decision.",
+      "zh": "应用代码可回滚到上一 Worker 版本，同时保留增量 Supervisor 字段、索引、触发器与审计事件；破坏性数据库回滚需要另行审查数据保留决定。"
+    }
   }
 }

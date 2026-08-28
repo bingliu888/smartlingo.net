@@ -8,6 +8,8 @@ import type { SiteLanguage } from "../lib/site-locale";
 import { CourseClassroomTile } from "./CourseClassroomTile";
 import { CoursePaymentActions } from "./CoursePaymentActions";
 import { CourseStudentManager } from "./CourseStudentManager";
+import { CourseSupervisorField } from "./CourseSupervisorField";
+import { CourseSupervisorShare } from "./CourseSupervisorShare";
 
 type Lang = SiteLanguage;
 type LanguageClass = {
@@ -16,6 +18,7 @@ type LanguageClass = {
   priceCents: number; currency: string; capacity: number; enrollmentCount: number;
   classKind: "official_course" | string; packageTier: SmartLingoPackageTier | null;
   trialDays: number; membershipStatus?: string | null; subscriptionStatus?: string | null;
+  subscriptionId?: string | null; supervisorRefId?: string | null;
   trialEndsAt?: number | null; isJoined?: boolean; canJoin?: boolean;
 };
 type Context = {
@@ -26,6 +29,7 @@ type Detail = {
   class: LanguageClass; isOwner: boolean; canManage: boolean;
   membership: { role: string; status: string } | null;
   placement: { id: string; status: string; entryMode: string; overallScore: number | null; recommendedLevel: string | null } | null;
+  canSupervise?: boolean; supervisorRefId?: string | null;
 };
 
 const COPY = {
@@ -59,7 +63,7 @@ function money(cents: number, currency = "USD") {
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100);
 }
 
-export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initialDurationMonths=3 }: { lang: Lang; initialClassId?: string; initialInviteCode?: string; initialTargetLanguage?: string; initialDurationMonths?: SmartLingoCourseDurationMonths }) {
+export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initialDurationMonths=3, initialSupervisorRefId }: { lang: Lang; initialClassId?: string; initialInviteCode?: string; initialTargetLanguage?: string; initialDurationMonths?: SmartLingoCourseDurationMonths; initialSupervisorRefId?: string }) {
   const t = COPY[lang === "zh" ? "zh" : "en"];
   const tx=(english:string,chinese:string)=>interfaceText(lang,english,chinese);
   const [context, setContext] = useState<Context | null>(null);
@@ -111,6 +115,7 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
       <h3>{item.title}</h3><p>{item.summary}</p>
       {plan && <ul>{plan.features.en.map((feature,index) => <li key={feature}>✓ {tx(feature,plan.features.zh[index])}</li>)}</ul>}
       <small>{t.packageFrom} {money(plan?.startingPriceCents || item.priceCents, item.currency)} / 3 {t.months} · {item.enrollmentCount}/{item.capacity} {t.learners}</small>
+      {item.subscriptionId?<CourseSupervisorField lang={lang} subscriptionId={item.subscriptionId} initialRefId={item.supervisorRefId}/>:null}
       <Link className="secondary-button" href={`/${lang}/classes/${item.id}`}>{t.open} →</Link>
     </article>;
   }
@@ -147,10 +152,11 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
       <div className="class-detail-grid">
         <article><span>{plan?tx(plan.name.en,plan.name.zh):item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features.en.map((feature,index) => <li key={feature}>✓ {tx(feature,plan.features.zh[index])}</li>)}</ul></article>
         <article><span>WEBINAR + GROUP AUDIO</span><h2>{t.classroom}</h2><p>{t.classroomCopy}</p></article>
-        {!joined && !detail.canManage && item.packageTier && <article className="class-subscribe-card"><span>{tx("FIXED-TERM COURSE ACCESS","固定期限课程学习权利")}</span><h2>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:tx("Choose a package","选择套餐")}</h2><p>{tx("Choose 3, 6, or 12 months. Card payment is available for all nine packages; Polygon USDT and GLC are available only for three months.","选择 3、6 或 12 个月。九个套餐均可使用信用卡；Polygon USDT 和 GLC 仅用于三个月套餐。")}</p><CoursePaymentActions lang={lang} classId={item.id} targetLanguage={item.targetLanguage} packageTier={item.packageTier} initialMonths={initialDurationMonths}/></article>}
+        {!joined && !detail.canManage && item.packageTier && <article className="class-subscribe-card"><span>{tx("FIXED-TERM COURSE ACCESS","固定期限课程学习权利")}</span><h2>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:tx("Choose a package","选择套餐")}</h2><p>{tx("Choose 3, 6, or 12 months. Card payment is available for all nine packages; Polygon USDT and GLC are available only for three months.","选择 3、6 或 12 个月。九个套餐均可使用信用卡；Polygon USDT 和 GLC 仅用于三个月套餐。")}</p><CoursePaymentActions lang={lang} classId={item.id} targetLanguage={item.targetLanguage} packageTier={item.packageTier} initialMonths={initialDurationMonths} supervisorRefId={initialSupervisorRefId}/></article>}
         {joined && <article className="class-placement-card"><span>5 SKILLS</span><h2>{t.fiveSkillsTitle}</h2><p>{t.fiveSkillsBody}</p><nav className="class-skill-launcher" aria-label={t.fiveSkillsTitle}>{learningLinks(item).map(skill => <Link href={skill.href} key={skill.key}><i aria-hidden="true">{skill.icon}</i><strong>{skill.label}</strong><small>{lang === "zh" ? "直接开始" : "Start now"} →</small></Link>)}</nav><div className="class-learning-actions"><Link className="primary-button" href={`/${lang}/classes/${encodeURIComponent(item.id)}/learn/session`}>{t.dailyLearning} →</Link><Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
         {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang==="zh"?"zh":"en"}/>}
         {detail.canManage && <CourseStudentManager classId={item.id} lang={lang==="zh"?"zh":"en"}/>}
+        {detail.canSupervise&&detail.supervisorRefId?<CourseSupervisorShare lang={lang} classId={item.id} targetLanguage={item.targetLanguage} refId={detail.supervisorRefId}/>:null}
       </div>{notice && <p className="class-notice">{notice}</p>}<Styles/>
     </section>;
   }

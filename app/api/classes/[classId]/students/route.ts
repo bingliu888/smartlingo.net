@@ -1,6 +1,7 @@
 import { createId, getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-access";
 import { cleanText } from "@/lib/smartlingo-classes";
+import { courseSupervisorIdentity } from "@/lib/course-supervisors";
 
 type Course = {
   id: string;
@@ -62,15 +63,18 @@ async function enableSubscription(
   const now = Math.floor(Date.now() / 1000);
   const periodEndsAt = now + 30 * 86_400;
   const manualProviderId = `manual:${course.id}:${target.id}:${now}`;
+  const supervisor = actor.id !== target.id ? await courseSupervisorIdentity(actor.id, true) : null;
   await database.batch([
     database.prepare(`INSERT INTO smartlingo_course_subscriptions
-      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,created_at,updated_at)
-      VALUES(?,?,?,'active',?,?,?,?,?,?,?)
+      (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,supervisor_user_id,supervisor_ref_id,created_at,updated_at)
+      VALUES(?,?,?,'active',?,?,?,?,?,?,?,?,?)
       ON CONFLICT(class_id,user_id) DO UPDATE SET status='active',monthly_price_cents=excluded.monthly_price_cents,
         current_period_ends_at=excluded.current_period_ends_at,
         provider_subscription_id=COALESCE(smartlingo_course_subscriptions.provider_subscription_id,excluded.provider_subscription_id),
+        supervisor_user_id=COALESCE(smartlingo_course_subscriptions.supervisor_user_id,excluded.supervisor_user_id),
+        supervisor_ref_id=COALESCE(smartlingo_course_subscriptions.supervisor_ref_id,excluded.supervisor_ref_id),
         updated_at=excluded.updated_at`)
-      .bind(createId(), course.id, target.id, course.priceCents, now, now, periodEndsAt, manualProviderId, now, now),
+      .bind(createId(), course.id, target.id, course.priceCents, now, now, periodEndsAt, manualProviderId, supervisor?.userId||null, supervisor?.refId||null, now, now),
     database.prepare(`INSERT INTO smartlingo_language_class_members
       (id,class_id,user_id,role,status,joined_at,updated_at) VALUES(?,?,?,'student','active',?,?)
       ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status='active',updated_at=excluded.updated_at`)

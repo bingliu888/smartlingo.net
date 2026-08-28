@@ -47,7 +47,7 @@ const subscriptionTerm = (plan: Plan, _months: number, t: (english: string, chin
   return `${level} · ${t("3-month fixed-term access", "3 个月固定期限学习权利")}`;
 };
 
-export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode, lockedCourseId }: { lang: SiteLanguage; initialPlan: Plan; initialLanguageCode: string; lockedCourseId?: string }) {
+export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode, lockedCourseId, supervisorRefId }: { lang: SiteLanguage; initialPlan: Plan; initialLanguageCode: string; lockedCourseId?: string; supervisorRefId?: string }) {
   const t = useCallback((english: string, chinese: string) => interfaceText(locale, english, chinese), [locale]);
   const [status, setStatus] = useState<Status>({ signedIn: false });
   const [options, setOptions] = useState<SmartPayCheckoutOption[]>([]);
@@ -140,7 +140,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
   const ensureLogin = () => {
     if (!status.signedIn) {
       const returnTo = lockedCourseId
-        ? `/${locale}/classes/${lockedCourseId}/pay/crypto?language=${initialLanguageCode}&months=3`
+        ? `/${locale}/classes/${lockedCourseId}/pay/crypto?language=${initialLanguageCode}&months=3${supervisorRefId?`&supervisor=${encodeURIComponent(supervisorRefId)}`:""}`
         : `/${locale}/programs/${initialLanguageCode}/pay/crypto?level=${plan}`;
       window.location.assign(`/${locale}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
       return false;
@@ -234,7 +234,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         ? await fetch("/api/billing/crypto/smartpay/claim", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ settingId: selectedOption.settingId, paymentId: payment.paymentId, classId: activeCourseId })
+          body: JSON.stringify({ settingId: selectedOption.settingId, paymentId: payment.paymentId, classId: activeCourseId, supervisorRefId })
         })
         : null;
       const directResult = response
@@ -247,6 +247,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
           classId: activeCourseId,
           settingId: selectedOption.settingId,
           txHash: payment.txHash,
+          supervisorRefId,
           onRetry: ({ retryNumber }) => setMessage(t(
             "Reconciliation is not ready. Retry {retryNumber} of 3 will run in 10 seconds.",
             "核对暂未完成；10 秒后进行第 {retryNumber} / 3 次重试。",
@@ -481,6 +482,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       classId: activeCourseId,
       settingId: selectedOption.settingId,
       txHash: hash,
+      supervisorRefId,
       initialDelayMs: afterSuccessfulPayment ? 6_000 : 0,
       onInitialWait: () => setMessage(t("The payment is confirmed on-chain. The first transaction-record check will run in 6 seconds. Do not pay again.", "付款已确认上链；6 秒后首次读取交易记录。请勿重复付款。")),
       onRetry: ({ retryNumber }) => setMessage(t(

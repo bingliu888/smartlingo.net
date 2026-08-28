@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     let subscription: StripeSubscription | null = null;
     if (event.type === "checkout.session.completed") {
       const object = event.data?.object as ({ subscription?: string;payment_intent?:string|{id?:string};amount_total?:number;currency?:string;
-        mode?:string;status?:string;payment_status?:string;metadata?:{user_id?:string;scope?:string;class_id?:string;package_tier?:string;target_language?:string;duration_months?:string;package_id?:string} }) | undefined;
+        mode?:string;status?:string;payment_status?:string;metadata?:{user_id?:string;scope?:string;class_id?:string;package_tier?:string;target_language?:string;duration_months?:string;package_id?:string;supervisor_ref_id?:string} }) | undefined;
       if(object?.mode==="payment"&&object.status==="complete"&&object.payment_status==="paid"&&object.metadata?.scope==="course_package"
         &&object.metadata.user_id&&object.metadata.class_id){
         const tier=object.metadata.package_tier as SmartLingoPackageTier;
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         if(!selectedPackage||!isSmartLingoCommunityLanguage(language)||object.metadata.package_id!==selectedPackage.id
           ||object.amount_total!==selectedPackage.priceCents||String(object.currency||"").toLowerCase()!=="usd"||!paymentIntentId)throw new Error("STRIPE_SCOPE_MISMATCH");
         await recordCoursePackagePurchase({userId:object.metadata.user_id,classId:object.metadata.class_id,targetLanguage:language,
-          packageTier:tier,durationMonths:months!,priceCents:selectedPackage.priceCents,provider:"stripe",providerReference:paymentIntentId});
+          packageTier:tier,durationMonths:months!,priceCents:selectedPackage.priceCents,provider:"stripe",providerReference:paymentIntentId,supervisorRefId:object.metadata.supervisor_ref_id||null});
         return Response.json({received:true});
       }
       if (object?.subscription) subscription = await stripeRequest<StripeSubscription>(`/subscriptions/${encodeURIComponent(object.subscription)}`);

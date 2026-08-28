@@ -14,6 +14,7 @@ type LanguageClassRow = {
   membershipRole: "owner" | "teacher" | "coordinator" | "student" | null;
   membershipStatus: "invited" | "active" | "paused" | "left" | "removed" | null;
   subscriptionStatus: "trialing" | "active" | "past_due" | "cancelled" | "expired" | null;
+  subscriptionId: string | null; supervisorRefId: string | null;
   trialEndsAt: number | null; currentPeriodEndsAt: number | null; createdAt: number;
 };
 
@@ -47,7 +48,8 @@ export async function GET(request: Request) {
       c.price_cents AS priceCents,c.currency,c.capacity,c.package_tier AS packageTier,
       c.billing_interval AS billingInterval,c.trial_days AS trialDays,c.created_at AS createdAt,
       mine.role AS membershipRole,mine.status AS membershipStatus,
-      subscription.status AS subscriptionStatus,subscription.trial_ends_at AS trialEndsAt,
+      subscription.id AS subscriptionId,subscription.status AS subscriptionStatus,
+      subscription.supervisor_ref_id AS supervisorRefId,subscription.trial_ends_at AS trialEndsAt,
       subscription.current_period_ends_at AS currentPeriodEndsAt,
       COALESCE(SUM(CASE WHEN members.role='student' AND members.status='active' THEN 1 ELSE 0 END),0) AS enrollmentCount
       FROM smartlingo_language_classes c

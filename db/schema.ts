@@ -1031,6 +1031,8 @@ export const lingoCourseSubscriptions = sqliteTable("smartlingo_course_subscript
   trialEndsAt: integer("trial_ends_at").notNull(),
   currentPeriodEndsAt: integer("current_period_ends_at"),
   providerSubscriptionId: text("provider_subscription_id").unique(),
+  supervisorUserId: text("supervisor_user_id").references(() => users.id, { onDelete: "set null" }),
+  supervisorRefId: text("supervisor_ref_id"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 }, (table) => [
@@ -1038,6 +1040,7 @@ export const lingoCourseSubscriptions = sqliteTable("smartlingo_course_subscript
   check("smartlingo_course_subscription_status_ck", sql`${table.status} IN ('trialing', 'active', 'past_due', 'cancelled', 'expired')`),
   check("smartlingo_course_subscription_price_ck", sql`${table.monthlyPriceCents} > 0`),
   index("smartlingo_course_subscription_user_status_idx").on(table.userId, table.status),
+  index("smartlingo_course_subscription_supervisor_idx").on(table.supervisorUserId, table.status, table.currentPeriodEndsAt),
 ]);
 
 export const lingoCoursePackages = sqliteTable("smartlingo_course_packages", {
@@ -1082,6 +1085,24 @@ export const lingoCoursePackagePurchases = sqliteTable("smartlingo_course_packag
   check("smartlingo_course_package_purchase_duration_ck", sql`${table.durationMonths} IN (3, 6, 12)`),
   check("smartlingo_course_package_purchase_provider_ck", sql`${table.provider} IN ('stripe', 'smartpay3')`),
   check("smartlingo_course_package_purchase_status_ck", sql`${table.status} IN ('paid', 'refunded', 'disputed', 'void')`),
+]);
+
+export const lingoCourseSupervisorRewardEvents = sqliteTable("smartlingo_course_supervisor_reward_events", {
+  id: text("id").primaryKey(),
+  purchaseId: text("purchase_id").notNull().unique().references(() => lingoCoursePackagePurchases.id, { onDelete: "restrict" }),
+  supervisorUserId: text("supervisor_user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  subscriberUserId: text("subscriber_user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  classId: text("class_id").notNull().references(() => lingoClasses.id, { onDelete: "restrict" }),
+  rewardBasisCents: integer("reward_basis_cents").notNull(),
+  rewardAmountCents: integer("reward_amount_cents"),
+  status: text("status").notNull().default("eligible"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [
+  check("smartlingo_course_supervisor_reward_basis_ck", sql`${table.rewardBasisCents} > 0`),
+  check("smartlingo_course_supervisor_reward_amount_ck", sql`${table.rewardAmountCents} IS NULL OR ${table.rewardAmountCents} >= 0`),
+  check("smartlingo_course_supervisor_reward_status_ck", sql`${table.status} IN ('eligible','earned','reversed')`),
+  index("smartlingo_course_supervisor_reward_user_idx").on(table.supervisorUserId, table.status, table.createdAt),
 ]);
 
 export const lingoClassMembers = sqliteTable("smartlingo_language_class_members", {

@@ -7,12 +7,14 @@ import { AdminMenuLink } from "./AdminMenuLink";
 import { useEffect, useRef, useState } from "react";
 import styles from "./account-menu.module.css";
 import { interfaceCopyFor, interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
+import { courseSupervisorCopy } from "../lib/course-supervisor-locale";
 
 export function HeaderAccount({ lang, initialSignedIn = false, mobile = false, onNavigate }: { lang: InterfaceLanguage; initialSignedIn?: boolean; mobile?: boolean; onNavigate?: () => void }) {
   const interfaceUi = interfaceCopyFor(lang);
+  const supervisorUi = courseSupervisorCopy(lang);
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const clerk = useClerk();
-  const [session, setSession] = useState<{ loaded: boolean; signedIn: boolean; imageUrl?: string }>({ loaded: initialSignedIn, signedIn: initialSignedIn });
+  const [session, setSession] = useState<{ loaded: boolean; signedIn: boolean; imageUrl?: string; canSupervise?: boolean }>({ loaded: initialSignedIn, signedIn: initialSignedIn });
   const [open, setOpen] = useState(mobile);
   const [unread, setUnread] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -27,7 +29,7 @@ export function HeaderAccount({ lang, initialSignedIn = false, mobile = false, o
   useEffect(() => {
     fetch("/api/auth/session", { cache: "no-store" })
       .then(response => response.ok ? response.json() : null)
-      .then(value => setSession({ loaded: true, signedIn: Boolean(value?.signedIn), imageUrl: value?.imageUrl }))
+      .then(value => setSession({ loaded: true, signedIn: Boolean(value?.signedIn), imageUrl: value?.imageUrl, canSupervise: Boolean(value?.canSupervise) }))
       .catch(() => setSession({ loaded: true, signedIn: initialSignedIn }));
   }, [initialSignedIn]);
   const signedIn = session.signedIn;
@@ -42,7 +44,7 @@ export function HeaderAccount({ lang, initialSignedIn = false, mobile = false, o
     const label = interfaceUi.me;
     const unreadLabel = t("{count} unread", "{count} 条未读消息").replace("{count}", String(unread));
     const accountLabel = `${label}${unread ? ` · ${unreadLabel}` : ""}`;
-    return <div ref={menuRef} className={`${styles.menu} gg-account-menu`}>{!mobile ? <button className="user-icon" onClick={() => setOpen(value => !value)} aria-label={accountLabel} title={label} aria-expanded={open}>{session.imageUrl ? <Image src={session.imageUrl} alt="" width={96} height={96} unoptimized/> : <span className="avatar-glyph" aria-hidden="true"/>}{unread > 0 && <i className={`unread-avatar-badge${unread > 99 ? " dot" : ""}`}>{unread > 99 ? "" : unread}</i>}</button> : null}{(open || mobile) && <nav aria-label={t("Account menu", "账户菜单")}><Link onClick={close} href={`/${lang}/dashboard`}><b>{t("Dashboard", "用户面板")}</b><small>→</small></Link><Link onClick={close} href={`/${lang}/classes?mine=1`}><b>{t("My Courses", "我的课程")}</b><small>→</small></Link><Link onClick={close} href={`/${lang}/account`}>{t("Profile", "个人资料")}<small>→</small></Link><AdminMenuLink lang={lang} onNavigate={close}/><Link onClick={close} href={`/${lang}/messages`}><b>{t("Messages", "消息")}</b>{unread > 0 ? <i className="menu-unread">{unread > 99 ? "99+" : unread}</i> : <small>→</small>}</Link><Link onClick={close} href={`/${lang}/programs`}>{t("Choose course", "选择课程")}<small>→</small></Link><button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); await clerk.signOut(); window.location.assign(`/${lang}`); }}>{t("Sign out", "退出登录")}<small>↗</small></button></nav>}</div>;
+    return <div ref={menuRef} className={`${styles.menu} gg-account-menu`}>{!mobile ? <button className="user-icon" onClick={() => setOpen(value => !value)} aria-label={accountLabel} title={label} aria-expanded={open}>{session.imageUrl ? <Image src={session.imageUrl} alt="" width={96} height={96} unoptimized/> : <span className="avatar-glyph" aria-hidden="true"/>}{unread > 0 && <i className={`unread-avatar-badge${unread > 99 ? " dot" : ""}`}>{unread > 99 ? "" : unread}</i>}</button> : null}{(open || mobile) && <nav aria-label={t("Account menu", "账户菜单")}><Link onClick={close} href={`/${lang}/dashboard`}><b>{t("Dashboard", "用户面板")}</b><small>→</small></Link><Link onClick={close} href={`/${lang}/classes?mine=1`}><b>{t("My Courses", "我的课程")}</b><small>→</small></Link>{session.canSupervise?<Link onClick={close} href={`/${lang}/my-students`}><b>{supervisorUi.menu}</b><small>→</small></Link>:null}<Link onClick={close} href={`/${lang}/account`}>{t("Profile", "个人资料")}<small>→</small></Link><AdminMenuLink lang={lang} onNavigate={close}/><Link onClick={close} href={`/${lang}/messages`}><b>{t("Messages", "消息")}</b>{unread > 0 ? <i className="menu-unread">{unread > 99 ? "99+" : unread}</i> : <small>→</small>}</Link><Link onClick={close} href={`/${lang}/programs`}>{t("Choose course", "选择课程")}<small>→</small></Link><button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); await clerk.signOut(); window.location.assign(`/${lang}`); }}>{t("Sign out", "退出登录")}<small>↗</small></button></nav>}</div>;
   }
   const label = interfaceUi.signIn;
   return mobile ? <nav className={styles.mobileSignIn} aria-label={interfaceUi.account}><Link href={`/${lang}/auth/login`} onClick={onNavigate}>{label}<small>→</small></Link></nav> : <Link className="user-icon" href={`/${lang}/auth/login`} aria-label={label} title={label}><span className="avatar-glyph" aria-hidden="true"/></Link>;

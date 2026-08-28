@@ -138,6 +138,10 @@ jobs:
           test "$presets_code" = "403"
           students_code="$(curl -sS -o /tmp/course-students.json -w '%{http_code}' https://smartlingo.net/api/classes/course_en_basic/students)"
           test "$students_code" = "401"
+          my_students_code="$(curl -sS -o /tmp/my-students.json -w '%{http_code}' https://smartlingo.net/api/my-students)"
+          test "$my_students_code" = "401"
+          supervisor_code="$(curl -sS -o /tmp/course-supervisor.json -w '%{http_code}' -X PATCH -H 'content-type: application/json' --data '{"supervisorRefId":"ABC234"}' https://smartlingo.net/api/course-subscriptions/not-a-subscription/supervisor)"
+          test "$supervisor_code" = "401"
           wallet_asset_code="$(curl -sS -o /dev/null -w '%{http_code}' https://smartlingo.net/wallet-assets/greatlove-onboard.js)"
           test "$wallet_asset_code" = "200"
 

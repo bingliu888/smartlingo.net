@@ -18,6 +18,7 @@ export async function verifyCryptoPaymentWithConfirmations(input: {
   classId: string;
   txHash: string;
   memberId?: string;
+  supervisorRefId?: string;
   attempts?: number;
   initialDelayMs?: number;
   intervalMs?: number;
@@ -54,7 +55,8 @@ export async function verifyCryptoPaymentWithConfirmations(input: {
           classId: input.classId,
           settingId: input.settingId,
           txHash: input.txHash,
-          ...(input.memberId ? { memberId: input.memberId } : {})
+          ...(input.memberId ? { memberId: input.memberId } : {}),
+          ...(input.supervisorRefId ? { supervisorRefId: input.supervisorRefId } : {}),
         })
       });
       data = await response.json().catch(() => ({})) as VerificationData;

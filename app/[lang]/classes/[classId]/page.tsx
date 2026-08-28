@@ -21,7 +21,7 @@ export default async function ClassPage({
   searchParams,
 }: {
   params: Promise<{ lang: string; classId: string }>;
-  searchParams: Promise<{ invite?: string; language?: string; months?: string }>;
+  searchParams: Promise<{ invite?: string; language?: string; months?: string; supervisor?: string }>;
 }) {
   const { lang, classId } = await params;
   if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
@@ -29,17 +29,18 @@ export default async function ClassPage({
   const courseMatch=/^course_([a-z]{2})_(basic|intermediate|advanced)$/.exec(classId);
   const targetLanguage=query.language||courseMatch?.[1]||"";
   const durationMonths=normalizeCourseDurationMonths(query.months)||3;
+  const supervisorRefId=/^[A-HJ-NP-Z2-9]{6}$/i.test(query.supervisor||"")?String(query.supervisor).toUpperCase():undefined;
   if(courseMatch&&(!isSmartLingoCommunityLanguage(targetLanguage)||targetLanguage!==courseMatch[1]))notFound();
   const user = await requestUser();
   if (!user) {
-    const returnQuery=new URLSearchParams();if(query.invite)returnQuery.set("invite",query.invite);if(targetLanguage)returnQuery.set("language",targetLanguage);returnQuery.set("months",String(durationMonths));
+    const returnQuery=new URLSearchParams();if(query.invite)returnQuery.set("invite",query.invite);if(targetLanguage)returnQuery.set("language",targetLanguage);returnQuery.set("months",String(durationMonths));if(supervisorRefId)returnQuery.set("supervisor",supervisorRefId);
     const returnTo = `/${lang}/classes/${encodeURIComponent(classId)}${returnQuery.size?`?${returnQuery}`:""}`;
     redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
   return (
     <main className="classes-page">
       <SiteHeader lang={lang} />
-      <ClassStudio lang={lang} initialClassId={classId} initialInviteCode={query.invite} initialTargetLanguage={targetLanguage} initialDurationMonths={durationMonths} />
+      <ClassStudio lang={lang} initialClassId={classId} initialInviteCode={query.invite} initialTargetLanguage={targetLanguage} initialDurationMonths={durationMonths} initialSupervisorRefId={supervisorRefId} />
       <SiteFooter lang={lang} />
     </main>
   );

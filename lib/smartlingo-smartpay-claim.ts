@@ -25,6 +25,7 @@ export async function claimSmartLingoCoursePayment(input: {
   settingId: string;
   transactionId: string;
   classId?: string;
+  supervisorRefId?: string;
 }) {
   const database = getDatabase();
   const targetUserId = input.targetUserId || input.actor.id;
@@ -79,6 +80,7 @@ export async function claimSmartLingoCoursePayment(input: {
     provider: "smartpay3",
     providerReference: `${setting.smartPay3Contract.toLowerCase()}:${transactionId}`,
     paidAt: now,
+    supervisorRefId: input.supervisorRefId || null,
   });
   const claimId = crypto.randomUUID();
   await database.prepare(`INSERT INTO smartpay3_payment_claims
