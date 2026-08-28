@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-language-crypto-checkout-20260828-r3",
+  "releaseId": "smartlingo-net-language-crypto-checkout-20260828-r4",
   "site": "smartlingo.net",
   "title": {
     "en": "Complete language-scoped card and crypto course checkout",
@@ -37,6 +37,7 @@
       "Replace passive price cards with an interactive language package catalog that launches card checkout directly and keeps one separate crypto-payment call to action.",
       "Add a public language-scoped crypto route and reuse the audited course checkout without exposing payment rules from another language.",
       "Allow generic language checkout to display every enabled level while retaining the locked single-course behavior on existing course routes.",
+      "Carry the route-validated twelve-language type into the interactive package catalog so strict CI type checking and runtime authorization use the same boundary.",
       "Map SmartPay3 mainId and language secondId back to the official course ID during both immediate claim and delayed account recovery.",
       "Keep all on-chain amounts authoritative and preserve user, course, wallet, Clerk, Stripe, D1, Cloudflare, and other site boundaries."
     ],
@@ -44,6 +45,7 @@
       "将静态价格卡升级为可操作的语言套餐目录，可直接启动银行卡结账，并保留一个独立的加密付款入口。",
       "新增公开且按学习语言限定的加密付款路由，复用已经审计的课程结账流程，不显示其他语言的付款规则。",
       "通用语言结账显示当前已启用的全部等级，同时保留现有课程路由锁定单门课程的行为。",
+      "将路由已经验证的十二语言类型传入交互式套餐目录，使严格 CI 类型检查与运行时授权采用同一边界。",
       "立即核对与延迟账户恢复都会将 SmartPay3 的 mainId 和语言 secondId 映射回准确的官方课程 ID。",
       "链上金额继续以合约为准，并保留用户、课程、钱包、Clerk、Stripe、D1、Cloudflare 及其他站点边界。"
     ]

@@ -12,10 +12,11 @@ import {
   type SmartLingoCourseDurationMonths,
   type SmartLingoPackageTier,
 } from "../lib/smartlingo-course-packages";
+import type { SmartLingoCommunityLanguage } from "../lib/smartlingo-language-communities";
 
 type Status = { signedIn: boolean };
 
-export function LanguageSubscriptionCatalog({ lang, language }: { lang: SiteLanguage; language: string }) {
+export function LanguageSubscriptionCatalog({ lang, language }: { lang: SiteLanguage; language: SmartLingoCommunityLanguage }) {
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const [status, setStatus] = useState<Status>({ signedIn: false });
   const [statusLoaded, setStatusLoaded] = useState(false);
