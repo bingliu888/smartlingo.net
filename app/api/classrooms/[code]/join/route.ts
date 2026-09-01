@@ -179,7 +179,7 @@ export async function POST(
     const allowedMedia = publishing
       ? {
           audio: !companion,
-          video: !companion && room.streamingMode === "video",
+          video: companion || room.streamingMode === "video",
           screenshare: access.manager && room.realtimeMode !== "livestream",
         }
       : { audio: false, video: false, screenshare: false };

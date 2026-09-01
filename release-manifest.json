@@ -1,17 +1,18 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-audio-share-stage-20260901",
+  "releaseId": "smartlingo-net-gold-v2-audio-share-publisher-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 audio-room shared-media visibility",
-    "zh": "Gold v2 音频房间共享媒体可见性"
+    "en": "Gold v2 audio-room shared-media publishing",
+    "zh": "Gold v2 音频房间共享媒体发布"
   },
   "purpose": {
-    "en": "Correct the generic Gold v2 audio-room companion-stage defect found during four-participant Chrome acceptance so live camera, file, web, and whiteboard tracks render locally and remotely without changing SmartLingo product or provider boundaries.",
-    "zh": "修正在 Chrome 四人验收中发现的 Gold v2 通用音频房间共享舞台缺陷，使实时摄像头、文件、网页与白板轨道可在本地及远端显示，且不改变 SmartLingo 产品或服务商边界。"
+    "en": "Correct the generic Gold v2 audio-room companion publisher and stage defects found during four-participant Chrome acceptance so live camera, file, web, and whiteboard tracks are permitted and render locally and remotely without changing SmartLingo product or provider boundaries.",
+    "zh": "修正在 Chrome 四人验收中发现的 Gold v2 通用音频房间共享发布权限与舞台缺陷，使实时摄像头、文件、网页与白板轨道获得发布权限并可在本地及远端显示，且不改变 SmartLingo 产品或服务商边界。"
   },
   "features": {
     "en": [
+      "Grant the isolated audio-room companion publisher video permission required for camera, file, web, and whiteboard tracks.",
       "Render every live audio-room companion video track from its live MediaStreamTrack and recognize camera, file, web, and whiteboard sources.",
       "Keep the live course status horizontal and readable while preserving every media control at desktop widths.",
       "Use fresh verified Clerk identity for administration, payment synchronization, co-host management, private-course access, and publishing actions.",
@@ -22,6 +23,7 @@
       "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
     ],
     "zh": [
+      "向隔离的音频房间共享发布者授予摄像头、文件、网页及白板轨道所需的视频发布权限。",
       "依据实时 MediaStreamTrack 渲染音频房间的全部共享视频轨道，并识别摄像头、文件、网页及白板来源。",
       "在桌面宽度下保持实时课程状态横向清晰可读，同时保留全部媒体控制。",
       "对管理、付款同步、共同教师管理、专属课程访问及发布操作使用新鲜且已验证的 Clerk 身份。",
@@ -46,6 +48,7 @@
   },
   "changes": {
     "en": [
+      "Allow a screen-share companion in an audio room to produce video while keeping its microphone disabled and its identity isolated from the normal online count.",
       "Treat a live local or remote companion MediaStreamTrack as authoritative even when the provider videoEnabled flag is delayed, and include File, Web, and Whiteboard suffixes in remote source discovery.",
       "Allow the desktop room header to wrap, keep the status cluster intrinsically sized, prevent status text wrapping, and let the complete toolbar occupy a bounded flexible row.",
       "Add three additive D1 migrations for identity and commerce hardening, realtime generation state and capacity triggers, and private storage reservation ledgers.",
@@ -62,6 +65,7 @@
       "Keep the reviewed RealtimeKit app UUID as a non-secret Worker configuration variable and write only the sensitive provider token as a Worker secret."
     ],
     "zh": [
+      "允许音频房间的共享伴随参与者发布视频，同时保持麦克风禁用，并使其身份与普通在线人数隔离。",
       "在服务商 videoEnabled 标志延迟时仍以本地或远端 live MediaStreamTrack 为准，并在远端来源发现中加入 File、Web 与 Whiteboard 后缀。",
       "允许桌面端房间顶部换行，保持状态区按内容确定宽度，禁止状态文字换行，并让完整工具栏使用有边界的弹性行。",
       "新增三项累加式 D1 迁移，覆盖身份与商业加固、实时房间代际状态和容量触发器，以及私有存储预留账本。",
