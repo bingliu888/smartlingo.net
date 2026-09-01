@@ -410,8 +410,13 @@ export async function claimCompanionParticipant(session: ClassParticipantSession
       session.id,
       session.tokenHash,
     ).run();
-    if (Number(result.meta?.changes || 0) !== 1)
-      throw new Error("PARTICIPANT_SESSION_CONFLICT");
+    if (Number(result.meta?.changes || 0) !== 1) {
+      const persisted = await activeSessionAfterMutation(session);
+      if (persisted?.companionReserved !== 1
+        || persisted.companionPublisherReserved !== 1
+        || persisted.companionProviderParticipantId !== null)
+        throw new Error("PARTICIPANT_SESSION_CONFLICT");
+    }
     session.companionReserved = 1;
     session.companionPublisherReserved = 1;
   } catch (error) {

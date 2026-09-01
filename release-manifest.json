@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-parent-bound-companion-20260901",
+  "releaseId": "smartlingo-net-gold-v2-companion-d1-readback-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 parent-bound shared-media companion",
-    "zh": "Gold v2 绑定主会话的共享媒体伴随连接"
+    "en": "Gold v2 companion reservation D1 readback",
+    "zh": "Gold v2 伴随连接预留 D1 回读"
   },
   "purpose": {
     "en": "Correct the generic Gold v2 audio-room companion lifecycle defect found during four-participant Chrome acceptance so shared camera, file, web, and whiteboard media reuse the current human tab session instead of consuming a fifth tab lease.",
@@ -12,6 +12,7 @@
   },
   "features": {
     "en": [
+      "Read back the persisted companion reservation when D1 reports a false zero change count, preventing a successful claim from being misreported as a replaced classroom tab.",
       "Bind the isolated shared-media companion to its current host tab session so four human tabs can remain online while camera, file, web, whiteboard, or screen media is published.",
       "Grant the isolated audio-room companion publisher video permission required for camera, file, web, and whiteboard tracks.",
       "Render every live audio-room companion video track from its live MediaStreamTrack and recognize camera, file, web, and whiteboard sources.",
@@ -24,6 +25,7 @@
       "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
     ],
     "zh": [
+      "当 D1 错误报告零变更时回读持久化的伴随连接预留，避免把成功认领误报为课堂标签页已被替换。",
       "将隔离的共享媒体伴随连接绑定到当前主持人标签页会话，使四个用户标签页保持在线时仍可发布摄像头、文件、网页、白板或屏幕媒体。",
       "向隔离的音频房间共享发布者授予摄像头、文件、网页及白板轨道所需的视频发布权限。",
       "依据实时 MediaStreamTrack 渲染音频房间的全部共享视频轨道，并识别摄像头、文件、网页及白板来源。",
