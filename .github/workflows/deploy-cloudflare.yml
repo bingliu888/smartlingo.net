@@ -188,16 +188,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          status="$(curl --silent --show-error --output "$RUNNER_TEMP/r2-buckets.json" \
+          bucket="smartlingo-net-class-files"
+          bucket_url="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/$bucket"
+          status="$(curl --silent --show-error --output "$RUNNER_TEMP/r2-bucket.json" \
             --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets")"
-          if [[ "$status" != "200" ]] || ! jq -e '.success == true and (.result.buckets | type == "array")' \
-            "$RUNNER_TEMP/r2-buckets.json" >/dev/null; then
-            echo "The SmartLingo Cloudflare token cannot list R2 buckets (HTTP $status)." >&2
-            exit 1
+            "$bucket_url")"
+          if [[ "$status" == "404" ]]; then
+            npx wrangler r2 bucket create "$bucket" --config wrangler.cloudflare.jsonc
+            status="$(curl --silent --show-error --output "$RUNNER_TEMP/r2-bucket.json" \
+              --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "$bucket_url")"
           fi
-          if ! jq -e 'any(.result.buckets[]?; .name == "smartlingo-net-class-files")' "$RUNNER_TEMP/r2-buckets.json" >/dev/null; then
-            npx wrangler r2 bucket create smartlingo-net-class-files --config wrangler.cloudflare.jsonc
+          if [[ "$status" != "200" ]] || ! jq -e --arg bucket "$bucket" \
+            '.success == true and .result.name == $bucket' "$RUNNER_TEMP/r2-bucket.json" >/dev/null; then
+            echo "The exact private SmartLingo R2 bucket is unavailable (HTTP $status)." >&2
+            exit 1
           fi
 
       - name: Apply D1 migrations
