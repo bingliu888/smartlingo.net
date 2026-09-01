@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-exact-r2-bucket-20260831",
+  "releaseId": "smartlingo-net-gold-v2-realtime-binding-kind-20260831",
   "site": "smartlingo.net",
   "title": {
     "en": "Gold v2 identity, commerce, realtime, and private classroom platform",
@@ -48,7 +48,8 @@
       "Build the exact Worker before running source contracts that exercise the compiled referral redirect, so a clean CI checkout validates the same artifact as local release gates.",
       "Resolve the reviewed site-owned RealtimeKit app by its immutable UUID from a complete paginated app page, while retaining a SmartLingo ownership-name guard instead of filtering out valid display-name variants.",
       "Replace the nonexistent legacy smartlingo_voice preset with the verified role-matched group-call guest, participant, and host presets used as sources for Gold least-privilege audio variants.",
-      "Provision the private class-file R2 bucket idempotently through Cloudflare's exact bucket endpoint, avoiding false absence from the default 20-bucket list page."
+      "Provision the private class-file R2 bucket idempotently through Cloudflare's exact bucket endpoint, avoiding false absence from the default 20-bucket list page.",
+      "Keep the reviewed RealtimeKit app UUID as a non-secret Worker configuration variable and write only the sensitive provider token as a Worker secret."
     ],
     "zh": [
       "新增三项累加式 D1 迁移，覆盖身份与商业加固、实时房间代际状态和容量触发器，以及私有存储预留账本。",
@@ -61,7 +62,8 @@
       "在运行会调用已编译推荐跳转的源码契约前先构建精确 Worker，使干净 CI 检出验证与本地发布门禁相同的产物。",
       "从完整分页应用列表按不可变 UUID 解析已审阅的站点专属 RealtimeKit 应用，同时保留 SmartLingo 所属名称校验，避免有效显示名变体被错误过滤。",
       "以已验证且角色匹配的群组通话访客、成员与主持人预设替代不存在的旧 smartlingo_voice 预设，作为 Gold 最小权限音频变体的来源。",
-      "通过 Cloudflare 精确桶接口幂等配置私有课堂文件 R2 桶，避免默认 20 桶列表分页造成的错误缺失判断。"
+      "通过 Cloudflare 精确桶接口幂等配置私有课堂文件 R2 桶，避免默认 20 桶列表分页造成的错误缺失判断。",
+      "将已审阅的 RealtimeKit 应用 UUID 保持为非敏感 Worker 配置变量，仅把敏感服务商令牌写为 Worker Secret。"
     ]
   },
   "validation": {

@@ -229,7 +229,7 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s' "$CLOUDFLARE_REALTIME_API_TOKEN" | npx wrangler secret put CLOUDFLARE_REALTIME_API_TOKEN --config wrangler.cloudflare.jsonc
-          printf '%s' "$RESOLVED_REALTIMEKIT_APP_ID" | npx wrangler secret put REALTIMEKIT_APP_ID --config wrangler.cloudflare.jsonc
+          test "$RESOLVED_REALTIMEKIT_APP_ID" = "816eb53a-1dc8-4939-9716-500747e385db"
 
       - name: Build exact production Worker
         run: npm run build

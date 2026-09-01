@@ -27,6 +27,8 @@ test("production workflows use exact actions without tolerated setup errors", ()
   assert.match(deploy, /npm audit --audit-level=moderate/);
   assert.doesNotMatch(deploy, /NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:\s*\$\{\{\s*secrets\./);
   assert.doesNotMatch(deploy, /put_secret (?:CLERK_SECRET_KEY|CLERK_JWT_KEY|OPENAI_API_KEY|DEEPSEEK_API_KEY|NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID)/);
+  assert.doesNotMatch(deploy, /secret put REALTIMEKIT_APP_ID/);
+  assert.match(deploy, /test "\$RESOLVED_REALTIMEKIT_APP_ID" = "816eb53a-1dc8-4939-9716-500747e385db"/);
   assert.match(read("../wrangler.cloudflare.jsonc"), /"keep_vars": true/);
   assert.match(deploy, /apps\?page_no=1&per_page=100/);
   assert.match(deploy, /\.id == "816eb53a-1dc8-4939-9716-500747e385db"/);
