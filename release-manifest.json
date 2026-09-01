@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-live-room-locale-20260901",
+  "releaseId": "smartlingo-net-gold-v2-audio-share-stage-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 live course locale continuity",
-    "zh": "Gold v2 实时课程语言连续性"
+    "en": "Gold v2 audio-room shared-media visibility",
+    "zh": "Gold v2 音频房间共享媒体可见性"
   },
   "purpose": {
-    "en": "Correct the generic Gold v2 live-room transition defect found during Safari acceptance so Chinese remains continuous while connecting and after Leave, without changing SmartLingo product or provider boundaries.",
-    "zh": "修正在 Safari 验收中发现的 Gold v2 通用实时房间过渡缺陷，使连接期间及离开后始终保持中文连续性，且不改变 SmartLingo 产品或服务商边界。"
+    "en": "Correct the generic Gold v2 audio-room companion-stage defect found during four-participant Chrome acceptance so live camera, file, web, and whiteboard tracks render locally and remotely without changing SmartLingo product or provider boundaries.",
+    "zh": "修正在 Chrome 四人验收中发现的 Gold v2 通用音频房间共享舞台缺陷，使实时摄像头、文件、网页与白板轨道可在本地及远端显示，且不改变 SmartLingo 产品或服务商边界。"
   },
   "features": {
     "en": [
-      "Keep live course waiting, connecting, and post-Leave transition copy in the selected Chinese or English interface language.",
+      "Render every live audio-room companion video track from its live MediaStreamTrack and recognize camera, file, web, and whiteboard sources.",
       "Keep the live course status horizontal and readable while preserving every media control at desktop widths.",
       "Use fresh verified Clerk identity for administration, payment synchronization, co-host management, private-course access, and publishing actions.",
       "Verify SmartPay3 transaction receipts, payouts, token transfers, confirmation depth, account RefID, and payer wallet before idempotently granting one course entitlement.",
@@ -22,7 +22,7 @@
       "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
     ],
     "zh": [
-      "让实时课程的等待、连接及离开后过渡文案始终使用所选中文或英文界面语言。",
+      "依据实时 MediaStreamTrack 渲染音频房间的全部共享视频轨道，并识别摄像头、文件、网页及白板来源。",
       "在桌面宽度下保持实时课程状态横向清晰可读，同时保留全部媒体控制。",
       "对管理、付款同步、共同教师管理、专属课程访问及发布操作使用新鲜且已验证的 Clerk 身份。",
       "在幂等授予一次课程权益前验证 SmartPay3 交易收据、分账、代币转账、确认深度、账户 RefID 及付款钱包。",
@@ -34,19 +34,19 @@
   },
   "affected": {
     "en": [
-      "SmartLingo Chinese live-course waiting, connecting, and Leave transition states and their behavioral regression contract.",
+      "SmartLingo Group Call and audio Webinar companion camera/content stages and their regression contract.",
       "SmartLingo desktop live-classroom header layout and its regression contract.",
       "SmartLingo Clerk session identity, administrator and course authorization, SmartPay3 course-payment synchronization, live classroom lifecycle, RealtimeKit media, private R2 files, recording, AI use, scheduled maintenance, and exact deployment evidence."
     ],
     "zh": [
-      "SmartLingo 中文实时课程的等待、连接及离开过渡状态与其行为回归契约。",
+      "SmartLingo Group Call 与音频 Webinar 的共享摄像头／内容舞台及其回归契约。",
       "SmartLingo 桌面端实时课堂顶部布局及其回归契约。",
       "SmartLingo Clerk 会话身份、管理员与课程授权、SmartPay3 课程付款同步、实时课堂生命周期、RealtimeKit 媒体、私有 R2 文件、录音、人工智能使用、定时维护及精确部署证据。"
     ]
   },
   "changes": {
     "en": [
-      "Route every pre-connect and post-Leave waiting state through one tested bilingual copy function instead of rendering English literals in Chinese rooms.",
+      "Treat a live local or remote companion MediaStreamTrack as authoritative even when the provider videoEnabled flag is delayed, and include File, Web, and Whiteboard suffixes in remote source discovery.",
       "Allow the desktop room header to wrap, keep the status cluster intrinsically sized, prevent status text wrapping, and let the complete toolbar occupy a bounded flexible row.",
       "Add three additive D1 migrations for identity and commerce hardening, realtime generation state and capacity triggers, and private storage reservation ledgers.",
       "Replace new classroom password writes with PBKDF2-SHA256 while retaining read-only compatibility for existing SHA-256 values.",
@@ -62,7 +62,7 @@
       "Keep the reviewed RealtimeKit app UUID as a non-secret Worker configuration variable and write only the sensitive provider token as a Worker secret."
     ],
     "zh": [
-      "将连接前及离开后的全部等待状态统一交由已测试的双语文案函数处理，避免中文房间渲染英文常量。",
+      "在服务商 videoEnabled 标志延迟时仍以本地或远端 live MediaStreamTrack 为准，并在远端来源发现中加入 File、Web 与 Whiteboard 后缀。",
       "允许桌面端房间顶部换行，保持状态区按内容确定宽度，禁止状态文字换行，并让完整工具栏使用有边界的弹性行。",
       "新增三项累加式 D1 迁移，覆盖身份与商业加固、实时房间代际状态和容量触发器，以及私有存储预留账本。",
       "课堂密码的新写入改为 PBKDF2-SHA256，同时只读兼容既有 SHA-256 值。",
@@ -80,14 +80,14 @@
   },
   "validation": {
     "en": [
-      "Pass the complete source-contract suite, including direct Chinese and English transition behavior, plus TypeScript, zero-warning ESLint, the production build, artifact and sensitive-data verification, and git whitespace checks before deployment.",
+      "Pass all 418 source contracts, including the companion live-track and source-suffix regression checks, plus TypeScript, zero-warning ESLint, production CI build, artifact and sensitive-data verification, and git whitespace checks before deployment.",
       "Replay all 72 migrations into an empty isolated D1 twice and verify the Gold v2 identity, lifecycle, capacity, storage, and cleanup objects with no foreign-key violations.",
       "Pass every source contract test, SmartPay3 compilation, TypeScript, zero-warning ESLint, production build, rendered Worker test, artifact validation, runtime-layout verification, and git whitespace check.",
       "Preserve the 48,000-item, twelve-language vocabulary catalog, published pronunciation metadata, difficulty, frequency, grade-level, learning, referral, and certificate boundaries.",
       "Require GitHub Actions to verify the dedicated SmartLingo RealtimeKit app and presets before production mutation, deploy the exact commit, probe apex/www and protected routes, and publish matching Project evidence."
     ],
     "zh": [
-      "部署前通过完整源码契约（包括中文与英文过渡行为直接测试）、TypeScript、零警告 ESLint、生产构建、产物与敏感数据验证及 Git 空白检查。",
+      "部署前通过全部 418 项源码契约（包括共享舞台 live 轨道及来源后缀回归检查）、TypeScript、零警告 ESLint、生产 CI 构建、产物与敏感数据验证及 Git 空白检查。",
       "在空白隔离 D1 中两次重放全部 72 项迁移，并验证 Gold v2 身份、生命周期、容量、存储及清理对象，且无外键违规。",
       "通过全部源码契约测试、SmartPay3 编译、TypeScript、零警告 ESLint、生产构建、渲染 Worker 测试、产物验证、运行布局验证及 Git 空白检查。",
       "保留 48,000 项十二语言词汇目录、已发布发音元数据、难度、频率、年级、学习、推荐及证书边界。",
@@ -96,11 +96,11 @@
   },
   "deferred": {
     "en": [
-      "Safari production acceptance starts after deployment; four-person realtime streaming remains intentionally deferred until the user switches to SOL High, when Chrome will be used only for that multi-session case.",
+      "Chrome four-participant Group Call and Webinar acceptance resumes immediately after this exact deployment; Safari remains the browser for non-multi-session production checks.",
       "No SmartMeeting, SmartNCT, or GeniusWallet production member data, credentials, provider identifiers, prices, contracts, or release history are copied."
     ],
     "zh": [
-      "部署后开始 Safari 正式站验收；四人实时串流按约定延后至用户切换 SOL High，届时仅该多会话场景使用 Chrome。",
+      "此精确版本部署后立即继续 Chrome 四人 Group Call 与 Webinar 验收；非多会话正式站检查仍使用 Safari。",
       "不复制 SmartMeeting、SmartNCT 或 GeniusWallet 的生产会员数据、凭据、服务商标识、价格、合约或发布历史。"
     ]
   },
@@ -117,7 +117,7 @@
     ]
   },
   "dataMigration": {
-    "included": true,
+    "included": false,
     "migrations": [
       "0175_gold_v2_identity_commerce.sql",
       "0176_gold_v2_realtime_lifecycle.sql",
