@@ -1,63 +1,63 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-server-verified-password-20260901-r2",
+  "releaseId": "smartlingo-net-shared-profile-wallet-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Server-verified bilingual password updates",
-    "zh": "服务器核验的双语密码更新"
+    "en": "Shared profile wallet save",
+    "zh": "共享资料钱包保存"
   },
   "purpose": {
-    "en": "Apply the Gold v2 password boundary discovered during Konectible migration to SmartLingo's bilingual account settings.",
-    "zh": "将 Konectible 迁移中发现的 Gold v2 密码边界同步到 SmartLingo 双语账户设置。"
+    "en": "Make SmartLingo's Profile save path explicitly accept the same payer wallet on multiple accounts while preserving account-specific RefID attribution.",
+    "zh": "让 SmartLingo 的资料保存路径明确接受多个账户使用同一付款钱包，同时保留按账户 RefID 归因。"
   },
   "features": {
     "en": [
-      "Add or update a password while preserving email-code sign-in.",
-      "Show English and Chinese current-password errors from stable server codes."
+      "Save the same EVM payer wallet in two or more account profiles.",
+      "Keep payment attribution tied to both wallet and the account's unique RefID."
     ],
     "zh": [
-      "添加或更新密码，同时保留邮箱验证码登录。",
-      "根据稳定的服务器错误码显示中英文当前密码提示。"
+      "在两个或更多账户资料中保存同一 EVM 付款钱包。",
+      "付款归因继续同时匹配钱包与账户唯一 RefID。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo account password settings and the new password API only.",
+      "SmartLingo Profile wallet API, crypto-wallet API, checkout errors, and regression contracts.",
       "Courses, learning records, certificates, rewards, referrals, and media are unchanged."
     ],
     "zh": [
-      "仅影响 SmartLingo 账户密码设置与新增密码接口。",
+      "影响 SmartLingo 资料钱包接口、加密钱包接口、结账错误处理及回归契约。",
       "课程、学习记录、证书、奖励、推荐及媒体均不变。"
     ]
   },
   "changes": {
     "en": [
-      "Replace direct client-side Clerk mutation with a bounded authenticated server request.",
-      "Verify an existing password server-side and apply independent network/member D1 limits.",
-      "Retain SmartLingo's add-versus-update mode and bilingual UI."
+      "Remove the obsolete Profile 409 response that treated a wallet as belonging to another subscribed account.",
+      "Keep wallet records keyed by user_id and wallet_address non-unique.",
+      "Remove unreachable single-owner checkout and localization residue."
     ],
     "zh": [
-      "以受限且已认证的服务器请求替换客户端直接修改 Clerk。",
-      "在服务器核验已有密码，并分别执行网络／会员 D1 限制。",
-      "保留 SmartLingo 新增／更新模式及双语界面。"
+      "移除把钱包视为属于其他已订阅账户的过时资料保存 409 响应。",
+      "钱包记录继续以 user_id 为键，wallet_address 不设唯一约束。",
+      "移除无法触发的单一归属结账与本地化残留。"
     ]
   },
   "validation": {
     "en": [
-      "All source and rendered-Worker tests, TypeScript, zero-warning ESLint, sensitive-data scan, and verified production build pass locally.",
-      "The built Worker exposes /api/account/password."
+      "A fresh full D1 migration replay accepts two accounts with the same wallet address.",
+      "Profile source contracts, TypeScript, zero-warning ESLint, sensitive-data scan, and verified production build must pass."
     ],
     "zh": [
-      "全部源码与渲染 Worker 测试、TypeScript、零警告 ESLint、敏感数据扫描及经验证的生产构建均在本地通过。",
-      "构建后的 Worker 已提供 /api/account/password。"
+      "全新完整 D1 迁移重放已接受两个账户保存同一钱包地址。",
+      "资料源码契约、TypeScript、零警告 ESLint、敏感数据扫描及经验证的生产构建必须通过。"
     ]
   },
   "deferred": {
     "en": [
-      "No learning, certificate, reward, payment-rule, provider, or data migration is included."
+      "No production wallet value, learning record, certificate, reward, payment rule, or provider configuration is changed."
     ],
     "zh": [
-      "本次不包含学习、证书、奖励、付款规则、服务商或数据迁移。"
+      "本次不修改生产钱包值、学习记录、证书、奖励、付款规则或服务商配置。"
     ]
   },
   "siteAdaptations": {

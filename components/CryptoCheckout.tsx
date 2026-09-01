@@ -181,11 +181,8 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       setConnected(true);
       setDirect(false);
       await refreshConnectedPreflight(result.provider, result.address);
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "";
-      setMessage(reason.includes("another account")
-        ? t("This wallet belongs to another account with subscription history. Contact an administrator if it needs correction.", "此钱包已属于有订阅历史的其他账户，无法绑定；如需更正请联系管理员。")
-        : t("Could not connect the wallet. Scan the QR code or approve SmartLingo in your wallet.", "无法连接钱包。请扫描二维码或在钱包中允许 SmartLingo 连接。"));
+    } catch {
+      setMessage(t("Could not connect the wallet. Scan the QR code or approve SmartLingo in your wallet.", "无法连接钱包。请扫描二维码或在钱包中允许 SmartLingo 连接。"));
     } finally {
       setBusy("");
     }
@@ -524,11 +521,8 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       setBusy("wallet");
       await saveWallet(wallet);
       setMessage(t("Payer wallet saved.", "付款钱包已保存。"));
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "";
-      setMessage(reason.includes("another account")
-        ? t("This wallet belongs to another account with subscription history. Contact an administrator if it needs correction.", "此钱包已属于有订阅历史的其他账户，无法绑定；如需更正请联系管理员。")
-        : t("Could not save the payer wallet.", "付款钱包无法保存。"));
+    } catch {
+      setMessage(t("Could not save the payer wallet.", "付款钱包无法保存。"));
     } finally {
       setBusy("");
     }

@@ -16,10 +16,13 @@ test("Gold v2 records reviewed common contracts and SmartLingo-only adapters", a
 });
 
 test("identity and payment preserve account ownership with shared payer wallets and verified receipts", async () => {
-  const [migration, identity, wallet, route, claim, receipt] = await Promise.all([
+  const [migration, identity, wallet, profile, walletRoute, checkout, route, claim, receipt] = await Promise.all([
     read("drizzle/0175_gold_v2_identity_commerce.sql"),
     read("lib/auth.ts"),
     read("lib/wallet-binding.ts"),
+    read("app/api/profile/route.ts"),
+    read("app/api/billing/crypto/wallet/route.ts"),
+    read("components/CryptoCheckout.tsx"),
     read("app/api/billing/crypto/smartpay/claim/route.ts"),
     read("lib/smartlingo-smartpay-claim.ts"),
     read("lib/smartpay3-receipt-verification.ts"),
@@ -34,6 +37,10 @@ test("identity and payment preserve account ownership with shared payer wallets 
     < identity.indexOf("return ensureClerkUser", identity.indexOf("async function prepareAndEnsureClerkUser")));
   assert.match(wallet, /ON CONFLICT\(user_id\)/);
   assert.doesNotMatch(wallet, /WALLET_ALREADY_IN_USE/);
+  assert.match(profile, /bindSmartPayWallet\(user\.id, walletAddress\)/);
+  assert.doesNotMatch(profile, /WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT|already belongs to another account/);
+  assert.doesNotMatch(walletRoute, /WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT|already belongs to another account/);
+  assert.doesNotMatch(checkout, /another account with subscription history|WALLET_ALREADY_IN_USE/);
   assert.match(route, /boundedJsonBody/);
   assert.match(route, /consumeAccountRequestLimit/);
   assert.match(claim, /verifySmartPay3Receipt/);

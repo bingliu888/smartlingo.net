@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     try { await bindSmartPayWallet(user.id, walletAddress); }
     catch (error) {
       const reason = error instanceof Error ? error.message : "WALLET_SAVE_FAILED";
-      return Response.json({ error: reason === "WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT" ? "This wallet already belongs to another account with subscription or payment history." : reason }, { status: reason === "WALLET_BELONGS_TO_SUBSCRIBED_ACCOUNT" ? 409 : 400 });
+      return Response.json({ error: reason }, { status: reason === "INVALID_WALLET" ? 400 : 500 });
     }
   }
   if (hasAiProviderPreference) { assignments.push("ai_provider_preference = ?"); values.push(aiProviderPreference); }
