@@ -799,17 +799,26 @@ function ConnectedRoom({
     } else setError("Sign in as a member to send messages.");
   }
   async function review(request: StageRequest, approve: boolean) {
-    await fetch(`/api/classrooms/${room.code}/media`, {
+    const response = await fetch(`/api/classrooms/${room.code}/media`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         action: "review-stage",
         sessionToken,
-        identity: request.identity,
+        identity,
+        targetIdentity: request.identity,
         mediaKind: request.mediaKind,
         approve,
       }),
     });
+    const result = (await response.json().catch(() => ({}))) as {
+      error?: string;
+    };
+    if (!response.ok) {
+      setError(result.error || "Unable to review stage request");
+      return;
+    }
+    setError("");
     await load();
   }
   async function addSpeaker() {

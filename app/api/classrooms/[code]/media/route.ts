@@ -25,6 +25,7 @@ type MediaBody = {
   action?: unknown;
   sessionToken?: unknown;
   identity?: unknown;
+  targetIdentity?: unknown;
   mic?: unknown;
   camera?: unknown;
   value?: unknown;
@@ -288,7 +289,9 @@ export async function POST(
   if (action === "review-stage") {
     if (!access.manager || room.realtimeMode !== "webinar")
       return Response.json({ error: "Manager access required" }, { status: 403 });
-    const targetIdentity = identity;
+    const targetIdentity = String(body.targetIdentity || "").slice(0, 100);
+    if (!targetIdentity)
+      return Response.json({ error: "Participant identity is required" }, { status: 400 });
     const kind = body.mediaKind === "video" ? "video" : "audio";
     await db.prepare(`UPDATE live_class_stage_requests SET status=?,updated_at=?
       WHERE room_id=? AND identity=? AND media_kind=?`).bind(
