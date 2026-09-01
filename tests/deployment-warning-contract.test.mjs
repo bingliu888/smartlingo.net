@@ -26,6 +26,11 @@ test("production workflows use exact actions without tolerated setup errors", ()
   assert.doesNotMatch(deploy, /NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:\s*\$\{\{\s*secrets\./);
   assert.doesNotMatch(deploy, /put_secret (?:CLERK_SECRET_KEY|CLERK_JWT_KEY|OPENAI_API_KEY|DEEPSEEK_API_KEY|NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID)/);
   assert.match(read("../wrangler.cloudflare.jsonc"), /"keep_vars": true/);
+  assert.ok(
+    deploy.indexOf("Build exact source and verify rendered Worker")
+      < deploy.indexOf("Run source contract tests"),
+    "the clean-checkout Worker must exist before source contracts import dist/server/index.js",
+  );
 });
 
 test("known tool notices are handled without hiding release failures", () => {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-secret-preservation-20260831",
+  "releaseId": "smartlingo-net-gold-v2-ci-build-order-20260831",
   "site": "smartlingo.net",
   "title": {
     "en": "Gold v2 identity, commerce, realtime, and private classroom platform",
@@ -44,7 +44,8 @@
       "Read back the exact newly generated participant-session id before interpreting D1 batch metadata and release provisional tab leases after failed browser joins.",
       "Bound request bodies, provider responses and deadlines, AI daily use, account request rates, polling cadence, cron work, and R2 cleanup batches.",
       "Replace the one-stage deployment with exact-commit validation, mutation, and Project-evidence jobs using pinned actions and migration-before-deploy ordering.",
-      "Read the public Clerk key from reviewed Worker configuration and preserve existing site-owned Clerk, AI, and WalletConnect secrets instead of requiring duplicate GitHub secret names."
+      "Read the public Clerk key from reviewed Worker configuration and preserve existing site-owned Clerk, AI, and WalletConnect secrets instead of requiring duplicate GitHub secret names.",
+      "Build the exact Worker before running source contracts that exercise the compiled referral redirect, so a clean CI checkout validates the same artifact as local release gates."
     ],
     "zh": [
       "新增三项累加式 D1 迁移，覆盖身份与商业加固、实时房间代际状态和容量触发器，以及私有存储预留账本。",
@@ -53,7 +54,8 @@
       "在解释 D1 批处理元数据前回读精确的新参与者会话 ID，并在浏览器加入失败后释放临时标签租约。",
       "限制请求体、服务商响应与超时、人工智能每日用量、账户请求频率、轮询节奏、定时任务工作量和 R2 清理批次。",
       "以固定版本 Actions 和先迁移后部署顺序，将单阶段部署替换为精确提交验证、生产变更及 Project 证据三个任务。",
-      "从已审阅的 Worker 配置读取公开 Clerk 密钥，并保留现有站点独立 Clerk、AI 与 WalletConnect 密钥，不要求重复的 GitHub Secret 名称。"
+      "从已审阅的 Worker 配置读取公开 Clerk 密钥，并保留现有站点独立 Clerk、AI 与 WalletConnect 密钥，不要求重复的 GitHub Secret 名称。",
+      "在运行会调用已编译推荐跳转的源码契约前先构建精确 Worker，使干净 CI 检出验证与本地发布门禁相同的产物。"
     ]
   },
   "validation": {

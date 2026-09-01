@@ -45,6 +45,9 @@ jobs:
         env:
           NODE_OPTIONS: --disable-warning=ExperimentalWarning
 
+      - name: Build exact source and verify rendered Worker
+        run: npm run build && node --test tests/rendered-html.test.mjs
+
       - name: Run source contract tests
         shell: bash
         run: |
@@ -63,9 +66,6 @@ jobs:
 
       - name: Compile and verify SmartLingo SmartPay3
         run: npm run contracts:test
-
-      - name: Build exact source and verify rendered Worker
-        run: npm run build && node --test tests/rendered-html.test.mjs
 
       - name: Verify production artifact
         run: npm run validate:artifact
