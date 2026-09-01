@@ -23,6 +23,9 @@ test("production workflows use exact actions without tolerated setup errors", ()
   assert.match(deploy, /accounts\/\$CLOUDFLARE_ACCOUNT_ID\/r2\/buckets/);
   assert.match(deploy, /if ! jq -e 'any\(\.result\.buckets\[\]\?; \.name == "smartlingo-net-class-files"\)'/);
   assert.match(deploy, /npm audit --audit-level=moderate/);
+  assert.doesNotMatch(deploy, /NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:\s*\$\{\{\s*secrets\./);
+  assert.doesNotMatch(deploy, /put_secret (?:CLERK_SECRET_KEY|CLERK_JWT_KEY|OPENAI_API_KEY|DEEPSEEK_API_KEY|NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID)/);
+  assert.match(read("../wrangler.cloudflare.jsonc"), /"keep_vars": true/);
 });
 
 test("known tool notices are handled without hiding release failures", () => {
