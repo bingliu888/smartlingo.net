@@ -1,41 +1,47 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-qa-day12-course-target-20260901",
+  "releaseId": "smartlingo-net-gold-v2-remote-companion-discovery-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "21-day real-learning acceptance day 12 and course-target navigation fix",
-    "zh": "21 天真实学习验收第 12 天与课程目标语言导航修复"
+    "en": "Gold v2 remote companion media discovery",
+    "zh": "Gold v2 远端伴随媒体发现"
   },
   "purpose": {
-    "en": "Publish the September 1 four-language production learning acceptance and fix the reproducible Server Components navigation error on subscribed-course links from the learner dashboard.",
-    "zh": "发布 9 月 1 日四语生产学习验收结果，并修复学员 Dashboard 已订阅课程链接可复现的 Server Components 导航错误。"
+    "en": "Complete the generic Gold v2 audio-room companion fix by discovering provider peers and subscribing late video tracks during four-participant production acceptance.",
+    "zh": "在四人生产验收中通过发现服务商参与者并订阅延迟视频轨道，完成 Gold v2 音频房间伴随连接的通用修复。"
   },
   "features": {
     "en": [
+      "Discover all joined companion peers, subscribe their late video tracks, and reconcile participant and video update events so remote camera, file, web, and whiteboard content renders reliably.",
       "Route each subscribed-course dashboard link through the classes page's supported target query parameter.",
       "Publish bilingual Project evidence for English, Japanese, Spanish, and Italian real-learning coverage."
     ],
     "zh": [
+      "发现全部已加入的伴随参与者、订阅其延迟视频轨道，并协调参与者及视频更新事件，使远端摄像头、文件、网页和白板内容可靠显示。",
       "让 Dashboard 的每个已订阅课程链接使用课程页支持的 target 查询参数。",
       "发布英语、日语、西班牙语及意大利语真实学习覆盖的双语 Project 证据。"
     ]
   },
   "affected": {
     "en": [
+      "SmartLingo audio Group Call and Webinar remote companion media rendering and its regression contract.",
       "Learner Dashboard course navigation and its target-language selection contract.",
       "Administrator Project release history only; no payment, referral, certificate, or entitlement schema is changed."
     ],
     "zh": [
+      "SmartLingo 音频 Group Call 与 Webinar 的远端伴随媒体渲染及其回归契约。",
       "学员 Dashboard 课程导航及其目标语言选择契约。",
       "仅更新管理员 Project 发布历史；付款、推荐、证书及课程权益架构均不变。"
     ]
   },
   "changes": {
     "en": [
+      "Replace local-map-only companion rendering with bounded provider discovery, event reconciliation, one-time subscriptions, and freshest-map track selection.",
       "Add a directly testable subscribed-course URL builder and replace the unsupported language query key with target.",
       "Add a behavioral regression proving the selected target survives URL parsing and the obsolete key is absent."
     ],
     "zh": [
+      "以有界服务商发现、事件协调、一次性订阅及最新映射轨道选择替换仅依赖本地映射的伴随媒体渲染。",
       "新增可直接测试的已订阅课程 URL 构造函数，并把不受支持的 language 查询键替换为 target。",
       "新增行为回归测试，证明 URL 解析后目标语言仍然存在，且旧查询键不再出现。"
     ]
