@@ -1,123 +1,34 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-deterministic-layout-subscription-20260901",
+  "releaseId": "smartlingo-net-gold-v2-security-sync-20260901",
   "site": "smartlingo.net",
-  "title": {
-    "en": "Gold v2 publisher and viewer companions",
-    "zh": "Gold v2 发布者与观众伴随连接"
-  },
+  "title": { "en": "Gold v2 account and billing boundary hardening", "zh": "Gold v2 账户与付款边界加固" },
   "purpose": {
-    "en": "Complete the generic Gold v2 audio-room companion fix by giving hosts a video-publishing companion and every other active participant a subscribe-only companion bound to the original human session.",
-    "zh": "通过为主持人提供可发布视频的伴随连接，并为其他活跃参与者提供绑定原人类会话的只订阅伴随连接，完成 Gold v2 音频房间通用修复。"
+    "en": "Synchronize generic account and billing-boundary fixes confirmed during the GreatLove Gold v2 migration while preserving SmartLingo boundaries.",
+    "zh": "同步 GreatLove Gold v2 迁移中确认的通用账户及付款边界修复，同时保留 SmartLingo 边界。"
   },
   "features": {
-    "en": [
-      "Allow non-host participants to join the shared-media companion as subscribe-only viewers without consuming a publisher reservation or another human seat.",
-      "Create the host companion from a video-capable preset so camera, file, web, and whiteboard tracks are actually published instead of remaining local previews.",
-      "Extend the bounded companion discovery window through 12 seconds so eventually consistent provider peers are found without continuous paging.",
-      "Reconcile subscribed participant maps every 750 ms while shared media is active so a delayed live track renders even when the SDK mutates it without an event.",
-      "Keep bounded companion discovery and delayed-track reconciliation active in background meeting tabs so four-tab participants receive remote camera, file, web, and whiteboard media.",
-      "Discover all joined companion peers, subscribe their late video tracks, and reconcile participant and video update events so remote camera, file, web, and whiteboard content renders reliably.",
-      "Route each subscribed-course dashboard link through the classes page's supported target query parameter.",
-      "Publish bilingual Project evidence for English, Japanese, Spanish, and Italian real-learning coverage."
-    ],
-    "zh": [
-      "允许非主持人以只订阅观众身份加入共享媒体伴随连接，且不占发布名额或额外人类席位。",
-      "以具备视频能力的预设创建主持人伴随连接，使摄像头、文件、网页及白板轨道真正发布，而非仅停留在本地预览。",
-      "把有界伴随参与者发现窗口延长至 12 秒，在不持续分页的前提下发现服务商最终一致性延迟的参与者。",
-      "共享媒体激活期间每 750 毫秒协调一次已订阅参与者映射，使 SDK 未触发事件而延迟写入的实时轨道仍可渲染。",
-      "让后台会议标签页继续执行有界伴随参与者发现及延迟轨道协调，使四标签页参与者可收到远端摄像头、文件、网页及白板媒体。",
-      "发现全部已加入的伴随参与者、订阅其延迟视频轨道，并协调参与者及视频更新事件，使远端摄像头、文件、网页和白板内容可靠显示。",
-      "让 Dashboard 的每个已订阅课程链接使用课程页支持的 target 查询参数。",
-      "发布英语、日语、西班牙语及意大利语真实学习覆盖的双语 Project 证据。"
-    ]
+    "en": ["Rate-limit administrator member creation, bound its JSON body, and canonicalize submitted email addresses.", "Remove source-site naming from the public SmartPay ABI response."],
+    "zh": ["限制管理员创建会员的频率、限制其 JSON 请求体，并规范化提交的邮箱地址。", "从公开 SmartPay ABI 响应中移除来源站点命名。"]
   },
   "affected": {
-    "en": [
-      "SmartLingo audio Group Call and Webinar companion authorization, provider preset selection, and parent-session reservation accounting.",
-      "Remove the visibility short-circuit from the bounded companion discovery and low-frequency local-map reconciliation paths without adding continuous provider paging.",
-      "SmartLingo audio Group Call and Webinar remote companion media rendering and its regression contract.",
-      "Learner Dashboard course navigation and its target-language selection contract.",
-      "Administrator Project release history only; no payment, referral, certificate, or entitlement schema is changed."
-    ],
-    "zh": [
-      "SmartLingo 音频 Group Call 与 Webinar 的伴随连接授权、服务商预设选择及父会话名额核算。",
-      "移除有界伴随参与者发现及低频本地映射协调路径中的可见性短路，同时不新增持续服务商分页。",
-      "SmartLingo 音频 Group Call 与 Webinar 的远端伴随媒体渲染及其回归契约。",
-      "学员 Dashboard 课程导航及其目标语言选择契约。",
-      "仅更新管理员 Project 发布历史；付款、推荐、证书及课程权益架构均不变。"
-    ]
+    "en": ["Administrator member creation and SmartPay ABI metadata only.", "No language course, learning record, referral, certificate, price, entitlement, or stored object changes."],
+    "zh": ["仅影响管理员创建会员及 SmartPay ABI 元数据。", "不更改语言课程、学习记录、推荐、证书、价格、权益或既有存储对象。"]
   },
   "changes": {
-    "en": [
-      "Split companion authorization into host publisher and viewer subscriber roles, with publisher capacity reserved only for the host companion.",
-      "Use the video transport preset family for the companion while leaving the primary classroom mode audio-only.",
-      "Replace local-map-only companion rendering with bounded provider discovery, event reconciliation, one-time subscriptions, and freshest-map track selection.",
-      "Add a directly testable subscribed-course URL builder and replace the unsupported language query key with target.",
-      "Add a behavioral regression proving the selected target survives URL parsing and the obsolete key is absent."
-    ],
-    "zh": [
-      "把伴随连接授权拆分为主持人发布者与观众订阅者，仅主持人伴随连接占用发布容量。",
-      "伴随连接使用视频传输预设系列，同时保持主课堂为纯音频模式。",
-      "以有界服务商发现、事件协调、一次性订阅及最新映射轨道选择替换仅依赖本地映射的伴随媒体渲染。",
-      "新增可直接测试的已订阅课程 URL 构造函数，并把不受支持的 language 查询键替换为 target。",
-      "新增行为回归测试，证明 URL 解析后目标语言仍然存在，且旧查询键不再出现。"
-    ]
+    "en": ["Apply a 60-per-hour admin-member request budget, an 8 KiB JSON limit, and canonical email validation.", "Rename the ABI comparison key to the generic comparison field."],
+    "zh": ["应用每小时 60 次的管理员会员请求预算、8 KiB JSON 限制及规范邮箱验证。", "将 ABI 比较键改为通用 comparison 字段。"]
   },
   "validation": {
-    "en": [
-      "America/Los_Angeles date 2026-09-01; anonymous GitHub preflight run 33495295098 passed all 32 route checks for day 12.",
-      "Sentence-catalog contracts passed 21/21, covering 36 courses with 120 sentences each and unique ten-item daily rounds.",
-      "The dedicated test learner completed real production course vocabulary, reading, writing, listening, and dialogue in English, Japanese, Spanish, and Italian; each language persisted five measured learning minutes.",
-      "Five-minute Sprints completed at EN 80, JA 80, ES 80, and IT 60; score history and each language's Today’s Sprint Top 25 category were verified.",
-      "SmartCard Practice answer-feedback-continue completed in all four languages; each legitimate correct answer created +10 course credit.",
-      "SmartCard Challenge answer-feedback-auto-advance completed in all four languages, including the six-second transition; no completion score was fabricated.",
-      "One beginner airport Everyday Speaking scene completed in all four languages with normal and slow playback controls; repeat-after-me remained off and no microphone permission was requested.",
-      "AI labels, adult-only Nearby opt-in copy, broad location copy, block/report controls, and four-language AI partner turn-taking pages were verified without enabling location or sending messages.",
-      "Legitimate Sprint rewards were EN +25, JA +25, ES +25, and IT +12; normal challenge, ranking, learning-minute, and course-credit records were expected QA output.",
-      "No payment, referral, certificate, checkout, or entitlement action was invoked. Remote D1 ledger read-back was unavailable locally because no Cloudflare API token was present, so no database-level unchanged claim is synthesized.",
-      "The production error reproduced only for /zh/classes?mine=1&language=en; the control route without the unsupported parameter logged no error."
-    ],
-    "zh": [
-      "America/Los_Angeles 日期为 2026-09-01；匿名 GitHub 预检运行 33495295098 通过第 12 天全部 32 项路由检查。",
-      "句子目录契约 21/21 通过，覆盖 36 门课程、每门 120 句及每日 10 个不重复题目。",
-      "专用测试学员在英语、日语、西班牙语和意大利语生产课程中完成词汇、阅读、写作、听力及对话；每种语言均持久化 5 个实测学习分钟。",
-      "四语 5 分钟 Sprint 均完成：英语 80、日语 80、西班牙语 80、意大利语 60；已核对成绩历史及各语言 Today’s Sprint Top 25 分类。",
-      "四语 SmartCard Practice 均完成答题、反馈、继续流程；每次有效正确答案正常产生 +10 课程积分。",
-      "四语 SmartCard Challenge 均完成答题、反馈及 6 秒自动前进；未虚构完成分数。",
-      "四语均完成一个初级机场生活口语场景，并核对正常与慢速播放；跟读始终关闭，未请求麦克风权限。",
-      "已核对 AI 标识、Nearby 仅限成人主动选择说明、宽泛位置说明、屏蔽／举报控件及四语 AI 伙伴轮流对话页面；未开启定位，也未发送消息。",
-      "Sprint 正常奖励为英语 +25、日语 +25、西班牙语 +25、意大利语 +12；挑战、排名、学习分钟及课程积分记录均为预期 QA 输出。",
-      "未触发付款、推荐、证书、结账或权益操作。因本地没有 Cloudflare API 令牌，远程 D1 账本无法只读回查，因此不合成数据库级‘未变化’结论。",
-      "生产错误仅在 /zh/classes?mine=1&language=en 复现；不含不支持参数的对照路由没有控制台错误。"
-    ]
+    "en": ["TypeScript and zero-warning ESLint pass locally.", "All source contracts pass except six rendered-Worker tests that require the production build artifact unavailable under the signed Codex Node runtime; GitHub Actions must run the complete Linux build and suite.", "npm audit reports zero vulnerabilities and git whitespace checks pass."],
+    "zh": ["本地 TypeScript 与零警告 ESLint 通过。", "除六项需要生产构建产物、但受 Codex 签名 Node 运行时限制的渲染 Worker 测试外，源码契约通过；GitHub Actions 必须完成 Linux 全构建及套件。", "npm audit 报告零漏洞，Git 空白检查通过。"]
   },
   "deferred": {
-    "en": [
-      "Physical-device microphone recognition and repeat-after-me remain outside this no-microphone acceptance.",
-      "Remote database-level payment, referral, and certificate ledger read-back requires deployment credentials and remains explicitly unverified by the local QA session."
-    ],
-    "zh": [
-      "真实设备麦克风识别与跟读不在本次无麦克风验收范围内。",
-      "付款、推荐及证书账本的远程数据库级回查需要部署凭据，本地 QA 会话明确未对此作验证。"
-    ]
+    "en": ["No learning, realtime, payment-rule, provider, or data migration is included."],
+    "zh": ["本次不包含学习、实时、付款规则、服务商或数据迁移变更。"]
   },
   "siteAdaptations": {
-    "en": [
-      "Preserve SmartLingo's Chinese interface, twelve-language routing, official course catalog, learning records, score history, AI safety labels, and education disclaimers.",
-      "Limit the implementation to the SmartLingo learner-dashboard link contract; shared site architecture is unchanged."
-    ],
-    "zh": [
-      "保留 SmartLingo 中文界面、十二语言路由、正式课程目录、学习记录、成绩历史、AI 安全标识及教育免责声明。",
-      "实现仅限 SmartLingo 学员 Dashboard 链接契约；共享站点架构不变。"
-    ]
-  },
-  "dataMigration": {
-    "included": false,
-    "migrations": [],
-    "rollback": {
-      "en": "No data migration is included; restore the preceding Worker release to roll back the navigation change.",
-      "zh": "本次不含数据迁移；如需回退导航变化，恢复上一版 Worker 即可。"
-    }
+    "en": ["Preserve SmartLingo's twelve-language routes, official course catalog, learning records, AI safety labels, Worker, D1, R2, Clerk, RealtimeKit, and payment resources."],
+    "zh": ["保留 SmartLingo 的十二语言路由、正式课程目录、学习记录、AI 安全标识，以及独立 Worker、D1、R2、Clerk、RealtimeKit 与付款资源。"]
   }
 }

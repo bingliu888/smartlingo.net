@@ -29,7 +29,7 @@ export async function GET() {
       public: true,
       length: 6,
       casePreservedOnChain: true,
-      smartMeetingComparison: "case-insensitive",
+      comparison: "case-insensitive",
       websiteCheckout: "automatically supplied from the signed-in member profile",
       thirdPartyCheckout: "supplied by the payer"
     },

@@ -1,18 +1,32 @@
 import { createClerkClient } from "@clerk/backend";
+import { consumeAccountRequestLimit } from "../../../../lib/account-request-limit";
 import { isPermanentAdmin } from "../../../../lib/admin-access";
 import { getDatabase, getSessionUser, sha256 } from "../../../../lib/auth";
+import { boundedJsonBody } from "../../../../lib/bounded-request-body";
+import { normalizeEmailAddress } from "../../../../lib/email-address";
 
 type Body = { action?: string; displayName?: string; email?: string; password?: string };
-
-const emailOf = (value: string | undefined) => (value ?? "").trim().toLowerCase();
 
 export async function POST(request: Request) {
   const admin = await getSessionUser(request);
   if (!admin) return Response.json({ error: "Authentication required" }, { status: 401 });
   if (!isPermanentAdmin(admin)) return Response.json({ error: "Administrator access required" }, { status: 403 });
-  const body = await request.json().catch(() => ({})) as Body;
-  const email = emailOf(body.email);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: "Valid email required" }, { status: 400 });
+  const limited = await consumeAccountRequestLimit({
+    request,
+    scope: "admin.members",
+    limit: 60,
+    windowSeconds: 60 * 60,
+    userId: admin.id,
+  });
+  if (limited) return limited;
+  let body: Body;
+  try {
+    body = await boundedJsonBody<Body>(request, 8 * 1024);
+  } catch (error) {
+    return error instanceof Response ? error : Response.json({ error: "Invalid request" }, { status: 400 });
+  }
+  const email = normalizeEmailAddress(body.email);
+  if (!email) return Response.json({ error: "Valid email required" }, { status: 400 });
 
   const db = getDatabase();
   const now = Math.floor(Date.now() / 1000);
