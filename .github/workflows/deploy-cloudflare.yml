@@ -144,13 +144,13 @@ jobs:
           api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/realtime/kit"
           status="$(curl --silent --show-error --output "$RUNNER_TEMP/realtime-apps.json" \
             --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_REALTIME_API_TOKEN" \
-            "$api/apps?search=SmartLingo.net")"
+            "$api/apps?page_no=1&per_page=100")"
           if [[ "$status" != "200" ]] || ! jq -e '.success == true and (.data | type == "array")' \
             "$RUNNER_TEMP/realtime-apps.json" >/dev/null; then
             echo "The SmartLingo Cloudflare token cannot read RealtimeKit apps (HTTP $status)." >&2
             exit 1
           fi
-          app_id="$(jq -er '[.data[] | select((.name | ascii_downcase | gsub("[^a-z0-9]"; "")) == "smartlingonet" and .id == "816eb53a-1dc8-4939-9716-500747e385db")] | if length == 1 then .[0].id else error("The exact SmartLingo.net RealtimeKit app is required") end' \
+          app_id="$(jq -er '[.data[] | select(.id == "816eb53a-1dc8-4939-9716-500747e385db" and ((.name // "" | ascii_downcase | gsub("[^a-z0-9]"; "")) | contains("smartlingo")))] | if length == 1 then .[0].id else error("The exact site-owned SmartLingo RealtimeKit app is required") end' \
             "$RUNNER_TEMP/realtime-apps.json")"
           status="$(curl --silent --show-error --output "$RUNNER_TEMP/realtime-presets.json" \
             --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_REALTIME_API_TOKEN" \
