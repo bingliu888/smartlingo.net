@@ -86,3 +86,11 @@
 .class-waiting-media-actions svg{width:100%;height:100%}
 @media(max-width:640px) and (orientation:portrait){.class-video-grid[data-layout]{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:900px) and (orientation:landscape){.class-video-grid[data-layout]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Keep the live status readable when the full media toolbar needs to wrap. */
+@media(min-width:761px){
+  .class-room-controls{flex-wrap:wrap}
+  .class-room-controls>div{flex:0 0 auto;min-width:max-content}
+  .class-room-controls>div>b,.class-room-controls>div>small{white-space:nowrap}
+  .class-room-controls nav{flex:1 1 520px;justify-content:flex-end}
+}

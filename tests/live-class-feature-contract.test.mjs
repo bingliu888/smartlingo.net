@@ -58,3 +58,12 @@ test("viewer join is permission-free and video tiles support fullscreen", () => 
   assert.match(room, /class-video-tile\$\{selected \? " selected" : ""\}/);
   assert.match(css, /class-video-tile\.selected/);
 });
+
+test("the full live toolbar wraps without collapsing status text into glyph columns", () => {
+  const css = read("app/[lang]/classrooms/classrooms.css");
+  assert.match(css, /@media\(min-width:761px\)/);
+  assert.match(css, /\.class-room-controls\{flex-wrap:wrap\}/);
+  assert.match(css, /\.class-room-controls>div\{flex:0 0 auto;min-width:max-content\}/);
+  assert.match(css, /\.class-room-controls>div>b,\.class-room-controls>div>small\{white-space:nowrap\}/);
+  assert.match(css, /\.class-room-controls nav\{flex:1 1 520px;justify-content:flex-end\}/);
+});
