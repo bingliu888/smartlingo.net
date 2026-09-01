@@ -172,6 +172,8 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /"--session-cookie-file", sessionCookieFile/);
   assert.doesNotMatch(releaseSource, /"--session-cookie", token/);
   assert.match(releaseSource, /'layout-placement-active'/);
+  assert.match(releaseSource, /'layout-en-subscription'[^\n]+4102444800,4102444800/);
+  assert.match(releaseSource, /'layout-es-subscription'[^\n]+4102444800,4102444800/);
   assert.match(releaseSource, /anonymous page control failed/);
   assert.match(releaseSource, /anonymous API control failed/);
   assert.match(releaseSource, /public-read API control failed/);

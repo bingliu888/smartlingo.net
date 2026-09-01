@@ -185,8 +185,8 @@ INSERT INTO sessions (id,user_id,clerk_session_id,expires_at,created_at) VALUES
  ('${sessionHash}','layout-user','layout-local-session',4102444800,1785680002);
 INSERT INTO smartlingo_course_subscriptions
  (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,provider_subscription_id,created_at,updated_at) VALUES
- ('layout-en-subscription','course_en_basic','layout-user','active',2000,1785680002,1788272002,1788272002,'layout-en',1785680002,1785680002),
- ('layout-es-subscription','course_es_basic','layout-user','active',2000,1785680002,1788272002,1788272002,'layout-es',1785680002,1785680002);
+ ('layout-en-subscription','course_en_basic','layout-user','active',2000,1785680002,4102444800,4102444800,'layout-en',1785680002,1785680002),
+ ('layout-es-subscription','course_es_basic','layout-user','active',2000,1785680002,4102444800,4102444800,'layout-es',1785680002,1785680002);
 INSERT INTO smartlingo_language_class_members (id,class_id,user_id,role,status,joined_at,updated_at) VALUES
  ('layout-en-member','course_en_basic','layout-user','student','active',1785680003,1785680003),
  ('layout-es-member','course_es_basic','layout-user','student','active',1785680004,1785680004);
