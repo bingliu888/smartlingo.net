@@ -130,7 +130,10 @@ export function groupCallPresetName(
   media:ParticipantMediaPolicy,
 ){
   const capabilities=`${media.audio?"a":""}${media.video?"v":""}${media.screenshare?"s":""}`||"listen";
-  return `smartlingo_gold_group_${meetingMode}_${role}_${capabilities}`;
+  const sourceVersion = meetingMode === "audio" && (media.video || media.screenshare)
+    ? "_av2"
+    : "";
+  return `smartlingo_gold_group_${meetingMode}_${role}_${capabilities}${sourceVersion}`;
 }
 const securedPresetPromises = new Map<string, Promise<void>>();
 const providerPresetSearchPromises = new Map<string,Promise<ProviderPreset|null>>();

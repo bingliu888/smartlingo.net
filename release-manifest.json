@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-companion-av-source-20260901",
+  "releaseId": "smartlingo-net-gold-v2-versioned-av-companion-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 companion full A/V preset source",
-    "zh": "Gold v2 伴随连接完整 A/V 预设来源"
+    "en": "Gold v2 versioned full A/V companion preset",
+    "zh": "Gold v2 版本化完整 A/V 伴随连接预设"
   },
   "purpose": {
     "en": "Correct the generic Gold v2 audio-room companion lifecycle defect found during four-participant Chrome acceptance so shared camera, file, web, and whiteboard media reuse the current human tab session instead of consuming a fifth tab lease.",
@@ -12,6 +12,7 @@
   },
   "features": {
     "en": [
+      "Version video-capable audio-room companion preset names so existing pure-audio provider templates cannot retain stale media configuration.",
       "Clone video-capable audio-room companions from the verified full A/V host preset so local camera and canvas tracks are delivered to remote participants.",
       "Read back the persisted companion reservation when D1 reports a false zero change count, preventing a successful claim from being misreported as a replaced classroom tab.",
       "Bind the isolated shared-media companion to its current host tab session so four human tabs can remain online while camera, file, web, whiteboard, or screen media is published.",
@@ -26,6 +27,7 @@
       "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
     ],
     "zh": [
+      "为具备视频能力的音频房间伴随连接预设名称增加版本，避免既有纯音频服务商模板保留过期媒体配置。",
       "从已验证的完整 A/V 主持人预设克隆具备视频能力的音频房间伴随连接，使本地摄像头及画布轨道可传送至远端参与者。",
       "当 D1 错误报告零变更时回读持久化的伴随连接预留，避免把成功认领误报为课堂标签页已被替换。",
       "将隔离的共享媒体伴随连接绑定到当前主持人标签页会话，使四个用户标签页保持在线时仍可发布摄像头、文件、网页、白板或屏幕媒体。",
