@@ -3,8 +3,20 @@ import { loadReleaseManifest, releaseNotes } from "./release-manifest.mjs";
 const manifest = loadReleaseManifest();
 const titleEn = manifest.title.en;
 const titleZh = manifest.title.zh;
-const notesEn = releaseNotes(manifest, "en");
-const notesZh = releaseNotes(manifest, "zh");
+const notesEn = [
+  ...releaseNotes(manifest, "en"),
+  ...(manifest.dataMigration?.included ? [
+    `Data migration: ${manifest.dataMigration.migrations.join(", ")}`,
+    `Rollback: ${manifest.dataMigration.rollback.en}`,
+  ] : []),
+];
+const notesZh = [
+  ...releaseNotes(manifest, "zh"),
+  ...(manifest.dataMigration?.included ? [
+    `数据迁移: ${manifest.dataMigration.migrations.join("、")}`,
+    `回退: ${manifest.dataMigration.rollback.zh}`,
+  ] : []),
+];
 const commit = String(process.env.GITHUB_SHA || "").trim();
 const runId = String(process.env.GITHUB_RUN_ID || "").trim();
 const repository = String(process.env.GITHUB_REPOSITORY || "bingliu888/smartlingo.net").trim();

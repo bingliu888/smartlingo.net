@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { runClassMaintenance, type ClassMaintenanceEnvironment } from "../lib/class-maintenance";
 
 interface Env {
   ASSETS: Fetcher;
@@ -11,9 +12,21 @@ interface Env {
   CLOUDFLARE_ACCOUNT_ID?: string;
   REALTIMEKIT_APP_ID?: string;
   REALTIMEKIT_GUEST_PRESET?: string;
+  REALTIMEKIT_GUEST_AUDIO_PRESET?: string;
   REALTIMEKIT_MEMBER_PRESET?: string;
+  REALTIMEKIT_MEMBER_AUDIO_PRESET?: string;
   REALTIMEKIT_HOST_PRESET?: string;
+  REALTIMEKIT_HOST_AUDIO_PRESET?: string;
   REALTIMEKIT_VIEWER_PRESET?: string;
+  REALTIMEKIT_VIEWER_AUDIO_PRESET?: string;
+  REALTIMEKIT_WEBINAR_HOST_PRESET?: string;
+  REALTIMEKIT_WEBINAR_SPEAKER_PRESET?: string;
+  REALTIMEKIT_WEBINAR_VIEWER_PRESET?: string;
+  REALTIMEKIT_LIVESTREAM_HOST_PRESET?: string;
+  REALTIMEKIT_LIVESTREAM_SPEAKER_PRESET?: string;
+  REALTIMEKIT_LIVESTREAM_VIEWER_PRESET?: string;
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
+  CLERK_SECRET_KEY?: string;
   MIGRATION_EXPORT_SECRET?: string;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -55,6 +68,12 @@ const worker = {
     }
 
     return handler.fetch(request, runtimeEnv, ctx);
+  },
+  async scheduled(_controller: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (env.DB) (globalThis as unknown as { __SMARTLINGO_DB__?: D1Database }).__SMARTLINGO_DB__ = env.DB;
+    if (env.BUCKET) (globalThis as unknown as { __SMARTLINGO_BUCKET__?: R2Bucket }).__SMARTLINGO_BUCKET__ = env.BUCKET;
+    (globalThis as typeof globalThis & { __CLASS_RUNTIME_ENV__?: Env }).__CLASS_RUNTIME_ENV__ = env;
+    ctx.waitUntil(runClassMaintenance(env as unknown as ClassMaintenanceEnvironment));
   },
 };
 

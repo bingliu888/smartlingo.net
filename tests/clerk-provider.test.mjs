@@ -78,7 +78,7 @@ test("parallel Clerk session initialization creates users idempotently", async (
   assert.equal(inserts.length, 1);
   assert.match(auth, /WHERE clerk_user_id = \? AND NOT EXISTS/);
   assert.match(auth, /UPDATE users SET clerk_user_id = \?/);
-  assert.match(auth, /email_verified, display_name, password_hash, preferred_language, clerk_user_id, created_at/);
+  assert.match(auth, /email_verified, display_name, password_hash, preferred_language, clerk_user_id, clerk_identity_checked_at, created_at/);
   assert.match(auth, /Unable to create or load Clerk user/);
 });
 

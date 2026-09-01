@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
+import { getClassRuntimeBindings } from "@/lib/live-class-runtime";
 
 const COOKIE_NAME = "smartlingo_session";
 const REFERRAL_COOKIE_NAME = "smartlingo_referral_code";
@@ -7,7 +8,7 @@ export const SESSION_SECONDS = 60 * 60 * 24 * 7;
 const REFERRAL_SECONDS = 60 * 60 * 24 * 30;
 const HASH_ITERATIONS = 210_000;
 
-type D1Result<T> = { results?: T[]; success: boolean };
+type D1Result<T> = { results?: T[]; success: boolean; meta?: { changes?: number } };
 type Statement = {
   bind: (...values: unknown[]) => Statement;
   first: <T>() => Promise<T | null>;
@@ -21,12 +22,14 @@ type Database = {
 
 export type SessionUser = {
   id: string;
+  clerkUserId: string;
   email: string;
   displayName: string;
   preferredLanguage: "en" | "zh";
   aiProviderPreference: "auto" | "openai" | "deepseek";
   role: "member" | "admin";
   emailVerified: number;
+  identityCheckedAt: number;
 };
 
 export const BOOTSTRAP_ADMIN_EMAIL = "bingliu@cybeye.com";
@@ -141,6 +144,7 @@ async function ensureClerkUser(
   language: string | null | undefined,
 ) {
   const normalizedEmail = email.trim().toLowerCase();
+  const identityCheckedAt = Math.floor(Date.now() / 1000);
   let user = await db().prepare(
     "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
   ).bind(clerkUserId).first<ClerkIdentityRow>();
@@ -153,13 +157,16 @@ async function ensureClerkUser(
       if (emailOwner && emailOwner.id !== user.id) {
         throw new Error("Verified email is already linked to another app account");
       }
-      await db().prepare("UPDATE users SET email = ?, email_verified = ? WHERE id = ? AND clerk_user_id = ?")
-        .bind(normalizedEmail, emailVerified ? 1 : 0, user.id, clerkUserId)
+      await db().prepare("UPDATE users SET email = ?, email_verified = ?, clerk_identity_checked_at = ? WHERE id = ? AND clerk_user_id = ?")
+        .bind(normalizedEmail, emailVerified ? 1 : 0, identityCheckedAt, user.id, clerkUserId)
         .run();
     } else if (user.emailVerified !== (emailVerified ? 1 : 0)) {
-      await db().prepare("UPDATE users SET email_verified = ? WHERE id = ? AND clerk_user_id = ?")
-        .bind(emailVerified ? 1 : 0, user.id, clerkUserId)
+      await db().prepare("UPDATE users SET email_verified = ?, clerk_identity_checked_at = ? WHERE id = ? AND clerk_user_id = ?")
+        .bind(emailVerified ? 1 : 0, identityCheckedAt, user.id, clerkUserId)
         .run();
+    } else {
+      await db().prepare("UPDATE users SET clerk_identity_checked_at = ? WHERE id = ? AND clerk_user_id = ?")
+        .bind(identityCheckedAt, user.id, clerkUserId).run();
     }
     return applyBootstrapAdmin(user.id, normalizedEmail, emailVerified);
   }
@@ -172,13 +179,14 @@ async function ensureClerkUser(
       throw new Error("Verified email is already linked to another Clerk user");
     }
     await db().prepare(
-      "UPDATE users SET clerk_user_id = ? WHERE id = ? AND (clerk_user_id IS NULL OR clerk_user_id = ?)",
-    ).bind(clerkUserId, emailUser.id, clerkUserId).run();
+      "UPDATE users SET clerk_user_id = ?, clerk_identity_checked_at = ? WHERE id = ? AND (clerk_user_id IS NULL OR clerk_user_id = ?)",
+    ).bind(clerkUserId, identityCheckedAt, emailUser.id, clerkUserId).run();
     user = await db().prepare(
       "SELECT id, email, clerk_user_id AS clerkUserId, email_verified AS emailVerified FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
     ).bind(clerkUserId).first<ClerkIdentityRow>();
     if (user) {
-      await db().prepare("UPDATE users SET email_verified = 1 WHERE id = ?").bind(user.id).run();
+      await db().prepare("UPDATE users SET email_verified = 1, clerk_identity_checked_at = ? WHERE id = ?")
+        .bind(identityCheckedAt, user.id).run();
       return applyBootstrapAdmin(user.id, normalizedEmail, true);
     }
   }
@@ -189,7 +197,7 @@ async function ensureClerkUser(
   // cookie. Both the Clerk subject and verified email are unique, so this is
   // safe and idempotent under concurrent requests.
   await db().prepare(
-    "INSERT OR IGNORE INTO users (id, email, email_verified, display_name, password_hash, preferred_language, clerk_user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO users (id, email, email_verified, display_name, password_hash, preferred_language, clerk_user_id, clerk_identity_checked_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   ).bind(
     clerkUserId,
     normalizedEmail,
@@ -198,6 +206,7 @@ async function ensureClerkUser(
     `clerk$${await sha256(crypto.randomUUID())}`,
     normalizedLanguage(language),
     clerkUserId,
+    identityCheckedAt,
     now,
   ).run();
   user = await db().prepare(
@@ -215,6 +224,39 @@ async function ensureClerkUser(
   return applyBootstrapAdmin(user.id, normalizedEmail, emailVerified);
 }
 
+async function prepareAndEnsureClerkUser(
+  clerkUserId: string,
+  email: string,
+  emailVerified: boolean,
+  name: string,
+  language: string | null | undefined,
+) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const linked = await db().prepare(
+    "SELECT id FROM users WHERE clerk_user_id=? LIMIT 1",
+  ).bind(clerkUserId).first<{ id: string }>();
+  const legacyEmailOwner = !linked && emailVerified ? await db().prepare(
+    "SELECT id,clerk_user_id AS clerkUserId FROM users WHERE lower(email)=lower(?) LIMIT 1",
+  ).bind(normalizedEmail).first<{ id: string; clerkUserId: string | null }>() : null;
+  // Preserve a legacy member-owned account that has not yet been linked to
+  // Clerk. A conflicting prior Clerk subject is displaced only after the new
+  // subject presents the same verified email from this site's Clerk app.
+  const ownershipTargetId = linked?.id
+    || (legacyEmailOwner && !legacyEmailOwner.clerkUserId ? legacyEmailOwner.id : clerkUserId);
+  await prepareClerkEmailOwnership({
+    userId: ownershipTargetId,
+    email: normalizedEmail,
+    verified: emailVerified,
+  });
+  return ensureClerkUser(
+    clerkUserId,
+    normalizedEmail,
+    emailVerified,
+    name,
+    language,
+  );
+}
+
 export async function createSessionForClerkUser(
   clerkUserId: string,
   email: string,
@@ -224,7 +266,13 @@ export async function createSessionForClerkUser(
   clerkSessionId: string,
   referralCode?: string | null,
 ) {
-  const user = await ensureClerkUser(clerkUserId, email, emailVerified, name, language);
+  const user = await prepareAndEnsureClerkUser(
+    clerkUserId,
+    email,
+    emailVerified,
+    name,
+    language,
+  );
   if (referralCode) await claimPlatformReferral(user.id, referralCode);
   return createSession(user.id, clerkSessionId);
 }
@@ -266,15 +314,140 @@ function cookieValue(request: Request, name: string) {
   return found ? found.slice(name.length + 1) : null;
 }
 
+const sessionUserSelection = `SELECT u.id,u.clerk_user_id AS clerkUserId,u.email,
+  u.email_verified AS emailVerified,u.display_name AS displayName,
+  u.preferred_language AS preferredLanguage,u.ai_provider_preference AS aiProviderPreference,
+  u.role,u.clerk_identity_checked_at AS identityCheckedAt`;
+
+async function reassignedEmailAddress(userId: string) {
+  const digest = new Uint8Array(await crypto.subtle.digest(
+    "SHA-256", new TextEncoder().encode(userId),
+  ));
+  const suffix = Array.from(digest.slice(0, 12),
+    byte => byte.toString(16).padStart(2, "0")).join("");
+  return `reassigned-${suffix}@unverified.invalid`;
+}
+
+export async function prepareClerkEmailOwnership(input: {
+  userId: string;
+  email: string;
+  verified: boolean;
+}) {
+  const database = db();
+  const statements: Statement[] = [];
+  const current = await database.prepare("SELECT email FROM users WHERE id=? LIMIT 1")
+    .bind(input.userId).first<{ email: string }>();
+  if (current?.email.trim().toLowerCase() === BOOTSTRAP_ADMIN_EMAIL
+    && input.email !== BOOTSTRAP_ADMIN_EMAIL)
+    statements.push(database.prepare("UPDATE users SET role='member' WHERE id=?")
+      .bind(input.userId));
+  if (input.verified) {
+    const conflict = await database.prepare(
+      "SELECT id FROM users WHERE id<>? AND lower(email)=lower(?) LIMIT 1",
+    ).bind(input.userId, input.email).first<{ id: string }>();
+    if (conflict) {
+      statements.push(database.prepare(`UPDATE users SET
+        email=?,email_verified=0,clerk_identity_checked_at=0,
+        clerk_identity_refresh_claim_token=NULL,clerk_identity_refresh_claimed_until=0,
+        role=CASE WHEN role='admin' THEN 'member' ELSE role END
+        WHERE id=? AND id<>? AND lower(email)=lower(?)`).bind(
+        await reassignedEmailAddress(conflict.id),
+        conflict.id,
+        input.userId,
+        input.email,
+      ));
+    }
+  }
+  if (statements.length) await database.batch(statements);
+}
+
+async function refreshSessionIdentity(user: SessionUser, now: number) {
+  if (!user.clerkUserId) return { ...user, emailVerified: 0 };
+  const database = db();
+  const claimToken = createId();
+  await database.prepare(`UPDATE users SET
+    clerk_identity_refresh_claim_token=?,clerk_identity_refresh_claimed_until=?
+    WHERE id=? AND clerk_identity_checked_at<=?
+      AND (clerk_identity_refresh_claim_token IS NULL
+        OR clerk_identity_refresh_claimed_until<=?)`).bind(
+    claimToken,
+    now + 30,
+    user.id,
+    now - 5 * 60,
+    now,
+  ).run();
+  const claim = await database.prepare(
+    "SELECT clerk_identity_refresh_claim_token AS token FROM users WHERE id=? LIMIT 1",
+  ).bind(user.id).first<{ token: string | null }>();
+  if (claim?.token !== claimToken) return { ...user, emailVerified: 0 };
+  try {
+    const runtime = getClassRuntimeBindings();
+    const secretKey = runtime.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY || "";
+    const publishableKey = runtime.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+      || process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+    if (!secretKey || !publishableKey) throw new Error("CLERK_IDENTITY_REFRESH_UNAVAILABLE");
+    const { createClerkClient } = await import("@clerk/backend");
+    const clerk = createClerkClient({ secretKey, publishableKey });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => reject(new Error("CLERK_IDENTITY_REFRESH_TIMEOUT")), 12_000);
+    });
+    const identity = await Promise.race([
+      clerk.users.getUser(user.clerkUserId),
+      timeout,
+    ]).finally(() => { if (timer) clearTimeout(timer); });
+    const primary = identity.emailAddresses.find(
+      address => address.id === identity.primaryEmailAddressId,
+    ) || identity.emailAddresses[0];
+    const email = primary?.emailAddress.trim().toLowerCase() || "";
+    const verified = primary?.verification?.status === "verified";
+    if (identity.banned || identity.locked || !email) {
+      await database.prepare(`UPDATE users SET email_verified=0,
+        clerk_identity_checked_at=?,clerk_identity_refresh_claim_token=NULL,
+        clerk_identity_refresh_claimed_until=0 WHERE id=? AND
+        clerk_identity_refresh_claim_token=?`).bind(now, user.id, claimToken).run();
+      return { ...user, emailVerified: 0, identityCheckedAt: now };
+    }
+    await prepareClerkEmailOwnership({ userId: user.id, email, verified });
+    await database.prepare(`UPDATE users SET email=?,email_verified=?,
+      clerk_identity_checked_at=?,clerk_identity_refresh_claim_token=NULL,
+      clerk_identity_refresh_claimed_until=0,
+      role=CASE WHEN ?='${BOOTSTRAP_ADMIN_EMAIL}' AND ?=1 THEN 'admin'
+        WHEN role='admin' AND ?<>'${BOOTSTRAP_ADMIN_EMAIL}' THEN 'member' ELSE role END
+      WHERE id=? AND clerk_identity_refresh_claim_token=?`).bind(
+      email,
+      verified ? 1 : 0,
+      now,
+      email,
+      verified ? 1 : 0,
+      email,
+      user.id,
+      claimToken,
+    ).run();
+    return database.prepare(`${sessionUserSelection} FROM users u WHERE u.id=? LIMIT 1`)
+      .bind(user.id).first<SessionUser>();
+  } catch {
+    await database.prepare(`UPDATE users SET email_verified=0,
+      clerk_identity_refresh_claim_token=NULL,clerk_identity_refresh_claimed_until=0
+      WHERE id=? AND clerk_identity_refresh_claim_token=?`)
+      .bind(user.id, claimToken).run().catch(() => undefined);
+    return { ...user, emailVerified: 0 };
+  }
+}
+
 export async function getSessionUser(request?: Request): Promise<SessionUser | null> {
   const token = request ? cookieValue(request, COOKIE_NAME) : (await cookies()).get(COOKIE_NAME)?.value ?? null;
   let user: SessionUser | null = null;
   if (token) {
     try {
       const now = Math.floor(Date.now() / 1000);
-      user = await db().prepare(
-        "SELECT u.id, u.email, u.email_verified AS emailVerified, u.display_name AS displayName, u.preferred_language AS preferredLanguage, u.ai_provider_preference AS aiProviderPreference, u.role FROM sessions s JOIN users u ON u.id = s.user_id LEFT JOIN platform_member_access a ON a.user_id = u.id WHERE s.id = ? AND COALESCE(a.status, 'active') = 'active' AND s.clerk_session_id IS NOT NULL AND s.expires_at > ? LIMIT 1",
-      ).bind(await sha256(token), now).first<SessionUser>();
+      user = await db().prepare(`${sessionUserSelection} FROM sessions s JOIN users u ON u.id=s.user_id
+        LEFT JOIN platform_member_access a ON a.user_id=u.id
+        WHERE s.id=? AND COALESCE(a.status,'active')='active'
+          AND s.clerk_session_id IS NOT NULL AND s.expires_at>? LIMIT 1`)
+        .bind(await sha256(token), now).first<SessionUser>();
+      if (user && user.identityCheckedAt <= now - 5 * 60)
+        user = await refreshSessionIdentity(user, now);
     } catch {
       // A stale legacy session cookie must not turn a public page into an error page.
     }
@@ -296,16 +469,17 @@ export async function getSessionUser(request?: Request): Promise<SessionUser | n
     const emailVerified = primaryEmail?.verification?.status === "verified";
     if (clerkUser && email && !clerkUser.banned && !clerkUser.locked) {
       try {
-        await ensureClerkUser(
+        await prepareAndEnsureClerkUser(
           clerkUser.id,
           email,
           emailVerified,
           clerkUser.fullName || clerkUser.firstName || email.split("@")[0] || "SmartLingo",
           "zh",
         );
-        user = await db().prepare(
-          "SELECT id, email, email_verified AS emailVerified, display_name AS displayName, preferred_language AS preferredLanguage, ai_provider_preference AS aiProviderPreference, role FROM users WHERE clerk_user_id = ? AND NOT EXISTS (SELECT 1 FROM platform_member_access a WHERE a.user_id = users.id AND a.status = 'removed') LIMIT 1",
-        ).bind(clerkUser.id).first<SessionUser>();
+        user = await db().prepare(`${sessionUserSelection} FROM users u
+          WHERE u.clerk_user_id=? AND NOT EXISTS (
+            SELECT 1 FROM platform_member_access a WHERE a.user_id=u.id AND a.status='removed'
+          ) LIMIT 1`).bind(clerkUser.id).first<SessionUser>();
       } catch {
         // Identity conflicts fail closed and must be resolved by an Admin.
       }

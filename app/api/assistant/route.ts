@@ -10,6 +10,7 @@ import { validateSmartLingoMedia } from "../../../lib/smartlingo-media";
 import { requestUser } from "../../../lib/request-user";
 import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES } from "../../../lib/smartlingo-language-communities";
 import { smartLingoAiStudyPartner } from "../../../lib/smartlingo-ai-study-partners";
+import { consumeAiDailyQuota } from "../../../lib/ai-daily-quota";
 
 type ChatMessage = { role?: unknown; content?: unknown };
 type AssistantFeature = Extract<SmartAiFeature, "public_guru" | "message_polish" | "chat_guru">;
@@ -80,6 +81,10 @@ export async function POST(request: Request) {
   const user = await requestUser();
   if (feature !== "public_guru" && !user) {
     return Response.json({ error: language === "zh" ? "请先登录。" : "Sign in is required." }, { status: 401 });
+  }
+  if (user) {
+    const quota = await consumeAiDailyQuota(user.id, "assistant");
+    if (quota) return quota;
   }
   const visitor = request.headers.get("cf-connecting-ip")
     || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()

@@ -159,6 +159,7 @@ export function LiveClassPlaylistManager({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             action: "abort-upload",
+            itemId: init.itemId,
             key: init.key,
             uploadId: init.uploadId,
           }),

@@ -5,9 +5,11 @@ import test from "node:test";
 const media = fs.readFileSync(new URL("../app/api/classrooms/[code]/media/route.ts", import.meta.url), "utf8");
 const client = fs.readFileSync(new URL("../components/live-class-room-client.tsx", import.meta.url), "utf8");
 
-test("the final manager publisher closes streaming even while viewers remain", () => {
-  assert.match(media, /activePublishers/);
-  assert.match(media, /access\.manager\s*&&\s*Number\(activePublishers\?\.count\s*\|\|\s*0\)\s*===\s*0/);
+test("a publisher leaving keeps silent viewers and the provider generation alive", () => {
+  const leave = media.match(/if \(action === "leave"\) \{[\s\S]*?return Response\.json\(\{ ok: true \}\);\n  \}/)?.[0] || "";
+  assert.match(leave, /revokeParticipantSession/);
+  assert.match(leave, /Silent viewers and moderators keep the provider generation alive/);
+  assert.doesNotMatch(leave, /queueClassProviderTeardown|provider_meeting_id=NULL|stream_active=0/);
   assert.match(client, /livestream\.stop\(\)/);
   assert.match(client, /wasPublishing\s*=\s*Boolean\(\s*client\?\.self\.audioEnabled\s*\|\|\s*client\?\.self\.videoEnabled,?\s*\)/);
   assert.ok(client.indexOf("wasPublishing = Boolean") < client.indexOf("client?.self.disableAudio()"));
@@ -19,6 +21,15 @@ test("the final manager publisher closes streaming even while viewers remain", (
   assert.match(client, /confirmStillAlone=\{confirmStillAlone\}/);
   assert.match(client, /user\.identity !== identity && !user\.isManager/);
   assert.match(media, /isManager: Boolean\(userId && managerIds\.has\(userId\)\)/);
+});
+
+test("participant reservation trusts persisted D1 state and failed clients release provisional leases", () => {
+  const sessions = fs.readFileSync(new URL("../lib/class-participant-session.ts", import.meta.url), "utf8");
+  assert.match(sessions, /activeSessionAfterMutation/);
+  assert.match(sessions, /inserted\?\.active && inserted\.tokenHash === tokenHash/);
+  assert.match(client, /let provisionalSessionToken = ""/);
+  assert.match(client, /sessionToken: provisionalSessionToken/);
+  assert.match(client, /keepalive: true/);
 });
 
 test("webinar promotion keeps the viewer connected until device permission is ready", () => {

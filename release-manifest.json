@@ -1,89 +1,105 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-qa-day10-gmail-blocker-20260830-r1",
+  "releaseId": "smartlingo-net-gold-v2-common-platform-20260831",
   "site": "smartlingo.net",
   "title": {
-    "en": "Record day-10 real-learning QA identity-recovery blocker",
-    "zh": "记录第 10 天真实学习 QA 身份恢复受阻"
+    "en": "Gold v2 identity, commerce, realtime, and private classroom platform",
+    "zh": "Gold v2 身份、商业、实时课堂与私有存储平台"
   },
   "purpose": {
-    "en": "Publish an accurate bilingual administrator Project record for the August 30 real-user QA attempt without claiming signed-in learning evidence that Chrome and Gmail could not safely provide.",
-    "zh": "为 8 月 30 日真实用户 QA 尝试发布准确的双语管理员 Project 记录，不虚构 Chrome 与 Gmail 无法安全提供的登录学习证据。"
+    "en": "Migrate the reviewed Gold v2 common platform to SmartLingo while preserving its independent twelve-language learning product, course model, data, credentials, and provider resources.",
+    "zh": "将已审阅的 Gold v2 公共平台迁移至 SmartLingo，同时保留其独立的十二语言学习产品、课程模型、数据、凭据及服务商资源。"
   },
   "features": {
     "en": [
-      "Record the passed 4,320-row sentence catalog contract and the successful 32-route anonymous production preflight as prerequisite evidence only.",
-      "Record the exact non-secret identity-recovery blocker and mark the four-language signed-in acceptance matrix incomplete rather than passed.",
-      "Publish each language's deterministic plan, measured active-learning time, deep-focus skill, and missing score-log evidence."
+      "Use fresh verified Clerk identity for administration, payment synchronization, co-host management, private-course access, and publishing actions.",
+      "Verify SmartPay3 transaction receipts, payouts, token transfers, confirmation depth, account RefID, and payer wallet before idempotently granting one course entitlement.",
+      "Allow one payer wallet to fund distinct SmartLingo accounts safely because account credit remains bound to the unique RefID rather than wallet exclusivity.",
+      "Provide generation-scoped Group Call, Webinar, and Broadcast sessions with four-tab human limits, 100-person Group capacity, nine-publisher staged capacity, and two-hour generations.",
+      "Keep silent viewers connected when a publisher leaves and add durable provider, participant, room, recording, file, and deletion recovery.",
+      "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
     ],
     "zh": [
-      "记录已通过的 4,320 行句子目录契约与 32 条正式站匿名路由预检，并明确它们只属于前置证据。",
-      "记录准确且不含隐私的身份恢复阻塞，将四语登录验收矩阵标记为未完成而非通过。",
-      "发布每种语言的确定性计划、实测有效学习时间、深度重点技能及缺失的分数日志证据。"
+      "对管理、付款同步、共同教师管理、专属课程访问及发布操作使用新鲜且已验证的 Clerk 身份。",
+      "在幂等授予一次课程权益前验证 SmartPay3 交易收据、分账、代币转账、确认深度、账户 RefID 及付款钱包。",
+      "允许同一付款钱包安全地为不同 SmartLingo 账户付款，因为账户入账仍绑定唯一 RefID，而不依赖钱包排他性。",
+      "提供按代际隔离的 Group Call、Webinar 与 Broadcast 会话，执行每人四标签页、Group 100 人、舞台 9 位发布者及两小时代际边界。",
+      "发布者离开时保持静默观众连接，并新增服务商、参与者、房间、录音、文件及删除流程的持久恢复。",
+      "新增私有课程材料、分片播放列表、录音产物、字节范围传输、账户存储配额、人工智能每日配额及可恢复清理。"
     ]
   },
   "affected": {
     "en": [
-      "Administrator Project release report for Pacific date 2026-08-30; no Course, Play, Everyday Speaking, learner, score, credit, challenge, reward, leaderboard, payment, referral, or certificate data is changed."
+      "SmartLingo Clerk session identity, administrator and course authorization, SmartPay3 course-payment synchronization, live classroom lifecycle, RealtimeKit media, private R2 files, recording, AI use, scheduled maintenance, and exact deployment evidence."
     ],
     "zh": [
-      "太平洋日期 2026-08-30 的管理员 Project 发布报告；不更改课程、Play、生活口语、学习者、分数、积分、挑战、奖励、排行榜、支付、推荐或证书数据。"
+      "SmartLingo Clerk 会话身份、管理员与课程授权、SmartPay3 课程付款同步、实时课堂生命周期、RealtimeKit 媒体、私有 R2 文件、录音、人工智能使用、定时维护及精确部署证据。"
     ]
   },
   "changes": {
     "en": [
-      "The production dashboard redirected to the Chinese sign-in page because no reusable dedicated learner session existed. Historical verification-message inspection identified the newest recipient as the permanent administrator, which was correctly rejected as a substitute for the dedicated learner.",
-      "Repeated Chrome control timeouts prevented safe inspection of an older matching Gmail verification message, so no test address or one-time code was submitted to SmartLingo and no signed-in learning action was started.",
-      "English: 5 minutes planned, 0 measured, Writing deep focus and SmartCard Practice feature focus; Course, Sprint, SmartCard, Challenge, Everyday Speaking, Rankings, Score History, displayed score, and persisted score log are incomplete.",
-      "Japanese: 2 minutes planned, 0 measured, Speaking deep focus and SmartCard Practice feature focus; Course, Sprint, SmartCard, Challenge, Everyday Speaking, Rankings, Score History, displayed score, and persisted score log are incomplete.",
-      "Spanish: 2 minutes planned, 0 measured, Listening deep focus and SmartCard Practice feature focus; Course, Sprint, SmartCard, Challenge, Everyday Speaking, Rankings, Score History, displayed score, and persisted score log are incomplete.",
-      "Italian: 5 minutes planned, 0 measured, Writing deep focus and Course feature focus; Course, Sprint, SmartCard, Challenge, Everyday Speaking, Rankings, Score History, displayed score, and persisted score log are incomplete."
+      "Add three additive D1 migrations for identity and commerce hardening, realtime generation state and capacity triggers, and private storage reservation ledgers.",
+      "Replace new classroom password writes with PBKDF2-SHA256 while retaining read-only compatibility for existing SHA-256 values.",
+      "Require tab-scoped participant credentials for media mutations, moderation, sharing, recording, heartbeat, and Leave.",
+      "Read back the exact newly generated participant-session id before interpreting D1 batch metadata and release provisional tab leases after failed browser joins.",
+      "Bound request bodies, provider responses and deadlines, AI daily use, account request rates, polling cadence, cron work, and R2 cleanup batches.",
+      "Replace the one-stage deployment with exact-commit validation, mutation, and Project-evidence jobs using pinned actions and migration-before-deploy ordering."
     ],
     "zh": [
-      "正式站用户面板因没有可复用的专用学习者会话而跳转到中文登录页。检查历史验证码邮件时确认最新收件身份属于永久管理员，因此正确拒绝将其替代专用学习者。",
-      "Chrome 控制 Gmail 时反复超时，无法安全检查更早的匹配验证码邮件；因此没有向 SmartLingo 提交测试邮箱或一次性验证码，也没有开始任何登录学习操作。",
-      "英语：计划 5 分钟，实测 0 分钟，深度重点为写作，功能重点为 SmartCard 练习；课程、今日速成、SmartCard、挑战、生活口语、排行榜、分数历史、显示分数及持久化分数日志均未完成。",
-      "日语：计划 2 分钟，实测 0 分钟，深度重点为口语，功能重点为 SmartCard 练习；课程、今日速成、SmartCard、挑战、生活口语、排行榜、分数历史、显示分数及持久化分数日志均未完成。",
-      "西班牙语：计划 2 分钟，实测 0 分钟，深度重点为听力，功能重点为 SmartCard 练习；课程、今日速成、SmartCard、挑战、生活口语、排行榜、分数历史、显示分数及持久化分数日志均未完成。",
-      "意大利语：计划 5 分钟，实测 0 分钟，深度重点为写作，功能重点为课程；课程、今日速成、SmartCard、挑战、生活口语、排行榜、分数历史、显示分数及持久化分数日志均未完成。"
+      "新增三项累加式 D1 迁移，覆盖身份与商业加固、实时房间代际状态和容量触发器，以及私有存储预留账本。",
+      "课堂密码的新写入改为 PBKDF2-SHA256，同时只读兼容既有 SHA-256 值。",
+      "媒体变更、管理、分享、录音、心跳及离开操作均要求标签页级参与者凭证。",
+      "在解释 D1 批处理元数据前回读精确的新参与者会话 ID，并在浏览器加入失败后释放临时标签租约。",
+      "限制请求体、服务商响应与超时、人工智能每日用量、账户请求频率、轮询节奏、定时任务工作量和 R2 清理批次。",
+      "以固定版本 Actions 和先迁移后部署顺序，将单阶段部署替换为精确提交验证、生产变更及 Project 证据三个任务。"
     ]
   },
   "validation": {
     "en": [
-      "The sentence exercise contract passed all five tests: 36 official courses, exactly 120 published sentences per course, and runtime-aligned Listening and Writing builders with ten unique daily items.",
-      "GitHub Actions route-preflight run 33305452201 completed successfully for 2026-08-30; its artifact passed all 32 anonymous production routes and was not treated as login or learning evidence.",
-      "The real Chrome production check visibly reached /zh/auth/login from /zh/dashboard. The required signed-in matrix did not run, and this report deliberately records a blocker rather than a pass.",
-      "Repeat-after-me remained off and no microphone permission was requested. No payment, referral, certificate, course-credit, challenge-reward, or leaderboard action was performed; administrator-level ledger equality was not available and is not claimed."
+      "Replay all 72 migrations into an empty isolated D1 twice and verify the Gold v2 identity, lifecycle, capacity, storage, and cleanup objects with no foreign-key violations.",
+      "Pass every source contract test, SmartPay3 compilation, TypeScript, zero-warning ESLint, production build, rendered Worker test, artifact validation, runtime-layout verification, and git whitespace check.",
+      "Preserve the 48,000-item, twelve-language vocabulary catalog, published pronunciation metadata, difficulty, frequency, grade-level, learning, referral, and certificate boundaries.",
+      "Require GitHub Actions to verify the dedicated SmartLingo RealtimeKit app and presets before production mutation, deploy the exact commit, probe apex/www and protected routes, and publish matching Project evidence."
     ],
     "zh": [
-      "句子练习契约五项全部通过：36 门正式课程每门恰有 120 条已发布句子，Listening 与 Writing 运行时构建器一致且每天各有 10 道唯一题。",
-      "GitHub Actions 路由预检 33305452201 已为 2026-08-30 成功完成；工件中的 32 条正式站匿名路由全部通过，且未被当作登录或学习证据。",
-      "真实 Chrome 正式站检查从 /zh/dashboard 可见跳转到 /zh/auth/login。必需的登录验收矩阵没有执行，本报告明确记录受阻而非通过。",
-      "三次跟读保持关闭且没有请求麦克风权限。没有执行支付、推荐、证书、课程积分、挑战奖励或排行榜操作；管理员级账本一致性不可用，因此不声称已确认。"
+      "在空白隔离 D1 中两次重放全部 72 项迁移，并验证 Gold v2 身份、生命周期、容量、存储及清理对象，且无外键违规。",
+      "通过全部源码契约测试、SmartPay3 编译、TypeScript、零警告 ESLint、生产构建、渲染 Worker 测试、产物验证、运行布局验证及 Git 空白检查。",
+      "保留 48,000 项十二语言词汇目录、已发布发音元数据、难度、频率、年级、学习、推荐及证书边界。",
+      "要求 GitHub Actions 在生产变更前验证 SmartLingo 专属 RealtimeKit 应用与预设，部署精确提交，探测 apex/www 及受保护路由，并发布匹配的 Project 证据。"
     ]
   },
   "deferred": {
     "en": [
-      "Retry the same 2026-08-30 deterministic plan only after Chrome can safely inspect the dedicated learner's newest matching Gmail verification message; then complete all four languages and publish measured signed-in evidence without rounding or synthetic activity."
+      "Safari production acceptance starts after deployment; four-person realtime streaming remains intentionally deferred until the user switches to SOL High, when Chrome will be used only for that multi-session case.",
+      "No SmartMeeting, SmartNCT, or GeniusWallet production member data, credentials, provider identifiers, prices, contracts, or release history are copied."
     ],
     "zh": [
-      "仅在 Chrome 能安全检查专用学习者最新匹配的 Gmail 验证邮件后，才按同一份 2026-08-30 确定性计划重试；随后完成四语矩阵，并发布不取整、不含合成活动的实测登录证据。"
+      "部署后开始 Safari 正式站验收；四人实时串流按约定延后至用户切换 SOL High，届时仅该多会话场景使用 Chrome。",
+      "不复制 SmartMeeting、SmartNCT 或 GeniusWallet 的生产会员数据、凭据、服务商标识、价格、合约或发布历史。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Keep the learner identity anonymized, keep SmartLingo's Chinese interface and four target-language plan, and preserve every site-local Clerk, Gmail, D1, Cloudflare, payment, referral, certificate, and learning-data boundary."
+      "Preserve SmartLingo branding, twelve-language navigation, fixed official courses, vocabulary and sentence catalogs, learning paths, AI partners, score history, referrals, certificates, and education disclaimers.",
+      "Map shared meeting concepts to SmartLingo Course, classroom, teacher, co-host, learner, and /classrooms routes.",
+      "Retain SmartLingo-owned Clerk application, D1 database, R2 buckets, RealtimeKit app and credentials, SmartPay3 contract, token settings, wallets, course prices, GitHub repository, Cloudflare Worker, and domains."
     ],
     "zh": [
-      "保持学习者身份匿名，保留 SmartLingo 中文界面与四种目标语言计划，并继续隔离站点专属 Clerk、Gmail、D1、Cloudflare、支付、推荐、证书及学习数据边界。"
+      "保留 SmartLingo 品牌、十二语言导航、固定正式课程、词汇与句子目录、学习路径、人工智能伙伴、分数历史、推荐、证书及教育免责声明。",
+      "将共享会议概念适配为 SmartLingo 的课程、课堂、教师、共同教师、学员及 /classrooms 路由。",
+      "保留 SmartLingo 独立拥有的 Clerk 应用、D1 数据库、R2 存储桶、RealtimeKit 应用与凭据、SmartPay3 合约、代币设置、钱包、课程价格、GitHub 仓库、Cloudflare Worker 和域名。"
     ]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": [
+      "0175_gold_v2_identity_commerce.sql",
+      "0176_gold_v2_realtime_lifecycle.sql",
+      "0177_gold_v2_private_storage.sql"
+    ],
     "rollback": {
-      "en": "No data migration is included; if the report presentation regresses, restore the prior Cloudflare Worker while retaining the non-secret QA evidence in source history.",
-      "zh": "本次不含数据迁移；若报告展示出现回归，可恢复上一版 Cloudflare Worker，并在源码历史中保留不含隐私的 QA 证据。"
+      "en": "The Gold v2 schema changes are additive except for the wallet-binding key migration. Roll back the Worker first; preserve Gold v2 tables and columns for forward recovery, and restore the prior one-wallet-per-account binding table only from a verified pre-migration D1 backup if a full data rollback is explicitly required.",
+      "zh": "Gold v2 架构除钱包绑定主键迁移外均为累加式。回退时先恢复上一版 Worker；保留 Gold v2 表与字段以便向前恢复，仅在明确需要完整数据回退时，才从已验证的迁移前 D1 备份恢复原有每账户一钱包绑定表。"
     }
   }
 }

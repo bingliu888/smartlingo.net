@@ -1621,7 +1621,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0174_course_subscription_supervisor");
+  assert.equal(migrations.at(-1)?.tag, "0177_gold_v2_private_storage");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1690,6 +1690,12 @@ export function validateD1Migrations() {
       "smartlingo_course_credit_source_uq",
       "smartlingo_course_package_tier_duration_uq",
       "smartlingo_course_package_purchase_provider_uq",
+      "smartlingo_smartpay_wallet_lookup_idx",
+      "class_participant_sessions_active_idx",
+      "class_provider_create_retry_idx",
+      "class_recording_claims_recovery_idx",
+      "member_storage_quota_host_state_idx",
+      "class_file_tombstones_retry_idx",
     ]) assert.ok(indexes.has(indexName), `missing required marketplace index: ${indexName}`);
 
     const tables = new Set(
@@ -1746,6 +1752,30 @@ export function validateD1Migrations() {
       "smartlingo_smartcard_daily_question_sets",
       "smartlingo_course_packages",
       "smartlingo_course_package_purchases",
+      "account_request_limits",
+      "member_ai_daily_quotas",
+      "worker_maintenance_cursors",
+      "class_realtime_capacity_ledger",
+      "class_participant_sessions",
+      "class_provider_create_attempts",
+      "class_provider_teardown_jobs",
+      "class_deletion_jobs",
+      "provider_participant_cleanup_jobs",
+      "provider_participant_create_attempts",
+      "class_participant_bans",
+      "class_password_failures",
+      "class_shared_content_state",
+      "class_recording_claims",
+      "class_recording_artifacts",
+      "provider_recording_cleanup_jobs",
+      "webhook_processing_claims",
+      "processed_webhooks",
+      "member_storage_quota_reservations",
+      "class_material_uploads",
+      "class_playlist_uploads",
+      "class_playlist_upload_parts",
+      "class_file_tombstones",
+      "class_recording_quota_reservations",
     ]) assert.ok(tables.has(tableName), `missing required marketplace table: ${tableName}`);
 
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_curriculum_levels").get().count, 3);

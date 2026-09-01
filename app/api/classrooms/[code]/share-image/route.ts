@@ -1,4 +1,9 @@
-import { classByCode } from "@/lib/live-classrooms";
+import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
+import { consumeAiDailyQuota } from "@/lib/ai-daily-quota";
+import { getSessionUser } from "@/lib/auth";
+import { boundedJsonBody } from "@/lib/bounded-request-body";
+import { classAccess, classByCode } from "@/lib/live-classrooms";
+import { generateSmartAiImage, safeSmartAiError } from "@/lib/smartlingo-ai-gateway";
 
 export const dynamic = "force-dynamic";
 
@@ -11,16 +16,38 @@ const styles: Record<string, string> = {
 
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  if (!/^\d{6}$/.test(code) || !await classByCode(code)) return Response.json({ error: "Course not found" }, { status: 404 });
-  const input = await request.json().catch(() => ({})) as { style?: string; direction?: string; locale?: string };
+  const room = /^\d{6}$/.test(code) ? await classByCode(code) : null;
+  if (!room) return Response.json({ error: "Course not found" }, { status: 404 });
+  const user = await getSessionUser(request);
+  const access = await classAccess(room, user);
+  if (!user || !access.allowed)
+    return Response.json({ error: "Course access required" }, { status: 403 });
+  if (!user.emailVerified || user.identityCheckedAt <= Math.floor(Date.now() / 1_000) - 5 * 60)
+    return Response.json({ error: "Verify your email before generating a course image" }, { status: 403 });
+  const limited = await consumeAccountRequestLimit({
+    request, scope: "class-share-image", userId: user.id, limit: 6, windowSeconds: 60,
+  });
+  if (limited) return limited;
+  const quota = await consumeAiDailyQuota(user.id, "class-share-image");
+  if (quota) return quota;
+  let input: { style?: string; direction?: string; locale?: string };
+  try { input = await boundedJsonBody(request, 8 * 1024); }
+  catch (error) {
+    return error instanceof Response ? error : Response.json({ error: "Invalid request" }, { status: 400 });
+  }
   const style = styles[String(input.style)] || styles.global;
   const direction = String(input.direction || "").trim().slice(0, 240);
-  const prompt = `Square social invitation background for an online class. ${style}. ${direction}. Strong visual focus with generous dark lower space for later typography overlay. High-end editorial artwork, tasteful, inclusive, no identifiable public figures. MANDATORY: background artwork only. Do not generate words, letters, numbers, URLs, logos, QR codes, signs, captions, watermarks, text-like glyphs, or interface elements.`;
+  const prompt = `Square social invitation background for an online language course. ${style}. ${direction}. Strong visual focus with generous dark lower space for later typography overlay. High-end editorial artwork, tasteful, inclusive, no identifiable public figures. MANDATORY: background artwork only. Do not generate words, letters, numbers, URLs, logos, QR codes, signs, captions, watermarks, text-like glyphs, or interface elements.`;
   try {
-    const { env } = await import("cloudflare:workers");
-    const ai = env.AI as unknown as { run(model: string, input: Record<string, unknown>): Promise<{ image?: string }> };
-    const result = await ai.run("@cf/black-forest-labs/flux-1-schnell", { prompt, steps: 6, seed: Math.floor(Math.random() * 2_147_483_647) });
-    if (!result.image) return Response.json({ error: "Image generation unavailable" }, { status: 502 });
-    return Response.json({ image: `data:image/jpeg;base64,${result.image}` }, { headers: { "Cache-Control": "no-store" } });
-  } catch { return Response.json({ error: "Image generation failed" }, { status: 502 }); }
+    const result = await generateSmartAiImage({ subject: `user:${user.id}:course-share`, prompt });
+    return Response.json({ image: `data:image/png;base64,${result.value}` }, {
+      headers: { "cache-control": "no-store" },
+    });
+  } catch (error) {
+    const safe = safeSmartAiError(error, input.locale === "zh" ? "zh" : "en", "image");
+    return Response.json({ error: safe.message, code: safe.code }, {
+      status: safe.status,
+      headers: safe.retryAfter ? { "retry-after": String(safe.retryAfter) } : undefined,
+    });
+  }
 }

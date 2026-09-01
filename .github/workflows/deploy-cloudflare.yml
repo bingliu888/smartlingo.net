@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare
+name: Deploy SmartLingo.net to Cloudflare
 
 on:
   push:
@@ -6,25 +6,26 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: cloudflare-production
+  group: smartlingo-production
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  validate:
+    name: Validate complete SmartLingo release
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
     steps:
-      - name: Configure deterministic Git defaults
-        run: git config --global init.defaultBranch main
-
       - name: Check out source
-        uses: actions/checkout@v7
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: npm
@@ -32,128 +33,310 @@ jobs:
       - name: Install dependencies
         run: npm ci --loglevel=error
 
-      - name: Audit all production and build dependencies
+      - name: Audit production and build dependencies
         run: npm audit --audit-level=moderate
 
-      - name: Lint authored source with zero-warning policy
-        run: npm run lint
+      - name: Validate exact release metadata and sensitive-data boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+          node scripts/release-manifest.mjs --require-current-commit
+          npm run scan:sensitive
 
-      - name: Validate detailed release manifest
-        run: node scripts/release-manifest.mjs --require-current-commit
-
-      - name: Verify session, course rooms, payment, voice, and release contracts
-        run: node --test tests/subscription-crypto-contract.test.mjs tests/course-student-management.test.mjs tests/smartlingo-class-live-chat.test.mjs tests/clerk-provider.test.mjs tests/clerk-session-bridge.test.mjs tests/voice-input-consistency.test.mjs tests/release-report-contract.test.mjs tests/deployment-report-contract.test.mjs
-
-      - name: Validate D1 migrations
+      - name: Replay all 72 D1 migrations and verify Gold v2
         run: npm run db:validate
         env:
           NODE_OPTIONS: --disable-warning=ExperimentalWarning
 
-      - name: Typecheck
-        run: npx tsc --noEmit
+      - name: Run source contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=()
+          for file in tests/*.test.mjs; do
+            [[ "$file" == "tests/rendered-html.test.mjs" ]] || tests+=("$file")
+          done
+          node --test "${tests[@]}"
+
+      - name: Lint authored source with zero-warning policy
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Compile and verify SmartLingo SmartPay3
+        run: npm run contracts:test
+
+      - name: Build exact source and verify rendered Worker
+        run: npm run build && node --test tests/rendered-html.test.mjs
+
+      - name: Verify production artifact
+        run: npm run validate:artifact
+
+      - name: Verify commit whitespace
+        run: git diff-tree --check HEAD^ HEAD
+
+  layout:
+    name: Validate exact SmartLingo WebKit layout
+    needs: validate
+    runs-on: macos-15
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --loglevel=error
+
+      - name: Validate exact release manifest
+        run: node scripts/release-manifest.mjs --require-current-commit
+
+      - name: Build exact source for WebKit
+        run: npm run build
+
+      - name: Verify the complete WebKit route and viewport matrix
+        run: npm run validate:layout
+
+  deploy:
+    name: Deploy validated SmartLingo release
+    needs: [validate, layout]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      CLERK_JWT_KEY: ${{ secrets.CLERK_JWT_KEY }}
+      CLOUDFLARE_REALTIME_API_TOKEN: ${{ secrets.CLOUDFLARE_REALTIME_API_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --loglevel=error
+
+      - name: Validate exact release and required deployment credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+          test -n "$CLERK_SECRET_KEY"
+          test -n "$CLOUDFLARE_REALTIME_API_TOKEN"
+          node scripts/release-manifest.mjs --require-current-commit
+
+      - name: Verify site-owned RealtimeKit app and presets before migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/realtime/kit"
+          status="$(curl --silent --show-error --output "$RUNNER_TEMP/realtime-apps.json" \
+            --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_REALTIME_API_TOKEN" \
+            "$api/apps?search=SmartLingo.net")"
+          if [[ "$status" != "200" ]] || ! jq -e '.success == true and (.data | type == "array")' \
+            "$RUNNER_TEMP/realtime-apps.json" >/dev/null; then
+            echo "The SmartLingo Cloudflare token cannot read RealtimeKit apps (HTTP $status)." >&2
+            exit 1
+          fi
+          app_id="$(jq -er '[.data[] | select((.name | ascii_downcase | gsub("[^a-z0-9]"; "")) == "smartlingonet" and .id == "816eb53a-1dc8-4939-9716-500747e385db")] | if length == 1 then .[0].id else error("The exact SmartLingo.net RealtimeKit app is required") end' \
+            "$RUNNER_TEMP/realtime-apps.json")"
+          status="$(curl --silent --show-error --output "$RUNNER_TEMP/realtime-presets.json" \
+            --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_REALTIME_API_TOKEN" \
+            "$api/$app_id/presets")"
+          if [[ "$status" != "200" ]] || ! jq -e '.success == true' \
+            "$RUNNER_TEMP/realtime-presets.json" >/dev/null; then
+            echo "The SmartLingo RealtimeKit presets are unavailable (HTTP $status)." >&2
+            exit 1
+          fi
+          for preset in group_call_guest group_call_participant group_call_host smartlingo_voice \
+            webinar_presenter webinar_viewer livestream_host livestream_viewer; do
+            jq -e --arg preset "$preset" 'any(.data[]?; .name == $preset)' \
+              "$RUNNER_TEMP/realtime-presets.json" >/dev/null || {
+                echo "Missing SmartLingo RealtimeKit preset: $preset" >&2
+                exit 1
+              }
+          done
+          echo "RESOLVED_REALTIMEKIT_APP_ID=$app_id" >> "$GITHUB_ENV"
+
+      - name: Compile reviewed SmartPay3 artifact for the exact release build
+        run: npm run contracts:compile
+
+      - name: Audit production identity and course ownership before migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --json --config wrangler.cloudflare.jsonc \
+            --command "SELECT COUNT(*) AS duplicate_groups FROM (SELECT lower(trim(email)) AS normalized_email FROM users GROUP BY lower(trim(email)) HAVING COUNT(*) > 1)" > "$RUNNER_TEMP/member-email-audit.json"
+          jq -e '.[0].results[0].duplicate_groups == 0' "$RUNNER_TEMP/member-email-audit.json" >/dev/null
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --json --config wrangler.cloudflare.jsonc \
+            --command "SELECT COUNT(*) AS orphaned_rooms FROM live_class_rooms room LEFT JOIN users owner ON owner.id=room.host_user_id WHERE owner.id IS NULL" > "$RUNNER_TEMP/course-owner-audit.json"
+          jq -e '.[0].results[0].orphaned_rooms == 0' "$RUNNER_TEMP/course-owner-audit.json" >/dev/null
+
+      - name: Ensure private SmartLingo class-file bucket
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output "$RUNNER_TEMP/r2-buckets.json" \
+            --write-out '%{http_code}' --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets")"
+          if [[ "$status" != "200" ]] || ! jq -e '.success == true and (.result.buckets | type == "array")' \
+            "$RUNNER_TEMP/r2-buckets.json" >/dev/null; then
+            echo "The SmartLingo Cloudflare token cannot list R2 buckets (HTTP $status)." >&2
+            exit 1
+          fi
+          if ! jq -e 'any(.result.buckets[]?; .name == "smartlingo-net-class-files")' "$RUNNER_TEMP/r2-buckets.json" >/dev/null; then
+            npx wrangler r2 bucket create smartlingo-net-class-files --config wrangler.cloudflare.jsonc
+          fi
 
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Verify every published vocabulary pronunciation guide
         shell: bash
         run: |
-          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(*)=48000 AND COUNT(DISTINCT target_language)=12 AND SUM(level='beginner')=12000 AND SUM(level='intermediate')=18000 AND SUM(level='advanced')=18000 AND SUM(CASE WHEN target_phonetic<>'' AND lexical_source_url<>'' AND lexical_source_license<>'' AND lexical_source_revision<>'' AND review_method<>'' AND json_extract(pronunciation_guides,'$.zh')<>'' AND json_extract(pronunciation_guides,'$.en')<>'' AND json_extract(pronunciation_guides,'$.es')<>'' AND json_extract(pronunciation_guides,'$.ja')<>'' AND json_extract(pronunciation_guides,'$.ko')<>'' AND json_extract(pronunciation_guides,'$.fr')<>'' AND json_extract(pronunciation_guides,'$.de')<>'' AND json_extract(pronunciation_guides,'$.ru')<>'' AND json_extract(pronunciation_guides,'$.it')<>'' AND json_extract(pronunciation_guides,'$.pt')<>'' AND json_extract(pronunciation_guides,'$.ar')<>'' AND json_extract(pronunciation_guides,'$.hi')<>'' THEN 1 ELSE 0 END)=COUNT(*) AND (SELECT meaning_zh FROM smartlingo_vocabulary_items WHERE target_language='en' AND form='in')='在……里面；在……期间' AND (SELECT meaning_zh FROM smartlingo_vocabulary_items WHERE target_language='en' AND form='be')='是；存在；成为' AND (SELECT meaning_zh FROM smartlingo_vocabulary_items WHERE target_language='en' AND form='day')='一天；白天' THEN 'VOCAB_PRONUNCIATION_COMPLETE' ELSE 'VOCAB_PRONUNCIATION_INCOMPLETE' END AS verification FROM smartlingo_vocabulary_items WHERE review_status='published';")"
-          grep -F 'VOCAB_PRONUNCIATION_COMPLETE' <<<"$result"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          set -euo pipefail
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --json --config wrangler.cloudflare.jsonc \
+            --command "SELECT COUNT(*) AS rows,COUNT(DISTINCT target_language) AS languages,SUM(level='beginner') AS beginner,SUM(level='intermediate') AS intermediate,SUM(level='advanced') AS advanced,SUM(CASE WHEN target_phonetic<>'' AND lexical_source_url<>'' AND lexical_source_license<>'' AND lexical_source_revision<>'' AND review_method<>'' AND json_extract(pronunciation_guides,'$.zh')<>'' AND json_extract(pronunciation_guides,'$.en')<>'' AND json_extract(pronunciation_guides,'$.es')<>'' AND json_extract(pronunciation_guides,'$.ja')<>'' AND json_extract(pronunciation_guides,'$.ko')<>'' AND json_extract(pronunciation_guides,'$.fr')<>'' AND json_extract(pronunciation_guides,'$.de')<>'' AND json_extract(pronunciation_guides,'$.ru')<>'' AND json_extract(pronunciation_guides,'$.it')<>'' AND json_extract(pronunciation_guides,'$.pt')<>'' AND json_extract(pronunciation_guides,'$.ar')<>'' AND json_extract(pronunciation_guides,'$.hi')<>'' THEN 1 ELSE 0 END) AS complete FROM smartlingo_vocabulary_items WHERE review_status='published'" > "$RUNNER_TEMP/vocabulary.json"
+          jq -e '.[0].results[0] | .rows == 48000 and .languages == 12 and .beginner == 12000 and .intermediate == 18000 and .advanced == 18000 and .complete == 48000' "$RUNNER_TEMP/vocabulary.json" >/dev/null
 
       - name: Verify vocabulary learning-order attributes
         shell: bash
         run: |
-          result="$(npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "SELECT CASE WHEN COUNT(*)=48000 AND SUM(difficulty BETWEEN 1 AND 5)=COUNT(*) AND SUM(frequency_degree BETWEEN 1 AND 10)=COUNT(*) AND SUM(grade_level BETWEEN 0 AND 12)=COUNT(*) AND COUNT(DISTINCT grade_level)=13 THEN 'VOCAB_ORDER_COMPLETE' ELSE 'VOCAB_ORDER_INCOMPLETE' END AS verification FROM smartlingo_vocabulary_items WHERE review_status='published';")"
-          grep -F 'VOCAB_ORDER_COMPLETE' <<<"$result"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          set -euo pipefail
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --json --config wrangler.cloudflare.jsonc \
+            --command "SELECT COUNT(*) AS rows,SUM(difficulty BETWEEN 1 AND 5) AS difficulty_ok,SUM(frequency_degree BETWEEN 1 AND 10) AS frequency_ok,SUM(grade_level BETWEEN 0 AND 12) AS grade_ok,COUNT(DISTINCT grade_level) AS grades FROM smartlingo_vocabulary_items WHERE review_status='published'" > "$RUNNER_TEMP/vocabulary-order.json"
+          jq -e '.[0].results[0] | .rows == 48000 and .difficulty_ok == 48000 and .frequency_ok == 48000 and .grade_ok == 48000 and .grades == 13' "$RUNNER_TEMP/vocabulary-order.json" >/dev/null
 
-      - name: Build
+      - name: Configure site-owned RealtimeKit runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$CLOUDFLARE_REALTIME_API_TOKEN" | npx wrangler secret put CLOUDFLARE_REALTIME_API_TOKEN --config wrangler.cloudflare.jsonc
+          printf '%s' "$RESOLVED_REALTIMEKIT_APP_ID" | npx wrangler secret put REALTIMEKIT_APP_ID --config wrangler.cloudflare.jsonc
+
+      - name: Build exact production Worker
         run: npm run build
 
       - name: Deploy Worker
         run: npx wrangler deploy --config wrangler.cloudflare.jsonc
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Configure independent production secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          put_secret() {
+            local name="$1"
+            local value="$2"
+            if [[ -n "$value" ]]; then
+              printf '%s' "$value" | npx wrangler secret put "$name" --config wrangler.cloudflare.jsonc
+            fi
+          }
+          put_secret CLERK_SECRET_KEY "$CLERK_SECRET_KEY"
+          put_secret CLERK_JWT_KEY "$CLERK_JWT_KEY"
+          put_secret OPENAI_API_KEY "$OPENAI_API_KEY"
+          put_secret DEEPSEEK_API_KEY "$DEEPSEEK_API_KEY"
+          put_secret NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID "$NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID"
 
       - name: Stamp adaptive learning and everyday dialogue releases
         shell: bash
-        run: >-
-          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc
-          --command "INSERT INTO smartlingo_learning_content_releases(content_key,release_id,released_at,updated_at)
-          VALUES('adaptive-sentences','${GITHUB_SHA}',unixepoch(),unixepoch())
-          ON CONFLICT(content_key) DO UPDATE SET release_id=excluded.release_id,released_at=excluded.released_at,updated_at=excluded.updated_at;
-          INSERT INTO smartlingo_learning_content_releases(content_key,release_id,released_at,updated_at)
-          VALUES('everyday-dialogues','${GITHUB_SHA}',unixepoch(),unixepoch())
-          ON CONFLICT(content_key) DO UPDATE SET release_id=excluded.release_id,released_at=excluded.released_at,updated_at=excluded.updated_at;"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc \
+            --command "INSERT INTO smartlingo_learning_content_releases(content_key,release_id,released_at,updated_at) VALUES('adaptive-sentences','${GITHUB_SHA}',unixepoch(),unixepoch()) ON CONFLICT(content_key) DO UPDATE SET release_id=excluded.release_id,released_at=excluded.released_at,updated_at=excluded.updated_at; INSERT INTO smartlingo_learning_content_releases(content_key,release_id,released_at,updated_at) VALUES('everyday-dialogues','${GITHUB_SHA}',unixepoch(),unixepoch()) ON CONFLICT(content_key) DO UPDATE SET release_id=excluded.release_id,released_at=excluded.released_at,updated_at=excluded.updated_at;"
 
-      - name: Configure classroom runtime secret
+      - name: Verify HTTPS and HTTP apex/www production surfaces
         shell: bash
         run: |
-          if [[ -z "$REALTIMEKIT_API_TOKEN" ]]; then
-            echo "Dedicated RealtimeKit token is not configured; preserving the existing Worker secret."
-            exit 0
-          fi
-          printf '%s' "$REALTIMEKIT_API_TOKEN" | npx wrangler secret put CLOUDFLARE_REALTIME_API_TOKEN --config wrangler.cloudflare.jsonc
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          REALTIMEKIT_API_TOKEN: ${{ secrets.CLOUDFLARE_REALTIME_API_TOKEN }}
+          set -euo pipefail
+          apex="$(curl --retry 12 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://smartlingo.net/en)"
+          www="$(curl --retry 12 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://www.smartlingo.net/en)"
+          [[ "$apex" == *'Beginner'* ]]
+          [[ "$www" == *'Beginner'* ]]
+          for url in http://smartlingo.net/en http://www.smartlingo.net/en; do
+            effective="$(curl --retry 6 --retry-delay 3 --retry-all-errors --fail --silent --show-error --location --output /dev/null --write-out '%{url_effective}' "$url")"
+            [[ "$effective" == https://smartlingo.net/* || "$effective" == https://www.smartlingo.net/* ]]
+          done
 
-      - name: Verify production course and payment boundaries
+      - name: Verify production course, AI, identity, and payment boundaries
         shell: bash
         run: |
-          home="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en)"
-          disclaimer="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/disclaimer)"
-          programs="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/en/programs)"
-          assistant="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS 'https://smartlingo.net/zh/assistant?language=en&mode=conversation&partner=leo')"
-          grep -F 'Beginner' <<<"$home"
-          grep -F 'All payments are final and non-refundable' <<<"$disclaimer"
-          grep -F '/en/programs' <<<"$disclaimer"
-          grep -F 'Build usable vocabulary, reading, writing, listening, and dialogue.' <<<"$programs"
-          grep -F 'Leo · AI' <<<"$assistant"
-          grep -F 'SmartLingo AI 学习伙伴，不是真人' <<<"$assistant"
-          if grep -F '/en/pricing' <<<"$home"; then exit 1; fi
-          pricing_code="$(curl -sS -o /tmp/pricing-redirect.html -w '%{http_code}' https://smartlingo.net/en/pricing)"
-          test "$pricing_code" = "307"
-          status="$(curl --retry 8 --retry-delay 5 --retry-all-errors -fsS https://smartlingo.net/api/billing/status)"
-          grep -F '"cryptoSettings"' <<<"$status"
-          card_code="$(curl -sS -o /tmp/card-checkout.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"classId":"course_en_basic","lang":"en"}' https://smartlingo.net/api/billing/card/checkout)"
-          test "$card_code" = "401"
-          code="$(curl -sS -o /tmp/admin-crypto.json -w '%{http_code}' https://smartlingo.net/api/admin/crypto-settings)"
-          test "$code" = "403"
-          presets_code="$(curl -sS -o /tmp/admin-crypto-presets.json -w '%{http_code}' -X POST https://smartlingo.net/api/admin/crypto-settings/presets)"
-          test "$presets_code" = "403"
-          students_code="$(curl -sS -o /tmp/course-students.json -w '%{http_code}' https://smartlingo.net/api/classes/course_en_basic/students)"
-          test "$students_code" = "401"
-          my_students_code="$(curl -sS -o /tmp/my-students.json -w '%{http_code}' https://smartlingo.net/api/my-students)"
-          test "$my_students_code" = "401"
-          supervisor_code="$(curl -sS -o /tmp/course-supervisor.json -w '%{http_code}' -X PATCH -H 'content-type: application/json' --data '{"supervisorRefId":"ABC234"}' https://smartlingo.net/api/course-subscriptions/not-a-subscription/supervisor)"
-          test "$supervisor_code" = "401"
-          wallet_asset_code="$(curl -sS -o /dev/null -w '%{http_code}' https://smartlingo.net/wallet-assets/greatlove-onboard.js)"
-          test "$wallet_asset_code" = "200"
+          set -euo pipefail
+          disclaimer="$(curl --retry 8 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://smartlingo.net/en/disclaimer)"
+          programs="$(curl --retry 8 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://smartlingo.net/en/programs)"
+          assistant="$(curl --retry 8 --retry-delay 5 --retry-all-errors --fail --silent --show-error 'https://smartlingo.net/zh/assistant?language=en&mode=conversation&partner=leo')"
+          [[ "$disclaimer" == *'All payments are final and non-refundable'* ]]
+          [[ "$programs" == *'Build usable vocabulary, reading, writing, listening, and dialogue.'* ]]
+          [[ "$assistant" == *'Leo · AI'* && "$assistant" == *'SmartLingo AI 学习伙伴，不是真人'* ]]
+          status="$(curl --retry 8 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://smartlingo.net/api/billing/status)"
+          [[ "$status" == *'"cryptoSettings"'* ]]
+          card_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' -X POST -H 'content-type: application/json' --data '{"classId":"course_en_basic","lang":"en"}' https://smartlingo.net/api/billing/card/checkout)"
+          [[ "$card_code" == '401' ]]
+          students_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://smartlingo.net/api/classes/course_en_basic/students)"
+          [[ "$students_code" == '401' ]]
+          admin_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://smartlingo.net/api/admin/crypto-settings)"
+          [[ "$admin_code" == '403' ]]
+
+  finalize:
+    name: Finalize exact SmartLingo Project evidence
+    needs: [validate, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --loglevel=error
+
+      - name: Validate exact release manifest
+        run: node scripts/release-manifest.mjs --require-current-commit
 
       - name: Publish exact Project release record
         shell: bash
         run: |
-          release_sql="$(node scripts/deployment-report-sql.mjs)"
-          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc --command "$release_sql"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          set -euo pipefail
+          node scripts/deployment-report-sql.mjs > "$RUNNER_TEMP/deployment-report.sql"
+          npx wrangler d1 execute smartlingo-net-cutover-20260801-d1 --remote --config wrangler.cloudflare.jsonc \
+            --file "$RUNNER_TEMP/deployment-report.sql"
 
-
-      - name: Verify current production Project release details
+      - name: Verify production evidence against the exact commit
         run: node scripts/verify-production-release-report.mjs

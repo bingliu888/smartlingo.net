@@ -62,7 +62,7 @@ export function ContentShareStudio({
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "#20d9aa";
     context.font = "700 28px system-ui";
-    context.fillText("SmartMeeting.club", 44, 52);
+    context.fillText("SmartLingo.net", 44, 52);
     if (title) {
       context.fillStyle = "#effaf7";
       context.font = "600 24px system-ui";
@@ -321,6 +321,29 @@ export function ContentShareStudio({
     await renderBlob(await response.blob(), item.fileName);
   }
 
+  async function selectLocalFile(file: File) {
+    await renderBlob(file, file.name);
+    if (!enabled) return;
+    if (file.size > 15 * 1024 * 1024) {
+      setMessage(zh ? "文件可在本机预览，但超过 15 MB，未保存为课程附件。" : "The file can be previewed locally but exceeds 15 MB, so it was not saved as a course attachment.");
+      return;
+    }
+    const response = await fetch(`${apiBase}/${code}/materials`, {
+      method: "POST",
+      headers: {
+        "content-type": file.type || "application/octet-stream",
+        "x-file-size": String(file.size),
+        "x-file-name": encodeURIComponent(file.name),
+      },
+      body: file,
+    });
+    if (response.ok) await loadMaterials();
+    else {
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      setMessage(result.error || (zh ? "文件可以预览，但无法保存为课程附件。" : "The file can be previewed but could not be saved as a course attachment."));
+    }
+  }
+
   async function publish(source: Source) {
     if (source === "web" && onWebShare) {
       if (!webUrl) return;
@@ -492,7 +515,7 @@ export function ContentShareStudio({
     {icon("whiteboard", zh ? "共享白板" : "Share whiteboard", <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m8 14 7-7 2 2-7 7H8zM9 18v3M15 18v3"/></svg>)}
     {open && typeof document !== "undefined" ? createPortal(<div className="content-share-backdrop" role="dialog" aria-modal="true" aria-label={zh ? "共享内容" : "Share content"}><section className="content-share-studio"><header><div><small>{zh ? "共享内容" : "CONTENT SHARE"}</small><h2>{open === "file" ? (zh ? "文件或照片" : "File or photo") : open === "web" ? (zh ? "网页" : "Web page") : (zh ? "白板" : "Whiteboard")}</h2></div><button type="button" disabled={busy} onClick={() => void closeStudio()} aria-label={zh ? "关闭并停止共享" : "Close and stop sharing"}>×</button></header>
       {open === "web" ? <><div className="content-share-web"><label><span>{zh ? "网页地址" : "Web address"}</span><input type="url" value={webUrl} onChange={(event) => setWebUrl(event.target.value)} placeholder="https://"/></label><p>{zh ? "网页会作为安全的只读预览留在会议内，可滚动并直接共享到内容画面。" : "The page stays inside the meeting as a safe read-only preview that you can scroll and share directly."}</p><button type="button" disabled={busy || !webUrl.trim()} onClick={() => void loadWebPreview()}>{busy ? (zh ? "正在载入…" : "Loading…") : (zh ? "载入网页" : "Load page")}</button></div>{textLines.length ? <><div className="content-share-canvas-wrap"><canvas ref={canvasRef} width={1280} height={720} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} onLostPointerCapture={stopDraw} onWheel={(event) => { event.preventDefault(); setTextOffset((value) => Math.max(0, Math.min(Math.max(0, textLines.length - 24), value + (event.deltaY > 0 ? 3 : -3)))); }}/></div><div className="content-scroll-controls"><button type="button" onClick={() => setTextOffset((value) => Math.max(0, value - 6))}>↑</button><span>{Math.min(textLines.length, textOffset + 1)} / {textLines.length}</span><button type="button" onClick={() => setTextOffset((value) => Math.min(Math.max(0, textLines.length - 24), value + 6))}>↓</button></div><footer>{activeSource === open ? <button type="button" className="danger" onClick={() => void onStop()}>{zh ? "停止共享" : "Stop sharing"}</button> : <button type="button" disabled={busy} onClick={() => void publish(open)}>{busy ? (zh ? "正在连接…" : "Connecting…") : (zh ? "开始共享" : "Start sharing")}</button>}</footer></> : null}</> : <>
-        {open === "file" ? <div className="content-share-file-picker"><input ref={inputRef} type="file" accept="image/*,text/plain,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void renderBlob(file, file.name); }}/><button type="button" onClick={() => inputRef.current?.click()}>{zh ? "选择照片或文件" : "Choose photo or file"}</button>{materials.length ? <div><strong>{zh ? "房间附件" : "Room attachments"}</strong>{materials.map((item) => <button type="button" key={item.id} onClick={() => void selectMaterial(item)}>{item.fileName}</button>)}</div> : null}</div> : <div className="whiteboard-tools" role="toolbar" aria-label={zh ? "白板工具" : "Whiteboard tools"}>
+        {open === "file" ? <div className="content-share-file-picker"><input ref={inputRef} type="file" accept="image/*,text/plain,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void selectLocalFile(file); }}/><button type="button" onClick={() => inputRef.current?.click()}>{zh ? "选择照片或文件" : "Choose photo or file"}</button>{materials.length ? <div><strong>{zh ? "房间附件" : "Room attachments"}</strong>{materials.map((item) => <button type="button" key={item.id} onClick={() => void selectMaterial(item)}>{item.fileName}</button>)}</div> : null}</div> : <div className="whiteboard-tools" role="toolbar" aria-label={zh ? "白板工具" : "Whiteboard tools"}>
           <label>{zh ? "颜色" : "Color"}<input type="color" defaultValue="#20d9aa" onChange={(event) => { colorRef.current = event.target.value; }}/></label>
           {([
             ["pen", zh ? "自由笔" : "Pen", <path key="pen" d="m4 20 4.5-1 10-10-3.5-3.5-10 10zM13.5 7l3.5 3.5"/>],

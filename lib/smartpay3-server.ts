@@ -2,7 +2,8 @@ import type { Address, Hex } from "viem";
 import { decodeFunctionResult, encodeFunctionData } from "viem";
 import smartPay3ArtifactJson from "../contracts/artifacts/SmartPay3.json";
 import { cryptoRpc } from "./crypto-rpc";
-import { SMARTPAY3_ABI } from "./smartpay3";
+import { SMARTPAY3_ABI, SMARTPAY3_TRANSACTION_RECORDED_TOPIC } from "./smartpay3";
+import { locateSmartPay3Receipt } from "./smartpay3-receipt-locator";
 
 type ContractTransactionRecord = {
   transactionId: Hex;
@@ -54,6 +55,22 @@ export async function smartPay3TransactionById(rpcUrl: string, contract: Address
   const data = await ethCall(rpcUrl, contract, "transactionById", [transactionId]);
   const record = decodeFunctionResult({ abi: SMARTPAY3_ABI, functionName: "transactionById", data }) as ContractTransactionRecord;
   return mapTransactions([record])[0];
+}
+
+export async function smartPay3ReceiptByTransactionId(input: {
+  rpcUrl: string;
+  contract: Address;
+  transactionId: Hex;
+  timestamp: number;
+}) {
+  return locateSmartPay3Receipt({
+    rpc: <T>(method: string, params: unknown[]) =>
+      cryptoRpc<T>(input.rpcUrl, method, params),
+    contract: input.contract,
+    transactionId: input.transactionId,
+    transactionTopic: SMARTPAY3_TRANSACTION_RECORDED_TOPIC,
+    timestamp: input.timestamp,
+  });
 }
 
 export async function smartPay3PayoutConfigurationRaw(rpcUrl: string, contract: Address) {

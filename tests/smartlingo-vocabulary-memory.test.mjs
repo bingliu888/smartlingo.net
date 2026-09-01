@@ -70,14 +70,16 @@ test("21-day vocabulary center is database-backed, server-graded, and fully bili
 
 test("production deployment rejects an incomplete multilingual pronunciation corpus", async () => {
   const workflow = await read("../.github/workflows/deploy-cloudflare.yml");
-  assert.match(workflow, /COUNT\(\*\)=48000/);
-  assert.match(workflow, /COUNT\(DISTINCT target_language\)=12/);
-  assert.match(workflow, /SUM\(level='beginner'\)=12000/);
+  assert.match(workflow, /COUNT\(\*\) AS rows/);
+  assert.match(workflow, /COUNT\(DISTINCT target_language\) AS languages/);
+  assert.match(workflow, /SUM\(level='beginner'\) AS beginner/);
   assert.match(workflow, /json_extract\(pronunciation_guides,'\$\.hi'\)<>''/);
   assert.match(workflow, /lexical_source_license<>''/);
-  assert.match(workflow, /VOCAB_PRONUNCIATION_COMPLETE/);
-  assert.match(workflow, /VOCAB_ORDER_COMPLETE/);
-  assert.match(workflow, /COUNT\(DISTINCT grade_level\)=13/);
+  assert.match(workflow, /\.rows == 48000 and \.languages == 12/);
+  assert.match(workflow, /\.beginner == 12000 and \.intermediate == 18000 and \.advanced == 18000/);
+  assert.match(workflow, /\.complete == 48000/);
+  assert.match(workflow, /COUNT\(DISTINCT grade_level\) AS grades/);
+  assert.match(workflow, /\.grade_ok == 48000 and \.grades == 13/);
 });
 
 test("daily deck prioritizes due reviews, uses twenty-word rounds, and reports real published totals", async () => {

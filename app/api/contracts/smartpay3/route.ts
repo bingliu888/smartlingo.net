@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { isAddress, type Address } from "viem";
 import { database } from "../../../../lib/db";
 import {
+  readBoundedExternalResponseText,
+  SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS,
+  withExternalRequestTimeout,
+} from "../../../../lib/external-request-timeout";
+import {
   smartPayExplorerAddressUrl,
   smartPayExplorerVerificationStatus,
   smartPaySourceDownloadUrls
@@ -11,12 +16,16 @@ export const dynamic = "force-dynamic";
 
 async function sourcifyMatch(chainId: number, contractAddress: string) {
   try {
-    const response = await fetch(`https://sourcify.dev/server/v2/contract/${chainId}/${contractAddress}`, {
+    const response = await withExternalRequestTimeout((signal) => fetch(`https://sourcify.dev/server/v2/contract/${chainId}/${contractAddress}`, {
       headers: { accept: "application/json" },
-      cache: "no-store"
-    });
+      cache: "no-store",
+      signal,
+    }), SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS);
     if (!response.ok) return "";
-    const data = await response.json().catch(() => ({})) as { match?: string; runtimeMatch?: string | null; creationMatch?: string | null };
+    const raw = await readBoundedExternalResponseText(response, 256 * 1024);
+    if (raw.truncated) return "";
+    let data: { match?: string; runtimeMatch?: string | null; creationMatch?: string | null } = {};
+    try { data = JSON.parse(raw.text) as typeof data; } catch { /* invalid upstream JSON */ }
     return String(data.match || data.runtimeMatch || data.creationMatch || "");
   } catch {
     return "";

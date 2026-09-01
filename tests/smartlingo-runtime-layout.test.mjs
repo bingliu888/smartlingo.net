@@ -190,4 +190,8 @@ test("full release matrix uses bounded fresh-WebKit batches and one merged count
   assert.match(runnerSource, /code: "path-mismatch"/);
   assert.match(runnerSource, /required: \{ overlapChecks: 1/);
   assert.match(swiftSource, /Double\(combinationCount\) \* 5\.0/);
+  assert.match(releaseSource, /SMARTLINGO_LAYOUT_ROUTES\.length/);
+  assert.match(releaseSource, /SMARTLINGO_LAYOUT_LANGUAGES\.length/);
+  assert.match(releaseSource, /SMARTLINGO_VIEWPORTS\.length/);
+  assert.doesNotMatch(releaseSource, /270\/270/);
 });

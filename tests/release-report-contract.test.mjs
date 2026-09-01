@@ -22,9 +22,12 @@ test("release manifest produces deployment-specific bilingual details", async ()
 
 test("deployment workflow requires a fresh manifest and report code consumes it", async () => {
   const workflow = await readFile(".github/workflows/deploy-cloudflare.yml", "utf8");
-  assert.match(workflow, /actions\/checkout@v7\s+with:\s+fetch-depth: 2/);
+  assert.match(workflow, /actions\/checkout@d23441a48e516b6c34aea4fa41551a30e30af803[^\n]*\n\s+with:\s+fetch-depth: 2/);
   assert.match(workflow, /release-manifest\.mjs --require-current-commit/);
-  assert.match(workflow, /tests\/voice-input-consistency\.test\.mjs/);
+  assert.match(workflow, /for file in tests\/\*\.test\.mjs/);
+  assert.match(workflow, /node --test "\$\{tests\[@\]\}"/);
+  assert.match(workflow, /runs-on: macos-15[\s\S]*npm run validate:layout/);
+  assert.match(workflow, /needs: \[validate, layout\]/);
   assert.match(workflow, /https:\/\/smartlingo\.net\/zh\/assistant\?language=en&mode=conversation&partner=leo/);
   assert.match(workflow, /Leo · AI/);
   assert.match(workflow, /SmartLingo AI 学习伙伴，不是真人/);

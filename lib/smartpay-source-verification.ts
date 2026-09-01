@@ -1,4 +1,9 @@
 import { encodeAbiParameters, isAddress, type Address, type Hex } from "viem";
+import {
+  readBoundedExternalResponseText,
+  SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS,
+  withExternalRequestTimeout,
+} from "./external-request-timeout.ts";
 
 type StandardJsonInput = {
   language: "Solidity";
@@ -80,15 +85,18 @@ export async function smartPayExplorerVerificationStatus(chainId: number, contra
   const explorerUrl = smartPayExplorerAddressUrl(chainId, contract);
   if (!explorerUrl) return { verified: false, message: "Explorer is not configured for this chain" };
   try {
-    const response = await fetch(explorerUrl, {
+    const response = await withExternalRequestTimeout((signal) => fetch(explorerUrl, {
       headers: {
         accept: "text/html,application/xhtml+xml",
-        "user-agent": "SmartMeeting SmartPay3 source verification status"
+        "user-agent": "SmartLingo SmartPay3 source verification status"
       },
-      cache: "no-store"
-    });
+      cache: "no-store",
+      signal,
+    }), SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS);
     if (!response.ok) return { verified: false, message: `Explorer HTTP ${response.status}` };
-    const verified = smartPayExplorerPageIsVerified(await response.text());
+    const body = await readBoundedExternalResponseText(response, 2 * 1024 * 1024);
+    if (body.truncated) return { verified: false, message: "Explorer response exceeded the verification limit" };
+    const verified = smartPayExplorerPageIsVerified(body.text);
     return {
       verified,
       message: verified ? "Source Code Verified on explorer" : "Explorer source verification is not yet visible"

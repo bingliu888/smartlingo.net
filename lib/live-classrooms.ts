@@ -1,6 +1,7 @@
 import { getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-access";
 import { canManageClass, paidClassAccess } from "@/lib/class-managers";
+import { verifyStoredClassPassword } from "@/lib/class-password";
 
 export type ClassType = "public" | "trial" | "private";
 export type StreamingMode = "audio" | "video";
@@ -11,6 +12,8 @@ export type ClassRoom = {
   streamingMode: StreamingMode; realtimeMode: RealtimeMode; startsAt: number; durationMinutes: number;
   trialMinutes: number; tuitionCents: number; hasPassword: number;
   providerMeetingId: string | null; streamActive: number; muteAll: number;
+  providerGeneration: number; providerGenerationStartedAt: number | null;
+  liveStartedAt: number | null; timeZone: string; providerCreateDeadlineAt: number | null;
   status: "active" | "archived"; createdAt: number; updatedAt: number;
 };
 
@@ -18,7 +21,11 @@ const selection = `SELECT r.id,r.code,r.host_user_id AS hostUserId,r.host_email 
   r.title,r.description,r.subject,r.class_type AS classType,r.streaming_mode AS streamingMode,r.realtime_mode AS realtimeMode,r.starts_at AS startsAt,
   r.duration_minutes AS durationMinutes,r.trial_minutes AS trialMinutes,r.tuition_cents AS tuitionCents,
   CASE WHEN r.password_hash IS NULL THEN 0 ELSE 1 END AS hasPassword,r.provider_meeting_id AS providerMeetingId,
-  r.stream_active AS streamActive,r.mute_all AS muteAll,r.status,r.created_at AS createdAt,r.updated_at AS updatedAt
+  r.stream_active AS streamActive,r.mute_all AS muteAll,
+  r.provider_generation AS providerGeneration,r.provider_generation_started_at AS providerGenerationStartedAt,
+  r.live_started_at AS liveStartedAt,r.time_zone AS timeZone,
+  r.provider_create_deadline_at AS providerCreateDeadlineAt,
+  r.status,r.created_at AS createdAt,r.updated_at AS updatedAt
   FROM live_class_rooms r`;
 
 export async function classByCode(code: string) {
@@ -33,13 +40,8 @@ export async function generateClassCode() {
   throw new Error("CLASS_CODE_EXHAUSTED");
 }
 
-async function hashPassword(value: string) {
-  const bytes=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)));
-  return Array.from(bytes,byte=>byte.toString(16).padStart(2,"0")).join("");
-}
-
 export async function verifyClassPassword(value: string, hash: string | null) {
-  return !hash || await hashPassword(value) === hash;
+  return verifyStoredClassPassword(value, hash);
 }
 
 export async function verifyClassEntryPassword(code: string, value: string) {
@@ -58,6 +60,9 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
   if(room.classType!=="private")return {allowed:true,admin,host,manager};
   if(manager)return {allowed:true,admin,host,manager:true};
   if(!user)return {allowed:false,admin:false,host:false,manager:false};
+  if(!user.emailVerified
+    || user.identityCheckedAt<=Math.floor(Date.now()/1_000)-5*60)
+    return {allowed:false,admin:false,host:false,manager:false};
   const courseMember=await getDatabase().prepare(`SELECT linked.course_id FROM (
       SELECT course_id,room_id FROM smartlingo_course_classrooms
       UNION ALL

@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { isAddress, type Address, type Hex } from "viem";
 import smartPay3ArtifactJson from "../../../../../contracts/artifacts/SmartPay3.json";
+import { boundedJsonBody } from "../../../../../lib/bounded-request-body";
 import { cryptoRpc, cryptoRpcUrl } from "../../../../../lib/crypto-rpc";
 import { cryptoSettingById } from "../../../../../lib/crypto-settings";
 import { createId, database, nowSeconds } from "../../../../../lib/db";
 import { requirePermanentAdmin } from "../../../../../lib/member";
+import {
+  readBoundedExternalResponseText,
+  SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS,
+  withExternalRequestTimeout,
+} from "../../../../../lib/external-request-timeout";
 import {
   SMARTPAY3_FACTORY_ADDRESS,
   smartPay3DeploymentData,
@@ -39,13 +45,20 @@ type VerificationResult = {
 
 const serviceMessage = (value: unknown) => String(value || "").replace(/\s+/g, " ").trim().slice(0, 200);
 
+async function providerJson<T>(response: Response) {
+  const raw = await readBoundedExternalResponseText(response, 512 * 1024);
+  if (raw.truncated) return {} as T;
+  try { return JSON.parse(raw.text) as T; } catch { return {} as T; }
+}
+
 async function submitSourcify(chainId: number, contract: Address, payload: ReturnType<typeof smartPay3SourceVerificationPayload>["sourcify"]) {
-  const response = await fetch(`https://sourcify.dev/server/v2/verify/${chainId}/${contract}`, {
+  const response = await withExternalRequestTimeout((signal) => fetch(`https://sourcify.dev/server/v2/verify/${chainId}/${contract}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json().catch(() => ({})) as { verificationId?: string; message?: string; error?: string };
+    body: JSON.stringify(payload),
+    signal,
+  }), SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS);
+  const data = await providerJson<{ verificationId?: string; message?: string; error?: string }>(response);
   const message = serviceMessage(data.message || data.error);
   const alreadyVerified = /already verified/i.test(message);
   return {
@@ -74,12 +87,13 @@ async function submitEtherscan(chainId: number, contract: Address, payload: Retu
     contractaddress: contract,
     ...payload
   });
-  const response = await fetch(endpoint, {
+  const response = await withExternalRequestTimeout((signal) => fetch(endpoint, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
-    body
-  });
-  const data = await response.json().catch(() => ({})) as { status?: string; message?: string; result?: string };
+    body,
+    signal,
+  }), SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS);
+  const data = await providerJson<{ status?: string; message?: string; result?: string }>(response);
   const message = serviceMessage(data.result || data.message);
   const alreadyVerified = /already verified/i.test(message);
   const submitted = (response.ok && data.status === "1") || alreadyVerified;
@@ -104,8 +118,11 @@ async function submitEtherscan(chainId: number, contract: Address, payload: Retu
     statusUrl.searchParams.set("module", "contract");
     statusUrl.searchParams.set("action", "checkverifystatus");
     statusUrl.searchParams.set("guid", verificationId);
-    const statusResponse = await fetch(statusUrl, { headers: { accept: "application/json" } });
-    const statusData = await statusResponse.json().catch(() => ({})) as { status?: string; message?: string; result?: string };
+    const statusResponse = await withExternalRequestTimeout((signal) => fetch(statusUrl, {
+      headers: { accept: "application/json" },
+      signal,
+    }), SOURCE_VERIFICATION_REQUEST_TIMEOUT_MS);
+    const statusData = await providerJson<{ status?: string; message?: string; result?: string }>(statusResponse);
     statusMessage = serviceMessage(statusData.result || statusData.message) || statusMessage;
     if (statusResponse.ok && statusData.status === "1") return {
       submitted: true,
@@ -147,14 +164,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const admin = await requirePermanentAdmin();
-    const input = await request.json().catch(() => null) as {
+    const input = await boundedJsonBody<{
       settingId?: unknown;
       contractAddress?: unknown;
       transactionHash?: unknown;
       deploymentSalt?: unknown;
       confirmPublicSource?: unknown;
       retryExisting?: unknown;
-    } | null;
+    }>(request, 16 * 1024);
     const settingId = String(input?.settingId || "");
     const contractAddress = String(input?.contractAddress || "").trim().toLowerCase();
     let transactionHash = String(input?.transactionHash || "").trim();

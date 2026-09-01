@@ -1,3 +1,9 @@
+import {
+  readBoundedExternalResponseText,
+  REALTIME_PROVIDER_REQUEST_TIMEOUT_MS,
+  withExternalRequestTimeout,
+} from "./external-request-timeout";
+
 export type RealtimeKitConfig = {
   apiToken: string;
   accountId: string;
@@ -28,14 +34,20 @@ async function realtimeKitRequest<T>(config: RealtimeKitConfig, path: string, in
   const account = encodeURIComponent(config.accountId);
   const app = encodeURIComponent(config.appId);
   const compactApp = encodeURIComponent(config.appId.replaceAll("-", ""));
-  const request = (url: string) => fetch(url, {
-    ...init,
+  const request = (url: string, requestInit: RequestInit = init) => withExternalRequestTimeout((signal) => fetch(url, {
+    ...requestInit,
+    signal,
     headers: {
       authorization: `Bearer ${config.apiToken}`,
       "content-type": "application/json",
-      ...(init.headers || {}),
+      ...(requestInit.headers || {}),
     },
-  });
+  }), REALTIME_PROVIDER_REQUEST_TIMEOUT_MS);
+  const payloadFor = async <Value>(response: Response) => {
+    const raw = await readBoundedExternalResponseText(response, 512 * 1024);
+    if (raw.truncated) return null;
+    try { return JSON.parse(raw.text) as RealtimeKitEnvelope<Value>; } catch { return null; }
+  };
   const bases = [
     `https://api.cloudflare.com/client/v4/accounts/${account}/realtime/kit/${app}`,
     `https://api.cloudflare.com/client/v4/accounts/${account}/realtime/kit/apps/${app}`,
@@ -48,22 +60,22 @@ async function realtimeKitRequest<T>(config: RealtimeKitConfig, path: string, in
   // still propagating. Keep the documented route primary and retry only a 404.
   for (const base of bases.slice(1)) {
     if (response.status !== 404) break;
+    await response.body?.cancel().catch(() => undefined);
     response = await request(`${base}${path}`);
   }
   let discovery = "";
   if (response.status === 404) {
-    const appListResponse = await fetch(
+    const appListResponse = await request(
       `https://api.cloudflare.com/client/v4/accounts/${account}/realtime/kit/apps`,
       { headers: { authorization: `Bearer ${config.apiToken}`, "content-type": "application/json" } },
     );
-    const appListPayload = await appListResponse.json().catch(() => null) as
-      RealtimeKitEnvelope<Array<{ id?: string }>> | null;
+    const appListPayload = await payloadFor<Array<{ id?: string }>>(appListResponse);
     const apps = appListPayload?.data ?? appListPayload?.result;
     const visible = Array.isArray(apps);
     const matched = visible && apps.some(candidate => candidate.id === config.appId);
     discovery = ` app-list=${appListResponse.status}/${visible ? apps.length : "invalid"} match=${matched}`;
   }
-  const payload = await response.json().catch(() => null) as RealtimeKitEnvelope<T> | null;
+  const payload = await payloadFor<T>(response);
   const data = payload?.data ?? payload?.result;
   if (!response.ok || !payload?.success || !data) {
     const providerError = payload?.errors?.[0];

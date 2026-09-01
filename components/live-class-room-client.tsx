@@ -24,6 +24,7 @@ import {
   mediaGridLayout,
   shouldAutoJoinClassRoom,
 } from "@/lib/class-realtime-participant-state";
+import { classPollDelay } from "@/lib/realtime-client-budget";
 
 type RealtimeMode = "group_call" | "webinar" | "livestream";
 type Room = {
@@ -73,6 +74,18 @@ type PlaylistState = { active: number; currentItemId: string | null };
 type PlaylistResponse = {
   items: Array<{ id: string }>;
   state: PlaylistState | null;
+};
+type RecordingArtifact = {
+  id: string;
+  status: "pending" | "recording" | "processing" | "ready" | "errored" | "deleted";
+  recordingSeconds: number;
+  audioSizeBytes: number;
+  createdAt: number;
+};
+type RecordingResponse = {
+  artifacts: RecordingArtifact[];
+  recording: boolean;
+  manager: boolean;
 };
 type PlaylistWindow = Window;
 
@@ -578,6 +591,7 @@ function ConnectedRoom({
   client,
   room,
   identity,
+  sessionToken,
   manager,
   displayName,
   role,
@@ -590,6 +604,7 @@ function ConnectedRoom({
   client: RTKClient;
   room: Room;
   identity: string;
+  sessionToken: string;
   manager: boolean;
   displayName: string;
   role: Role;
@@ -607,7 +622,10 @@ function ConnectedRoom({
     [blocked, setBlocked] = useState(false),
     [speakerEmail, setSpeakerEmail] = useState(""),
     [connectedSeconds, setConnectedSeconds] = useState(0),
-    [confirmLeave, setConfirmLeave] = useState(false);
+    [confirmLeave, setConfirmLeave] = useState(false),
+    [recordings, setRecordings] = useState<RecordingArtifact[]>([]),
+    [recordingActive, setRecordingActive] = useState(false),
+    [recordingBusy, setRecordingBusy] = useState(false);
   const subscribedPeers = useRef(new Set<string>());
   const cameraBeforeScreenShare = useRef(false);
   useEffect(() => {
@@ -661,14 +679,50 @@ function ConnectedRoom({
     await fetch(`/api/classrooms/${room.code}/media`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "heartbeat", identity, mic, camera }),
+      body: JSON.stringify({ action: "heartbeat", identity, sessionToken, mic, camera }),
     });
-  }, [camera, identity, mic, room.code]);
+  }, [camera, identity, mic, room.code, sessionToken]);
   useEffect(() => {
-    void load();
-    const timer = window.setInterval(() => void load(), 3000);
+    let cancelled = false;
+    let timer = 0;
+    let failures = 0;
+    const cycle = async () => {
+      try {
+        await load();
+        failures = 0;
+      } catch {
+        failures += 1;
+      }
+      if (!cancelled)
+        timer = window.setTimeout(cycle, classPollDelay({
+          kind: "media",
+          joined: true,
+          moderator: manager,
+          hidden: document.hidden,
+          failures,
+          jitter: Math.random(),
+        }));
+    };
+    void cycle();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [load, manager]);
+  const loadRecordings = useCallback(async () => {
+    const response = await fetch(`/api/classrooms/${room.code}/recording`, {
+      cache: "no-store",
+    }).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json() as RecordingResponse;
+    setRecordings(Array.isArray(data.artifacts) ? data.artifacts : []);
+    setRecordingActive(Boolean(data.recording));
+  }, [room.code]);
+  useEffect(() => {
+    void loadRecordings();
+    const timer = window.setInterval(() => void loadRecordings(), 10_000);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [loadRecordings]);
   useEffect(() => {
     if (media?.canPublish)
       setError((current) =>
@@ -706,6 +760,7 @@ function ConnectedRoom({
           body: JSON.stringify({
             action: "request-stage",
             identity,
+            sessionToken,
             mediaKind: kind,
           }),
         });
@@ -748,6 +803,7 @@ function ConnectedRoom({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         action: "review-stage",
+        sessionToken,
         identity: request.identity,
         mediaKind: request.mediaKind,
         approve,
@@ -760,7 +816,7 @@ function ConnectedRoom({
     const response = await fetch(`/api/classrooms/${room.code}/media`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "add-speaker", email: speakerEmail }),
+      body: JSON.stringify({ action: "add-speaker", sessionToken, email: speakerEmail }),
     });
     const data = (await response.json().catch(() => ({}))) as {
       error?: string;
@@ -770,6 +826,33 @@ function ConnectedRoom({
       setSpeakerEmail("");
       await load();
     }
+  }
+  async function changeRecording(action: "start" | "stop") {
+    setRecordingBusy(true);
+    setError("");
+    const response = await fetch(`/api/classrooms/${room.code}/recording`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, identity, sessionToken }),
+    }).catch(() => null);
+    const data = response
+      ? await response.json().catch(() => ({})) as { error?: string }
+      : { error: "Recording service unavailable" };
+    if (!response?.ok) setError(data.error || "Unable to change recording");
+    await loadRecordings();
+    setRecordingBusy(false);
+  }
+  async function deleteRecording(id: string) {
+    setRecordingBusy(true);
+    const response = await fetch(`/api/classrooms/${room.code}/recording/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      setError(data.error || "Unable to delete recording");
+    }
+    await loadRecordings();
+    setRecordingBusy(false);
   }
   return (
     <>
@@ -809,6 +892,7 @@ function ConnectedRoom({
               code={room.code}
               displayName={displayName}
               manager={manager}
+              parentSessionToken={sessionToken}
               lang={lang}
               listening={listening}
               onError={setError}
@@ -821,6 +905,17 @@ function ConnectedRoom({
               lang={lang}
               onError={setError}
               onSharingChange={(sharing) => {
+                void fetch(`/api/classrooms/${room.code}/media`, {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({
+                    action: "screen-share",
+                    identity,
+                    sessionToken,
+                    value: sharing,
+                  }),
+                  keepalive: !sharing,
+                }).catch(() => undefined);
                 if (sharing) {
                   cameraBeforeScreenShare.current = camera;
                   if (camera) void change(mic, false);
@@ -836,6 +931,7 @@ function ConnectedRoom({
               client={client}
               code={room.code}
               identity={identity}
+              sessionToken={sessionToken}
               mic={mic}
               camera={camera}
               manager={manager}
@@ -855,6 +951,21 @@ function ConnectedRoom({
           >
             <SpeakerIcon off={!listening} />
           </button>
+          {manager && (
+            <button
+              className={recordingActive ? "on" : ""}
+              disabled={recordingBusy}
+              onClick={() => void changeRecording(recordingActive ? "stop" : "start")}
+              aria-label={recordingActive
+                ? (lang === "zh" ? "停止录音" : "Stop recording")
+                : (lang === "zh" ? "开始录音" : "Start recording")}
+              title={recordingActive
+                ? (lang === "zh" ? "停止录音" : "Stop recording")
+                : (lang === "zh" ? "开始录音" : "Start recording")}
+            >
+              ●
+            </button>
+          )}
           <button className="leave" onClick={() => setConfirmLeave(true)}>
             {lang === "zh" ? "离开" : "Leave"}
           </button>
@@ -886,6 +997,32 @@ function ConnectedRoom({
         >
           {lang === "zh" ? "开始收听" : "Start listening"}
         </button>
+      )}
+      {recordings.length > 0 && (
+        <section className="class-stage-panel" aria-label={lang === "zh" ? "课程录音" : "Course recordings"}>
+          <h3>{lang === "zh" ? "课程录音" : "Course recordings"}</h3>
+          {recordings.map((recording) => (
+            <article key={recording.id}>
+              <span>
+                {new Date(recording.createdAt * 1_000).toLocaleString()}
+                {" · "}
+                {recording.status === "ready"
+                  ? `${Math.floor(recording.recordingSeconds / 60)} min`
+                  : recording.status}
+              </span>
+              {recording.status === "ready" ? (
+                <audio controls preload="none"
+                  src={`/api/classrooms/${room.code}/recording/${recording.id}`} />
+              ) : null}
+              {manager ? (
+                <button disabled={recordingBusy}
+                  onClick={() => void deleteRecording(recording.id)}>
+                  {lang === "zh" ? "删除" : "Delete"}
+                </button>
+              ) : null}
+            </article>
+          ))}
+        </section>
       )}
       {room.streamingMode === "video" && (
         <ClassScreenShareStage
@@ -1006,12 +1143,13 @@ export function LiveClassRoomClient({
     [role, setRole] = useState<Role>("viewer"),
     [mic, setMic] = useState(false),
     [camera, setCamera] = useState(false),
+    [sessionToken, setSessionToken] = useState(""),
     [identity] = useState(() => crypto.randomUUID()),
     [entryPassword] = useState(() => { try { return String(JSON.parse(sessionStorage.getItem(`class-entry-${room.code}`) || "{}").password || ""); } catch { return ""; } }),
     [error, setError] = useState(""),
     [connecting, setConnecting] = useState(false),
     [playlistEnabled, setPlaylistEnabled] = useState(false),
-    [hostOnline, setHostOnline] = useState(manager),
+    [, setHostOnline] = useState(manager),
     [humanStreamActive, setHumanStreamActive] = useState(false),
     [humanStreamSeen, setHumanStreamSeen] = useState(false),
     [hasAudience, setHasAudience] = useState(true),
@@ -1045,14 +1183,15 @@ export function LiveClassRoomClient({
         await fetch(`/api/classrooms/${room.code}/media`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "leave", identity }),
+          body: JSON.stringify({ action: "leave", identity, sessionToken }),
           keepalive: true,
         }).catch(() => undefined);
       setMic(false);
       setCamera(false);
       setJoined(false);
+      setSessionToken("");
     },
-    [client, identity, room.code, room.realtimeMode],
+    [client, identity, room.code, room.realtimeMode, sessionToken],
   );
   const connect = useCallback(
     async ({
@@ -1074,6 +1213,7 @@ export function LiveClassRoomClient({
       joining.current = true;
       setConnecting(true);
       setError("");
+      let provisionalSessionToken = "";
       try {
         if (client && joined) await disconnect(false);
         const response = await fetch(`/api/classrooms/${room.code}/join`, {
@@ -1085,18 +1225,21 @@ export function LiveClassRoomClient({
               password: entryPassword,
               start,
               publish,
+              sessionToken,
             }),
           }),
           data = (await response.json().catch(() => ({}))) as {
             authToken?: string;
+            sessionToken?: string;
             role?: Role;
             error?: string;
           };
-        if (!response.ok || !data.authToken) {
+        if (!response.ok || !data.authToken || !data.sessionToken) {
           if (data.error !== "STREAM_NOT_ACTIVE")
             setError(data.error || "Unable to connect");
           return;
         }
+        provisionalSessionToken = data.sessionToken;
         const next = await initClient({
           authToken: data.authToken,
           defaults: { audio: false, video: false },
@@ -1104,12 +1247,14 @@ export function LiveClassRoomClient({
         await next?.join();
         await next?.self.disableAudio();
         await next?.self.disableVideo();
+        setSessionToken(data.sessionToken);
         const approval = await fetch(`/api/classrooms/${room.code}/media`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             action: "media",
             identity,
+            sessionToken: data.sessionToken,
             mic: nextMic,
             camera: nextCamera,
             authorizeOnly: true,
@@ -1128,6 +1273,7 @@ export function LiveClassRoomClient({
           body: JSON.stringify({
             action: "media",
             identity,
+            sessionToken: data.sessionToken,
             mic: nextMic,
             camera: nextCamera,
           }),
@@ -1139,6 +1285,17 @@ export function LiveClassRoomClient({
       } catch (issue) {
         preparedAudioTrack?.stop();
         preparedVideoTrack?.stop();
+        if (provisionalSessionToken)
+          await fetch(`/api/classrooms/${room.code}/media`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              action: "leave",
+              identity,
+              sessionToken: provisionalSessionToken,
+            }),
+            keepalive: true,
+          }).catch(() => undefined);
         setError(
           issue instanceof Error
             ? issue.message
@@ -1149,7 +1306,7 @@ export function LiveClassRoomClient({
         setConnecting(false);
       }
     },
-    [client, disconnect, displayName, entryPassword, identity, initClient, joined, room.code],
+    [client, disconnect, displayName, entryPassword, identity, initClient, joined, room.code, sessionToken],
   );
   const changeMedia = useCallback(
     async (nextMic: boolean, nextCamera: boolean) => {
@@ -1168,6 +1325,7 @@ export function LiveClassRoomClient({
         body: JSON.stringify({
           action: "media",
           identity,
+          sessionToken,
           mic: nextMic,
           camera: nextCamera,
           authorizeOnly: true,
@@ -1205,22 +1363,22 @@ export function LiveClassRoomClient({
       const response = await fetch(`/api/classrooms/${room.code}/media`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "media", identity, mic: nextMic, camera: nextCamera }),
+        body: JSON.stringify({ action: "media", identity, sessionToken, mic: nextMic, camera: nextCamera }),
       });
       if (!response.ok) throw new Error("Unable to synchronize media state");
       setMic(nextMic);
       setCamera(nextCamera);
     },
-    [camera, client, connect, identity, mic, role, room.code],
+    [camera, client, connect, identity, mic, role, room.code, sessionToken],
   );
   const reportLeave = useCallback(() => {
     void fetch(`/api/classrooms/${room.code}/media`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "leave", identity }),
+      body: JSON.stringify({ action: "leave", identity, sessionToken }),
       keepalive: true,
     }).catch(() => undefined);
-  }, [identity, room.code]);
+  }, [identity, room.code, sessionToken]);
   const leave = useCallback(async () => {
     await disconnect(true);
     window.location.assign(`/${lang}/classrooms/${room.code}`);
@@ -1236,78 +1394,79 @@ export function LiveClassRoomClient({
   }, [identity, room.code]);
   useEffect(() => {
     let alive = true;
+    let timer = 0;
+    let failures = 0;
+    let checking = false;
     const check = async () => {
-      const [mediaResponse, playlistResponse] = await Promise.all([
-        fetch(`/api/classrooms/${room.code}/media`, { cache: "no-store" }),
-        fetch(`/api/classrooms/${room.code}/playlist`, { cache: "no-store" }),
-      ]);
-      if (!alive) return;
-      const mediaState = mediaResponse.ok
-          ? ((await mediaResponse.json()) as Media)
-          : null,
-        playlist = playlistResponse.ok
-          ? ((await playlistResponse.json()) as PlaylistResponse)
-          : null,
-        active = Boolean(playlist?.state?.active && playlist.items.length);
-      setPlaylistEnabled(active);
-      if (mediaState) {
-        setHostOnline(Boolean(mediaState.hostOnline) || manager);
-        setHasAudience(
-          manager
-            ? mediaState.users.some(
-                (user) => user.identity !== identity && !user.isManager,
-              )
-            : mediaState.users.some((user) => user.identity !== identity),
-        );
-        const nextHumanStreamActive = Boolean(
-          mediaState.users?.some((user) =>
-            Boolean(user.micOn || user.cameraOn),
-          ),
-        );
-        setHumanStreamActive(nextHumanStreamActive);
-        if (nextHumanStreamActive) setHumanStreamSeen(true);
+      if (!alive || checking) return;
+      checking = true;
+      try {
+        const [mediaResponse, playlistResponse] = await Promise.all([
+          fetch(`/api/classrooms/${room.code}/media`, { cache: "no-store" }),
+          fetch(`/api/classrooms/${room.code}/playlist`, { cache: "no-store" }),
+        ]);
+        if (!alive) return;
+        const mediaState = mediaResponse.ok
+            ? ((await mediaResponse.json()) as Media)
+            : null,
+          playlist = playlistResponse.ok
+            ? ((await playlistResponse.json()) as PlaylistResponse)
+            : null,
+          active = Boolean(playlist?.state?.active && playlist.items.length);
+        failures = mediaResponse.ok ? 0 : failures + 1;
+        setPlaylistEnabled(active);
+        if (mediaState) {
+          setHostOnline(Boolean(mediaState.hostOnline) || manager);
+          setHasAudience(
+            manager
+              ? mediaState.users.some(
+                  (user) => user.identity !== identity && !user.isManager,
+                )
+              : mediaState.users.some((user) => user.identity !== identity),
+          );
+          const nextHumanStreamActive = Boolean(
+            mediaState.users?.some((user) =>
+              Boolean(user.micOn || user.cameraOn),
+            ),
+          );
+          setHumanStreamActive(nextHumanStreamActive);
+          if (nextHumanStreamActive) setHumanStreamSeen(true);
+        }
+        if (mediaState && shouldAutoJoinClassRoom(mediaState) && !joined && !joining.current)
+          void connect();
+        if (mediaState && !mediaState.streamActive && joined && !manager)
+          void disconnect(true);
+      } catch {
+        failures += 1;
+      } finally {
+        checking = false;
+        if (alive)
+          timer = window.setTimeout(check, classPollDelay({
+            kind: "media",
+            joined,
+            moderator: manager,
+            hidden: document.hidden,
+            failures,
+            jitter: Math.random(),
+          }));
       }
-      if (mediaState && shouldAutoJoinClassRoom(mediaState) && !joined && !joining.current)
-        void connect();
-      if (
-        mediaState &&
-        !mediaState.streamActive &&
-        joined &&
-        !manager
-      )
-        void disconnect(true);
     };
     void check();
-    const poll = window.setInterval(() => void check(), 3000),
-      visible = () => {
-        if (document.visibilityState === "visible") void check();
-      };
+    const visible = () => {
+      if (document.visibilityState !== "visible") return;
+      window.clearTimeout(timer);
+      void check();
+    };
     document.addEventListener("visibilitychange", visible);
     return () => {
       alive = false;
-      window.clearInterval(poll);
+      window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", visible);
     };
   }, [connect, disconnect, identity, joined, manager, room.code]);
   useEffect(() => {
-    if (!joined || manager || hostOnline) return;
-    const timer = window.setTimeout(() => {
-      setError(
-        lang === "zh"
-          ? "主持人离线已满 5 分钟，已自动离开课程。"
-          : "The host has been offline for 5 minutes. You have left the course room.",
-      );
-      void disconnect(true);
-      window.setTimeout(
-        () => window.location.assign(`/${lang}/classrooms/${room.code}`),
-        900,
-      );
-    }, 300000);
-    return () => window.clearTimeout(timer);
-  }, [disconnect, hostOnline, joined, lang, manager, room.code]);
-  useEffect(() => {
     const cleanup = () => {
-      const body = new Blob([JSON.stringify({ action: "leave", identity })], {
+      const body = new Blob([JSON.stringify({ action: "leave", identity, sessionToken })], {
         type: "application/json",
       });
       if (!navigator.sendBeacon(`/api/classrooms/${room.code}/media`, body))
@@ -1316,7 +1475,7 @@ export function LiveClassRoomClient({
     };
     window.addEventListener("pagehide", cleanup);
     return () => window.removeEventListener("pagehide", cleanup);
-  }, [disconnect, identity, reportLeave, room.code]);
+  }, [disconnect, identity, reportLeave, room.code, sessionToken]);
   const managerPanel = manager ? (
     <LiveClassPlaylistManager
       code={room.code}
@@ -1384,6 +1543,7 @@ export function LiveClassRoomClient({
           client={client}
           room={room}
           identity={identity}
+          sessionToken={sessionToken}
           manager={manager}
           displayName={displayName}
           role={role}

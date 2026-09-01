@@ -484,6 +484,27 @@
       "when": 1787948488000,
       "tag": "0174_course_subscription_supervisor",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "6",
+      "when": 1788202800000,
+      "tag": "0175_gold_v2_identity_commerce",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "6",
+      "when": 1788202801000,
+      "tag": "0176_gold_v2_realtime_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1788202802000,
+      "tag": "0177_gold_v2_private_storage",
+      "breakpoints": true
     }
   ]
 }

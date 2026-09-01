@@ -1,51 +1,142 @@
+import { boundedJsonBody } from "@/lib/bounded-request-body";
 import { classAccess, classByCode } from "@/lib/live-classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
+import {
+  activeParticipantSessionByMediaIdentity,
+  cleanupExpiredParticipantSessions,
+  heartbeatParticipantSession,
+  markPublisherMediaState,
+  moderatorBanParticipant,
+  releasePublisherIfIdle,
+  requireParticipantSession,
+  reservePublisher,
+  revokeParticipantSession,
+  type ClassParticipantSession,
+} from "@/lib/class-participant-session";
+import {
+  classProviderGenerationExpired,
+  queueClassProviderTeardown,
+} from "@/lib/class-provider-lifecycle";
+import { normalizeEmailAddress } from "@/lib/email-address";
+import { UNVERIFIED_PUBLISHER_CONTINUOUS_SECONDS } from "@/lib/verified-member-policy";
+
+type MediaBody = {
+  action?: unknown;
+  sessionToken?: unknown;
+  identity?: unknown;
+  mic?: unknown;
+  camera?: unknown;
+  value?: unknown;
+  mediaKind?: unknown;
+  approve?: unknown;
+  email?: unknown;
+  authorizeOnly?: unknown;
+  humanIdentity?: unknown;
+};
+
+function nowSeconds() {
+  return Math.floor(Date.now() / 1_000);
+}
+
+function sessionFailure(error: unknown) {
+  const code = error instanceof Error ? error.message : "PARTICIPANT_SESSION_REQUIRED";
+  const status = code === "PARTICIPANT_SESSION_KICKED"
+    ? 403
+    : code === "PARTICIPANT_SESSION_CONFLICT"
+      ? 409
+    : code.includes("EXPIRED") || code.includes("GENERATION")
+      ? 410
+      : 401;
+  return Response.json({ error: code, errorCode: code }, {
+    status,
+    headers: { "cache-control": "no-store" },
+  });
+}
+
+async function requireSession(
+  request: Request,
+  room: NonNullable<Awaited<ReturnType<typeof classByCode>>>,
+  body: MediaBody,
+  touch = true,
+) {
+  return requireParticipantSession({
+    request,
+    room,
+    token: body.sessionToken,
+    identity: body.identity,
+    touch,
+  });
+}
+
+async function sessionEmailVerified(session: ClassParticipantSession) {
+  if (!session.userId) return false;
+  return Boolean((await getDatabase().prepare(
+    "SELECT email_verified AS emailVerified FROM users WHERE id=? LIMIT 1",
+  ).bind(session.userId).first<{ emailVerified: number }>())?.emailVerified);
+}
+
+async function interruptUnverifiedPublisher(
+  session: ClassParticipantSession,
+  roomId: string,
+  identity: string,
+) {
+  await revokeParticipantSession(session, "leave");
+  await getDatabase().prepare(
+    "UPDATE live_class_media_presence SET mic_on=0,camera_on=0,active=0,last_seen_at=? WHERE room_id=? AND identity=?",
+  ).bind(nowSeconds(), roomId, identity).run();
+  return Response.json({
+    error: "Verify your email to continue publishing. You can rejoin immediately as a viewer.",
+    errorCode: "UNVERIFIED_PUBLISHER_INTERRUPTED",
+  }, { status: 409, headers: { "cache-control": "no-store" } });
+}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ code: string }> },
 ) {
-  const { code } = await params,
-    room = await classByCode(code);
+  const { code } = await params;
+  const room = await classByCode(code);
   if (!room) return Response.json({ error: "Not found" }, { status: 404 });
-  const identity = String(
-      new URL(request.url).searchParams.get("identity") || "",
-    ).slice(0, 100),
-    user = await getSessionUser(request),
-    access = await classAccess(room, user, true);
-  if (!access.allowed)
-    return Response.json({ error: "Access denied" }, { status: 403 });
-  const now = Math.floor(Date.now() / 1000),
-    db = getDatabase();
-  await db
-    .prepare(
-      "UPDATE live_class_media_presence SET active=0,mic_on=0,camera_on=0 WHERE room_id=? AND last_seen_at<=?",
-    )
-    .bind(room.id, now - 45)
-    .run();
-  const activePresence = await db
-    .prepare(
-      "SELECT 1 AS active FROM live_class_media_presence WHERE room_id=? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>? LIMIT 1",
-    )
-    .bind(room.id, now - 45)
-    .first<{ active: number }>();
-  let streamActive = Boolean(room.streamActive);
-  if (streamActive && !activePresence && room.updatedAt <= now - 45) {
-    await db
-      .prepare(
-        "UPDATE live_class_rooms SET stream_active=0,provider_meeting_id=NULL,mute_all=0,updated_at=? WHERE id=? AND stream_active=1 AND updated_at<=?",
-      )
-      .bind(now, room.id, now - 45)
-      .run();
+  const identity = String(new URL(request.url).searchParams.get("identity") || "").slice(0, 100);
+  const user = await getSessionUser(request);
+  const access = await classAccess(room, user, true);
+  if (!access.allowed) return Response.json({ error: "Access denied" }, { status: 403 });
+
+  const now = nowSeconds();
+  const db = getDatabase();
+  await cleanupExpiredParticipantSessions(room.id, 25);
+  await db.prepare(`UPDATE live_class_media_presence SET active=0,mic_on=0,camera_on=0
+    WHERE room_id=? AND NOT EXISTS(
+      SELECT 1 FROM class_participant_sessions session
+      WHERE session.room_id=live_class_media_presence.room_id
+        AND session.media_identity=live_class_media_presence.identity
+        AND session.active=1 AND session.last_seen_at>?
+    )`).bind(room.id, now - 90).run();
+
+  let streamActive = Boolean(room.streamActive && room.providerMeetingId);
+  if (streamActive && classProviderGenerationExpired(room, now)) {
+    await queueClassProviderTeardown({
+      roomId: room.id,
+      providerMeetingId: room.providerMeetingId!,
+      generation: room.providerGeneration,
+      reason: "duration",
+    });
     streamActive = false;
   }
-  const users = (await db
-    .prepare(
-      "SELECT identity,user_id AS userId,display_name AS displayName,is_member AS isMember,mic_on AS micOn,camera_on AS cameraOn,last_seen_at AS lastSeenAt FROM live_class_media_presence WHERE room_id=? AND active=1 ORDER BY display_name LIMIT 1000",
-    )
-    .bind(room.id)
-    .run()) as {
-    results?: Array<{
+
+  const rawUsers = (await db.prepare(`SELECT presence.identity,
+    presence.user_id AS userId,presence.display_name AS displayName,
+    presence.is_member AS isMember,presence.mic_on AS micOn,
+    presence.camera_on AS cameraOn,presence.last_seen_at AS lastSeenAt,
+    session.human_identity AS humanIdentity
+    FROM live_class_media_presence presence
+    JOIN class_participant_sessions session
+      ON session.room_id=presence.room_id AND session.media_identity=presence.identity
+    WHERE presence.room_id=? AND presence.active=1 AND session.active=1
+      AND session.generation=? AND session.last_seen_at>?
+    ORDER BY presence.display_name,presence.identity LIMIT 1000`)
+    .bind(room.id, room.providerGeneration, now - 90)
+    .run<{
       identity: string;
       userId: string | null;
       displayName: string;
@@ -53,344 +144,299 @@ export async function GET(
       micOn: number;
       cameraOn: number;
       lastSeenAt: number;
-    }>;
-  };
-  const rawUsers = users.results || [],
-    screenShareActive = rawUsers.some(
-      (item) =>
-        item.identity === "screenshare:" + room.id &&
-        Boolean(item.cameraOn) &&
-        item.lastSeenAt > now - 15,
-    ),
-    activeUsers = rawUsers.filter(
-      (item) => item.identity !== "screenshare:" + room.id,
-    ),
-    managerIds = new Set([
-      room.hostUserId,
-      ...(
-        (
-          await db
-            .prepare("SELECT user_id AS userId FROM live_class_cohosts WHERE room_id=?")
-            .bind(room.id)
-            .run<{ userId: string }>()
-        ).results || []
-      ).map((item) => item.userId),
-    ]),
-    hostOnline = activeUsers.some((item) => item.userId === room.hostUserId);
-  const requests =
-    access.manager && room.realtimeMode === "webinar"
-      ? (
-          await db
-            .prepare(
-              "SELECT identity,display_name AS displayName,media_kind AS mediaKind,status FROM live_class_stage_requests WHERE room_id=? AND status='pending' ORDER BY created_at LIMIT 100",
-            )
-            .bind(room.id)
-            .run()
-        ).results || []
-      : [];
-  const speakers =
-    access.manager && room.realtimeMode === "livestream"
-      ? (
-          await db
-            .prepare(
-              "SELECT member_email AS email FROM live_class_stage_speakers WHERE room_id=? ORDER BY created_at",
-            )
-            .bind(room.id)
-            .run()
-        ).results || []
-      : [];
-  let canPublish =
-    access.manager ||
-    room.classType === "private" ||
-    room.realtimeMode === "group_call";
+      humanIdentity: string;
+    }>()).results || [];
+  const activeUsers = rawUsers.filter((item) => !item.identity.startsWith("screenshare:"));
+  const managerIds = new Set([
+    room.hostUserId,
+    ...((await db.prepare("SELECT user_id AS userId FROM live_class_cohosts WHERE room_id=?")
+      .bind(room.id).run<{ userId: string }>()).results || []).map((item) => item.userId),
+  ]);
+  const hostOnline = activeUsers.some((item) => item.userId === room.hostUserId);
+  const shared = await db.prepare(`SELECT active,lease_until AS leaseUntil
+    FROM class_shared_content_state WHERE room_id=? LIMIT 1`)
+    .bind(room.id).first<{ active: number; leaseUntil: number | null }>();
+  const screenShareActive = Boolean(shared?.active && Number(shared.leaseUntil || 0) > now);
+
+  const requests = access.manager && room.realtimeMode === "webinar"
+    ? (await db.prepare(`SELECT identity,display_name AS displayName,
+        media_kind AS mediaKind,status FROM live_class_stage_requests
+        WHERE room_id=? AND status='pending' ORDER BY created_at LIMIT 100`)
+      .bind(room.id).run()).results || []
+    : [];
+  const speakers = access.manager && room.realtimeMode === "livestream"
+    ? (await db.prepare(`SELECT member_email AS email FROM live_class_stage_speakers
+        WHERE room_id=? ORDER BY created_at LIMIT 100`)
+      .bind(room.id).run()).results || []
+    : [];
+
+  let canPublish = access.manager || room.classType === "private"
+    || room.realtimeMode === "group_call";
   if (!canPublish && room.realtimeMode === "webinar" && identity)
-    canPublish = Boolean(
-      await db
-        .prepare(
-          "SELECT 1 FROM live_class_stage_requests WHERE room_id=? AND identity=? AND status='approved' LIMIT 1",
-        )
-        .bind(room.id, identity)
-        .first(),
-    );
+    canPublish = Boolean(await db.prepare(
+      "SELECT 1 FROM live_class_stage_requests WHERE room_id=? AND identity=? AND status='approved' LIMIT 1",
+    ).bind(room.id, identity).first());
   if (!canPublish && room.realtimeMode === "livestream" && user)
-    canPublish = Boolean(
-      await db
-        .prepare(
-          "SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?)",
-        )
-        .bind(room.id, user.email)
-        .first(),
-    );
+    canPublish = Boolean(await db.prepare(
+      "SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?) LIMIT 1",
+    ).bind(room.id, user.email).first());
+
   return Response.json({
     streamActive,
     providerMeetingId: streamActive ? room.providerMeetingId : null,
+    generation: room.providerGeneration,
+    generationStartedAt: room.providerGenerationStartedAt,
+    sessionDeadlineAt: room.providerGenerationStartedAt
+      ? room.providerGenerationStartedAt + 120 * 60
+      : null,
     streamingMode: room.streamingMode,
     realtimeMode: room.realtimeMode,
     manager: access.manager,
     canPublish,
     hostOnline,
-    participantLimit: room.realtimeMode === "group_call" ? 100 : null,
-    publisherLimit: room.realtimeMode === "group_call" ? null : 9,
-    users: activeUsers.map(({ userId, ...item }) => ({
+    participantLimit: room.realtimeMode === "group_call" ? 100 : 1000,
+    publisherLimit: room.realtimeMode === "group_call" ? 100 : 9,
+    users: activeUsers.map(({ userId, humanIdentity, ...item }) => ({
       ...item,
       isManager: Boolean(userId && managerIds.has(userId)),
+      ...(access.manager ? { humanIdentity } : {}),
     })),
     requests,
     speakers,
     screenShareActive,
-  });
+  }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ code: string }> },
 ) {
-  const { code } = await params,
-    room = await classByCode(code);
+  const { code } = await params;
+  const room = await classByCode(code);
   if (!room) return Response.json({ error: "Not found" }, { status: 404 });
-  const body = (await request.json().catch(() => ({}))) as {
-      action?: string;
-      identity?: string;
-      mic?: boolean;
-      camera?: boolean;
-      value?: boolean;
-      mediaKind?: "audio" | "video";
-      approve?: boolean;
-      email?: string;
-      authorizeOnly?: boolean;
-    },
-    user = await getSessionUser(request),
-    access = await classAccess(room, user, true),
-    db = getDatabase(),
-    now = Math.floor(Date.now() / 1000),
-    identity = String(body.identity || "").slice(0, 100);
-  if (body.action === "screen-share") {
-    if (!access.manager)
-      return Response.json(
-        { error: "Manager access required" },
-        { status: 403 },
-      );
-    if (room.streamingMode !== "audio" || room.realtimeMode === "livestream")
-      return Response.json(
-        { error: "Audio broadcasts cannot share screens" },
-        { status: 409 },
-      );
-    if (body.value)
-      await db
-        .prepare(
-          "INSERT INTO live_class_media_presence(id,room_id,identity,user_id,display_name,is_member,mic_on,camera_on,active,last_seen_at) VALUES(?,?,?,?,?,0,0,1,1,?) ON CONFLICT(room_id,identity) DO UPDATE SET camera_on=1,active=1,last_seen_at=excluded.last_seen_at",
-        )
-        .bind(
-          createId(),
-          room.id,
-          "screenshare:" + room.id,
-          null,
-          "Screen share",
-          now,
-        )
-        .run();
-    else
-      await db
-        .prepare(
-          "UPDATE live_class_media_presence SET camera_on=0,active=0,last_seen_at=? WHERE room_id=? AND identity=?",
-        )
-        .bind(now, room.id, "screenshare:" + room.id)
-        .run();
-    return Response.json({ screenShareActive: Boolean(body.value) });
+
+  let body: MediaBody;
+  try { body = await boundedJsonBody<MediaBody>(request, 16 * 1024); }
+  catch (error) {
+    return error instanceof Response ? error : Response.json({ error: "Invalid request" }, { status: 400 });
   }
-  if (body.action === "request-stage") {
-    if (room.realtimeMode !== "webinar" || !identity)
+  const user = await getSessionUser(request);
+  const access = await classAccess(room, user, true);
+  const db = getDatabase();
+  const now = nowSeconds();
+  const action = String(body.action || "");
+  const identity = String(body.identity || "").slice(0, 100);
+
+  let session: ClassParticipantSession;
+  try { session = await requireSession(request, room, body, action !== "leave"); }
+  catch (error) { return sessionFailure(error); }
+
+  if (action === "screen-share") {
+    if (!access.manager || session.role !== "host")
+      return Response.json({ error: "Manager access required" }, { status: 403 });
+    if (room.realtimeMode === "livestream")
+      return Response.json({ error: "Livestream rooms cannot share screens" }, { status: 409 });
+    const active = body.value === true;
+    if (active) {
+      const result = await db.prepare(`INSERT INTO class_shared_content_state(
+        room_id,generation,media_identity,source,label,active,claim_token,lease_until,updated_at
+      ) VALUES(?,? ,?,'screen','Screen share',1,?,?,?)
+      ON CONFLICT(room_id) DO UPDATE SET generation=excluded.generation,
+        media_identity=excluded.media_identity,source='screen',label=excluded.label,
+        active=1,claim_token=excluded.claim_token,lease_until=excluded.lease_until,
+        updated_at=excluded.updated_at
+      WHERE class_shared_content_state.active=0
+        OR class_shared_content_state.lease_until<=?
+        OR class_shared_content_state.claim_token=excluded.claim_token`)
+        .bind(room.id, room.providerGeneration, session.mediaIdentity, session.tokenHash,
+          now + 15, now, now).run();
+      if (Number(result.meta?.changes || 0) !== 1)
+        return Response.json({ error: "Another participant is already sharing" }, { status: 409 });
+    } else {
+      await db.prepare(`UPDATE class_shared_content_state SET active=0,lease_until=?,updated_at=?
+        WHERE room_id=? AND claim_token=?`).bind(now, now, room.id, session.tokenHash).run();
+    }
+    await db.prepare(`UPDATE live_class_media_presence SET camera_on=?,active=1,last_seen_at=?
+      WHERE room_id=? AND identity=?`).bind(active ? 1 : 0, now, room.id, session.mediaIdentity).run();
+    return Response.json({ screenShareActive: active });
+  }
+
+  if (action === "request-stage") {
+    if (room.realtimeMode !== "webinar")
       return Response.json({ error: "Invalid stage request" }, { status: 400 });
-    const presence = await db
-      .prepare(
-        "SELECT user_id AS userId,display_name AS displayName FROM live_class_media_presence WHERE room_id=? AND identity=? AND active=1",
-      )
-      .bind(room.id, identity)
-      .first<{ userId: string | null; displayName: string }>();
-    if (!presence)
-      return Response.json(
-        { error: "Join as a viewer first" },
-        { status: 409 },
-      );
     const kind = body.mediaKind === "video" ? "video" : "audio";
-    await db
-      .prepare(
-        "INSERT INTO live_class_stage_requests(id,room_id,identity,user_id,display_name,media_kind,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'pending',?,?) ON CONFLICT(room_id,identity,media_kind) DO UPDATE SET status='pending',updated_at=excluded.updated_at",
-      )
-      .bind(
-        createId(),
-        room.id,
-        identity,
-        presence.userId,
-        presence.displayName,
-        kind,
-        now,
-        now,
-      )
-      .run();
+    await db.prepare(`INSERT INTO live_class_stage_requests(
+      id,room_id,identity,user_id,display_name,media_kind,status,created_at,updated_at
+    ) VALUES(?,?,?,?,?,?,'pending',?,?) ON CONFLICT(room_id,identity,media_kind)
+      DO UPDATE SET status='pending',updated_at=excluded.updated_at`).bind(
+      createId(), room.id, session.mediaIdentity, session.userId,
+      session.displayName, kind, now, now,
+    ).run();
     return Response.json({ ok: true });
   }
-  if (body.action === "review-stage") {
+
+  if (action === "review-stage") {
     if (!access.manager || room.realtimeMode !== "webinar")
-      return Response.json(
-        { error: "Manager access required" },
-        { status: 403 },
-      );
-    await db
-      .prepare(
-        "UPDATE live_class_stage_requests SET status=?,updated_at=? WHERE room_id=? AND identity=? AND media_kind=?",
-      )
-      .bind(
-        body.approve ? "approved" : "denied",
-        now,
-        room.id,
-        identity,
-        body.mediaKind === "video" ? "video" : "audio",
-      )
-      .run();
+      return Response.json({ error: "Manager access required" }, { status: 403 });
+    const targetIdentity = identity;
+    const kind = body.mediaKind === "video" ? "video" : "audio";
+    await db.prepare(`UPDATE live_class_stage_requests SET status=?,updated_at=?
+      WHERE room_id=? AND identity=? AND media_kind=?`).bind(
+      body.approve === true ? "approved" : "denied",
+      now,
+      room.id,
+      targetIdentity,
+      kind,
+    ).run();
+    if (body.approve !== true) {
+      const target = await activeParticipantSessionByMediaIdentity(room.id, targetIdentity);
+      if (target?.publisherReserved) {
+        await releasePublisherIfIdle(target);
+        await revokeParticipantSession(target, "leave");
+        await db.prepare(`UPDATE live_class_media_presence SET mic_on=0,camera_on=0,active=0,last_seen_at=?
+          WHERE room_id=? AND identity=?`).bind(now, room.id, targetIdentity).run();
+      }
+    }
     return Response.json({ ok: true });
   }
-  if (body.action === "add-speaker" || body.action === "remove-speaker") {
+
+  if (action === "add-speaker" || action === "remove-speaker") {
     if (!access.manager || room.realtimeMode !== "livestream")
-      return Response.json(
-        { error: "Manager access required" },
-        { status: 403 },
-      );
-    const email = String(body.email || "")
-      .trim()
-      .toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(email))
-      return Response.json(
-        { error: "Enter a valid member email" },
-        { status: 400 },
-      );
-    if (body.action === "add-speaker") {
-      if (
-        !(await db
-          .prepare("SELECT 1 FROM users WHERE lower(email)=lower(?) LIMIT 1")
-          .bind(email)
-          .first())
-      )
-        return Response.json(
-          { error: "Registered member not found" },
-          { status: 404 },
-        );
-      await db
-        .prepare(
-          "INSERT OR IGNORE INTO live_class_stage_speakers(id,room_id,member_email,added_by_user_id,created_at) VALUES(?,?,?,?,?)",
-        )
-        .bind(createId(), room.id, email, user!.id, now)
-        .run();
-    } else
-      await db
-        .prepare(
-          "DELETE FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?)",
-        )
-        .bind(room.id, email)
-        .run();
+      return Response.json({ error: "Manager access required" }, { status: 403 });
+    const email = normalizeEmailAddress(body.email);
+    if (!email) return Response.json({ error: "Enter a valid member email" }, { status: 400 });
+    if (action === "add-speaker") {
+      const target = await db.prepare(
+        "SELECT id,email_verified AS emailVerified,clerk_identity_checked_at AS checkedAt FROM users WHERE lower(email)=lower(?) LIMIT 1",
+      ).bind(email).first<{ id: string; emailVerified: number; checkedAt: number }>();
+      if (!target) return Response.json({ error: "Registered member not found" }, { status: 404 });
+      if (!target.emailVerified || target.checkedAt <= nowSeconds() - 5 * 60)
+        return Response.json({ error: "Speaker email must be verified", errorCode: "VERIFIED_MEMBER_REQUIRED" }, { status: 403 });
+      await db.prepare(`INSERT OR IGNORE INTO live_class_stage_speakers(
+        id,room_id,member_email,added_by_user_id,created_at
+      ) VALUES(?,?,?,?,?)`).bind(createId(), room.id, email, user!.id, now).run();
+    } else {
+      await db.prepare(
+        "DELETE FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?)",
+      ).bind(room.id, email).run();
+    }
     return Response.json({ ok: true });
   }
-  if (!identity)
-    return Response.json({ error: "Identity required" }, { status: 400 });
-  if (body.action === "heartbeat") {
-    await db
-      .prepare(
-        "UPDATE live_class_media_presence SET mic_on=COALESCE(?,mic_on),camera_on=COALESCE(?,camera_on),last_seen_at=?,active=1 WHERE room_id=? AND identity=?",
-      )
-      .bind(
-        typeof body.mic === "boolean" ? (body.mic ? 1 : 0) : null,
-        typeof body.camera === "boolean" ? (body.camera ? 1 : 0) : null,
-        now,
-        room.id,
-        identity,
-      )
-      .run();
+
+  if (action === "kick") {
+    if (!access.manager || !user)
+      return Response.json({ error: "Manager access required" }, { status: 403 });
+    const humanIdentity = String(body.humanIdentity || "");
+    const target = (await db.prepare(`SELECT human_identity AS humanIdentity,
+      user_id AS userId,display_name AS displayName FROM class_participant_sessions
+      WHERE room_id=? AND human_identity=? AND active=1 LIMIT 1`)
+      .bind(room.id, humanIdentity)
+      .first<{ humanIdentity: string; userId: string | null; displayName: string }>());
+    if (!target) return Response.json({ error: "Participant not found" }, { status: 404 });
+    if (target.userId === room.hostUserId)
+      return Response.json({ error: "The permanent host cannot be removed" }, { status: 409 });
+    const removed = await moderatorBanParticipant({
+      roomId: room.id,
+      humanIdentity: target.humanIdentity,
+      displayName: target.displayName,
+      userId: target.userId,
+      bannedByUserId: user.id,
+    });
+    return Response.json({ ok: true, removed });
+  }
+
+  if (action === "allow-reentry") {
+    if (!access.manager)
+      return Response.json({ error: "Manager access required" }, { status: 403 });
+    await db.prepare("DELETE FROM class_participant_bans WHERE room_id=? AND human_identity=?")
+      .bind(room.id, String(body.humanIdentity || "")).run();
     return Response.json({ ok: true });
   }
-  if (body.action === "leave") {
-    await db
-      .prepare(
-        "UPDATE live_class_media_presence SET active=0,mic_on=0,camera_on=0,last_seen_at=? WHERE room_id=? AND identity=?",
-      )
-      .bind(now, room.id, identity)
-      .run();
-    const remaining = await db
-      .prepare(
-        "SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND last_seen_at>?",
-      )
-      .bind(room.id, now - 45)
-      .first<{ count: number }>();
-    const activePublishers = await db
-      .prepare(
-        "SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>?",
-      )
-      .bind(room.id, now - 45)
-      .first<{ count: number }>();
-    if (
-      Number(remaining?.count || 0) === 0 ||
-      (access.manager && Number(activePublishers?.count || 0) === 0)
-    )
-      await db
-        .prepare(
-          "UPDATE live_class_rooms SET stream_active=0,provider_meeting_id=NULL,mute_all=0,updated_at=? WHERE id=?",
-        )
-        .bind(now, room.id)
-        .run();
+
+  if (action === "heartbeat") {
+    try { await heartbeatParticipantSession(session); }
+    catch (error) { return sessionFailure(error); }
+    if (session.publisherStartedAt
+      && session.publisherStartedAt <= now - UNVERIFIED_PUBLISHER_CONTINUOUS_SECONDS
+      && !await sessionEmailVerified(session))
+      return interruptUnverifiedPublisher(session, room.id, session.mediaIdentity);
+    await db.prepare(`UPDATE live_class_media_presence SET
+      mic_on=COALESCE(?,mic_on),camera_on=COALESCE(?,camera_on),
+      last_seen_at=?,active=1 WHERE room_id=? AND identity=?`).bind(
+      typeof body.mic === "boolean" ? (body.mic ? 1 : 0) : null,
+      typeof body.camera === "boolean" ? (body.camera ? 1 : 0) : null,
+      now,
+      room.id,
+      session.mediaIdentity,
+    ).run();
+    if (session.tokenHash) await db.prepare(`UPDATE class_shared_content_state SET
+      lease_until=?,updated_at=? WHERE room_id=? AND active=1 AND claim_token=?`)
+      .bind(now + 15, now, room.id, session.tokenHash).run();
     return Response.json({ ok: true });
   }
-  if (body.action === "media") {
+
+  if (action === "leave") {
+    await revokeParticipantSession(session, "leave");
+    await db.prepare(`UPDATE live_class_media_presence SET active=0,mic_on=0,camera_on=0,last_seen_at=?
+      WHERE room_id=? AND identity=?`).bind(now, room.id, session.mediaIdentity).run();
+    await db.prepare(`UPDATE class_shared_content_state SET active=0,lease_until=?,updated_at=?
+      WHERE room_id=? AND claim_token=?`).bind(now, now, room.id, session.tokenHash).run();
+    // Silent viewers and moderators keep the provider generation alive. A
+    // participant leaving never retires a whole room; only the two-hour clock,
+    // explicit closure, deletion, or bounded idle maintenance can do that.
+    return Response.json({ ok: true });
+  }
+
+  if (action === "media") {
     if (!access.allowed)
       return Response.json({ error: "Access denied" }, { status: 403 });
-    let allowed =
-      access.manager ||
-      room.classType === "private" ||
-      room.realtimeMode === "group_call";
+    const wantsMic = body.mic === true;
+    const wantsCamera = body.camera === true;
+    const publishing = wantsMic || wantsCamera;
+    let allowed = access.manager || room.classType === "private"
+      || room.realtimeMode === "group_call";
     if (!allowed && room.realtimeMode === "webinar")
-      allowed = Boolean(
-        await db
-          .prepare(
-            "SELECT 1 FROM live_class_stage_requests WHERE room_id=? AND identity=? AND status='approved' AND media_kind IN (?,?) LIMIT 1",
-          )
-          .bind(
-            room.id,
-            identity,
-            body.mic ? "audio" : "video",
-            body.camera ? "video" : "audio",
-          )
-          .first(),
-      );
-    if (!allowed && room.realtimeMode === "livestream" && user)
-      allowed = Boolean(
-        await db
-          .prepare(
-            "SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?)",
-          )
-          .bind(room.id, user.email)
-          .first(),
-      );
-    if (!allowed && (body.mic || body.camera))
-      return Response.json({ error: "STAGE_ACCESS_REQUIRED" }, { status: 403 });
-    if (room.realtimeMode !== "group_call" && (body.mic || body.camera)) {
-      const count = await db
-        .prepare(
-          "SELECT COUNT(*) AS count FROM live_class_media_presence WHERE room_id=? AND identity<>? AND active=1 AND (mic_on=1 OR camera_on=1) AND last_seen_at>?",
-        )
-        .bind(room.id, identity, now - 45)
-        .first<{ count: number }>();
-      if (Number(count?.count || 0) >= 9)
-        return Response.json(
-          { error: "The 9-speaker stage is full" },
-          { status: 409 },
-        );
+      allowed = Boolean(await db.prepare(`SELECT 1 FROM live_class_stage_requests
+        WHERE room_id=? AND identity=? AND status='approved'
+          AND media_kind IN (?,?) LIMIT 1`).bind(
+        room.id,
+        session.mediaIdentity,
+        wantsMic ? "audio" : "video",
+        wantsCamera ? "video" : "audio",
+      ).first());
+    if (!allowed && room.realtimeMode === "livestream" && session.userId)
+      allowed = Boolean(await db.prepare(`SELECT 1 FROM live_class_stage_speakers speaker
+        JOIN users member ON lower(member.email)=lower(speaker.member_email)
+        WHERE speaker.room_id=? AND member.id=? AND member.email_verified=1
+          AND member.clerk_identity_checked_at>unixepoch()-300 LIMIT 1`)
+        .bind(room.id, session.userId).first());
+    if (publishing && (!allowed || session.role === "viewer"))
+      return Response.json({ error: "STAGE_ACCESS_REQUIRED", errorCode: "STAGE_ACCESS_REQUIRED" }, { status: 403 });
+
+    if (publishing) {
+      try { await reservePublisher(session); }
+      catch (error) {
+        const code = error instanceof Error ? error.message : "PUBLISHER_LIMIT_REACHED";
+        return Response.json({ error: "The publisher stage is full", errorCode: code }, { status: 409 });
+      }
+      if (session.publisherStartedAt
+        && session.publisherStartedAt <= now - UNVERIFIED_PUBLISHER_CONTINUOUS_SECONDS
+        && !await sessionEmailVerified(session))
+        return interruptUnverifiedPublisher(session, room.id, session.mediaIdentity);
     }
-    if (body.authorizeOnly) return Response.json({ ok: true });
-    await db
-      .prepare(
-        "UPDATE live_class_media_presence SET mic_on=?,camera_on=?,last_seen_at=?,active=1 WHERE room_id=? AND identity=?",
-      )
-      .bind(body.mic ? 1 : 0, body.camera ? 1 : 0, now, room.id, identity)
-      .run();
+    if (body.authorizeOnly === true) return Response.json({ ok: true });
+    try { await markPublisherMediaState(session, publishing); }
+    catch (error) { return sessionFailure(error); }
+    await db.prepare(`UPDATE live_class_media_presence SET mic_on=?,camera_on=?,last_seen_at=?,active=1
+      WHERE room_id=? AND identity=?`).bind(
+      wantsMic ? 1 : 0,
+      wantsCamera ? 1 : 0,
+      now,
+      room.id,
+      session.mediaIdentity,
+    ).run();
     return Response.json({ ok: true });
   }
+
   return Response.json({ error: "Invalid action" }, { status: 400 });
 }

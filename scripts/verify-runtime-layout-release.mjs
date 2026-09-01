@@ -7,6 +7,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import {
+  SMARTLINGO_LAYOUT_LANGUAGES,
+  SMARTLINGO_LAYOUT_ROUTES,
+  SMARTLINGO_VIEWPORTS,
+} from "./verify-runtime-layout-webkit.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const wrangler = join(projectRoot, "node_modules", "wrangler", "bin", "wrangler.js");
@@ -170,9 +175,12 @@ async function main() {
       r2_buckets: [{ binding: "BUCKET", bucket_name: "smartlingo-layout-release-media" }],
     }), { mode: 0o600 });
     await writeFile(fixture, `
-INSERT INTO users (id,email,display_name,password_hash,preferred_language,role,created_at) VALUES
- ('layout-user','bingliu@cybeye.com','Layout Learner','disabled-local-fixture','en','admin',1785680000),
- ('layout-peer','layout-peer@smartlingo.invalid','Layout Peer','disabled-local-fixture','zh','member',1785680001);
+INSERT INTO users (id,email,email_verified,display_name,password_hash,preferred_language,
+ clerk_user_id,clerk_identity_checked_at,role,created_at) VALUES
+ ('layout-user','bingliu@cybeye.com',1,'Layout Learner','disabled-local-fixture','en',
+  'layout-clerk-user',unixepoch(),'admin',1785680000),
+ ('layout-peer','layout-peer@smartlingo.invalid',1,'Layout Peer','disabled-local-fixture','zh',
+  'layout-clerk-peer',unixepoch(),'member',1785680001);
 INSERT INTO sessions (id,user_id,clerk_session_id,expires_at,created_at) VALUES
  ('${sessionHash}','layout-user','layout-local-session',4102444800,1785680002);
 INSERT INTO smartlingo_course_subscriptions
@@ -227,9 +235,14 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
       cwd: projectRoot,
       env: isolatedEnv,
     });
-    const evidence = verified.stdout.match(/WebKit runtime layout verified: 270\/270[^\n]*/)?.[0];
+    const expectedLayoutCount = SMARTLINGO_LAYOUT_ROUTES.length
+      * SMARTLINGO_LAYOUT_LANGUAGES.length
+      * SMARTLINGO_VIEWPORTS.length;
+    const evidence = verified.stdout.match(new RegExp(
+      `WebKit runtime layout verified: ${expectedLayoutCount}\/${expectedLayoutCount}[^\\n]*`,
+    ))?.[0];
     if (!evidence) {
-      throw new Error(`Full 270/270 WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+      throw new Error(`Full ${expectedLayoutCount}/${expectedLayoutCount} WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
     }
     await writeFile(join(tmpdir(), "smartlingo-layout-release-evidence.txt"), `${evidence}\n`, { mode: 0o600 });
     process.stderr.write(`${evidence}\n`);

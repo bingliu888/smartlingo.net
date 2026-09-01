@@ -16,6 +16,7 @@
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "scan:sensitive": "node scripts/scan-sensitive-data.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "db:validate": "node scripts/validate-d1-migrations.mjs",
     "validate:layout": "node scripts/verify-runtime-layout-release.mjs"

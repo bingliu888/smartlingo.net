@@ -12,6 +12,9 @@ export const users = sqliteTable("users", {
   aiProviderPreference: text("ai_provider_preference").notNull().default("auto"),
   role: text("role").notNull().default("member"),
   walletAddress: text("wallet_address"),
+  clerkIdentityCheckedAt: integer("clerk_identity_checked_at").notNull().default(0),
+  clerkIdentityRefreshClaimToken: text("clerk_identity_refresh_claim_token"),
+  clerkIdentityRefreshClaimedUntil: integer("clerk_identity_refresh_claimed_until").notNull().default(0),
   createdAt: integer("created_at").notNull(),
 }, (table) => [
   check("smartlingo_user_role_ck", sql`${table.role} IN ('member', 'admin')`),

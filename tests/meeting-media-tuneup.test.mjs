@@ -26,7 +26,7 @@ test("media state is authorized before capture state is published", () => {
   const room = read("components/live-class-room-client.tsx");
   const media = read("app/api/classrooms/[code]/media/route.ts");
   assert.match(room, /authorizeOnly: true/);
-  assert.match(media, /if \(body\.authorizeOnly\) return Response\.json/);
+  assert.match(media, /if \(body\.authorizeOnly === true\) return Response\.json/);
   assert.match(media, /mic_on=COALESCE/);
 });
 
