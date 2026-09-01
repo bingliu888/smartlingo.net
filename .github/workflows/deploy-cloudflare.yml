@@ -160,7 +160,7 @@ jobs:
             echo "The SmartLingo RealtimeKit presets are unavailable (HTTP $status)." >&2
             exit 1
           fi
-          for preset in group_call_guest group_call_participant group_call_host smartlingo_voice \
+          for preset in group_call_guest group_call_participant group_call_host \
             webinar_presenter webinar_viewer livestream_host livestream_viewer; do
             jq -e --arg preset "$preset" 'any(.data[]?; .name == $preset)' \
               "$RUNNER_TEMP/realtime-presets.json" >/dev/null || {

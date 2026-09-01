@@ -30,6 +30,7 @@ test("production workflows use exact actions without tolerated setup errors", ()
   assert.match(deploy, /\.id == "816eb53a-1dc8-4939-9716-500747e385db"/);
   assert.match(deploy, /contains\("smartlingo"\)/);
   assert.doesNotMatch(deploy, /apps\?search=SmartLingo\.net/);
+  assert.doesNotMatch(deploy, /smartlingo_voice/);
   assert.ok(
     deploy.indexOf("Build exact source and verify rendered Worker")
       < deploy.indexOf("Run source contract tests"),

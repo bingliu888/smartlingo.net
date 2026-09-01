@@ -12,6 +12,9 @@ test("SmartLingo classroom data and media are isolated", () => {
   assert.match(migration, /CREATE TABLE IF NOT EXISTS live_class_chat_messages/);
   assert.match(config, /816eb53a-1dc8-4939-9716-500747e385db/);
   assert.match(config, /smartlingo-net-class-files/);
+  assert.match(config, /"REALTIMEKIT_MEMBER_AUDIO_PRESET": "group_call_participant"/);
+  assert.match(config, /"REALTIMEKIT_HOST_AUDIO_PRESET": "group_call_host"/);
+  assert.doesNotMatch(config, /smartlingo_voice/);
   assert.doesNotMatch(config, /40e38988-f116-43bd-91eb-6e5def18cf0c/);
   assert.doesNotMatch(config, /6600026b-1e03-40e9-a8cf-49802ca50c2d/);
 });
