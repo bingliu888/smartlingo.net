@@ -24,6 +24,7 @@ import {
   mediaGridLayout,
   shouldAutoJoinClassRoom,
 } from "@/lib/class-realtime-participant-state";
+import { classRoomWaitingCopy } from "@/lib/class-room-waiting-copy";
 import { classPollDelay } from "@/lib/realtime-client-budget";
 
 type RealtimeMode = "group_call" | "webinar" | "livestream";
@@ -1491,6 +1492,7 @@ export function LiveClassRoomClient({
       enabled={playlistEnabled && !humanStreamActive && !humanStreamSeen}
     />
   );
+  const waitingCopy = classRoomWaitingCopy(lang, connecting, manager);
   if (!joined || !client)
     return (
       <>
@@ -1498,18 +1500,8 @@ export function LiveClassRoomClient({
         {waitingPlaylist}
         <section className="class-waiting">
           <span className="stream-spinner" />
-          <h2>
-            {connecting
-              ? "Connecting…"
-              : manager
-                ? "Start the live course room"
-                : "Waiting for live course room"}
-          </h2>
-          <p>
-            {manager
-              ? "Start this site's independent live media session. Microphone and camera remain off until selected."
-              : "You join automatically as a viewer when streaming starts. No device permission is requested."}
-          </p>
+          <h2>{waitingCopy.title}</h2>
+          <p>{waitingCopy.description}</p>
           {(manager || room.realtimeMode === "group_call") && (
             <div className="class-waiting-media-actions">
               <button disabled={connecting} onClick={() => void changeMedia(true, false)} aria-label={lang === "zh" ? "开启麦克风" : "Turn on microphone"}><MicIcon /></button>
