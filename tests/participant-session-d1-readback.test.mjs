@@ -23,6 +23,6 @@ test("critical participant-session mutations recover from D1 change-count false 
   assert.match(source, /persisted\?\.providerMeetingId === providerMeetingId/);
   assert.match(source, /persisted\?\.publisherReserved !== 1/);
   assert.match(source, /persisted\?\.companionReserved !== 1/);
-  assert.match(source, /persisted\.companionPublisherReserved !== 1/);
+  assert.match(source, /persisted\.companionPublisherReserved !== \(publisher \? 1 : 0\)/);
   assert.match(source, /persisted\.lastSeenAt < now/);
 });

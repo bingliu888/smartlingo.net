@@ -153,7 +153,7 @@ export async function POST(
     return Response.json({ error: "STREAM_NOT_ACTIVE", errorCode: "STREAM_NOT_ACTIVE" }, { status: 409 });
 
   const companion = body.screenShareCompanion === true;
-  if (companion && (!access.manager || room.streamingMode !== "audio"
+  if (companion && (room.streamingMode !== "audio"
     || room.realtimeMode === "livestream")) {
     return Response.json({ error: "Screen-share companion is unavailable" }, { status: 409 });
   }
@@ -167,18 +167,19 @@ export async function POST(
         room,
         token: body.sessionToken,
       });
-      if (companionSession.role !== "host")
-        throw new Error("PARTICIPANT_SESSION_CONFLICT");
-      await claimCompanionParticipant(companionSession);
+      const companionPublisher = companionSession.role === "host";
+      await claimCompanionParticipant(companionSession, companionPublisher);
       companionAttempt = await beginProviderParticipantAttempt(companionSession, providerMeetingId);
       const participant = await createProviderParticipant(
         providerMeetingId,
         companionAttempt.customParticipantId,
         `${displayName} · Screen`,
-        "host",
-        room.streamingMode,
+        companionPublisher ? "host" : "viewer",
+        "video",
         room.realtimeMode,
-        { audio: false, video: true, screenshare: true },
+        companionPublisher
+          ? { audio: false, video: true, screenshare: true }
+          : { audio: false, video: false, screenshare: false },
       );
       await attachCompanionParticipant(
         companionSession,
@@ -191,13 +192,13 @@ export async function POST(
         sessionToken: String(body.sessionToken),
         sessionId: companionSession.id,
         identity: companionSession.mediaIdentity,
-        role: "host",
+        role: companionPublisher ? "host" : "viewer",
         meetingId: providerMeetingId,
         generation: room.providerGeneration,
         streamingMode: room.streamingMode,
         realtimeMode: room.realtimeMode,
-        manager: true,
-        canPublish: true,
+        manager: companionPublisher,
+        canPublish: companionPublisher,
         emailVerified: Boolean(user?.emailVerified),
         participantLimit: participantCapacity(room),
         publisherLimit: room.realtimeMode === "group_call" ? 100 : 9,

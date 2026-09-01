@@ -401,24 +401,28 @@ export async function attachProviderParticipant(
     .bind(attemptId).run();
 }
 
-export async function claimCompanionParticipant(session: ClassParticipantSession) {
+export async function claimCompanionParticipant(
+  session: ClassParticipantSession,
+  publisher = true,
+) {
   try {
     const result = await getDatabase().prepare(`UPDATE class_participant_sessions SET
-      companion_reserved=1,companion_publisher_reserved=1
+      companion_reserved=1,companion_publisher_reserved=?
       WHERE id=? AND token_hash=? AND active=1 AND companion_reserved=0
         AND companion_provider_participant_id IS NULL`).bind(
+      publisher ? 1 : 0,
       session.id,
       session.tokenHash,
     ).run();
     if (Number(result.meta?.changes || 0) !== 1) {
       const persisted = await activeSessionAfterMutation(session);
       if (persisted?.companionReserved !== 1
-        || persisted.companionPublisherReserved !== 1
+        || persisted.companionPublisherReserved !== (publisher ? 1 : 0)
         || persisted.companionProviderParticipantId !== null)
         throw new Error("PARTICIPANT_SESSION_CONFLICT");
     }
     session.companionReserved = 1;
-    session.companionPublisherReserved = 1;
+    session.companionPublisherReserved = publisher ? 1 : 0;
   } catch (error) {
     const code = sessionError(error);
     if (code) throw new Error(code);
