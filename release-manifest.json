@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-server-verified-password-20260901-r1",
+  "releaseId": "smartlingo-net-server-verified-password-20260901-r2",
   "site": "smartlingo.net",
   "title": {
     "en": "Server-verified bilingual password updates",
@@ -69,4 +69,3 @@
     ]
   }
 }
-
