@@ -40,3 +40,10 @@ test("webinar promotion keeps the viewer connected until device permission is re
   assert.match(client, /preparedAudioTrack:\s*permission\.getAudioTracks\(\)\[0\]/);
   assert.match(client, /preparedVideoTrack:\s*permission\.getVideoTracks\(\)\[0\]/);
 });
+
+test("viewer-to-publisher rotation reports the replaced presence before joining again", () => {
+  const connect = client.match(/const connect = useCallback\([\s\S]*?\n    \[client, disconnect,/)?.[0] || "";
+  assert.match(connect, /if \(client && joined\) await disconnect\(true\)/);
+  assert.doesNotMatch(connect, /if \(client && joined\) await disconnect\(false\)/);
+  assert.ok(connect.indexOf("await disconnect(true)") < connect.indexOf("fetch(`/api/classrooms/${room.code}/join`"));
+});

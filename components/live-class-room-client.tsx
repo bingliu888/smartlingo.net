@@ -1216,7 +1216,10 @@ export function LiveClassRoomClient({
       setError("");
       let provisionalSessionToken = "";
       try {
-        if (client && joined) await disconnect(false);
+        // Report the replaced viewer session before rotating to a publisher
+        // session. Otherwise the old D1 presence row remains active until its
+        // heartbeat expires and the room briefly shows a ghost participant.
+        if (client && joined) await disconnect(true);
         const response = await fetch(`/api/classrooms/${room.code}/join`, {
             method: "POST",
             headers: { "content-type": "application/json" },
