@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-publisher-viewer-companions-20260901",
+  "releaseId": "smartlingo-net-gold-v2-late-companion-discovery-window-20260901",
   "site": "smartlingo.net",
   "title": {
     "en": "Gold v2 publisher and viewer companions",
@@ -14,6 +14,7 @@
     "en": [
       "Allow non-host participants to join the shared-media companion as subscribe-only viewers without consuming a publisher reservation or another human seat.",
       "Create the host companion from a video-capable preset so camera, file, web, and whiteboard tracks are actually published instead of remaining local previews.",
+      "Extend the bounded companion discovery window through 12 seconds so eventually consistent provider peers are found without continuous paging.",
       "Reconcile subscribed participant maps every 750 ms while shared media is active so a delayed live track renders even when the SDK mutates it without an event.",
       "Keep bounded companion discovery and delayed-track reconciliation active in background meeting tabs so four-tab participants receive remote camera, file, web, and whiteboard media.",
       "Discover all joined companion peers, subscribe their late video tracks, and reconcile participant and video update events so remote camera, file, web, and whiteboard content renders reliably.",
@@ -23,6 +24,7 @@
     "zh": [
       "允许非主持人以只订阅观众身份加入共享媒体伴随连接，且不占发布名额或额外人类席位。",
       "以具备视频能力的预设创建主持人伴随连接，使摄像头、文件、网页及白板轨道真正发布，而非仅停留在本地预览。",
+      "把有界伴随参与者发现窗口延长至 12 秒，在不持续分页的前提下发现服务商最终一致性延迟的参与者。",
       "共享媒体激活期间每 750 毫秒协调一次已订阅参与者映射，使 SDK 未触发事件而延迟写入的实时轨道仍可渲染。",
       "让后台会议标签页继续执行有界伴随参与者发现及延迟轨道协调，使四标签页参与者可收到远端摄像头、文件、网页及白板媒体。",
       "发现全部已加入的伴随参与者、订阅其延迟视频轨道，并协调参与者及视频更新事件，使远端摄像头、文件、网页和白板内容可靠显示。",

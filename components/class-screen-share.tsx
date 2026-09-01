@@ -123,7 +123,7 @@ function ClassCompanionCameraStage({client,lang,localTrack}:{client:RTKClient;la
   useEffect(()=>{
     let cancelled=false;const timers:number[]=[];
     const discover=async()=>{try{const peers=await client.participants.getAllJoinedPeers("",100,0)as unknown as ScreenPeer[];if(cancelled)return;const remote=peers.filter(peer=>peer.id!==client.self.id);setDiscovered(current=>current.length===remote.length&&current.every((peer,index)=>peer.id===remote[index]?.id)?current:remote);const missing=remote.map(peer=>peer.id).filter(id=>!subscribedRef.current.has(id));if(missing.length){missing.forEach(id=>subscribedRef.current.add(id));await client.participants.subscribe(missing,["video"]).catch(()=>missing.forEach(id=>subscribedRef.current.delete(id)))}setRevision(value=>value+1)}catch{}};
-    for(const delay of[0,1500,4000])timers.push(window.setTimeout(()=>void discover(),delay));
+    for(const delay of[0,1500,4000,8000,12000])timers.push(window.setTimeout(()=>void discover(),delay));
     const onVisible=()=>{if(!document.hidden)void discover()};document.addEventListener("visibilitychange",onVisible);
     return()=>{cancelled=true;timers.forEach(timer=>window.clearTimeout(timer));document.removeEventListener("visibilitychange",onVisible)};
   },[client]);
