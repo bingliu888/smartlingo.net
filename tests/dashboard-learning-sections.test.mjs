@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { subscribedCourseHref } from "../lib/dashboard-learning-links.ts";
 
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),"utf8");
 
@@ -20,4 +21,12 @@ test("feature add actions lead to their own language or course selection pages",
   for(const marker of ["/smartcards","/play/challenge","/play/everyday","/programs"])assert.match(hub,new RegExp(marker.replaceAll("/","\\/")));
   assert.match(setup,/No course choice is required/);
   assert.match(setup,/course_\$\{target\.code\}_basic\/sprint/);
+});
+
+test("subscribed course links pass the selected language through the classes target contract",()=>{
+  assert.equal(subscribedCourseHref("zh","en"),"/zh/classes?mine=1&target=en");
+  assert.equal(subscribedCourseHref("es","it"),"/es/classes?mine=1&target=it");
+  const url=new URL(subscribedCourseHref("ja","es"),"https://smartlingo.net");
+  assert.equal(url.searchParams.get("target"),"es");
+  assert.equal(url.searchParams.has("language"),false);
 });

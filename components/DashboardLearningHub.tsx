@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { subscribedCourseHref } from "../lib/dashboard-learning-links";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import { interfaceLanguages, interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
 import styles from "./DashboardLearningHub.module.css";
@@ -19,7 +20,7 @@ function featureHref(feature: Feature, lang: InterfaceLanguage, language: string
   if (feature === "smartcards") return `/${lang}/smartcards/starter-${language}`;
   if (feature === "challenge") return `/${lang}/play/challenge?language=${language}`;
   if (feature === "everyday") return `/${lang}/play/everyday?language=${language}`;
-  return `/${lang}/classes?mine=1&language=${language}`;
+  return subscribedCourseHref(lang, language);
 }
 
 function addHref(feature: Feature, lang: InterfaceLanguage) {

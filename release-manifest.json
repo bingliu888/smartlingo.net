@@ -1,145 +1,99 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-versioned-av-companion-20260901",
+  "releaseId": "smartlingo-net-qa-day12-course-target-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 versioned full A/V companion preset",
-    "zh": "Gold v2 版本化完整 A/V 伴随连接预设"
+    "en": "21-day real-learning acceptance day 12 and course-target navigation fix",
+    "zh": "21 天真实学习验收第 12 天与课程目标语言导航修复"
   },
   "purpose": {
-    "en": "Correct the generic Gold v2 audio-room companion lifecycle defect found during four-participant Chrome acceptance so shared camera, file, web, and whiteboard media reuse the current human tab session instead of consuming a fifth tab lease.",
-    "zh": "修正在 Chrome 四人验收中发现的 Gold v2 通用音频房间共享伴随连接生命周期缺陷，使摄像头、文件、网页及白板共享复用当前用户标签页会话，不再占用第五码标签页租约。"
+    "en": "Publish the September 1 four-language production learning acceptance and fix the reproducible Server Components navigation error on subscribed-course links from the learner dashboard.",
+    "zh": "发布 9 月 1 日四语生产学习验收结果，并修复学员 Dashboard 已订阅课程链接可复现的 Server Components 导航错误。"
   },
   "features": {
     "en": [
-      "Version video-capable audio-room companion preset names so existing pure-audio provider templates cannot retain stale media configuration.",
-      "Clone video-capable audio-room companions from the verified full A/V host preset so local camera and canvas tracks are delivered to remote participants.",
-      "Read back the persisted companion reservation when D1 reports a false zero change count, preventing a successful claim from being misreported as a replaced classroom tab.",
-      "Bind the isolated shared-media companion to its current host tab session so four human tabs can remain online while camera, file, web, whiteboard, or screen media is published.",
-      "Grant the isolated audio-room companion publisher video permission required for camera, file, web, and whiteboard tracks.",
-      "Render every live audio-room companion video track from its live MediaStreamTrack and recognize camera, file, web, and whiteboard sources.",
-      "Keep the live course status horizontal and readable while preserving every media control at desktop widths.",
-      "Use fresh verified Clerk identity for administration, payment synchronization, co-host management, private-course access, and publishing actions.",
-      "Verify SmartPay3 transaction receipts, payouts, token transfers, confirmation depth, account RefID, and payer wallet before idempotently granting one course entitlement.",
-      "Allow one payer wallet to fund distinct SmartLingo accounts safely because account credit remains bound to the unique RefID rather than wallet exclusivity.",
-      "Provide generation-scoped Group Call, Webinar, and Broadcast sessions with four-tab human limits, 100-person Group capacity, nine-publisher staged capacity, and two-hour generations.",
-      "Keep silent viewers connected when a publisher leaves and add durable provider, participant, room, recording, file, and deletion recovery.",
-      "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
+      "Route each subscribed-course dashboard link through the classes page's supported target query parameter.",
+      "Publish bilingual Project evidence for English, Japanese, Spanish, and Italian real-learning coverage."
     ],
     "zh": [
-      "为具备视频能力的音频房间伴随连接预设名称增加版本，避免既有纯音频服务商模板保留过期媒体配置。",
-      "从已验证的完整 A/V 主持人预设克隆具备视频能力的音频房间伴随连接，使本地摄像头及画布轨道可传送至远端参与者。",
-      "当 D1 错误报告零变更时回读持久化的伴随连接预留，避免把成功认领误报为课堂标签页已被替换。",
-      "将隔离的共享媒体伴随连接绑定到当前主持人标签页会话，使四个用户标签页保持在线时仍可发布摄像头、文件、网页、白板或屏幕媒体。",
-      "向隔离的音频房间共享发布者授予摄像头、文件、网页及白板轨道所需的视频发布权限。",
-      "依据实时 MediaStreamTrack 渲染音频房间的全部共享视频轨道，并识别摄像头、文件、网页及白板来源。",
-      "在桌面宽度下保持实时课程状态横向清晰可读，同时保留全部媒体控制。",
-      "对管理、付款同步、共同教师管理、专属课程访问及发布操作使用新鲜且已验证的 Clerk 身份。",
-      "在幂等授予一次课程权益前验证 SmartPay3 交易收据、分账、代币转账、确认深度、账户 RefID 及付款钱包。",
-      "允许同一付款钱包安全地为不同 SmartLingo 账户付款，因为账户入账仍绑定唯一 RefID，而不依赖钱包排他性。",
-      "提供按代际隔离的 Group Call、Webinar 与 Broadcast 会话，执行每人四标签页、Group 100 人、舞台 9 位发布者及两小时代际边界。",
-      "发布者离开时保持静默观众连接，并新增服务商、参与者、房间、录音、文件及删除流程的持久恢复。",
-      "新增私有课程材料、分片播放列表、录音产物、字节范围传输、账户存储配额、人工智能每日配额及可恢复清理。"
+      "让 Dashboard 的每个已订阅课程链接使用课程页支持的 target 查询参数。",
+      "发布英语、日语、西班牙语及意大利语真实学习覆盖的双语 Project 证据。"
     ]
   },
   "affected": {
     "en": [
-      "Claim, attach, recover, and release the provider companion participant on the parent participant session without revoking the parent classroom connection or incrementing the per-human tab count.",
-      "SmartLingo Group Call and audio Webinar companion camera/content stages and their regression contract.",
-      "SmartLingo desktop live-classroom header layout and its regression contract.",
-      "SmartLingo Clerk session identity, administrator and course authorization, SmartPay3 course-payment synchronization, live classroom lifecycle, RealtimeKit media, private R2 files, recording, AI use, scheduled maintenance, and exact deployment evidence."
+      "Learner Dashboard course navigation and its target-language selection contract.",
+      "Administrator Project release history only; no payment, referral, certificate, or entitlement schema is changed."
     ],
     "zh": [
-      "在主参与者会话上认领、附加、恢复及释放服务商伴随参与者，不撤销主课堂连接，也不增加每位用户的标签页计数。",
-      "SmartLingo Group Call 与音频 Webinar 的共享摄像头／内容舞台及其回归契约。",
-      "SmartLingo 桌面端实时课堂顶部布局及其回归契约。",
-      "SmartLingo Clerk 会话身份、管理员与课程授权、SmartPay3 课程付款同步、实时课堂生命周期、RealtimeKit 媒体、私有 R2 文件、录音、人工智能使用、定时维护及精确部署证据。"
+      "学员 Dashboard 课程导航及其目标语言选择契约。",
+      "仅更新管理员 Project 发布历史；付款、推荐、证书及课程权益架构均不变。"
     ]
   },
   "changes": {
     "en": [
-      "Allow a screen-share companion in an audio room to produce video while keeping its microphone disabled and its identity isolated from the normal online count.",
-      "Treat a live local or remote companion MediaStreamTrack as authoritative even when the provider videoEnabled flag is delayed, and include File, Web, and Whiteboard suffixes in remote source discovery.",
-      "Allow the desktop room header to wrap, keep the status cluster intrinsically sized, prevent status text wrapping, and let the complete toolbar occupy a bounded flexible row.",
-      "Add three additive D1 migrations for identity and commerce hardening, realtime generation state and capacity triggers, and private storage reservation ledgers.",
-      "Replace new classroom password writes with PBKDF2-SHA256 while retaining read-only compatibility for existing SHA-256 values.",
-      "Require tab-scoped participant credentials for media mutations, moderation, sharing, recording, heartbeat, and Leave.",
-      "Read back the exact newly generated participant-session id before interpreting D1 batch metadata and release provisional tab leases after failed browser joins.",
-      "Bound request bodies, provider responses and deadlines, AI daily use, account request rates, polling cadence, cron work, and R2 cleanup batches.",
-      "Replace the one-stage deployment with exact-commit validation, mutation, and Project-evidence jobs using pinned actions and migration-before-deploy ordering.",
-      "Read the public Clerk key from reviewed Worker configuration and preserve existing site-owned Clerk, AI, and WalletConnect secrets instead of requiring duplicate GitHub secret names.",
-      "Build the exact Worker before running source contracts that exercise the compiled referral redirect, so a clean CI checkout validates the same artifact as local release gates.",
-      "Resolve the reviewed site-owned RealtimeKit app by its immutable UUID from a complete paginated app page, while retaining a SmartLingo ownership-name guard instead of filtering out valid display-name variants.",
-      "Replace the nonexistent legacy smartlingo_voice preset with the verified role-matched group-call guest, participant, and host presets used as sources for Gold least-privilege audio variants.",
-      "Provision the private class-file R2 bucket idempotently through Cloudflare's exact bucket endpoint, avoiding false absence from the default 20-bucket list page.",
-      "Keep the reviewed RealtimeKit app UUID as a non-secret Worker configuration variable and write only the sensitive provider token as a Worker secret."
+      "Add a directly testable subscribed-course URL builder and replace the unsupported language query key with target.",
+      "Add a behavioral regression proving the selected target survives URL parsing and the obsolete key is absent."
     ],
     "zh": [
-      "允许音频房间的共享伴随参与者发布视频，同时保持麦克风禁用，并使其身份与普通在线人数隔离。",
-      "在服务商 videoEnabled 标志延迟时仍以本地或远端 live MediaStreamTrack 为准，并在远端来源发现中加入 File、Web 与 Whiteboard 后缀。",
-      "允许桌面端房间顶部换行，保持状态区按内容确定宽度，禁止状态文字换行，并让完整工具栏使用有边界的弹性行。",
-      "新增三项累加式 D1 迁移，覆盖身份与商业加固、实时房间代际状态和容量触发器，以及私有存储预留账本。",
-      "课堂密码的新写入改为 PBKDF2-SHA256，同时只读兼容既有 SHA-256 值。",
-      "媒体变更、管理、分享、录音、心跳及离开操作均要求标签页级参与者凭证。",
-      "在解释 D1 批处理元数据前回读精确的新参与者会话 ID，并在浏览器加入失败后释放临时标签租约。",
-      "限制请求体、服务商响应与超时、人工智能每日用量、账户请求频率、轮询节奏、定时任务工作量和 R2 清理批次。",
-      "以固定版本 Actions 和先迁移后部署顺序，将单阶段部署替换为精确提交验证、生产变更及 Project 证据三个任务。",
-      "从已审阅的 Worker 配置读取公开 Clerk 密钥，并保留现有站点独立 Clerk、AI 与 WalletConnect 密钥，不要求重复的 GitHub Secret 名称。",
-      "在运行会调用已编译推荐跳转的源码契约前先构建精确 Worker，使干净 CI 检出验证与本地发布门禁相同的产物。",
-      "从完整分页应用列表按不可变 UUID 解析已审阅的站点专属 RealtimeKit 应用，同时保留 SmartLingo 所属名称校验，避免有效显示名变体被错误过滤。",
-      "以已验证且角色匹配的群组通话访客、成员与主持人预设替代不存在的旧 smartlingo_voice 预设，作为 Gold 最小权限音频变体的来源。",
-      "通过 Cloudflare 精确桶接口幂等配置私有课堂文件 R2 桶，避免默认 20 桶列表分页造成的错误缺失判断。",
-      "将已审阅的 RealtimeKit 应用 UUID 保持为非敏感 Worker 配置变量，仅把敏感服务商令牌写为 Worker Secret。"
+      "新增可直接测试的已订阅课程 URL 构造函数，并把不受支持的 language 查询键替换为 target。",
+      "新增行为回归测试，证明 URL 解析后目标语言仍然存在，且旧查询键不再出现。"
     ]
   },
   "validation": {
     "en": [
-      "Pass all source contracts, including parent-session companion lifecycle, live-track, and source-suffix regression checks, plus TypeScript, zero-warning ESLint, production CI build, artifact and sensitive-data verification, and git whitespace checks before deployment.",
-      "Replay all 72 migrations into an empty isolated D1 twice and verify the Gold v2 identity, lifecycle, capacity, storage, and cleanup objects with no foreign-key violations.",
-      "Pass every source contract test, SmartPay3 compilation, TypeScript, zero-warning ESLint, production build, rendered Worker test, artifact validation, runtime-layout verification, and git whitespace check.",
-      "Preserve the 48,000-item, twelve-language vocabulary catalog, published pronunciation metadata, difficulty, frequency, grade-level, learning, referral, and certificate boundaries.",
-      "Require GitHub Actions to verify the dedicated SmartLingo RealtimeKit app and presets before production mutation, deploy the exact commit, probe apex/www and protected routes, and publish matching Project evidence."
+      "America/Los_Angeles date 2026-09-01; anonymous GitHub preflight run 33495295098 passed all 32 route checks for day 12.",
+      "Sentence-catalog contracts passed 21/21, covering 36 courses with 120 sentences each and unique ten-item daily rounds.",
+      "The dedicated test learner completed real production course vocabulary, reading, writing, listening, and dialogue in English, Japanese, Spanish, and Italian; each language persisted five measured learning minutes.",
+      "Five-minute Sprints completed at EN 80, JA 80, ES 80, and IT 60; score history and each language's Today’s Sprint Top 25 category were verified.",
+      "SmartCard Practice answer-feedback-continue completed in all four languages; each legitimate correct answer created +10 course credit.",
+      "SmartCard Challenge answer-feedback-auto-advance completed in all four languages, including the six-second transition; no completion score was fabricated.",
+      "One beginner airport Everyday Speaking scene completed in all four languages with normal and slow playback controls; repeat-after-me remained off and no microphone permission was requested.",
+      "AI labels, adult-only Nearby opt-in copy, broad location copy, block/report controls, and four-language AI partner turn-taking pages were verified without enabling location or sending messages.",
+      "Legitimate Sprint rewards were EN +25, JA +25, ES +25, and IT +12; normal challenge, ranking, learning-minute, and course-credit records were expected QA output.",
+      "No payment, referral, certificate, checkout, or entitlement action was invoked. Remote D1 ledger read-back was unavailable locally because no Cloudflare API token was present, so no database-level unchanged claim is synthesized.",
+      "The production error reproduced only for /zh/classes?mine=1&language=en; the control route without the unsupported parameter logged no error."
     ],
     "zh": [
-      "部署前通过全部源码契约（包括绑定主会话的伴随连接生命周期、live 轨道及来源后缀回归检查）、TypeScript、零警告 ESLint、生产 CI 构建、产物与敏感数据验证及 Git 空白检查。",
-      "在空白隔离 D1 中两次重放全部 72 项迁移，并验证 Gold v2 身份、生命周期、容量、存储及清理对象，且无外键违规。",
-      "通过全部源码契约测试、SmartPay3 编译、TypeScript、零警告 ESLint、生产构建、渲染 Worker 测试、产物验证、运行布局验证及 Git 空白检查。",
-      "保留 48,000 项十二语言词汇目录、已发布发音元数据、难度、频率、年级、学习、推荐及证书边界。",
-      "要求 GitHub Actions 在生产变更前验证 SmartLingo 专属 RealtimeKit 应用与预设，部署精确提交，探测 apex/www 及受保护路由，并发布匹配的 Project 证据。"
+      "America/Los_Angeles 日期为 2026-09-01；匿名 GitHub 预检运行 33495295098 通过第 12 天全部 32 项路由检查。",
+      "句子目录契约 21/21 通过，覆盖 36 门课程、每门 120 句及每日 10 个不重复题目。",
+      "专用测试学员在英语、日语、西班牙语和意大利语生产课程中完成词汇、阅读、写作、听力及对话；每种语言均持久化 5 个实测学习分钟。",
+      "四语 5 分钟 Sprint 均完成：英语 80、日语 80、西班牙语 80、意大利语 60；已核对成绩历史及各语言 Today’s Sprint Top 25 分类。",
+      "四语 SmartCard Practice 均完成答题、反馈、继续流程；每次有效正确答案正常产生 +10 课程积分。",
+      "四语 SmartCard Challenge 均完成答题、反馈及 6 秒自动前进；未虚构完成分数。",
+      "四语均完成一个初级机场生活口语场景，并核对正常与慢速播放；跟读始终关闭，未请求麦克风权限。",
+      "已核对 AI 标识、Nearby 仅限成人主动选择说明、宽泛位置说明、屏蔽／举报控件及四语 AI 伙伴轮流对话页面；未开启定位，也未发送消息。",
+      "Sprint 正常奖励为英语 +25、日语 +25、西班牙语 +25、意大利语 +12；挑战、排名、学习分钟及课程积分记录均为预期 QA 输出。",
+      "未触发付款、推荐、证书、结账或权益操作。因本地没有 Cloudflare API 令牌，远程 D1 账本无法只读回查，因此不合成数据库级‘未变化’结论。",
+      "生产错误仅在 /zh/classes?mine=1&language=en 复现；不含不支持参数的对照路由没有控制台错误。"
     ]
   },
   "deferred": {
     "en": [
-      "Chrome four-participant Group Call and Webinar acceptance resumes immediately after this exact deployment; Safari remains the browser for non-multi-session production checks.",
-      "No SmartMeeting, SmartNCT, or GeniusWallet production member data, credentials, provider identifiers, prices, contracts, or release history are copied."
+      "Physical-device microphone recognition and repeat-after-me remain outside this no-microphone acceptance.",
+      "Remote database-level payment, referral, and certificate ledger read-back requires deployment credentials and remains explicitly unverified by the local QA session."
     ],
     "zh": [
-      "此精确版本部署后立即继续 Chrome 四人 Group Call 与 Webinar 验收；非多会话正式站检查仍使用 Safari。",
-      "不复制 SmartMeeting、SmartNCT 或 GeniusWallet 的生产会员数据、凭据、服务商标识、价格、合约或发布历史。"
+      "真实设备麦克风识别与跟读不在本次无麦克风验收范围内。",
+      "付款、推荐及证书账本的远程数据库级回查需要部署凭据，本地 QA 会话明确未对此作验证。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo branding, twelve-language navigation, fixed official courses, vocabulary and sentence catalogs, learning paths, AI partners, score history, referrals, certificates, and education disclaimers.",
-      "Map shared meeting concepts to SmartLingo Course, classroom, teacher, co-host, learner, and /classrooms routes.",
-      "Retain SmartLingo-owned Clerk application, D1 database, R2 buckets, RealtimeKit app and credentials, SmartPay3 contract, token settings, wallets, course prices, GitHub repository, Cloudflare Worker, and domains."
+      "Preserve SmartLingo's Chinese interface, twelve-language routing, official course catalog, learning records, score history, AI safety labels, and education disclaimers.",
+      "Limit the implementation to the SmartLingo learner-dashboard link contract; shared site architecture is unchanged."
     ],
     "zh": [
-      "保留 SmartLingo 品牌、十二语言导航、固定正式课程、词汇与句子目录、学习路径、人工智能伙伴、分数历史、推荐、证书及教育免责声明。",
-      "将共享会议概念适配为 SmartLingo 的课程、课堂、教师、共同教师、学员及 /classrooms 路由。",
-      "保留 SmartLingo 独立拥有的 Clerk 应用、D1 数据库、R2 存储桶、RealtimeKit 应用与凭据、SmartPay3 合约、代币设置、钱包、课程价格、GitHub 仓库、Cloudflare Worker 和域名。"
+      "保留 SmartLingo 中文界面、十二语言路由、正式课程目录、学习记录、成绩历史、AI 安全标识及教育免责声明。",
+      "实现仅限 SmartLingo 学员 Dashboard 链接契约；共享站点架构不变。"
     ]
   },
   "dataMigration": {
     "included": false,
-    "migrations": [
-      "0175_gold_v2_identity_commerce.sql",
-      "0176_gold_v2_realtime_lifecycle.sql",
-      "0177_gold_v2_private_storage.sql"
-    ],
+    "migrations": [],
     "rollback": {
-      "en": "The Gold v2 schema changes are additive except for the wallet-binding key migration. Roll back the Worker first; preserve Gold v2 tables and columns for forward recovery, and restore the prior one-wallet-per-account binding table only from a verified pre-migration D1 backup if a full data rollback is explicitly required.",
-      "zh": "Gold v2 架构除钱包绑定主键迁移外均为累加式。回退时先恢复上一版 Worker；保留 Gold v2 表与字段以便向前恢复，仅在明确需要完整数据回退时，才从已验证的迁移前 D1 备份恢复原有每账户一钱包绑定表。"
+      "en": "No data migration is included; restore the preceding Worker release to roll back the navigation change.",
+      "zh": "本次不含数据迁移；如需回退导航变化，恢复上一版 Worker 即可。"
     }
   }
 }
