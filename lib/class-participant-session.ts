@@ -26,6 +26,7 @@ export type ClassParticipantSession = {
   tokenHash: string;
   providerMeetingId: string | null;
   providerParticipantId: string | null;
+  companionProviderParticipantId: string | null;
   publisherReserved: number;
   companionReserved: number;
   companionPublisherReserved: number;
@@ -43,6 +44,7 @@ const SESSION_SELECT = `SELECT id,room_id AS roomId,generation,
   user_id AS userId,display_name AS displayName,role,token_hash AS tokenHash,
   provider_meeting_id AS providerMeetingId,
   provider_participant_id AS providerParticipantId,
+  companion_provider_participant_id AS companionProviderParticipantId,
   publisher_reserved AS publisherReserved,companion_reserved AS companionReserved,
   companion_publisher_reserved AS companionPublisherReserved,
   publisher_started_at AS publisherStartedAt,
@@ -399,15 +401,93 @@ export async function attachProviderParticipant(
     .bind(attemptId).run();
 }
 
+export async function claimCompanionParticipant(session: ClassParticipantSession) {
+  try {
+    const result = await getDatabase().prepare(`UPDATE class_participant_sessions SET
+      companion_reserved=1,companion_publisher_reserved=1
+      WHERE id=? AND token_hash=? AND active=1 AND companion_reserved=0
+        AND companion_provider_participant_id IS NULL`).bind(
+      session.id,
+      session.tokenHash,
+    ).run();
+    if (Number(result.meta?.changes || 0) !== 1)
+      throw new Error("PARTICIPANT_SESSION_CONFLICT");
+    session.companionReserved = 1;
+    session.companionPublisherReserved = 1;
+  } catch (error) {
+    const code = sessionError(error);
+    if (code) throw new Error(code);
+    throw error;
+  }
+}
+
+export async function attachCompanionParticipant(
+  session: ClassParticipantSession,
+  attemptId: string,
+  providerMeetingId: string,
+  participantId: string,
+) {
+  const result = await getDatabase().prepare(`UPDATE class_participant_sessions SET
+    provider_meeting_id=?,companion_provider_participant_id=?
+    WHERE id=? AND active=1 AND token_hash=? AND companion_reserved=1`).bind(
+    providerMeetingId,
+    participantId,
+    session.id,
+    session.tokenHash,
+  ).run();
+  if (Number(result.meta?.changes || 0) !== 1) {
+    const persisted = await activeSessionAfterMutation(session);
+    if (persisted?.providerMeetingId !== providerMeetingId
+      || persisted.companionProviderParticipantId !== participantId) {
+      const now = nowSeconds();
+      await getDatabase().prepare(`INSERT INTO provider_participant_cleanup_jobs(
+        provider_meeting_id,provider_participant_id,room_id,participant_session_id,
+        attempts,next_attempt_at,requested_at,updated_at
+      ) VALUES(?,?,?,?,0,?,?,?) ON CONFLICT(provider_meeting_id,provider_participant_id)
+        DO UPDATE SET next_attempt_at=MIN(next_attempt_at,excluded.next_attempt_at),updated_at=excluded.updated_at`)
+        .bind(providerMeetingId, participantId, session.roomId, session.id, now, now, now).run();
+      throw new Error("PARTICIPANT_SESSION_REPLACED");
+    }
+  }
+  session.providerMeetingId = providerMeetingId;
+  session.companionProviderParticipantId = participantId;
+  await getDatabase().prepare("DELETE FROM provider_participant_create_attempts WHERE id=?")
+    .bind(attemptId).run();
+}
+
+export async function releaseCompanionParticipant(session: ClassParticipantSession) {
+  if (session.providerMeetingId && session.companionProviderParticipantId) {
+    const now = nowSeconds();
+    await getDatabase().prepare(`INSERT INTO provider_participant_cleanup_jobs(
+      provider_meeting_id,provider_participant_id,room_id,participant_session_id,
+      attempts,next_attempt_at,requested_at,updated_at
+    ) VALUES(?,?,?,?,0,?,?,?) ON CONFLICT(provider_meeting_id,provider_participant_id)
+      DO UPDATE SET next_attempt_at=MIN(next_attempt_at,excluded.next_attempt_at),updated_at=excluded.updated_at`)
+      .bind(session.providerMeetingId, session.companionProviderParticipantId,
+        session.roomId, session.id, now, now, now).run();
+  }
+  await getDatabase().prepare(`UPDATE class_participant_sessions SET
+    companion_provider_participant_id=NULL,companion_reserved=0,
+    companion_publisher_reserved=0 WHERE id=? AND token_hash=? AND active=1`).bind(
+    session.id,
+    session.tokenHash,
+  ).run();
+  session.companionProviderParticipantId = null;
+  session.companionReserved = 0;
+  session.companionPublisherReserved = 0;
+}
+
 export async function abandonDefiniteParticipantAttempt(attemptId: string, error: unknown) {
   if (providerParticipantCreateFailureIsDefinite(error)) {
     await getDatabase().prepare("DELETE FROM provider_participant_create_attempts WHERE id=?")
       .bind(attemptId).run();
+    return true;
   } else {
     const message = error instanceof Error ? error.message.slice(0, 240) : "Ambiguous provider response";
     await getDatabase().prepare(`UPDATE provider_participant_create_attempts SET
       attempts=attempts+1,next_check_at=?,last_error=?,updated_at=? WHERE id=?`)
       .bind(nowSeconds() + 30, message, nowSeconds(), attemptId).run();
+    return false;
   }
 }
 
@@ -438,15 +518,18 @@ export async function releasePublisherIfIdle(session: ClassParticipantSession) {
 }
 
 async function queueSessionProviderRemoval(session: ClassParticipantSession) {
-  if (!session.providerMeetingId || !session.providerParticipantId) return;
+  if (!session.providerMeetingId) return;
   const now = nowSeconds();
-  await getDatabase().prepare(`INSERT INTO provider_participant_cleanup_jobs(
-    provider_meeting_id,provider_participant_id,room_id,participant_session_id,
-    attempts,next_attempt_at,requested_at,updated_at
-  ) VALUES(?,?,?,?,0,?,?,?) ON CONFLICT(provider_meeting_id,provider_participant_id)
-    DO UPDATE SET next_attempt_at=MIN(next_attempt_at,excluded.next_attempt_at),updated_at=excluded.updated_at`)
-    .bind(session.providerMeetingId, session.providerParticipantId, session.roomId,
-      session.id, now, now, now).run();
+  for (const participantId of [session.providerParticipantId, session.companionProviderParticipantId]) {
+    if (!participantId) continue;
+    await getDatabase().prepare(`INSERT INTO provider_participant_cleanup_jobs(
+      provider_meeting_id,provider_participant_id,room_id,participant_session_id,
+      attempts,next_attempt_at,requested_at,updated_at
+    ) VALUES(?,?,?,?,0,?,?,?) ON CONFLICT(provider_meeting_id,provider_participant_id)
+      DO UPDATE SET next_attempt_at=MIN(next_attempt_at,excluded.next_attempt_at),updated_at=excluded.updated_at`)
+      .bind(session.providerMeetingId, participantId, session.roomId,
+        session.id, now, now, now).run();
+  }
 }
 
 export async function revokeParticipantSession(
@@ -518,11 +601,17 @@ export async function cleanupRevokedProviderParticipants(limit = 25) {
 
 export async function recoverAmbiguousParticipantCreates(limit = 10) {
   const now = nowSeconds();
-  const attempts = (await getDatabase().prepare(`SELECT id,provider_meeting_id AS providerMeetingId,
+  const attempts = (await getDatabase().prepare(`SELECT id,participant_session_id AS participantSessionId,
+    provider_meeting_id AS providerMeetingId,
     custom_participant_id AS customParticipantId,not_found_confirmations AS notFoundConfirmations,
     attempts FROM provider_participant_create_attempts WHERE next_check_at<=?
     ORDER BY next_check_at,updated_at LIMIT ?`).bind(now, Math.max(1, Math.min(25, limit)))
-    .run<{ id: string; providerMeetingId: string; customParticipantId: string; notFoundConfirmations: number; attempts: number }>()).results || [];
+    .run<{ id: string; participantSessionId: string; providerMeetingId: string; customParticipantId: string; notFoundConfirmations: number; attempts: number }>()).results || [];
+  const clearRecoveredCompanionClaim = async (participantSessionId: string) => {
+    await getDatabase().prepare(`UPDATE class_participant_sessions SET
+      companion_reserved=0,companion_publisher_reserved=0
+      WHERE id=? AND companion_provider_participant_id IS NULL`).bind(participantSessionId).run();
+  };
   for (const attempt of attempts) {
     try {
       const participant = await findProviderParticipantByCustomId(
@@ -533,12 +622,14 @@ export async function recoverAmbiguousParticipantCreates(limit = 10) {
         await removeProviderParticipant(attempt.providerMeetingId, participant.id);
         await getDatabase().prepare("DELETE FROM provider_participant_create_attempts WHERE id=?")
           .bind(attempt.id).run();
+        await clearRecoveredCompanionClaim(attempt.participantSessionId);
         continue;
       }
       const confirmations = Number(attempt.notFoundConfirmations || 0) + 1;
       if (confirmations >= 3) {
         await getDatabase().prepare("DELETE FROM provider_participant_create_attempts WHERE id=?")
           .bind(attempt.id).run();
+        await clearRecoveredCompanionClaim(attempt.participantSessionId);
       } else {
         await getDatabase().prepare(`UPDATE provider_participant_create_attempts SET
           not_found_confirmations=?,attempts=attempts+1,next_check_at=?,last_error=NULL,updated_at=? WHERE id=?`)

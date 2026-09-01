@@ -1,17 +1,18 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-audio-share-publisher-20260901",
+  "releaseId": "smartlingo-net-gold-v2-parent-bound-companion-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 audio-room shared-media publishing",
-    "zh": "Gold v2 音频房间共享媒体发布"
+    "en": "Gold v2 parent-bound shared-media companion",
+    "zh": "Gold v2 绑定主会话的共享媒体伴随连接"
   },
   "purpose": {
-    "en": "Correct the generic Gold v2 audio-room companion publisher and stage defects found during four-participant Chrome acceptance so live camera, file, web, and whiteboard tracks are permitted and render locally and remotely without changing SmartLingo product or provider boundaries.",
-    "zh": "修正在 Chrome 四人验收中发现的 Gold v2 通用音频房间共享发布权限与舞台缺陷，使实时摄像头、文件、网页与白板轨道获得发布权限并可在本地及远端显示，且不改变 SmartLingo 产品或服务商边界。"
+    "en": "Correct the generic Gold v2 audio-room companion lifecycle defect found during four-participant Chrome acceptance so shared camera, file, web, and whiteboard media reuse the current human tab session instead of consuming a fifth tab lease.",
+    "zh": "修正在 Chrome 四人验收中发现的 Gold v2 通用音频房间共享伴随连接生命周期缺陷，使摄像头、文件、网页及白板共享复用当前用户标签页会话，不再占用第五码标签页租约。"
   },
   "features": {
     "en": [
+      "Bind the isolated shared-media companion to its current host tab session so four human tabs can remain online while camera, file, web, whiteboard, or screen media is published.",
       "Grant the isolated audio-room companion publisher video permission required for camera, file, web, and whiteboard tracks.",
       "Render every live audio-room companion video track from its live MediaStreamTrack and recognize camera, file, web, and whiteboard sources.",
       "Keep the live course status horizontal and readable while preserving every media control at desktop widths.",
@@ -23,6 +24,7 @@
       "Add private course materials, multipart playlists, recording artifacts, byte-range delivery, account storage quotas, AI daily quotas, and recoverable cleanup."
     ],
     "zh": [
+      "将隔离的共享媒体伴随连接绑定到当前主持人标签页会话，使四个用户标签页保持在线时仍可发布摄像头、文件、网页、白板或屏幕媒体。",
       "向隔离的音频房间共享发布者授予摄像头、文件、网页及白板轨道所需的视频发布权限。",
       "依据实时 MediaStreamTrack 渲染音频房间的全部共享视频轨道，并识别摄像头、文件、网页及白板来源。",
       "在桌面宽度下保持实时课程状态横向清晰可读，同时保留全部媒体控制。",
@@ -36,11 +38,13 @@
   },
   "affected": {
     "en": [
+      "Claim, attach, recover, and release the provider companion participant on the parent participant session without revoking the parent classroom connection or incrementing the per-human tab count.",
       "SmartLingo Group Call and audio Webinar companion camera/content stages and their regression contract.",
       "SmartLingo desktop live-classroom header layout and its regression contract.",
       "SmartLingo Clerk session identity, administrator and course authorization, SmartPay3 course-payment synchronization, live classroom lifecycle, RealtimeKit media, private R2 files, recording, AI use, scheduled maintenance, and exact deployment evidence."
     ],
     "zh": [
+      "在主参与者会话上认领、附加、恢复及释放服务商伴随参与者，不撤销主课堂连接，也不增加每位用户的标签页计数。",
       "SmartLingo Group Call 与音频 Webinar 的共享摄像头／内容舞台及其回归契约。",
       "SmartLingo 桌面端实时课堂顶部布局及其回归契约。",
       "SmartLingo Clerk 会话身份、管理员与课程授权、SmartPay3 课程付款同步、实时课堂生命周期、RealtimeKit 媒体、私有 R2 文件、录音、人工智能使用、定时维护及精确部署证据。"
@@ -84,14 +88,14 @@
   },
   "validation": {
     "en": [
-      "Pass all 418 source contracts, including the companion live-track and source-suffix regression checks, plus TypeScript, zero-warning ESLint, production CI build, artifact and sensitive-data verification, and git whitespace checks before deployment.",
+      "Pass all source contracts, including parent-session companion lifecycle, live-track, and source-suffix regression checks, plus TypeScript, zero-warning ESLint, production CI build, artifact and sensitive-data verification, and git whitespace checks before deployment.",
       "Replay all 72 migrations into an empty isolated D1 twice and verify the Gold v2 identity, lifecycle, capacity, storage, and cleanup objects with no foreign-key violations.",
       "Pass every source contract test, SmartPay3 compilation, TypeScript, zero-warning ESLint, production build, rendered Worker test, artifact validation, runtime-layout verification, and git whitespace check.",
       "Preserve the 48,000-item, twelve-language vocabulary catalog, published pronunciation metadata, difficulty, frequency, grade-level, learning, referral, and certificate boundaries.",
       "Require GitHub Actions to verify the dedicated SmartLingo RealtimeKit app and presets before production mutation, deploy the exact commit, probe apex/www and protected routes, and publish matching Project evidence."
     ],
     "zh": [
-      "部署前通过全部 418 项源码契约（包括共享舞台 live 轨道及来源后缀回归检查）、TypeScript、零警告 ESLint、生产 CI 构建、产物与敏感数据验证及 Git 空白检查。",
+      "部署前通过全部源码契约（包括绑定主会话的伴随连接生命周期、live 轨道及来源后缀回归检查）、TypeScript、零警告 ESLint、生产 CI 构建、产物与敏感数据验证及 Git 空白检查。",
       "在空白隔离 D1 中两次重放全部 72 项迁移，并验证 Gold v2 身份、生命周期、容量、存储及清理对象，且无外键违规。",
       "通过全部源码契约测试、SmartPay3 编译、TypeScript、零警告 ESLint、生产构建、渲染 Worker 测试、产物验证、运行布局验证及 Git 空白检查。",
       "保留 48,000 项十二语言词汇目录、已发布发音元数据、难度、频率、年级、学习、推荐及证书边界。",

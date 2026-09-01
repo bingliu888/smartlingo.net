@@ -7,6 +7,7 @@ import {
   heartbeatParticipantSession,
   markPublisherMediaState,
   moderatorBanParticipant,
+  releaseCompanionParticipant,
   releasePublisherIfIdle,
   requireParticipantSession,
   reservePublisher,
@@ -230,6 +231,15 @@ export async function POST(
   let session: ClassParticipantSession;
   try { session = await requireSession(request, room, body, action !== "leave"); }
   catch (error) { return sessionFailure(error); }
+
+  if (action === "release-companion") {
+    if (!access.manager || session.role !== "host")
+      return Response.json({ error: "Manager access required" }, { status: 403 });
+    await releaseCompanionParticipant(session);
+    await db.prepare(`UPDATE class_shared_content_state SET active=0,lease_until=?,updated_at=?
+      WHERE room_id=? AND claim_token=?`).bind(now, now, room.id, session.tokenHash).run();
+    return Response.json({ ok: true });
+  }
 
   if (action === "screen-share") {
     if (!access.manager || session.role !== "host")

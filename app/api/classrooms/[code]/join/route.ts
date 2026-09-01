@@ -8,10 +8,14 @@ import {
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
 import {
   abandonDefiniteParticipantAttempt,
+  attachCompanionParticipant,
   attachProviderParticipant,
   beginProviderParticipantAttempt,
+  claimCompanionParticipant,
   classGuestCookieHeader,
   participantCapacity,
+  releaseCompanionParticipant,
+  requireParticipantSession,
   reserveParticipantSession,
   reservePublisher,
   revokeParticipantSession,
@@ -154,13 +158,66 @@ export async function POST(
     return Response.json({ error: "Screen-share companion is unavailable" }, { status: 409 });
   }
 
-  let role: "viewer" | "member" | "host" = access.manager
+  if (companion) {
+    let companionSession: Awaited<ReturnType<typeof requireParticipantSession>> | null = null;
+    let companionAttempt: Awaited<ReturnType<typeof beginProviderParticipantAttempt>> | null = null;
+    try {
+      companionSession = await requireParticipantSession({
+        request,
+        room,
+        token: body.sessionToken,
+      });
+      if (companionSession.role !== "host")
+        throw new Error("PARTICIPANT_SESSION_CONFLICT");
+      await claimCompanionParticipant(companionSession);
+      companionAttempt = await beginProviderParticipantAttempt(companionSession, providerMeetingId);
+      const participant = await createProviderParticipant(
+        providerMeetingId,
+        companionAttempt.customParticipantId,
+        `${displayName} · Screen`,
+        "host",
+        room.streamingMode,
+        room.realtimeMode,
+        { audio: false, video: true, screenshare: true },
+      );
+      await attachCompanionParticipant(
+        companionSession,
+        companionAttempt.id,
+        providerMeetingId,
+        participant.id,
+      );
+      return Response.json({
+        authToken: participant.token,
+        sessionToken: String(body.sessionToken),
+        sessionId: companionSession.id,
+        identity: companionSession.mediaIdentity,
+        role: "host",
+        meetingId: providerMeetingId,
+        generation: room.providerGeneration,
+        streamingMode: room.streamingMode,
+        realtimeMode: room.realtimeMode,
+        manager: true,
+        canPublish: true,
+        emailVerified: Boolean(user?.emailVerified),
+        participantLimit: participantCapacity(room),
+        publisherLimit: room.realtimeMode === "group_call" ? 100 : 9,
+        screenShareCompanion: true,
+      }, { headers: { "cache-control": "no-store" } });
+    } catch (error) {
+      const definite = companionAttempt
+        ? await abandonDefiniteParticipantAttempt(companionAttempt.id, error).catch(() => false)
+        : true;
+      if (companionSession && definite)
+        await releaseCompanionParticipant(companionSession).catch(() => undefined);
+      return joinFailure(error);
+    }
+  }
+
+  const role: "viewer" | "member" | "host" = access.manager
     ? "host"
     : wantsPublish
       ? "member"
       : "viewer";
-  if (companion) role = "host";
-
   let reserved: Awaited<ReturnType<typeof reserveParticipantSession>> | null = null;
   let attempt: Awaited<ReturnType<typeof beginProviderParticipantAttempt>> | null = null;
   try {
@@ -168,25 +225,25 @@ export async function POST(
       request,
       room,
       user,
-      mediaIdentity: companion ? `screenshare:${identity}` : identity,
-      displayName: companion ? `${displayName} · Screen` : displayName,
+      mediaIdentity: identity,
+      displayName,
       role,
       currentToken: body.sessionToken,
     });
-    const publishing = companion || access.manager || wantsPublish;
+    const publishing = access.manager || wantsPublish;
     if (publishing) await reservePublisher(reserved.session);
     attempt = await beginProviderParticipantAttempt(reserved.session, providerMeetingId);
     const allowedMedia = publishing
       ? {
-          audio: !companion,
-          video: companion || room.streamingMode === "video",
+          audio: true,
+          video: room.streamingMode === "video",
           screenshare: access.manager && room.realtimeMode !== "livestream",
         }
       : { audio: false, video: false, screenshare: false };
     const participant = await createProviderParticipant(
       providerMeetingId,
       attempt.customParticipantId,
-      companion ? `${displayName} · Screen` : displayName,
+      displayName,
       role,
       room.streamingMode,
       room.realtimeMode,
@@ -207,9 +264,9 @@ export async function POST(
       last_seen_at=excluded.last_seen_at`).bind(
       createId(),
       room.id,
-      companion ? `screenshare:${identity}` : identity,
+      identity,
       user?.id || null,
-      companion ? `${displayName} · Screen` : displayName,
+      displayName,
       user ? 1 : 0,
       now,
     ).run();
@@ -233,7 +290,7 @@ export async function POST(
       emailVerified: Boolean(user?.emailVerified),
       participantLimit: participantCapacity(room),
       publisherLimit: room.realtimeMode === "group_call" ? 100 : 9,
-      screenShareCompanion: companion,
+      screenShareCompanion: false,
     }, { headers });
   } catch (error) {
     if (attempt) await abandonDefiniteParticipantAttempt(attempt.id, error).catch(() => undefined);
