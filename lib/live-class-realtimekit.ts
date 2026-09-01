@@ -787,7 +787,6 @@ async function securedParticipantPreset(
   // Gold preset for every role/capability combination, then apply the
   // least-privilege permissions below. Unique names also prevent concurrent
   // roles from racing to rewrite one shared preset's moderation permissions.
-  const groupCallSourceName=audio?config.hostAudioPreset:config.hostPreset;
   const presetName = groupCallPeer
     ? groupCallPresetName(meetingMode,role,permitted)
     : participantPresetVariant(basePresetName, role, permitted);
@@ -800,6 +799,11 @@ async function securedParticipantPreset(
       : role === "viewer"
         ? {moderator:false,audio:permitted.audio,video:permitted.video,screenshare:permitted.screenshare,participantList:false,hiddenParticipant:true,livestream:false,stage:false}
         : {moderator,audio:permitted.audio,video:permitted.video,screenshare:permitted.screenshare,participantList:moderator,hiddenParticipant:false,livestream:moderator,stage:true};
+  const groupCallSourceName = permitted.video || permitted.screenshare
+    ? config.hostPreset
+    : audio
+      ? config.hostAudioPreset
+      : config.hostPreset;
   const sourceName = groupCallPeer
     ? groupCallSourceName
     : basePresetName === config.webinarSpeakerPreset && basePresetName !== config.webinarHostPreset
