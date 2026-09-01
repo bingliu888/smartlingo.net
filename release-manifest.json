@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-background-companion-discovery-20260901",
+  "releaseId": "smartlingo-net-gold-v2-delayed-companion-track-reconcile-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 background companion media discovery",
-    "zh": "Gold v2 后台伴随媒体发现"
+    "en": "Gold v2 delayed companion track reconciliation",
+    "zh": "Gold v2 延迟伴随轨道协调"
   },
   "purpose": {
     "en": "Complete the generic Gold v2 audio-room companion fix by keeping bounded provider discovery and delayed-track reconciliation active for valid background meeting tabs during four-participant production acceptance.",
@@ -12,12 +12,14 @@
   },
   "features": {
     "en": [
+      "Reconcile subscribed participant maps every 750 ms while shared media is active so a delayed live track renders even when the SDK mutates it without an event.",
       "Keep bounded companion discovery and delayed-track reconciliation active in background meeting tabs so four-tab participants receive remote camera, file, web, and whiteboard media.",
       "Discover all joined companion peers, subscribe their late video tracks, and reconcile participant and video update events so remote camera, file, web, and whiteboard content renders reliably.",
       "Route each subscribed-course dashboard link through the classes page's supported target query parameter.",
       "Publish bilingual Project evidence for English, Japanese, Spanish, and Italian real-learning coverage."
     ],
     "zh": [
+      "共享媒体激活期间每 750 毫秒协调一次已订阅参与者映射，使 SDK 未触发事件而延迟写入的实时轨道仍可渲染。",
       "让后台会议标签页继续执行有界伴随参与者发现及延迟轨道协调，使四标签页参与者可收到远端摄像头、文件、网页及白板媒体。",
       "发现全部已加入的伴随参与者、订阅其延迟视频轨道，并协调参与者及视频更新事件，使远端摄像头、文件、网页和白板内容可靠显示。",
       "让 Dashboard 的每个已订阅课程链接使用课程页支持的 target 查询参数。",
