@@ -227,8 +227,6 @@ export async function POST(
   const db = getDatabase();
   const now = nowSeconds();
   const action = String(body.action || "");
-  const identity = String(body.identity || "").slice(0, 100);
-
   let session: ClassParticipantSession;
   try { session = await requireSession(request, room, body, action !== "leave"); }
   catch (error) { return sessionFailure(error); }
