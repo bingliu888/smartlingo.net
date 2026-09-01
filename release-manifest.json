@@ -1,22 +1,24 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-remote-companion-discovery-20260901",
+  "releaseId": "smartlingo-net-gold-v2-background-companion-discovery-20260901",
   "site": "smartlingo.net",
   "title": {
-    "en": "Gold v2 remote companion media discovery",
-    "zh": "Gold v2 远端伴随媒体发现"
+    "en": "Gold v2 background companion media discovery",
+    "zh": "Gold v2 后台伴随媒体发现"
   },
   "purpose": {
-    "en": "Complete the generic Gold v2 audio-room companion fix by discovering provider peers and subscribing late video tracks during four-participant production acceptance.",
-    "zh": "在四人生产验收中通过发现服务商参与者并订阅延迟视频轨道，完成 Gold v2 音频房间伴随连接的通用修复。"
+    "en": "Complete the generic Gold v2 audio-room companion fix by keeping bounded provider discovery and delayed-track reconciliation active for valid background meeting tabs during four-participant production acceptance.",
+    "zh": "在四人生产验收中让有效后台会议标签页继续执行有界服务商发现及延迟轨道协调，完成 Gold v2 音频房间伴随连接的通用修复。"
   },
   "features": {
     "en": [
+      "Keep bounded companion discovery and delayed-track reconciliation active in background meeting tabs so four-tab participants receive remote camera, file, web, and whiteboard media.",
       "Discover all joined companion peers, subscribe their late video tracks, and reconcile participant and video update events so remote camera, file, web, and whiteboard content renders reliably.",
       "Route each subscribed-course dashboard link through the classes page's supported target query parameter.",
       "Publish bilingual Project evidence for English, Japanese, Spanish, and Italian real-learning coverage."
     ],
     "zh": [
+      "让后台会议标签页继续执行有界伴随参与者发现及延迟轨道协调，使四标签页参与者可收到远端摄像头、文件、网页及白板媒体。",
       "发现全部已加入的伴随参与者、订阅其延迟视频轨道，并协调参与者及视频更新事件，使远端摄像头、文件、网页和白板内容可靠显示。",
       "让 Dashboard 的每个已订阅课程链接使用课程页支持的 target 查询参数。",
       "发布英语、日语、西班牙语及意大利语真实学习覆盖的双语 Project 证据。"
@@ -24,11 +26,13 @@
   },
   "affected": {
     "en": [
+      "Remove the visibility short-circuit from the bounded companion discovery and low-frequency local-map reconciliation paths without adding continuous provider paging.",
       "SmartLingo audio Group Call and Webinar remote companion media rendering and its regression contract.",
       "Learner Dashboard course navigation and its target-language selection contract.",
       "Administrator Project release history only; no payment, referral, certificate, or entitlement schema is changed."
     ],
     "zh": [
+      "移除有界伴随参与者发现及低频本地映射协调路径中的可见性短路，同时不新增持续服务商分页。",
       "SmartLingo 音频 Group Call 与 Webinar 的远端伴随媒体渲染及其回归契约。",
       "学员 Dashboard 课程导航及其目标语言选择契约。",
       "仅更新管理员 Project 发布历史；付款、推荐、证书及课程权益架构均不变。"
