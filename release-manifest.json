@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-security-sync-20260901",
+  "releaseId": "smartlingo-net-gold-v2-realtime-security-sync-20260901",
   "site": "smartlingo.net",
   "title": { "en": "Gold v2 account and billing boundary hardening", "zh": "Gold v2 账户与付款边界加固" },
   "purpose": {
@@ -8,16 +8,16 @@
     "zh": "同步 GreatLove Gold v2 迁移中确认的通用账户及付款边界修复，同时保留 SmartLingo 边界。"
   },
   "features": {
-    "en": ["Rate-limit administrator member creation, bound its JSON body, and canonicalize submitted email addresses.", "Remove source-site naming from the public SmartPay ABI response."],
-    "zh": ["限制管理员创建会员的频率、限制其 JSON 请求体，并规范化提交的邮箱地址。", "从公开 SmartPay ABI 响应中移除来源站点命名。"]
+    "en": ["Rate-limit administrator member creation, bound its JSON body, and canonicalize submitted email addresses.", "Remove source-site naming from the public SmartPay ABI response.", "Remove the replaced viewer presence before rotating into a publisher session."],
+    "zh": ["限制管理员创建会员的频率、限制其 JSON 请求体，并规范化提交的邮箱地址。", "从公开 SmartPay ABI 响应中移除来源站点命名。", "切换为发布者会话前移除被替换的观众在线记录。"]
   },
   "affected": {
     "en": ["Administrator member creation and SmartPay ABI metadata only.", "No language course, learning record, referral, certificate, price, entitlement, or stored object changes."],
     "zh": ["仅影响管理员创建会员及 SmartPay ABI 元数据。", "不更改语言课程、学习记录、推荐、证书、价格、权益或既有存储对象。"]
   },
   "changes": {
-    "en": ["Apply a 60-per-hour admin-member request budget, an 8 KiB JSON limit, and canonical email validation.", "Rename the ABI comparison key to the generic comparison field."],
-    "zh": ["应用每小时 60 次的管理员会员请求预算、8 KiB JSON 限制及规范邮箱验证。", "将 ABI 比较键改为通用 comparison 字段。"]
+    "en": ["Apply a 60-per-hour admin-member request budget, an 8 KiB JSON limit, and canonical email validation.", "Rename the ABI comparison key to the generic comparison field.", "Report Leave for the old viewer session before the publisher join creates a new presence.", "Pin browserslist 4.28.8 for the newly disclosed high-severity fixes."],
+    "zh": ["应用每小时 60 次的管理员会员请求预算、8 KiB JSON 限制及规范邮箱验证。", "将 ABI 比较键改为通用 comparison 字段。", "发布者加入生成新在线记录前，为旧观众会话报告离开。", "锁定 browserslist 4.28.8，修复新披露的高危漏洞。"]
   },
   "validation": {
     "en": ["TypeScript and zero-warning ESLint pass locally.", "All source contracts pass except six rendered-Worker tests that require the production build artifact unavailable under the signed Codex Node runtime; GitHub Actions must run the complete Linux build and suite.", "npm audit reports zero vulnerabilities and git whitespace checks pass."],
