@@ -2,10 +2,10 @@ import type { Address } from "viem";
 import { atomicTokenAmountToDisplay } from "./crypto-amount";
 import { cryptoRpcUrl } from "./crypto-rpc";
 import { activeCryptoSettings, type CryptoPaymentSetting } from "./crypto-settings";
-import { availableSmartPayCheckoutIdentity, configuredSmartPay3CheckoutScopes, type SmartPayCheckoutOption } from "./smartpay-checkout";
+import { availableSmartPayCheckoutIdentity, configuredSmartPay4CheckoutScopes, type SmartPayCheckoutOption } from "./smartpay-checkout";
 import { cryptoSubscriptionIdsForCourse } from "./crypto-subscription";
-import { smartPay3RulePresets, smartPay3RulePresetStatus } from "./smartpay3-presets";
-import { smartPay3PaymentRules, smartPay3PayoutConfigurationRaw, verifySmartPay3Identity } from "./smartpay3-server";
+import { smartPay4RulePresets, smartPay4RulePresetStatus } from "./smartpay4-presets";
+import { smartPay4PaymentRules, smartPay4PayoutConfigurationRaw, verifySmartPay4Identity } from "./smartpay4-server";
 import { fixedCourseId } from "./smartlingo-course-packages";
 import {
   isSmartLingoCommunityLanguage,
@@ -19,16 +19,16 @@ export async function currentSmartPayCheckoutOptions(
 ) {
   const settings = inputSettings ? [...inputSettings] : await activeCryptoSettings();
   const languages = selectedLanguage ? [selectedLanguage] : SMARTLINGO_COMMUNITY_LANGUAGE_CODES;
-  return (await Promise.all(configuredSmartPay3CheckoutScopes(settings).map(async scope => {
+  return (await Promise.all(configuredSmartPay4CheckoutScopes(settings).map(async scope => {
     const rpcUrl = await cryptoRpcUrl(scope.chainId);
     if (!rpcUrl) return [] as SmartPayCheckoutOption[];
     const contractAddress = scope.contractAddress as Address;
-    const identity = await availableSmartPayCheckoutIdentity(() => verifySmartPay3Identity(rpcUrl, contractAddress));
+    const identity = await availableSmartPayCheckoutIdentity(() => verifySmartPay4Identity(rpcUrl, contractAddress));
     if (!identity || identity.paused) return [] as SmartPayCheckoutOption[];
-    const [payouts, rules] = await Promise.all([smartPay3PayoutConfigurationRaw(rpcUrl, contractAddress), smartPay3PaymentRules(rpcUrl, contractAddress)]);
+    const [payouts, rules] = await Promise.all([smartPay4PayoutConfigurationRaw(rpcUrl, contractAddress), smartPay4PaymentRules(rpcUrl, contractAddress)]);
     if (!payouts.length) return [] as SmartPayCheckoutOption[];
-    return smartPay3RulePresets(settings, scope.chainId).flatMap(preset => {
-      const rule = smartPay3RulePresetStatus(preset, rules).rule;
+    return smartPay4RulePresets(settings, scope.chainId).flatMap(preset => {
+      const rule = smartPay4RulePresetStatus(preset, rules).rule;
       if (!rule?.enabled || BigInt(rule.primaryTokenAmount) <= 0n) return [];
       const fullPrimary = BigInt(rule.primaryTokenAmount), fullSecondary = BigInt(rule.secondaryTokenAmount);
       if (preset.mode === "dual" ? fullSecondary <= 0n : fullSecondary !== 0n) return [];
@@ -44,12 +44,12 @@ export async function currentSmartPayCheckoutOptions(
         const ids = cryptoSubscriptionIdsForCourse(languageCode, preset.plan);
         const classId = fixedCourseId(languageCode, preset.plan);
         return {
-          key: `smartpay3:${preset.key}:${languageCode}`, settingId: primarySetting.id, plan: preset.plan, months: 3,
+          key: `smartpay4:${preset.key}:${languageCode}`, settingId: primarySetting.id, plan: preset.plan, months: 3,
           languageCode, classId, chainId: primarySetting.chainId, chainName: primarySetting.chainName,
           contractAddress, tokenAddress: preset.primaryTokenAddress, tokenSymbol: preset.primaryTokenSymbol,
           tokenDecimals: preset.primaryTokenDecimals, tokenAmountAtomic: fullPrimary.toString(),
           tokenAmount: atomicTokenAmountToDisplay(fullPrimary, preset.primaryTokenDecimals), mainId: ids.mainId, secondId: ids.secondId, minConfirmations,
-          smartPay3Offer: {
+          smartPay4Offer: {
             mode: preset.mode, contractAddress, primaryTokenAddress: preset.primaryTokenAddress, primaryTokenSymbol: preset.primaryTokenSymbol,
             primaryTokenDecimals: preset.primaryTokenDecimals, primaryTokenAmountAtomic: primaryAtomic.toString(),
             primaryTokenAmount: atomicTokenAmountToDisplay(primaryAtomic, preset.primaryTokenDecimals), primaryPercent: preset.primaryPercent,

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { SMARTPAY3_ABI } from "../../../../../../lib/smartpay3";
+import { SMARTPAY4_ABI } from "../../../../../../lib/smartpay4";
 
 export const dynamic = "force-dynamic";
 export async function GET() {
-  const contract = "SmartPay3";
+  const contract = "SmartPay4";
   return NextResponse.json({
     contract,
     siteSpecific: true,
@@ -39,6 +39,6 @@ export async function GET() {
       "bingacademy_membership_annual"
     ],
     subscriptionSecondId: "",
-    abi: SMARTPAY3_ABI
+    abi: SMARTPAY4_ABI
   });
 }

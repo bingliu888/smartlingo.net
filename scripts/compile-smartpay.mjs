@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import solc from "solc";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const entryPath = join(root, "contracts/SmartPay3.sol");
-const entryName = "contracts/SmartPay3.sol";
+const entryPath = join(root, "contracts/SmartPay4.sol");
+const entryName = "contracts/SmartPay4.sol";
 const mockPath = join(root, "contracts/test/MockUSDC.sol");
 const mockName = "contracts/test/MockUSDC.sol";
 
@@ -53,6 +53,7 @@ const input = {
   },
   settings: {
     optimizer: { enabled: true, runs: 500 },
+    viaIR: true,
     evmVersion: "paris",
     metadata: { bytecodeHash: "ipfs" },
     outputSelection: {
@@ -67,13 +68,13 @@ if (diagnostics.length) {
   throw new Error(diagnostics.map(item => item.formattedMessage || item.message).join("\n"));
 }
 
-const compiled = output.contracts?.[entryName]?.SmartPay3;
+const compiled = output.contracts?.[entryName]?.SmartPay4;
 const compiledMock = output.contracts?.[mockName]?.MockUSDC;
-if (!compiled?.abi || !compiled?.evm?.bytecode?.object) throw new Error("SmartPay3 compilation produced no artifact");
+if (!compiled?.abi || !compiled?.evm?.bytecode?.object) throw new Error("SmartPay4 compilation produced no artifact");
 if (!compiledMock?.abi || !compiledMock?.evm?.bytecode?.object) throw new Error("MockUSDC compilation produced no artifact");
 const deployedBytecodeBytes = compiled.evm.deployedBytecode.object.length / 2;
 if (deployedBytecodeBytes > 24_576) {
-  throw new Error(`SmartPay3 deployed bytecode is ${deployedBytecodeBytes} bytes and exceeds the EIP-170 limit`);
+  throw new Error(`SmartPay4 deployed bytecode is ${deployedBytecodeBytes} bytes and exceeds the EIP-170 limit`);
 }
 
 const abi = `${JSON.stringify(compiled.abi, null, 2)}\n`;
@@ -93,12 +94,12 @@ const verificationDiagnostics = (verificationOutput.errors || []).filter(item =>
 if (verificationDiagnostics.length) {
   throw new Error(verificationDiagnostics.map(item => item.formattedMessage || item.message).join("\n"));
 }
-const verificationBytecode = verificationOutput.contracts?.[entryName]?.SmartPay3?.evm?.bytecode?.object;
+const verificationBytecode = verificationOutput.contracts?.[entryName]?.SmartPay4?.evm?.bytecode?.object;
 if (!verificationBytecode || verificationBytecode !== compiled.evm.bytecode.object) {
-  throw new Error("SmartPay3 source-verification input does not reproduce the deployment bytecode");
+  throw new Error("SmartPay4 source-verification input does not reproduce the deployment bytecode");
 }
 const artifact = {
-  contractName: "SmartPay3",
+  contractName: "SmartPay4",
   sourceName: entryName,
   compiler: solc.version(),
   evmVersion: "paris",
@@ -122,8 +123,8 @@ const mockArtifact = {
 await mkdir(join(root, "contracts/abi"), { recursive: true });
 await mkdir(join(root, "contracts/artifacts"), { recursive: true });
 await mkdir(join(root, "public/contracts"), { recursive: true });
-await writeFile(join(root, "contracts/abi/SmartPay3.json"), abi);
-await writeFile(join(root, "public/contracts/SmartPay3.abi.json"), abi);
-await writeFile(join(root, "contracts/artifacts/SmartPay3.json"), `${JSON.stringify(artifact, null, 2)}\n`);
+await writeFile(join(root, "contracts/abi/SmartPay4.json"), abi);
+await writeFile(join(root, "public/contracts/SmartPay4.abi.json"), abi);
+await writeFile(join(root, "contracts/artifacts/SmartPay4.json"), `${JSON.stringify(artifact, null, 2)}\n`);
 await writeFile(join(root, "contracts/artifacts/MockUSDC.json"), `${JSON.stringify(mockArtifact, null, 2)}\n`);
-console.log(`Compiled SmartPay3 with ${solc.version()} (${compiled.abi.length} ABI entries, ${deployedBytecodeBytes} deployed bytes).`);
+console.log(`Compiled SmartPay4 with ${solc.version()} (${compiled.abi.length} ABI entries, ${deployedBytecodeBytes} deployed bytes).`);

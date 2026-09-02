@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   const file = url.searchParams.get("file");
   if (!Number.isInteger(chainId) || chainId <= 0 || !isAddress(contractAddress)
     || !["source", "standard-json", "status"].includes(String(file))) {
-    return NextResponse.json({ error: "Select a published SmartPay3 source file" }, { status: 400 });
+    return NextResponse.json({ error: "Select a published SmartPay4 source file" }, { status: 400 });
   }
   const publication = await database().prepare(`SELECT published_at AS publishedAt,
       source_code AS sourceCode,standard_json_input AS standardJsonInput,
@@ -70,9 +70,9 @@ export async function GET(request: Request) {
       explorerMessage: explorerStatus.verified ? explorerStatus.message : (publication?.explorerMessage || explorerStatus.message)
     }, { headers: { "cache-control": "private, no-store" } });
   }
-  if (!publication) return NextResponse.json({ error: "SmartPay3 source is not public for this contract" }, { status: 404 });
+  if (!publication) return NextResponse.json({ error: "SmartPay4 source is not public for this contract" }, { status: 404 });
   if (!publication.sourceCode || !publication.standardJsonInput) {
-    return NextResponse.json({ error: "SmartPay3 source artifact is unavailable" }, { status: 503 });
+    return NextResponse.json({ error: "SmartPay4 source artifact is unavailable" }, { status: 503 });
   }
   const isSource = file === "source";
   const body = isSource ? `${publication.sourceCode.trimEnd()}\n` : `${publication.standardJsonInput.trimEnd()}\n`;
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
   return new Response(body, {
     headers: {
       "content-type": isSource ? "text/plain; charset=utf-8" : "application/json; charset=utf-8",
-      "content-disposition": `attachment; filename="SmartPay3-${chainId}-${contractAddress}.${extension}"`,
+      "content-disposition": `attachment; filename="SmartPay4-${chainId}-${contractAddress}.${extension}"`,
       "cache-control": "public, max-age=300, s-maxage=31536000, immutable",
       "access-control-allow-origin": "*",
       "x-content-type-options": "nosniff",

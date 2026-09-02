@@ -12,26 +12,26 @@ import {
   type EthereumProvider
 } from "../lib/evm-wallet-client";
 import type { SiteLanguage } from "../lib/site-locale";
-import { smartPayOwnerWalletButton } from "../lib/smartpay-admin-wallet-ui";
+import { smartPayOwnerActionFeedback, smartPayOwnerConnectionError, smartPayOwnerWalletButton } from "../lib/smartpay-admin-wallet-ui";
 import { smartPayChainLabel, smartPayChainOptions, smartPayChainSettings } from "../lib/smartpay-chain-options";
 import {
-  requestSmartPay3Deployment,
-  smartPay3AddressFromReceipt,
-  smartPay3DeploymentData,
-  type SmartPay3DeploymentArtifact
+  requestSmartPay4Deployment,
+  smartPay4AddressFromReceipt,
+  smartPay4DeploymentData,
+  type SmartPay4DeploymentArtifact
 } from "../lib/smartpay-deployment";
 import { SMARTLINGO_WALLET_CONNECT } from "../lib/smartlingo-commerce-wallet";
-import { SMARTPAY3_ABI } from "../lib/smartpay3";
+import { SMARTPAY4_ABI } from "../lib/smartpay4";
 import { smartPayTransactionNeedsReconciliation } from "../lib/smartpay-reconciliation";
 import {
-  smartPay3RulePresets,
-  smartPay3RulePresetStatus,
-  type SmartPay3RulePreset
-} from "../lib/smartpay3-presets";
+  smartPay4RulePresets,
+  smartPay4RulePresetStatus,
+  type SmartPay4RulePreset
+} from "../lib/smartpay4-presets";
 
 type PayoutRow = { wallet: string; percent: string };
 type TokenState = { symbol: string; decimals: number; balanceAtomic: string | null; balance: string | null };
-type SmartPay3PaymentRule = {
+type SmartPay4PaymentRule = {
   primaryTokenAddress: string;
   secondaryTokenAddress: string;
   mainId: string;
@@ -52,6 +52,7 @@ type TransactionRecord = {
   transactionId: string;
   timestamp: number;
   wallet: string;
+  payerId: string;
   refId: string;
   mainId: string;
   secondId: string;
@@ -63,14 +64,15 @@ type TransactionRecord = {
   claimedMemberId?: string | null;
   subscriptionRecorded?: boolean;
   subscriptionEndsAt?: number | null;
+  siteOwned?: boolean;
 };
-type MatchedMember = { id: string; email: string; displayName: string; payerWalletAddress: string; refId: string };
+type MatchedMember = { id: string; email: string; displayName: string; payerId: string };
 type ContractState = {
   contract: string;
   owner: string;
   paused: boolean;
   payouts: Array<{ wallet: string; shareBps: number }>;
-  rules: SmartPay3PaymentRule[];
+  rules: SmartPay4PaymentRule[];
   tokens: Record<string, TokenState>;
   totalTransactions: number;
   latestTransactions: TransactionRecord[];
@@ -121,8 +123,8 @@ export function SmartPayAdminConsole({
   const [settingId, setSettingId] = useState(initialChainSettings[0]?.id || "");
   const chainOptions = useMemo(() => smartPayChainOptions(settings), [settings]);
   const selected = settings.find(item => item.id === settingId) || settings[0];
-  const [contractAddress, setContractAddress] = useState(selected?.smartPay3Contract || "");
-  const [smartPay3UsdtPercent, setSmartPay3UsdtPercent] = useState(String(selected?.smartPay3UsdtPercent ?? 50));
+  const [contractAddress, setContractAddress] = useState(selected?.smartPay4Contract || "");
+  const [smartPay4UsdtPercent, setSmartPay4UsdtPercent] = useState(String(selected?.smartPay4UsdtPercent ?? 50));
   const [contractState, setContractState] = useState<ContractState | null>(null);
   const [provider, setProvider] = useState<EthereumProvider | null>(null);
   const [connectedWallet, setConnectedWallet] = useState("");
@@ -132,7 +134,7 @@ export function SmartPayAdminConsole({
   const [withdrawToken, setWithdrawToken] = useState(selected?.tokenContract || "");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawTokenState, setWithdrawTokenState] = useState<TokenState | null>(null);
-  const [queryWallet, setQueryWallet] = useState("");
+  const [queryPayerId, setQueryPayerId] = useState("");
   const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
   const [transactionTotal, setTransactionTotal] = useState(0);
   const [matchedMembers, setMatchedMembers] = useState<MatchedMember[]>([]);
@@ -146,19 +148,19 @@ export function SmartPayAdminConsole({
   const activePayouts = lastPayoutIndex >= 0 ? payouts.slice(0, lastPayoutIndex + 1) : [];
   const explicitBps = activePayouts.slice(0, -1).map(row => toBps(row.percent));
   const remainingBps = 10_000 - explicitBps.reduce((sum, value) => sum + (Number.isFinite(value) ? value : 0), 0);
-  const selectedContract = selected?.smartPay3Contract || "";
-  const contractName = "SmartPay3";
-  const contractAbi = SMARTPAY3_ABI;
+  const selectedContract = selected?.smartPay4Contract || "";
+  const contractName = "SmartPay4";
+  const contractAbi = SMARTPAY4_ABI;
   const contractConfigured = Boolean(selectedContract && isAddress(selectedContract));
   const transactionReadReady = Boolean(contractState);
   const ownerWalletButton = smartPayOwnerWalletButton(locale, busy, connectedWallet);
   const selectedChainId = selected?.chainId;
-  const smartPay3Rules = useMemo(() => contractState?.rules || [], [contractState?.rules]);
-  const smartPay3Presets = useMemo(() => smartPay3RulePresets(settings, selectedChainId), [settings, selectedChainId]);
-  const smartPay3PresetRows = useMemo(() => smartPay3Presets.map(preset => ({
+  const smartPay4Rules = useMemo(() => contractState?.rules || [], [contractState?.rules]);
+  const smartPay4Presets = useMemo(() => smartPay4RulePresets(settings, selectedChainId), [settings, selectedChainId]);
+  const smartPay4PresetRows = useMemo(() => smartPay4Presets.map(preset => ({
     preset,
-    status: smartPay3RulePresetStatus(preset, smartPay3Rules)
-  })), [smartPay3Presets, smartPay3Rules]);
+    status: smartPay4RulePresetStatus(preset, smartPay4Rules)
+  })), [smartPay4Presets, smartPay4Rules]);
   const withdrawTokenOptions = useMemo(() => Object.entries(contractState?.tokens || {}), [contractState?.tokens]);
   const withdrawalPreflight = useMemo(() => withdrawTokenState && withdrawAmount
     ? smartPayWithdrawalPreflight(withdrawAmount, withdrawTokenState.decimals, withdrawTokenState.balanceAtomic)
@@ -187,7 +189,7 @@ export function SmartPayAdminConsole({
     let cancelled = false;
     if (!selectedChainId || !isAddress(selectedContract)) return () => { cancelled = true; };
     const query = new URLSearchParams({ chainId: String(selectedChainId), address: selectedContract, file: "status" });
-    void fetch(`/api/contracts/smartpay3?${query}`, { cache: "no-store" })
+    void fetch(`/api/contracts/smartpay4?${query}`, { cache: "no-store" })
       .then(response => response.json())
       .then((result: SourceVerificationResponse) => {
         if (cancelled) return;
@@ -246,8 +248,8 @@ export function SmartPayAdminConsole({
   function selectSetting(nextId: string) {
     const next = settings.find(item => item.id === nextId) || settings[0];
     setSettingId(next?.id || "");
-    setContractAddress(next?.smartPay3Contract || "");
-    setSmartPay3UsdtPercent(String(next?.smartPay3UsdtPercent ?? 50));
+    setContractAddress(next?.smartPay4Contract || "");
+    setSmartPay4UsdtPercent(String(next?.smartPay4UsdtPercent ?? 50));
     setWithdrawToken("");
     setWithdrawTokenState(null);
     setContractState(null);
@@ -288,20 +290,20 @@ export function SmartPayAdminConsole({
     const data = await response.json().catch(() => ({})) as { contractAddress?: string; error?: string };
     if (!response.ok || !data.contractAddress) throw new Error(data.error || "SAVE_FAILED");
     setSettings(current => current.map(item => item.chainId === selected.chainId
-      ? { ...item, smartPay3Contract: data.contractAddress || null }
+      ? { ...item, smartPay4Contract: data.contractAddress || null }
       : item));
     setContractAddress(data.contractAddress);
     return data.contractAddress;
   }
 
-  async function saveSmartPay3Percentage() {
+  async function saveSmartPay4Percentage() {
     if (!selected) return;
-    const percent = Number(smartPay3UsdtPercent);
+    const percent = Number(smartPay4UsdtPercent);
     if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
       setMessage(zh ? "USDT 比例必须是 0–100 的整数。" : "USDT percentage must be an integer from 0 to 100.");
       return;
     }
-    setBusy("save-smartpay3-percent");
+    setBusy("save-smartpay4-percent");
     try {
       const response = await fetch("/api/admin/crypto-payments/contract", {
         method: "PATCH",
@@ -310,12 +312,12 @@ export function SmartPayAdminConsole({
       });
       const data = await response.json().catch(() => ({})) as { updated?: boolean; error?: string };
       if (!response.ok || !data.updated) throw new Error(data.error || "SAVE_FAILED");
-      setSettings(current => current.map(item => ({ ...item, smartPay3UsdtPercent: percent })));
+      setSettings(current => current.map(item => ({ ...item, smartPay4UsdtPercent: percent })));
       setMessage(zh
-        ? `SmartPay3 比例已保存：${percent}% USDT + ${100 - percent}% GLC；无需 Owner 或链上确认。`
-        : `SmartPay3 ratio saved: ${percent}% USDT + ${100 - percent}% GLC. No Owner or on-chain confirmation is required.`);
+        ? `SmartPay4 比例已保存：${percent}% USDT + ${100 - percent}% GLC；无需 Owner 或链上确认。`
+        : `SmartPay4 ratio saved: ${percent}% USDT + ${100 - percent}% GLC. No Owner or on-chain confirmation is required.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : (zh ? "无法保存 SmartPay3 比例。" : "Unable to save the SmartPay3 ratio."));
+      setMessage(error instanceof Error ? error.message : (zh ? "无法保存 SmartPay4 比例。" : "Unable to save the SmartPay4 ratio."));
     } finally {
       setBusy("");
     }
@@ -386,11 +388,11 @@ export function SmartPayAdminConsole({
       const initialOwner = active.address as Address;
       setOwnerWallet(initialOwner);
       const artifactResponse = await fetch("/api/admin/smartpay/bundle", { cache: "no-store" });
-      const artifact = await artifactResponse.json().catch(() => ({})) as SmartPay3DeploymentArtifact & { error?: string };
+      const artifact = await artifactResponse.json().catch(() => ({})) as SmartPay4DeploymentArtifact & { error?: string };
       if (!artifactResponse.ok) throw new Error(artifact.error || "DEPLOYMENT_ARTIFACT_UNAVAILABLE");
-      const data = smartPay3DeploymentData(artifact, initialOwner, SMARTPAY3_ABI);
+      const data = smartPay4DeploymentData(artifact, initialOwner, SMARTPAY4_ABI);
       setMessage(zh ? `正在预估部署 Gas；随后请在钱包确认 ${contractName} 部署。` : `Estimating deployment gas; then confirm the ${contractName} deployment in your wallet.`);
-      const deployment = await requestSmartPay3Deployment(active.provider, initialOwner, data, {
+      const deployment = await requestSmartPay4Deployment(active.provider, initialOwner, data, {
         chainId: selected.chainId,
         siteScope: "smartlingo.net",
         deploymentId: crypto.randomUUID()
@@ -398,7 +400,7 @@ export function SmartPayAdminConsole({
       const { hash } = deployment;
       setMessage(zh ? "部署交易已发送，正在等待链上确认…" : "Deployment submitted. Waiting for on-chain confirmation…");
       const receipt = await waitForTransactionReceipt(active.provider, hash);
-      const deployedAddress = smartPay3AddressFromReceipt(receipt, deployment.contractAddress);
+      const deployedAddress = smartPay4AddressFromReceipt(receipt, deployment.contractAddress);
       setMessage(zh ? "合约已部署，正在验证并保存地址…" : "Contract deployed. Verifying and saving its address…");
       await verifyAndSaveContractAddress(deployedAddress);
       await refreshContractState(true);
@@ -503,8 +505,8 @@ export function SmartPayAdminConsole({
     const active = provider && connectedWallet ? { provider, address: connectedWallet } : await connectWallet();
     if (!active || !selected || !contractState) throw new Error("CONNECT_OWNER_FIRST");
     await assertProviderChain(active.provider, selected.chainId);
-    if (!isAddress(ownerWallet) || ownerWallet.toLowerCase() !== active.address.toLowerCase()) throw new Error("OWNER_FIELD_MISMATCH");
-    if (contractState.owner.toLowerCase() !== active.address.toLowerCase()) throw new Error("NOT_OWNER");
+    const ownerError = smartPayOwnerConnectionError(contractState.owner, ownerWallet, active.address);
+    if (ownerError) throw new Error(ownerError);
     return active;
   }
 
@@ -523,9 +525,9 @@ export function SmartPayAdminConsole({
       return true;
     } catch (error) {
       const reason = error instanceof Error ? error.message : "";
-      setMessage(reason === "NOT_OWNER" ? (zh ? "只有当前链上 Owner 可以执行此操作。" : "Only the current on-chain Owner can perform this action.")
-        : reason === "OWNER_FIELD_MISMATCH" ? (zh ? "Owner 编辑框必须与已连接钱包一致。" : "The Owner field must match the connected wallet.")
-          : (zh ? "链上操作未完成；请检查钱包确认和网络。" : "The on-chain action did not complete. Check the wallet confirmation and network."));
+      const feedback = smartPayOwnerActionFeedback(locale, reason);
+      if (feedback.interruptive) window.alert(feedback.message);
+      setMessage(feedback.message);
       return false;
     } finally {
       setBusy("");
@@ -586,7 +588,7 @@ export function SmartPayAdminConsole({
     } catch (error) {
       const reason = error instanceof Error ? error.message : "";
       setMessage(reason === "TOKEN_NOT_AVAILABLE"
-        ? (zh ? "请选择已在 SmartPay3 链上付款规则中的代币。" : "Select a token from an enabled SmartPay3 on-chain payment rule.")
+        ? (zh ? "请选择已在 SmartPay4 链上付款规则中的代币。" : "Select a token from an enabled SmartPay4 on-chain payment rule.")
         : (error instanceof Error ? error.message : (zh ? "无法读取代币。" : "Unable to read the token.")));
     } finally {
       setBusy("");
@@ -623,15 +625,15 @@ export function SmartPayAdminConsole({
       setMessage(reason === "BALANCE_UNAVAILABLE"
         ? (zh ? "暂时无法读取合约代币余额；未调用钱包。" : "The contract token balance is unavailable. The wallet was not called.")
         : reason === "TOKEN_NOT_AVAILABLE"
-          ? (zh ? "请选择已在 SmartPay3 链上付款规则中的代币。" : "Select a token from an enabled SmartPay3 on-chain payment rule.")
+          ? (zh ? "请选择已在 SmartPay4 链上付款规则中的代币。" : "Select a token from an enabled SmartPay4 on-chain payment rule.")
           : (zh ? "请输入符合代币精度的有效提款数量。" : "Enter a valid withdrawal amount for this token's decimals."));
     } finally {
       setBusy(current => current === "withdraw-check" ? "" : current);
     }
   }
 
-  async function confirmSmartPay3Preset(preset: SmartPay3RulePreset) {
-    const status = smartPay3RulePresetStatus(preset, smartPay3Rules);
+  async function confirmSmartPay4Preset(preset: SmartPay4RulePreset) {
+    const status = smartPay4RulePresetStatus(preset, smartPay4Rules);
     if (status.state === "configured") return;
     await sendOwnerTransaction(
       "setPaymentRule",
@@ -662,7 +664,8 @@ export function SmartPayAdminConsole({
     let alreadyRecorded = 0;
     const errors: string[] = [];
     const currentPeriodEnds: number[] = [];
-    const eligible = records.filter(record => smartPayTransactionNeedsReconciliation(record, member.payerWalletAddress, member.refId));
+    const eligible = records.filter(record => record.siteOwned
+      && smartPayTransactionNeedsReconciliation(record, member.payerId, record.refId));
     for (const record of eligible) {
       const paymentTokenAddress = record.primaryTokenAddress;
       const paymentSetting = settings.find(item => item.chainId === selected.chainId
@@ -692,10 +695,10 @@ export function SmartPayAdminConsole({
 
   async function loadLatestTransactions() {
     if (!selected) throw new Error("SELECT_RAIL");
-    const wallet = queryWallet.trim();
-    if (wallet && !isAddress(wallet)) throw new Error(zh ? "请输入有效用户钱包，或留空读取最新 25 条。" : "Enter a valid member wallet, or leave it blank for the latest 25.");
-    const firstParams = new URLSearchParams({ settingId: selected.id, limit: wallet ? "100" : "25" });
-    if (wallet) firstParams.set("wallet", wallet);
+    const payerId = queryPayerId.trim().toUpperCase();
+    if (payerId && !/^[A-HJ-NP-Z2-9]{6}$/.test(payerId)) throw new Error(zh ? "请输入有效的 6 位 PayerID，或留空读取最新 25 条。" : "Enter a valid six-character PayerID, or leave it blank for the latest 25.");
+    const firstParams = new URLSearchParams({ settingId: selected.id, limit: payerId ? "100" : "25" });
+    if (payerId) firstParams.set("payerId", payerId);
     const firstResponse = await fetch(`/api/billing/crypto/smartpay/records?${firstParams}`, { cache: "no-store" });
     const first = await firstResponse.json().catch(() => ({})) as LookupResponse;
     if (!firstResponse.ok) throw new Error(first.error || "TRANSACTION_LOOKUP_FAILED");
@@ -707,7 +710,7 @@ export function SmartPayAdminConsole({
 
   async function refreshTransactions(autoSync = true) {
     if (!transactionReadReady) {
-      setMessage(zh ? "请先部署并验证 SmartPay3，再读取交易。" : "Deploy and verify SmartPay3 before reading transactions.");
+      setMessage(zh ? "请先部署并验证 SmartPay4，再读取交易。" : "Deploy and verify SmartPay4 before reading transactions.");
       return;
     }
     setBusy("transactions");
@@ -723,7 +726,7 @@ export function SmartPayAdminConsole({
       if (autoSync && result.records.length && result.members.length) {
         const grouped = new Map<string, MatchedMember[]>();
         for (const member of result.members) {
-          const key = member.payerWalletAddress.toLowerCase();
+          const key = member.payerId.toUpperCase();
           grouped.set(key, [...(grouped.get(key) || []), member]);
         }
         for (const [, members] of grouped) if (members.length === 1) {
@@ -739,7 +742,7 @@ export function SmartPayAdminConsole({
           setMatchedMembers(result.members);
         }
       }
-      const ambiguous = result.members.filter(member => result.members.filter(item => item.payerWalletAddress.toLowerCase() === member.payerWalletAddress.toLowerCase()).length > 1).length;
+      const ambiguous = result.members.filter(member => result.members.filter(item => item.payerId.toUpperCase() === member.payerId.toUpperCase()).length > 1).length;
       const latestSubscriptionEnd = subscriptionEnds.length ? Math.max(...subscriptionEnds) : null;
       setMessage(syncErrors.length
         ? (zh ? `交易已读取，但 ${syncErrors.length} 条订阅核对失败：${syncErrors.join("；")}` : `Transactions loaded, but ${syncErrors.length} subscription reconciliation(s) failed: ${syncErrors.join("; ")}`)
@@ -747,7 +750,7 @@ export function SmartPayAdminConsole({
         ? (zh
           ? `已自动核对并新增 ${synced} 条订阅记录${latestSubscriptionEnd ? `；订阅至 ${subscriptionEndLabel(latestSubscriptionEnd, locale)}` : ""}。`
           : `${synced} subscription record(s) were reconciled automatically${latestSubscriptionEnd ? `; subscription through ${subscriptionEndLabel(latestSubscriptionEnd, locale)}` : ""}.`)
-        : ambiguous ? (zh ? "交易已读取；有钱包匹配多个会员，请手动选择会员同步。" : "Transactions loaded. A wallet matches multiple members, so choose the member manually.")
+        : ambiguous ? (zh ? "交易已读取；有 PayerID 匹配多个会员，请手动选择会员同步。" : "Transactions loaded. A PayerID matches multiple members, so choose the member manually.")
           : (zh ? "交易与订阅状态已刷新，没有新的未入账付款。" : "Transactions and subscription status refreshed; no new unrecorded payment was found."));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : (zh ? "无法读取交易。" : "Unable to read transactions."));
@@ -786,7 +789,7 @@ export function SmartPayAdminConsole({
       <div className="admin-form-heading"><div><span>CONTRACT</span><h2>{zh ? "部署或导入合约" : "Deploy or import contract"}</h2></div></div>
       <label><span>{zh ? "部署链" : "Deployment chain"}</span><select value={selected?.id || ""} onChange={event => selectSetting(event.target.value)}>{chainOptions.map(option => <option key={option.chainId} value={option.setting?.id || `unconfigured:${option.chainId}`} disabled={!option.setting}>{option.label}</option>)}</select></label>
       <p className="smartpay-token-balance">{selectedContract ? (zh ? "当前合约" : "Current contract") + " · " + selectedContract : (zh ? `此网络尚未配置 ${contractName}。` : `${contractName} is not configured for this network.`)}</p>
-      <div className="smartpay-ratio-setting"><label><span>{zh ? "USDT 付款比例（0–100）" : "USDT payment percentage (0–100)"}</span><input inputMode="numeric" value={smartPay3UsdtPercent} onChange={event => setSmartPay3UsdtPercent(event.target.value)} /></label><button type="button" className="button ghost" onClick={() => void saveSmartPay3Percentage()} disabled={Boolean(busy)}>{busy === "save-smartpay3-percent" ? "…" : (zh ? "更新比例" : "Update ratio")}</button><small>{zh ? `当前输入表示 ${smartPay3UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay3UsdtPercent)) ? 100 - Number(smartPay3UsdtPercent) : "—"}% GLC。只保存本站数据库，不需要 Owner 或链上交易。` : `The current input means ${smartPay3UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay3UsdtPercent)) ? 100 - Number(smartPay3UsdtPercent) : "—"}% GLC. It is saved only in this site's database and requires no Owner or on-chain transaction.`}</small></div>
+      <div className="smartpay-ratio-setting"><label><span>{zh ? "USDT 付款比例（0–100）" : "USDT payment percentage (0–100)"}</span><input inputMode="numeric" value={smartPay4UsdtPercent} onChange={event => setSmartPay4UsdtPercent(event.target.value)} /></label><button type="button" className="button ghost" onClick={() => void saveSmartPay4Percentage()} disabled={Boolean(busy)}>{busy === "save-smartpay4-percent" ? "…" : (zh ? "更新比例" : "Update ratio")}</button><small>{zh ? `当前输入表示 ${smartPay4UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay4UsdtPercent)) ? 100 - Number(smartPay4UsdtPercent) : "—"}% GLC。只保存本站数据库，不需要 Owner 或链上交易。` : `The current input means ${smartPay4UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay4UsdtPercent)) ? 100 - Number(smartPay4UsdtPercent) : "—"}% GLC. It is saved only in this site's database and requires no Owner or on-chain transaction.`}</small></div>
       <label className="toggle-field smartpay-source-toggle"><input type="checkbox" checked={publishSource} onChange={event => setPublishSource(event.target.checked)} disabled={Boolean(busy)}/><span>{zh ? "提交源码进行公开验证（默认开启）" : "Submit source code for public verification (default on)"}</span></label>
       <small className="smartpay-source-warning">{zh ? "开启：钱包部署确认后上传源码、执行链下字节码匹配，并开放源码与浏览器链接；不产生额外 Gas，也不等于审计。关闭：只提供 ABI 链接，源码不上传、不开放下载。" : "On: after wallet-confirmed deployment, upload source for an off-chain bytecode match and expose source and explorer links; this adds no gas and is not an audit. Off: provide only the ABI link, without uploading or exposing source."}</small>
       {contractConfigured ? <p className="flow-intro">{zh ? "需要新代码或重置链上配置时，可重新部署全新空合约；旧合约和历史记录不会删除。" : "Redeploy a new empty contract when code changes or on-chain configuration must be reset. The old contract and history are not deleted."}</p> : null}
@@ -845,22 +848,22 @@ export function SmartPayAdminConsole({
     <section className="smartpay-console-card smartpay-wide-card">
       <div className="admin-form-heading"><div><span>PAYMENT ITEMS</span><h2>{zh ? "后台付款项目与链上规则" : "Dashboard payment items & on-chain rules"}</h2></div><button type="button" onClick={() => void refreshContractState()} disabled={!contractConfigured || Boolean(busy)}>{busy === "refresh-contract" ? "…" : (zh ? "刷新链上规则" : "Refresh on-chain rules")}</button></div>
       <p>{zh ? "链上只保存初期、中级、高级三个 3 个月价格产品；所有学习语言共享同一价格规则，学生付款时选择的语言会单独记录为 secondID。USDT 项目保存 100% USDT、100% 等值 GLC 与 10 亿 GLC 门槛，实际 USDT 比例保存在本站数据库。" : "Only the three 3-month Beginner, Intermediate, and Advanced price products are stored on-chain. Every learning language shares the same price rule; the language selected at checkout is recorded separately as secondID. USDT rules store full USDT/GLC equivalents and the 1-billion-GLC threshold, while the active mix stays in this site's database."}</p>
-      {smartPay3PresetRows.length ? <div className="smartpay-rule-list smartpay-preset-list">{smartPay3PresetRows.map(({ preset, status }) => {
+      {smartPay4PresetRows.length ? <div className="smartpay-rule-list smartpay-preset-list">{smartPay4PresetRows.map(({ preset, status }) => {
         const key = `preset:${preset.key}`;
         const tier = preset.plan === "basic" ? (zh ? "初期课程" : "Beginner") : preset.plan === "intermediate" ? (zh ? "中级课程" : "Intermediate") : (zh ? "高级课程" : "Advanced");
-        return <article key={preset.key}><div><strong>{tier} · {preset.months} {zh ? "个月" : "months"} · {preset.mode === "dual" ? `${preset.primaryTokenSymbol} / ${preset.secondaryTokenSymbol}` : preset.primaryTokenSymbol}</strong><small>{preset.mainId} · {zh ? "语言由学生付款时选择" : "Language selected at checkout"}</small></div><div><b>{preset.mode === "dual" ? `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol} ↔ ${preset.secondaryTokenAmount} ${preset.secondaryTokenSymbol}` : `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol}`}</b><small>{preset.mode === "dual" ? `${zh ? `当前本站：${preset.primaryPercent}% / ${preset.secondaryPercent}%` : `Current site: ${preset.primaryPercent}% / ${preset.secondaryPercent}%`} · ${zh ? `门槛 ${preset.minimumSecondaryBalance} GLC` : `Threshold ${preset.minimumSecondaryBalance} GLC`}` : (zh ? "非 USDT · 100% 单币付款" : "Non-USDT · 100% single-token payment")}</small></div><span className={status.state === "configured" ? "rule-enabled" : "rule-disabled"}>{status.state === "configured" ? (zh ? "链上已配置" : "Configured") : status.state === "missing" ? (zh ? "链上缺失" : "Missing") : (zh ? "需要更新" : "Update needed")}</span>{status.state !== "configured" ? <button type="button" className="button primary" onClick={() => void confirmSmartPay3Preset(preset)} disabled={!contractState || Boolean(busy)}>{busy === key ? "…" : (zh ? "确认写入" : "Confirm on-chain")}</button> : null}</article>;
-      })}</div> : <p>{zh ? "所选链尚无可写入 SmartPay3 的后台付款项目。" : "No dashboard payment item is available for SmartPay3 on this chain."}</p>}
+        return <article key={preset.key}><div><strong>{tier} · {preset.months} {zh ? "个月" : "months"} · {preset.mode === "dual" ? `${preset.primaryTokenSymbol} / ${preset.secondaryTokenSymbol}` : preset.primaryTokenSymbol}</strong><small>{preset.mainId} · {zh ? "语言由学生付款时选择" : "Language selected at checkout"}</small></div><div><b>{preset.mode === "dual" ? `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol} ↔ ${preset.secondaryTokenAmount} ${preset.secondaryTokenSymbol}` : `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol}`}</b><small>{preset.mode === "dual" ? `${zh ? `当前本站：${preset.primaryPercent}% / ${preset.secondaryPercent}%` : `Current site: ${preset.primaryPercent}% / ${preset.secondaryPercent}%`} · ${zh ? `门槛 ${preset.minimumSecondaryBalance} GLC` : `Threshold ${preset.minimumSecondaryBalance} GLC`}` : (zh ? "非 USDT · 100% 单币付款" : "Non-USDT · 100% single-token payment")}</small></div><span className={status.state === "configured" ? "rule-enabled" : "rule-disabled"}>{status.state === "configured" ? (zh ? "链上已配置" : "Configured") : status.state === "missing" ? (zh ? "链上缺失" : "Missing") : (zh ? "需要更新" : "Update needed")}</span>{status.state !== "configured" ? <button type="button" className="button primary" onClick={() => void confirmSmartPay4Preset(preset)} disabled={!contractState || Boolean(busy)}>{busy === key ? "…" : (zh ? "确认写入" : "Confirm on-chain")}</button> : null}</article>;
+      })}</div> : <p>{zh ? "所选链尚无可写入 SmartPay4 的后台付款项目。" : "No dashboard payment item is available for SmartPay4 on this chain."}</p>}
     </section>
 
     <section className="smartpay-console-card smartpay-wide-card">
       <div className="admin-form-heading"><div><span>TRANSACTIONS</span><h2>{zh ? "交易与订阅自动核对" : "Transactions & subscription reconciliation"}</h2></div></div>
-      <p>{zh ? "输入钱包读取该钱包最新 100 条交易；留空读取合约最新 25 条。只有钱包与 RefID 都匹配会员且尚未入账的订阅才会自动更新。" : "Enter a wallet to read its latest 100 transactions, or leave it blank for the latest 25 contract transactions. Only unclaimed subscriptions whose wallet and RefID both match a member are synchronized."}</p>
-      <div className="smartpay-transaction-query"><label><span>{zh ? "用户钱包（可留空）" : "Member wallet (optional)"}</span><input value={queryWallet} onChange={event => setQueryWallet(event.target.value.trim())} placeholder="0x…" disabled={!transactionReadReady}/></label><button type="button" className="button primary" onClick={() => void refreshTransactions()} disabled={!contractConfigured || !transactionReadReady || Boolean(busy)}>{busy === "transactions" ? "…" : (zh ? "刷新交易并核对订阅" : "Refresh transactions & subscriptions")}</button></div>
-      <p className="smartpay-record-count">{!transactionReadReady ? (zh ? "交易读取：等待重新部署" : "Transaction reads: redeploy required") : queryWallet ? (zh ? `钱包交易：${transactions.length} / ${transactionTotal}` : `Wallet transactions: ${transactions.length} of ${transactionTotal}`) : (zh ? `最新交易：${transactions.length} / 合约总计 ${transactionTotal}` : `Latest transactions: ${transactions.length} of ${transactionTotal} total`)}</p>
-      {transactions.length ? <div className="smartpay-transaction-table" role="region" aria-label={`${contractName} transactions`}><table><thead><tr><th>TransactionID</th><th>{zh ? "时间 / 钱包 / RefID" : "Time / wallet / RefID"}</th><th>mainID / secondID</th><th>{zh ? "代币 / 数量" : "Token / amount"}</th><th>{zh ? "订阅状态" : "Subscription"}</th></tr></thead><tbody>{transactions.map(record => <tr key={record.transactionId}><td><code>{record.transactionId}</code></td><td>{new Date(record.timestamp * 1000).toLocaleString(locale)}<small>{record.wallet}</small><small>RefID · {record.refId}</small></td><td>{record.mainId}<small>{record.secondId || "—"}</small></td><td>{record.primaryTokenAmount}<small>{record.primaryTokenAddress}</small>{hasSecondaryTransaction(record) ? <>{record.secondaryTokenAmount}<small>{record.secondaryTokenAddress}</small></> : null}</td><td><span className={record.subscriptionRecorded ? "rule-enabled" : "rule-disabled"}>{record.subscriptionRecorded ? (zh ? "已确认" : "Confirmed") : (zh ? "待核对" : "Pending")}</span>{record.subscriptionEndsAt ? <small>{zh ? `订阅至 ${subscriptionEndLabel(record.subscriptionEndsAt, locale)}` : `Subscription through ${subscriptionEndLabel(record.subscriptionEndsAt, locale)}`}</small> : null}</td></tr>)}</tbody></table></div> : null}
+      <p>{zh ? "输入 PayerID 读取该账户最新 100 条交易；留空读取合约最新 25 条。付款钱包仅作为审计信息，PayerID 识别付款人，RefID 识别课程产品 Owner。" : "Enter a PayerID to read that account's latest 100 transactions, or leave it blank for the latest 25 contract transactions. The funding wallet is audit data only: PayerID identifies the payer and RefID identifies the course product Owner."}</p>
+      <div className="smartpay-transaction-query"><label><span>{zh ? "PayerID（可留空）" : "PayerID (optional)"}</span><input value={queryPayerId} onChange={event => setQueryPayerId(event.target.value.trim().toUpperCase())} placeholder="ABC234" disabled={!transactionReadReady}/></label><button type="button" className="button primary" onClick={() => void refreshTransactions()} disabled={!contractConfigured || !transactionReadReady || Boolean(busy)}>{busy === "transactions" ? "…" : (zh ? "刷新交易并核对订阅" : "Refresh transactions & subscriptions")}</button></div>
+      <p className="smartpay-record-count">{!transactionReadReady ? (zh ? "交易读取：等待重新部署" : "Transaction reads: redeploy required") : queryPayerId ? (zh ? `PayerID 交易：${transactions.length} / ${transactionTotal}` : `PayerID transactions: ${transactions.length} of ${transactionTotal}`) : (zh ? `最新交易：${transactions.length} / 合约总计 ${transactionTotal}` : `Latest transactions: ${transactions.length} of ${transactionTotal} total`)}</p>
+      {transactions.length ? <div className="smartpay-transaction-table" role="region" aria-label={`${contractName} transactions`}><table><thead><tr><th>TransactionID</th><th>{zh ? "时间 / 钱包 / PayerID / RefID" : "Time / wallet / PayerID / RefID"}</th><th>mainID / secondID</th><th>{zh ? "代币 / 数量" : "Token / amount"}</th><th>{zh ? "订阅状态" : "Subscription"}</th></tr></thead><tbody>{transactions.map(record => <tr key={record.transactionId}><td><code>{record.transactionId}</code></td><td>{new Date(record.timestamp * 1000).toLocaleString(locale)}<small>{record.wallet}</small><small>PayerID · {record.payerId}</small><small>RefID · {record.refId}</small></td><td>{record.mainId}<small>{record.secondId || "—"}</small></td><td>{record.primaryTokenAmount}<small>{record.primaryTokenAddress}</small>{hasSecondaryTransaction(record) ? <>{record.secondaryTokenAmount}<small>{record.secondaryTokenAddress}</small></> : null}</td><td><span className={record.subscriptionRecorded ? "rule-enabled" : "rule-disabled"}>{record.subscriptionRecorded ? (zh ? "已确认" : "Confirmed") : (zh ? "待核对" : "Pending")}</span>{record.subscriptionEndsAt ? <small>{zh ? `订阅至 ${subscriptionEndLabel(record.subscriptionEndsAt, locale)}` : `Subscription through ${subscriptionEndLabel(record.subscriptionEndsAt, locale)}`}</small> : null}</td></tr>)}</tbody></table></div> : null}
       {matchedMembers.length ? <div className="smartpay-matched-members"><strong>{zh ? "匹配会员" : "Matched members"}</strong>{matchedMembers.map(member => {
-        const needsReconciliation = transactions.some(record => smartPayTransactionNeedsReconciliation(record, member.payerWalletAddress, member.refId));
-        return <div key={member.id}><span>{member.displayName} · {member.email}{" "}<small>{shortAddress(member.payerWalletAddress)} · RefID {member.refId || "—"}</small></span>{needsReconciliation ? <button type="button" onClick={() => void manualSync(member)} disabled={Boolean(busy)}>{busy === `sync:${member.id}` ? "…" : (zh ? "手动核对此会员" : "Reconcile this member")}</button> : null}</div>;
+        const needsReconciliation = transactions.some(record => record.siteOwned && smartPayTransactionNeedsReconciliation(record, member.payerId, record.refId));
+        return <div key={member.id}><span>{member.displayName} · {member.email}{" "}<small>PayerID {member.payerId}</small></span>{needsReconciliation ? <button type="button" onClick={() => void manualSync(member)} disabled={Boolean(busy)}>{busy === `sync:${member.id}` ? "…" : (zh ? "手动核对此会员" : "Reconcile this member")}</button> : null}</div>;
       })}</div> : null}
     </section>
 

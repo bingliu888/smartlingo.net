@@ -27,7 +27,7 @@ test("course prices, public catalog, and language or course-scoped wallet checko
   assert.doesNotMatch(footer, /\/pricing/);
   assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
   for (const marker of [
-    "Connect wallet", "connectEvmWallet", "SMARTPAY3_ABI", "prepared.refId",
+    "Connect wallet", "connectEvmWallet", "SMARTPAY4_ABI", "prepared.refId",
     "eth_sendTransaction", "Refresh balances & gas", "Transaction hash", "lockedCourseId",
   ]) assert.ok(checkout.includes(marker), `missing ${marker}`);
   assert.match(checkout, /activeCourseId = selectedOption\?\.classId/);
@@ -51,11 +51,11 @@ test("course prices, public catalog, and language or course-scoped wallet checko
 
 test("site-isolated rails grant only the selected language and three-month crypto package", async () => {
   const [migration, packageMigration, admin, settings, presets, optionsRoute, checkout, claim, purchase, records, status, accountLookup] = await Promise.all([
-    read("../drizzle/0172_smartpay3_course_refid.sql"),
+    Promise.all([read("../drizzle/0172_smartpay3_course_refid.sql"), read("../drizzle/0178_smartpay4_payer_identity.sql")]).then(parts => parts.join("\n")),
     read("../drizzle/0173_course_subscription_packages.sql"),
     read("../components/SmartPayAdminConsole.tsx"),
     read("../app/api/admin/crypto-settings/route.ts"),
-    read("../lib/smartpay3-presets.ts"),
+    read("../lib/smartpay4-presets.ts"),
     read("../app/api/billing/crypto/smartpay/options/route.ts"),
     read("../components/CryptoCheckout.tsx"),
     read("../lib/smartlingo-smartpay-claim.ts"),
@@ -64,7 +64,7 @@ test("site-isolated rails grant only the selected language and three-month crypt
     read("../app/api/billing/status/route.ts"),
     read("../components/SmartPayAccountLookup.tsx"),
   ]);
-  for (const marker of ["smartpay3_contract", "smartpay3_usdt_percent", "smartpay3_payment_claims", "smartpay_source_publications"]) {
+  for (const marker of ["smartpay4_contract", "smartpay4_usdt_percent", "smartpay4_payment_claims", "smartpay_source_publications"]) {
     assert.match(migration, new RegExp(marker));
   }
   assert.match(admin, /Deploy or import contract/);
@@ -88,8 +88,10 @@ test("site-isolated rails grant only the selected language and three-month crypt
   assert.match(purchase, /addCourseSubscriptionMonths/);
   for (const packageId of ["basic_3m", "basic_6m", "basic_12m", "intermediate_3m", "intermediate_6m", "intermediate_12m", "advanced_3m", "advanced_6m", "advanced_12m"]) assert.match(packageMigration, new RegExp(packageId));
   for (const tokenAmount of ["'30'", "'60'", "'120'", "'30000000'", "'60000000'", "'120000000'"]) assert.match(packageMigration, new RegExp(tokenAmount));
-  assert.match(records, /smartPay3LatestTransactions/);
-  assert.match(status, /smartpay3_payment_claims/);
+  assert.match(records, /smartPay4LatestTransactions/);
+  assert.match(records, /payerId:/);
+  assert.doesNotMatch(records, /wallet_address AS wallet|Save a payer wallet/);
+  assert.match(status, /smartpay4_payment_claims/);
   assert.match(accountLookup, /cryptoSubscriptionPlanForIds\(row\.mainId,row\.secondId\)/);
   assert.match(accountLookup, /fixedCourseId\(row\.secondId,plan\)/);
   assert.doesNotMatch(accountLookup, /classId:row\.secondId/);

@@ -7,7 +7,7 @@ import { bytesToHex, createAccount, createAddressFromPrivateKey, hexToBytes } fr
 import { createVM, runTx } from "@ethereumjs/vm";
 import { decodeEventLog, decodeFunctionResult, encodeDeployData, encodeFunctionData } from "viem";
 
-const artifact=JSON.parse(await readFile(new URL("../contracts/artifacts/SmartPay3.json",import.meta.url),"utf8"));
+const artifact=JSON.parse(await readFile(new URL("../contracts/artifacts/SmartPay4.json",import.meta.url),"utf8"));
 const tokenArtifact=JSON.parse(await readFile(new URL("../contracts/artifacts/MockUSDC.json",import.meta.url),"utf8"));
 const ownerKey=hexToBytes(`0x${"11".repeat(32)}`);
 const payerKey=hexToBytes(`0x${"22".repeat(32)}`);
@@ -18,6 +18,8 @@ const treasury=createAddressFromPrivateKey(treasuryKey);
 const zeroAddress="0x0000000000000000000000000000000000000000";
 const basicMainId="smartlingo_course_basic_3m";
 const intermediateMainId="smartlingo_course_intermediate_3m";
+const productOwnerRefId="ADM234";
+const payerId="USR234";
 
 async function testChain(){
   const common=new Common({chain:Mainnet,hardfork:Hardfork.Prague});
@@ -58,21 +60,23 @@ async function deployCheckout(chain,{configure=true}={}){
   return {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance};
 }
 
-test("SmartPay3 is the only public ABI and exposes authoritative price reads",async()=>{
-  const publicAbi=JSON.parse(await readFile(new URL("../public/contracts/SmartPay3.abi.json",import.meta.url),"utf8"));
+test("SmartPay4 is the only public ABI and exposes authoritative price reads",async()=>{
+  const publicAbi=JSON.parse(await readFile(new URL("../public/contracts/SmartPay4.abi.json",import.meta.url),"utf8"));
   assert.deepEqual(publicAbi,artifact.abi);
-  assert.equal(artifact.contractName,"SmartPay3");
+  assert.equal(artifact.contractName,"SmartPay4");
   const rule=publicAbi.find(item=>item.type==="function"&&item.name==="paymentRule");
   assert.deepEqual(rule.inputs.map(input=>input.name),["primaryTokenAddress","secondaryTokenAddress","mainId","secondId"]);
   assert.deepEqual(rule.outputs.map(output=>output.name),["primaryTokenAmount","secondaryTokenAmount","minimumSecondaryBalance","enabled"]);
   const pay=publicAbi.find(item=>item.type==="function"&&item.name==="pay");
-  assert.deepEqual(pay.inputs.map(input=>input.name),["primaryTokenAddress","secondaryTokenAddress","mainId","secondId","primaryTokenAmount","refId"]);
+  assert.deepEqual(pay.inputs.map(input=>input.name),["primaryTokenAddress","secondaryTokenAddress","mainId","secondId","primaryTokenAmount","refId","payerId"]);
   const transaction=publicAbi.find(item=>item.type==="function"&&item.name==="transactionById");
-  assert.deepEqual(transaction.outputs[0].components.map(component=>component.name),["transactionId","timestamp","wallet","refId","mainId","secondId","primaryTokenAddress","primaryTokenAmount","secondaryTokenAddress","secondaryTokenAmount"]);
+  assert.deepEqual(transaction.outputs[0].components.map(component=>component.name),["transactionId","timestamp","wallet","payerId","refId","mainId","secondId","primaryTokenAddress","primaryTokenAmount","secondaryTokenAddress","secondaryTokenAmount"]);
+  assert.ok(publicAbi.some(item=>item.type==="function"&&item.name==="getTransactionsByPayerID"));
+  assert.equal(publicAbi.some(item=>item.type==="function"&&item.name==="latestTransactions"),false);
   assert.equal(JSON.stringify(publicAbi).toLowerCase().includes("domain"),false);
 });
 
-test("SmartPay3 reads its rule and atomically records mixed, secondary-only, and primary-only payments",async()=>{
+test("SmartPay4 reads its rule and atomically records mixed, secondary-only, and primary-only payments",async()=>{
   const chain=await testChain();
   const {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance}=await deployCheckout(chain);
   const rule=await chain.call(contract,artifact.abi,"paymentRule",[primary.toString(),secondary.toString(),basicMainId,""]);
@@ -81,16 +85,17 @@ test("SmartPay3 reads its rule and atomically records mixed, secondary-only, and
   await chain.send(ownerKey,{to:secondary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"mint",args:[payer.toString(),minimumSecondaryBalance+fullSecondary*2n]})});
   await chain.send(payerKey,{to:primary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"approve",args:[contract.toString(),fullPrimary*2n]})});
   await chain.send(payerKey,{to:secondary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"approve",args:[contract.toString(),minimumSecondaryBalance+fullSecondary*2n]})});
-  const rows=[[fullPrimary/2n,fullSecondary/2n,"AbC234"],[0n,fullSecondary,"ZXCVBN"],[fullPrimary,0n,"H7m9P2"]];
+  const rows=[[fullPrimary/2n,fullSecondary/2n],[0n,fullSecondary],[fullPrimary,0n]];
   const ids=[];
-  for(const [primaryAmount,secondaryAmount,refId] of rows){
-    const result=await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),secondary.toString(),basicMainId,"es",primaryAmount,refId]})});
+  for(const [primaryAmount,secondaryAmount] of rows){
+    const result=await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),secondary.toString(),basicMainId,"es",primaryAmount,productOwnerRefId,payerId]})});
     const decoded=result.receipt.logs.map(([address,topics,data])=>({address:bytesToHex(address),topics:topics.map(bytesToHex),data:bytesToHex(data)})).map(log=>{try{return decodeEventLog({abi:artifact.abi,...log});}catch{return null;}});
     const recorded=decoded.find(item=>item?.eventName==="TransactionRecorded");
     assert.ok(recorded);
     assert.equal(recorded.args.primaryTokenAmount,primaryAmount);
     assert.equal(recorded.args.secondaryTokenAmount,secondaryAmount);
-    assert.equal(recorded.args.refId,refId);
+    assert.equal(recorded.args.refId,productOwnerRefId);
+    assert.equal(recorded.args.payerId,payerId);
     assert.equal(recorded.args.secondId,"es");
     ids.push(recorded.args.transactionId);
     const payouts=decoded.filter(item=>item?.eventName==="PayoutExecuted");
@@ -99,32 +104,34 @@ test("SmartPay3 reads its rule and atomically records mixed, secondary-only, and
       assert.deepEqual(splits,amount?[amount*30n/100n,amount-(amount*30n/100n)]:[]);
     }
   }
-  const latest=await chain.call(contract,artifact.abi,"latestTransactions",[payer.toString(),100n]);
+  const latest=await chain.call(contract,artifact.abi,"getTransactionsByPayerID",[payerId,100n]);
   assert.equal(latest[1],3n);
   assert.deepEqual(latest[0].map(record=>record.transactionId),ids.toReversed());
-  assert.deepEqual(latest[0].map(record=>record.refId),rows.map(row=>row[2]).toReversed());
+  assert.deepEqual(latest[0].map(record=>record.refId),rows.map(()=>productOwnerRefId).toReversed());
+  assert.deepEqual(latest[0].map(record=>record.payerId),rows.map(()=>payerId).toReversed());
 });
 
-test("SmartPay3 enforces secondary eligibility and exact single-token rules",async()=>{
+test("SmartPay4 enforces secondary eligibility and exact single-token rules",async()=>{
   const chain=await testChain();
   const {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance}=await deployCheckout(chain);
   await chain.send(ownerKey,{to:primary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"mint",args:[payer.toString(),fullPrimary*2n]})});
   await chain.send(ownerKey,{to:secondary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"mint",args:[payer.toString(),minimumSecondaryBalance-1n]})});
   await chain.send(payerKey,{to:primary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"approve",args:[contract.toString(),fullPrimary*2n]})});
   await chain.send(payerKey,{to:secondary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"approve",args:[contract.toString(),fullSecondary]})});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),secondary.toString(),basicMainId,"ja",fullPrimary/2n,"ABC234"]}),expectFailure:true});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),secondary.toString(),basicMainId,"ja",fullPrimary,"ABC234"]})});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),secondary.toString(),basicMainId,"ja",fullPrimary/2n,productOwnerRefId,payerId]}),expectFailure:true});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),secondary.toString(),basicMainId,"ja",fullPrimary,productOwnerRefId,payerId]})});
   await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,intermediateMainId,"",fullPrimary,0n,0n,true]})});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary/2n,"ABC234"]}),expectFailure:true});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,"ABC234"]})});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,"ABC12"]}),expectFailure:true});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,"ABC1DE"]}),expectFailure:true});
-  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"xx",fullPrimary,"ABC234"]}),expectFailure:true});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary/2n,productOwnerRefId,payerId]}),expectFailure:true});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,productOwnerRefId,payerId]})});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,"ABC12",payerId]}),expectFailure:true});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,"ABC1DE",payerId]}),expectFailure:true});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"zh",fullPrimary,productOwnerRefId,"USR12"]}),expectFailure:true});
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"xx",fullPrimary,productOwnerRefId,payerId]}),expectFailure:true});
   await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,"smartlingo_course_basic_6m","",fullPrimary,0n,0n,true]}),expectFailure:true});
   await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,basicMainId,"es",fullPrimary,0n,0n,true]}),expectFailure:true});
 });
 
-test("SmartPay3 owner operations transfer immediately and reject the former owner and every non-owner",async()=>{
+test("SmartPay4 owner operations transfer immediately and reject the former owner and every non-owner",async()=>{
   const chain=await testChain();
   const {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance}=await deployCheckout(chain);
   const calls=[

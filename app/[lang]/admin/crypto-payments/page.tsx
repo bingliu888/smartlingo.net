@@ -27,7 +27,7 @@ export default async function CryptoPaymentsAdminPage({ params }: { params: Prom
   return <main className="dashboard-page smartpay-admin-page">
     <SiteHeader lang={lang}/>
     <section className="account-settings-main">
-      <p className="section-kicker">SMARTPAY3 CONTROL</p>
+      <p className="section-kicker">SMARTPAY4 CONTROL</p>
       <h1>{interfaceText(lang, "Crypto payments", "加密货币付款")}</h1>
       <p className="account-settings-intro">{interfaceText(
         lang,

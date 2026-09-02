@@ -57,6 +57,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidPayerId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidPaymentRatio",
     "type": "error"
   },
@@ -352,6 +357,12 @@
       {
         "indexed": false,
         "internalType": "string",
+        "name": "payerId",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
         "name": "refId",
         "type": "string"
       },
@@ -528,17 +539,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "wallet",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "maxCount",
         "type": "uint256"
       }
     ],
-    "name": "latestTransactions",
+    "name": "getLatestTransactions",
     "outputs": [
       {
         "components": [
@@ -556,6 +562,11 @@
             "internalType": "address",
             "name": "wallet",
             "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "payerId",
+            "type": "string"
           },
           {
             "internalType": "string",
@@ -593,7 +604,93 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct SmartPay3.TransactionRecord[]",
+        "internalType": "struct SmartPay4.TransactionRecord[]",
+        "name": "page",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "total",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "payerId",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "getTransactionsByPayerID",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "transactionId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "timestamp",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "wallet",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "payerId",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "refId",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "mainId",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "secondId",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "primaryTokenAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "primaryTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "secondaryTokenAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "secondaryTokenAmount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct SmartPay4.TransactionRecord[]",
         "name": "page",
         "type": "tuple[]"
       },
@@ -669,6 +766,11 @@
       {
         "internalType": "string",
         "name": "refId",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "payerId",
         "type": "string"
       }
     ],
@@ -803,7 +905,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct SmartPay3.PaymentRule[]",
+        "internalType": "struct SmartPay4.PaymentRule[]",
         "name": "page",
         "type": "tuple[]"
       }
@@ -957,6 +1059,11 @@
           },
           {
             "internalType": "string",
+            "name": "payerId",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
             "name": "refId",
             "type": "string"
           },
@@ -991,7 +1098,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct SmartPay3.TransactionRecord",
+        "internalType": "struct SmartPay4.TransactionRecord",
         "name": "",
         "type": "tuple"
       }

@@ -2,6 +2,7 @@ import { cryptoSubscriptionPlanForIds } from "./crypto-subscription";
 
 export type SmartPayReconciliationRecord = {
   wallet: string;
+  payerId: string;
   refId: string;
   mainId: string;
   secondId: string;
@@ -9,23 +10,23 @@ export type SmartPayReconciliationRecord = {
 };
 
 export function smartPayRecipientMatches(
-  record: Pick<SmartPayReconciliationRecord, "wallet" | "refId">,
-  payerWalletAddress: string,
-  memberRefId: string,
+  record: Pick<SmartPayReconciliationRecord, "payerId" | "refId">,
+  payerId: string,
+  productOwnerRefId: string,
 ) {
-  const wallet = payerWalletAddress.trim().toLowerCase();
-  const refId = memberRefId.trim().toUpperCase();
-  return Boolean(wallet && refId)
-    && record.wallet.trim().toLowerCase() === wallet
-    && record.refId.trim().toUpperCase() === refId;
+  const payer = payerId.trim().toUpperCase();
+  const owner = productOwnerRefId.trim().toUpperCase();
+  return Boolean(payer && owner)
+    && record.payerId.trim().toUpperCase() === payer
+    && record.refId.trim().toUpperCase() === owner;
 }
 
 export function smartPayTransactionNeedsReconciliation(
   record: SmartPayReconciliationRecord,
-  payerWalletAddress: string,
-  memberRefId: string,
+  payerId: string,
+  productOwnerRefId: string,
 ) {
-  return smartPayRecipientMatches(record, payerWalletAddress, memberRefId)
+  return smartPayRecipientMatches(record, payerId, productOwnerRefId)
     && cryptoSubscriptionPlanForIds(record.mainId, record.secondId) !== null
     && !record.subscriptionRecorded;
 }

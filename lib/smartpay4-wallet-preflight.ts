@@ -10,7 +10,7 @@ const ERC20_READ_ABI = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] }
 ] as const;
 
-const SMARTPAY3_PAY_ABI = [{
+const SMARTPAY4_PAY_ABI = [{
   type: "function", name: "pay", stateMutability: "nonpayable",
   inputs: [
     { name: "primaryTokenAddress", type: "address" },
@@ -18,12 +18,13 @@ const SMARTPAY3_PAY_ABI = [{
     { name: "mainId", type: "string" },
     { name: "secondId", type: "string" },
     { name: "primaryTokenAmount", type: "uint256" },
-    { name: "refId", type: "string" }
+    { name: "refId", type: "string" },
+    { name: "payerId", type: "string" }
   ],
   outputs: [{ name: "transactionId", type: "bytes32" }]
 }] as const;
 
-export type SmartPay3WalletPreflight = {
+export type SmartPay4WalletPreflight = {
   primaryBalanceAtomic: string;
   secondaryBalanceAtomic: string;
   nativeBalanceAtomic: string;
@@ -45,11 +46,11 @@ const asHexBigInt = (value: unknown, reason: string) => {
 };
 
 const readUint = (value: unknown, functionName: "balanceOf" | "allowance") => {
-  if (typeof value !== "string") throw new Error("SMARTPAY3_BALANCE_READ_FAILED");
+  if (typeof value !== "string") throw new Error("SMARTPAY4_BALANCE_READ_FAILED");
   return decodeFunctionResult({ abi: ERC20_READ_ABI, functionName, data: value as Hex }) as bigint;
 };
 
-export async function readSmartPay3WalletPreflight(input: {
+export async function readSmartPay4WalletPreflight(input: {
   provider: EthereumProvider;
   wallet: Address;
   contractAddress: Address;
@@ -61,7 +62,8 @@ export async function readSmartPay3WalletPreflight(input: {
   mainId: string;
   secondId: string;
   refId: string;
-}): Promise<SmartPay3WalletPreflight> {
+  payerId: string;
+}): Promise<SmartPay4WalletPreflight> {
   const balanceData = encodeFunctionData({ abi: ERC20_READ_ABI, functionName: "balanceOf", args: [input.wallet] });
   const allowanceData = encodeFunctionData({ abi: ERC20_READ_ABI, functionName: "allowance", args: [input.wallet, input.contractAddress] });
   const needsSecondary = input.secondaryRequired > 0n;
@@ -79,8 +81,8 @@ export async function readSmartPay3WalletPreflight(input: {
   const primaryAllowance = readUint(primaryAllowanceRaw, "allowance");
   const secondaryBalance = needsSecondary ? readUint(secondaryReads[0], "balanceOf") : 0n;
   const secondaryAllowance = needsSecondary ? readUint(secondaryReads[1], "allowance") : 0n;
-  const nativeBalance = asHexBigInt(nativeRaw, "SMARTPAY3_NATIVE_BALANCE_READ_FAILED");
-  const gasPrice = asHexBigInt(gasPriceRaw, "SMARTPAY3_GAS_PRICE_READ_FAILED");
+  const nativeBalance = asHexBigInt(nativeRaw, "SMARTPAY4_NATIVE_BALANCE_READ_FAILED");
+  const gasPrice = asHexBigInt(gasPriceRaw, "SMARTPAY4_GAS_PRICE_READ_FAILED");
   const primaryEnough = primaryBalance >= input.primaryRequired;
   const secondaryEnough = secondaryBalance >= input.secondaryRequired;
   const eligibilityMet = input.secondaryRequired === 0n || (secondaryBalance >= input.minimumSecondaryBalance && secondaryEnough);
@@ -98,7 +100,7 @@ export async function readSmartPay3WalletPreflight(input: {
     ? encodeFunctionData({ abi: ERC20_READ_ABI, functionName: "approve", args: [input.contractAddress, input.primaryRequired] })
     : nextAction === "approve-secondary"
       ? encodeFunctionData({ abi: ERC20_READ_ABI, functionName: "approve", args: [input.contractAddress, input.secondaryRequired] })
-      : encodeFunctionData({ abi: SMARTPAY3_PAY_ABI, functionName: "pay", args: [input.primaryTokenAddress, input.secondaryTokenAddress, input.mainId, input.secondId, input.primaryRequired, input.refId] });
+      : encodeFunctionData({ abi: SMARTPAY4_PAY_ABI, functionName: "pay", args: [input.primaryTokenAddress, input.secondaryTokenAddress, input.mainId, input.secondId, input.primaryRequired, input.refId, input.payerId] });
   try {
     const estimate = await input.provider.request({ method: "eth_estimateGas", params: [{ from: input.wallet, to: target, data }] });
     const gasLimit = bufferedWalletGasLimit(estimate);
@@ -113,7 +115,7 @@ export async function readSmartPay3WalletPreflight(input: {
       primaryBalanceAtomic: primaryBalance.toString(), secondaryBalanceAtomic: secondaryBalance.toString(), nativeBalanceAtomic: nativeBalance.toString(),
       primaryAllowanceAtomic: primaryAllowance.toString(), secondaryAllowanceAtomic: secondaryAllowance.toString(), primaryEnough, secondaryEnough,
       eligibilityMet, gasEnough: null, nextAction, gasLimit: null, estimatedFeeAtomic: null,
-      simulationError: walletRpcErrorData(error) || "SMARTPAY3_GAS_ESTIMATE_FAILED"
+      simulationError: walletRpcErrorData(error) || "SMARTPAY4_GAS_ESTIMATE_FAILED"
     };
   }
 }

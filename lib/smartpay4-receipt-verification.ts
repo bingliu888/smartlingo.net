@@ -1,15 +1,15 @@
 import { decodeEventLog, type Hex } from "viem";
 import {
-  decodeSmartPay3TransactionLog,
-  SMARTPAY3_ABI,
-  SMARTPAY3_PAYOUT_EXECUTED_TOPIC,
-  SMARTPAY3_TRANSACTION_RECORDED_TOPIC,
-  type SmartPay3TransactionEvent,
-} from "./smartpay3";
+  decodeSmartPay4TransactionLog,
+  SMARTPAY4_ABI,
+  SMARTPAY4_PAYOUT_EXECUTED_TOPIC,
+  SMARTPAY4_TRANSACTION_RECORDED_TOPIC,
+  type SmartPay4TransactionEvent,
+} from "./smartpay4";
 import { smartPayRecipientMatches } from "./smartpay-reconciliation";
-import type { SmartPay3ReceiptLog } from "./smartpay3-receipt-locator";
+import type { SmartPay4ReceiptLog } from "./smartpay4-receipt-locator";
 
-export type { SmartPay3ReceiptLog } from "./smartpay3-receipt-locator";
+export type { SmartPay4ReceiptLog } from "./smartpay4-receipt-locator";
 
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const addressTopic = (address: string) =>
@@ -21,7 +21,7 @@ function matchesAmount(value: string | undefined, amount: bigint) {
 }
 
 function matchingTransfer(
-  logs: SmartPay3ReceiptLog[],
+  logs: SmartPay4ReceiptLog[],
   token: string,
   payer: string,
   wallet: string,
@@ -34,15 +34,15 @@ function matchingTransfer(
     && matchesAmount(item.data, amount));
 }
 
-function payoutRows(logs: SmartPay3ReceiptLog[], contract: string, transactionId: string) {
+function payoutRows(logs: SmartPay4ReceiptLog[], contract: string, transactionId: string) {
   return logs.flatMap((item) => {
     if (item.address?.toLowerCase() !== contract
-      || item.topics?.[0]?.toLowerCase() !== SMARTPAY3_PAYOUT_EXECUTED_TOPIC.toLowerCase()
+      || item.topics?.[0]?.toLowerCase() !== SMARTPAY4_PAYOUT_EXECUTED_TOPIC.toLowerCase()
       || item.topics?.[1]?.toLowerCase() !== transactionId.toLowerCase()
       || !item.data || !item.topics) return [];
     try {
       const decoded = decodeEventLog({
-        abi: SMARTPAY3_ABI,
+        abi: SMARTPAY4_ABI,
         eventName: "PayoutExecuted",
         data: item.data as Hex,
         topics: item.topics as [Hex, ...Hex[]],
@@ -62,10 +62,11 @@ function payoutRows(logs: SmartPay3ReceiptLog[], contract: string, transactionId
   });
 }
 
-export function verifySmartPay3Receipt(input: {
-  logs: SmartPay3ReceiptLog[];
+export function verifySmartPay4Receipt(input: {
+  logs: SmartPay4ReceiptLog[];
   contract: string;
   payer: string;
+  payerId: string;
   primaryToken: string;
   secondaryToken: string;
   mainId: string;
@@ -79,12 +80,12 @@ export function verifySmartPay3Receipt(input: {
   const secondaryToken = input.secondaryToken.toLowerCase();
   const paymentLogs = input.logs.filter((item) =>
     item.address?.toLowerCase() === contract
-      && item.topics?.[0]?.toLowerCase() === SMARTPAY3_TRANSACTION_RECORDED_TOPIC.toLowerCase());
+      && item.topics?.[0]?.toLowerCase() === SMARTPAY4_TRANSACTION_RECORDED_TOPIC.toLowerCase());
   if (paymentLogs.length !== 1 || !paymentLogs[0].data || !paymentLogs[0].topics)
     return { ok: false as const, reason: "transaction-log" };
-  let payment: SmartPay3TransactionEvent;
+  let payment: SmartPay4TransactionEvent;
   try {
-    payment = decodeSmartPay3TransactionLog({
+    payment = decodeSmartPay4TransactionLog({
       data: paymentLogs[0].data as Hex,
       topics: paymentLogs[0].topics as Hex[],
     });
@@ -92,7 +93,7 @@ export function verifySmartPay3Receipt(input: {
     return { ok: false as const, reason: "transaction-log" };
   }
   if (payment.transactionId.toLowerCase() !== input.transactionId.toLowerCase()
-    || !smartPayRecipientMatches(payment, payer, input.refId)
+    || !smartPayRecipientMatches(payment, input.payerId, input.refId)
     || payment.primaryTokenAddress.toLowerCase() !== primaryToken
     || payment.secondaryTokenAddress.toLowerCase() !== secondaryToken
     || payment.mainId !== input.mainId || payment.secondId !== input.secondId)

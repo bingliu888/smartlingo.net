@@ -1,9 +1,9 @@
-export type SmartPay3ReceiptLog = { address?: string; topics?: string[]; data?: string };
-export type SmartPay3LocatedReceipt = {
+export type SmartPay4ReceiptLog = { address?: string; topics?: string[]; data?: string };
+export type SmartPay4LocatedReceipt = {
   transactionHash?: string;
   status?: string;
   blockNumber?: string;
-  logs?: SmartPay3ReceiptLog[];
+  logs?: SmartPay4ReceiptLog[];
 };
 
 type RpcBlock = { timestamp?: string };
@@ -25,7 +25,7 @@ async function firstBlockAtOrAfter(rpc: RpcCall, latest: bigint, timestamp: bigi
   return low;
 }
 
-export async function locateSmartPay3Receipt(input: {
+export async function locateSmartPay4Receipt(input: {
   rpc: RpcCall;
   contract: string;
   transactionId: string;
@@ -52,7 +52,7 @@ export async function locateSmartPay3Receipt(input: {
   const hashes = [...new Set(logs.map((log) => log.transactionHash?.toLowerCase())
     .filter((value): value is string => Boolean(value)))];
   if (hashes.length !== 1) throw new Error("TRANSACTION_EVENT_NOT_FOUND");
-  const receipt = await input.rpc<SmartPay3LocatedReceipt>(
+  const receipt = await input.rpc<SmartPay4LocatedReceipt>(
     "eth_getTransactionReceipt", [hashes[0]],
   );
   if (!receipt.transactionHash || receipt.transactionHash.toLowerCase() !== hashes[0]

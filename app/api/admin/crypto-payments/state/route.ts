@@ -6,11 +6,11 @@ import { cryptoSettingById } from "../../../../../lib/crypto-settings";
 import { requirePermanentAdmin } from "../../../../../lib/member";
 import { erc20ContractDetails } from "../../../../../lib/erc20-server";
 import {
-  smartPay3LatestTransactions,
-  smartPay3PaymentRules,
-  smartPay3PayoutConfigurationRaw,
-  verifySmartPay3Identity
-} from "../../../../../lib/smartpay3-server";
+  smartPay4LatestTransactions,
+  smartPay4PaymentRules,
+  smartPay4PayoutConfigurationRaw,
+  verifySmartPay4Identity
+} from "../../../../../lib/smartpay4-server";
 
 export const dynamic = "force-dynamic";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -21,18 +21,18 @@ export async function GET(request: Request) {
     const params = new URL(request.url).searchParams;
     const setting = await cryptoSettingById(String(params.get("settingId") || ""));
     if (!setting) return NextResponse.json({ error: "Select an active payment rail" }, { status: 400 });
-    const configuredContract = setting.smartPay3Contract;
+    const configuredContract = setting.smartPay4Contract;
     if (!configuredContract || !isAddress(configuredContract)) {
-      return NextResponse.json({ error: "SmartPay3 is not configured for this payment rail" }, { status: 409 });
+      return NextResponse.json({ error: "SmartPay4 is not configured for this payment rail" }, { status: 409 });
     }
     const rpcUrl = await cryptoRpcUrl(setting.chainId);
     if (!rpcUrl) return NextResponse.json({ error: "Blockchain RPC is not configured for this network" }, { status: 503 });
     const contract = configuredContract as Address;
-    const identity = await verifySmartPay3Identity(rpcUrl, contract);
+    const identity = await verifySmartPay4Identity(rpcUrl, contract);
     const [payouts, rules, latest] = await Promise.all([
-      smartPay3PayoutConfigurationRaw(rpcUrl, contract),
-      smartPay3PaymentRules(rpcUrl, contract),
-      smartPay3LatestTransactions({ rpcUrl, contract, maxCount: 25 })
+      smartPay4PayoutConfigurationRaw(rpcUrl, contract),
+      smartPay4PaymentRules(rpcUrl, contract),
+      smartPay4LatestTransactions({ rpcUrl, contract, maxCount: 25 })
     ]);
     const tokenAddresses = [...new Set(rules.flatMap(rule => [
       rule.primaryTokenAddress.toLowerCase(),

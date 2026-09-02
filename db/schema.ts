@@ -1086,7 +1086,7 @@ export const lingoCoursePackagePurchases = sqliteTable("smartlingo_course_packag
   index("smartlingo_course_package_purchase_class_idx").on(table.classId, table.status, table.accessEndsAt),
   check("smartlingo_course_package_purchase_tier_ck", sql`${table.packageTier} IN ('basic', 'intermediate', 'advanced')`),
   check("smartlingo_course_package_purchase_duration_ck", sql`${table.durationMonths} IN (3, 6, 12)`),
-  check("smartlingo_course_package_purchase_provider_ck", sql`${table.provider} IN ('stripe', 'smartpay3')`),
+  check("smartlingo_course_package_purchase_provider_ck", sql`${table.provider} IN ('stripe', 'smartpay3', 'smartpay4')`),
   check("smartlingo_course_package_purchase_status_ck", sql`${table.status} IN ('paid', 'refunded', 'disputed', 'void')`),
 ]);
 

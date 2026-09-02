@@ -10,7 +10,7 @@ export const CRYPTO_PLANS = [
 export type CryptoPaymentSetting = {
   id: string; label: string; chainType: "evm"; chainName: string; chainId: number;
   tokenSymbol: string; tokenContract: string; tokenDecimals: number; receiverWallet: string;
-  smartPay3Contract: string | null; smartPay3UsdtPercent: number;
+  smartPay4Contract: string | null; smartPay4UsdtPercent: number;
   basicAmountCents: number; intermediateAmountCents: number; advancedAmountCents: number;
   basicTokenAmount: string; intermediateTokenAmount: string; advancedTokenAmount: string;
   minConfirmations: number; walletConnectProjectId: string | null; enabled: number;

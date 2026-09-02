@@ -1,79 +1,87 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-qa-21-day-report-20260902",
+  "releaseId": "smartlingo-net-smartpay4-payer-identity-20260902",
   "site": "smartlingo.net",
   "title": {
-    "en": "Signed-in four-language 21-day QA report",
-    "zh": "登录态四语言 21 天质量验收报告"
+    "en": "SmartPay4 payer-identity checkout",
+    "zh": "SmartPay4 付款人身份结账"
   },
   "purpose": {
-    "en": "Publish the administrator Project record for the September 2 signed-in production acceptance after all required real-user evidence was collected.",
-    "zh": "在全部必要的真实用户证据完成后，发布 9 月 2 日登录态生产验收的管理员 Project 记录。"
+    "en": "Replace SmartPay3 with SmartPay4 so a signed-in SmartLingo member can fund a course purchase from any connected wallet while the chain record still identifies the payer and product owner.",
+    "zh": "以 SmartPay4 取代 SmartPay3，使已登录 SmartLingo 会员可用任意连接钱包为课程付款，同时链上记录仍明确付款人与产品 Owner。"
   },
   "features": {
     "en": [
-      "English passed Course, Play, SmartCard Practice, Challenge, Rankings, Score History, and Everyday Speaking; planned 2 minutes, measured 2 minutes 31 seconds, deep focus Reading, Sprint score 80/100, and the signed-in score and learning logs persisted.",
-      "Japanese passed Course, Play, SmartCard Practice, Challenge, Rankings, Score History, and Everyday Speaking; planned 3 minutes, measured 3 minutes 2 seconds, deep focus Vocabulary, Sprint score 80/100, and the signed-in score and learning logs persisted.",
-      "Spanish passed Course, Play, SmartCard Practice, Challenge, Rankings, Score History, and Everyday Speaking; planned 4 minutes, measured 4 minutes 4 seconds, deep focus Reading, displayed Sprint scores 60/100 and 80/100, and the signed-in score and learning logs persisted.",
-      "Italian passed Course, Play, SmartCard Practice, Challenge, Rankings, Score History, and Everyday Speaking; planned 1 minute, measured 1 minute 58 seconds, deep focus Listening, Sprint score 80/100, and the signed-in score and learning logs persisted."
+      "Every payment now carries the signed-in member PayerID and the permanent administrator product-owner RefID as separate six-character identities.",
+      "Account payment recovery reads the SmartPay4 transaction map by PayerID instead of requiring a saved profile wallet.",
+      "The administrator receives an immediate bilingual reminder when an Owner-only action is attempted from a wallet that is not the SmartPay4 Owner."
     ],
     "zh": [
-      "英语通过课程、Play、智慧卡练习、挑战、排行榜、成绩历史及生活口语；计划 2 分钟，实测 2 分 31 秒，深测阅读，速成 80/100，登录态成绩与学习日志均已持久化。",
-      "日语通过课程、Play、智慧卡练习、挑战、排行榜、成绩历史及生活口语；计划 3 分钟，实测 3 分 2 秒，深测词汇，速成 80/100，登录态成绩与学习日志均已持久化。",
-      "西班牙语通过课程、Play、智慧卡练习、挑战、排行榜、成绩历史及生活口语；计划 4 分钟，实测 4 分 4 秒，深测阅读，页面显示速成 60/100 与 80/100，登录态成绩与学习日志均已持久化。",
-      "意大利语通过课程、Play、智慧卡练习、挑战、排行榜、成绩历史及生活口语；计划 1 分钟，实测 1 分 58 秒，深测听力，速成 80/100，登录态成绩与学习日志均已持久化。"
+      "每笔付款现在分别携带已登录会员的六位 PayerID 与永久管理员产品 Owner 的六位 RefID。",
+      "账户付款恢复改为按 PayerID 读取 SmartPay4 交易映射，不再要求个人资料保存钱包。",
+      "管理员使用非 SmartPay4 Owner 钱包执行 Owner 专属操作时，会立即收到双语提醒。"
     ]
   },
   "affected": {
     "en": [
-      "The report covers the anonymized qa_test_learner_1 identity in the Chinese production interface on smartlingo.net for Pacific date 2026-09-02.",
-      "Payment records, the zero-point referral ledger, three existing certificates, subscription state, roles, and provider settings remained unchanged."
+      "SmartLingo's three supported three-month course products, twelve learning-language second IDs, Polygon payment administration, checkout, reconciliation, and account lookup are affected.",
+      "Card payments, course prices, existing SmartPay3 history, profile wallet editing, referrals, certificates, learning data, classrooms, header, footer, and branding are unchanged."
     ],
     "zh": [
-      "报告覆盖太平洋日期 2026-09-02、smartlingo.net 中文生产界面中的匿名 qa_test_learner_1 身份。",
-      "付款记录、零积分介绍人账本、原有三份证书、订阅状态、角色及服务商设置均保持不变。"
+      "影响 SmartLingo 三个受支持的三个月课程产品、十二种学习语言 secondID、Polygon 付款管理、结账、核对与账户查询。",
+      "银行卡付款、课程价格、既有 SmartPay3 历史、个人资料钱包编辑、推荐、证书、学习数据、教室、页眉、页脚及品牌均不变。"
     ]
   },
   "changes": {
     "en": [
-      "Record real Chrome evidence for four languages without storing the test email, verification code, message body, or authentication artifacts.",
-      "Reference vocabulary-loading fix commit 8618ceacf51316d4db6c4971d2024a3a27a705c5 and successful Cloudflare deployment run 33618456522."
+      "Added the site-specific SmartPay4 contract, ABI, deployment artifact, public ABI route, PayerID transaction index, and separate contract-wide administrator read.",
+      "Removed SmartPay3 runtime contract, routes, styles, libraries, and public artifacts while retaining immutable migrations and historical provider compatibility.",
+      "Added a server-authoritative permanent-administrator product-owner resolver and required PayerID plus owner RefID during preparation, payment, receipt verification, claim, and synchronization.",
+      "Added migration 0178 for fresh SmartPay4 configuration and claims without copying the former SmartPay3 contract address."
     ],
     "zh": [
-      "记录四种语言的真实 Chrome 证据，不保存测试邮箱、验证码、邮件正文或身份验证资料。",
-      "引用词汇加载修复提交 8618ceacf51316d4db6c4971d2024a3a27a705c5 与成功的 Cloudflare 部署运行 33618456522。"
+      "新增站点专属 SmartPay4 合约、ABI、部署产物、公开 ABI 路由、PayerID 交易索引及独立的管理员全合约查询。",
+      "移除 SmartPay3 运行时合约、路由、样式、库及公开产物，同时保留不可变迁移与历史付款提供方兼容。",
+      "新增服务端权威的永久管理员产品 Owner 解析，并在准备、付款、收据验证、认领与同步全流程要求 PayerID 加 Owner RefID。",
+      "新增 0178 迁移，用于全新的 SmartPay4 配置与付款认领，且不会复制旧 SmartPay3 合约地址。"
     ]
   },
   "validation": {
     "en": [
-      "All 36 official courses expose exactly 120 prebuilt sentences; Listening and Writing each select ten unique daily items from the reviewed 4,320-row catalog.",
-      "Each language completed a real five-skill Sprint, a checked Course Writing sentence advancing 1/10 to 2/10, and a checked target-language Listening sentence advancing 1/10 to 2/10.",
-      "Challenge used the learner-local 2026-09-02 set and advanced automatically after six seconds; rankings showed the selected language on the server-derived Top 25 surface.",
-      "Repeat-after-me and user-language audio remained off throughout, and no microphone permission was requested; the normal no-microphone text and scenario paths passed.",
-      "Mika, Leo, and Aya were visibly marked as AI study partners; the AI turn-taking entry worked without enabling Nearby or sharing location."
+      "The SmartPay4 Solidity contract compiled reproducibly with the reviewed artifact and passed mixed-token, single-token, identity, ownership, invalid-ID, and non-owner tests.",
+      "All focused payment, migration, multilingual interface, shared authentication, and site architecture contracts passed; TypeScript, zero-warning lint, D1 replay, and the production Worker build passed.",
+      "All 73 migrations applied exactly once in the local replay, no-op on the second run, and reported zero foreign-key violations."
     ],
     "zh": [
-      "36 门正式课程均恰好提供 120 条预建句子；听力与写作分别从已审核的 4,320 行目录选择每日十条唯一题目。",
-      "每种语言均完成真实五技能速成、课程写作正确组句并由 1/10 前进至 2/10，以及目标语言听力正确组句并由 1/10 前进至 2/10。",
-      "挑战采用学习者本地 2026-09-02 题组并在六秒后自动前进；排行榜在服务器生成的 Top 25 界面显示所选语言。",
-      "全程保持跟读和用户语言语音关闭，未请求麦克风权限；正常无麦克风文本与场景路径通过。",
-      "Mika、Leo 和 Aya 均明确标为人工智能学习伙伴；未开启 Nearby 或共享位置即可进入人工智能轮流学习。"
+      "SmartPay4 Solidity 合约以已审核产物可重现编译，并通过混合代币、单代币、身份、所有权、无效 ID 与非 Owner 测试。",
+      "付款、迁移、多语言界面、共享身份验证及站点架构的专项合约均通过；TypeScript、零警告 lint、D1 回放与生产 Worker 构建均通过。",
+      "本地回放中 73 个迁移均只应用一次，第二次运行无操作，外键违规为零。"
     ]
   },
   "deferred": {
     "en": [
-      "Physical-device microphone scoring remains outside scheduled QA by design; no blocker remains for the required no-microphone acceptance path."
+      "A new site-owned SmartPay4 contract must be deployed and configured by the administrator before live course-token payments resume; the user will perform the authenticated wallet acceptance test."
     ],
     "zh": [
-      "真实设备麦克风评分按设计不属于定时质量验收范围；必要的无麦克风验收路径没有剩余阻塞。"
+      "管理员必须先部署并配置新的站点专属 SmartPay4 合约，课程代币付款才会恢复；用户将执行登录态钱包验收测试。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo's Chinese interface, twelve-language picker, server-graded learning history, Clerk identity, Worker, D1, R2, course catalog, and strict payment/referral/certificate boundaries."
+      "SmartLingo keeps its three shared three-month price rules; the payment secondID remains the selected learning language and every course product's RefID remains the permanent administrator."
     ],
     "zh": [
-      "保留 SmartLingo 中文界面、十二语言选择器、服务端评分学习历史、Clerk 身份、Worker、D1、R2、课程目录及严格的付款/介绍人/证书边界。"
+      "SmartLingo 保留三个共享的三个月价格规则；付款 secondID 仍是所选学习语言，每个课程产品的 RefID 仍是永久管理员。"
     ]
+  },
+  "dataMigration": {
+    "included": true,
+    "migrations": [
+      "0178_smartpay4_payer_identity"
+    ],
+    "rollback": {
+      "en": "Restore the pre-release D1 snapshot and previous Worker together; existing SmartPay3 claims and purchase history remain retained for audit.",
+      "zh": "同时恢复发布前的 D1 快照与上一版 Worker；既有 SmartPay3 认领及购买历史仍保留用于审计。"
+    }
   }
 }

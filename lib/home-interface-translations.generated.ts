@@ -743,7 +743,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "要確認",
     "Completing checkout": "チェックアウトを完了しています",
     "Start five-skill learning": "5技能学習を始めましょう",
-    "3-month fixed-term access": "3か月の定期アクセス"
+    "3-month fixed-term access": "3か月の定期アクセス",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "支払いはサインインしている PayerID と照合されます。資金調達ウォレットは接続されているウォレットであれば何でもよく、プロフィールに保存する必要はありません。",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "PayerID に一致する最近のオンチェーン支払いを検索するには、空白のままにします。",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "サインインしているアカウントの PayerID の最新 100 件のレコードを読み取ります。ファンディング ウォレットはプロファイル ウォレットとは異なる場合がありますが、プロファイル ウォレットは必要ありません。ルックアップにはウォレットへの接続、署名、ガスは必要ありません。"
   },
   "ko": {
     "SmartLingo — Speak from day one": "SmartLingo — 첫날부터 말해보세요",
@@ -1487,7 +1490,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "확인 필요",
     "Completing checkout": "결제 완료 중",
     "Start five-skill learning": "5가지 기술 학습 시작",
-    "3-month fixed-term access": "3개월 고정 기간 액세스"
+    "3-month fixed-term access": "3개월 고정 기간 액세스",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "결제는 로그인한 PayerID와 일치합니다. 펀딩 지갑은 연결된 지갑일 수 있으며 프로필에 저장할 필요가 없습니다.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "귀하의 PayerID와 일치하는 최근 온체인 결제를 찾으려면 공백으로 남겨두세요.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "로그인한 계정의 PayerID에 대한 최신 100개 기록을 읽습니다. 펀딩 지갑은 프로필 지갑과 다를 수 있으며 프로필 지갑이 필요하지 않습니다. 조회에는 지갑 연결, 서명 또는 가스가 필요하지 않습니다."
   },
   "es": {
     "SmartLingo — Speak from day one": "SmartLingo — Habla desde el primer día",
@@ -2231,7 +2237,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "Se necesita confirmación",
     "Completing checkout": "Completando el pago",
     "Start five-skill learning": "Iniciar el aprendizaje de cinco habilidades",
-    "3-month fixed-term access": "Acceso a plazo fijo de 3 meses"
+    "3-month fixed-term access": "Acceso a plazo fijo de 3 meses",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "Los pagos coinciden con su PayerID registrado. La billetera de fondos puede ser cualquier billetera conectada y no es necesario guardarla en su perfil.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "Déjelo en blanco para encontrar un pago en cadena reciente que coincida con su PayerID.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "Lea los últimos 100 registros del PayerID de la cuenta iniciada. La billetera de fondos puede diferir de la billetera de perfil y no se requiere ninguna billetera de perfil. La búsqueda no requiere conexión de billetera, firma ni gasolina."
   },
   "fr": {
     "SmartLingo — Speak from day one": "SmartLingo — Parlez dès le premier jour",
@@ -2975,7 +2984,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "Confirmation nécessaire",
     "Completing checkout": "Finalisation du paiement",
     "Start five-skill learning": "Commencer l'apprentissage de cinq compétences",
-    "3-month fixed-term access": "Accès à durée déterminée de 3 mois"
+    "3-month fixed-term access": "Accès à durée déterminée de 3 mois",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "Les paiements correspondent à votre PayerID connecté. Le portefeuille de financement peut être n’importe quel portefeuille connecté et n’a pas besoin d’être enregistré dans votre profil.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "Laissez ce champ vide pour rechercher un paiement en chaîne récent correspondant à votre PayerID.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "Lisez les 100 derniers enregistrements pour le PayerID du compte connecté. Le portefeuille de financement peut différer du portefeuille de profil et aucun portefeuille de profil n'est requis. La recherche ne nécessite aucune connexion de portefeuille, signature ou gaz."
   },
   "de": {
     "SmartLingo — Speak from day one": "SmartLingo – Sprechen Sie vom ersten Tag an",
@@ -3719,7 +3731,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "Bestätigung erforderlich",
     "Completing checkout": "Der Checkout wird abgeschlossen",
     "Start five-skill learning": "Beginnen Sie mit dem Erlernen von fünf Fertigkeiten",
-    "3-month fixed-term access": "3 Monate befristeter Zugang"
+    "3-month fixed-term access": "3 Monate befristeter Zugang",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "Zahlungen werden Ihrer angemeldeten PayerID zugeordnet. Das Finanzierungs-Wallet kann ein beliebiges verbundenes Wallet sein und muss nicht in Ihrem Profil gespeichert werden.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "Lassen Sie das Feld leer, um eine aktuelle, passende On-Chain-Zahlung für Ihre PayerID zu finden.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "Lesen Sie die letzten 100 Datensätze für die PayerID des angemeldeten Kontos. Das Finanzierungs-Wallet kann sich vom Profil-Wallet unterscheiden und es ist kein Profil-Wallet erforderlich. Für die Suche ist keine Wallet-Verbindung, Signatur oder Gas erforderlich."
   },
   "ru": {
     "SmartLingo — Speak from day one": "SmartLingo — Говори с первого дня",
@@ -4463,7 +4478,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "Требуется подтверждение",
     "Completing checkout": "Завершение оформления заказа",
     "Start five-skill learning": "Начните обучение пяти навыкам",
-    "3-month fixed-term access": "Доступ на 3 месяца с фиксированным сроком"
+    "3-month fixed-term access": "Доступ на 3 месяца с фиксированным сроком",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "Платежи сопоставляются с вашим идентификатором PayerID, для которого вы вошли в систему. Кошелек для финансирования может быть любым подключенным кошельком, и его не нужно сохранять в вашем профиле.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "Оставьте поле пустым, чтобы найти недавний соответствующий внутрисетевой платеж для вашего PayerID.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "Прочтите последние 100 записей для идентификатора PayerID вошедшего в систему аккаунта. Кошелек для финансирования может отличаться от кошелька профиля, и кошелек профиля не требуется. Поиск не требует подключения к кошельку, подписи или газа."
   },
   "it": {
     "SmartLingo — Speak from day one": "SmartLingo: parla dal primo giorno",
@@ -5207,7 +5225,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "Serve conferma",
     "Completing checkout": "Completamento del pagamento",
     "Start five-skill learning": "Inizia l’apprendimento delle cinque abilità",
-    "3-month fixed-term access": "Accesso a tempo determinato di 3 mesi"
+    "3-month fixed-term access": "Accesso a tempo determinato di 3 mesi",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "I pagamenti vengono abbinati al PayerID con cui hai effettuato l'accesso. Il portafoglio di finanziamento può essere qualsiasi portafoglio connesso e non è necessario che sia salvato nel tuo profilo.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "Lascia vuoto per trovare un pagamento on-chain recente corrispondente al tuo PayerID.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "Leggi gli ultimi 100 record per il PayerID dell'account a cui hai effettuato l'accesso. Il portafoglio di finanziamento può differire dal portafoglio del profilo e non è richiesto alcun portafoglio del profilo. La ricerca non richiede connessione al portafoglio, firma o gas."
   },
   "pt": {
     "SmartLingo — Speak from day one": "SmartLingo — Fale desde o primeiro dia",
@@ -5951,7 +5972,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "Confirmação necessária",
     "Completing checkout": "Concluindo a finalização da compra",
     "Start five-skill learning": "Comece o aprendizado de cinco habilidades",
-    "3-month fixed-term access": "Acesso por prazo fixo de 3 meses"
+    "3-month fixed-term access": "Acesso por prazo fixo de 3 meses",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "Os pagamentos correspondem ao seu PayerID conectado. A carteira de financiamento pode ser qualquer carteira conectada e não precisa ser salva no seu perfil.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "Deixe em branco para encontrar um pagamento em rede correspondente recente para o seu PayerID.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "Leia os últimos 100 registros do PayerID da conta conectada. A carteira de financiamento pode ser diferente da carteira de perfil e nenhuma carteira de perfil é necessária. A pesquisa não requer conexão de carteira, assinatura ou gás."
   },
   "ar": {
     "SmartLingo — Speak from day one": "SmartLingo — تحدث من اليوم الأول",
@@ -6695,7 +6719,10 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "التأكيد مطلوب",
     "Completing checkout": "استكمال الخروج",
     "Start five-skill learning": "ابدأ بتعلم المهارات الخمس",
-    "3-month fixed-term access": "وصول محدد المدة لمدة 3 أشهر"
+    "3-month fixed-term access": "وصول محدد المدة لمدة 3 أشهر",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "تتم مطابقة الدفعات مع PayerID الذي قمت بتسجيل الدخول إليه. قد تكون محفظة التمويل أي محفظة متصلة ولا تحتاج إلى حفظها في ملفك الشخصي.",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "اتركه فارغًا للعثور على دفعة حديثة متطابقة على السلسلة لـ PayerID الخاص بك.",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "اقرأ أحدث 100 سجل لـ PayerID الخاص بالحساب الذي تم تسجيل الدخول به. قد تختلف محفظة التمويل عن محفظة الملف الشخصي، ولا يلزم وجود محفظة للملف الشخصي. لا يتطلب البحث أي اتصال بالمحفظة أو التوقيع أو الغاز."
   },
   "hi": {
     "SmartLingo — Speak from day one": "स्मार्टलिंगो - पहले दिन से बोलें",
@@ -7439,6 +7466,9 @@ export const homeInterfaceTranslations: Record<string, Record<string, string>> =
     "Confirmation needed": "पुष्टि की आवश्यकता है",
     "Completing checkout": "चेकआउट पूरा हो रहा है",
     "Start five-skill learning": "पाँच-कौशल सीखना शुरू करें",
-    "3-month fixed-term access": "3 महीने की निश्चित अवधि की पहुंच"
+    "3-month fixed-term access": "3 महीने की निश्चित अवधि की पहुंच",
+    "Payments are matched to your signed-in PayerID. The funding wallet may be any connected wallet and does not need to be saved in your profile.": "भुगतान आपके साइन-इन PayerID से मेल खाते हैं। फंडिंग वॉलेट कोई भी कनेक्टेड वॉलेट हो सकता है और इसे आपकी प्रोफ़ाइल में सहेजने की आवश्यकता नहीं है।",
+    "Leave blank to find a recent matching on-chain payment for your PayerID.": "अपने PayerID के लिए हाल ही में मेल खाने वाले ऑन-चेन भुगतान को खोजने के लिए खाली छोड़ दें।",
+    "Read the latest 100 records for the signed-in account’s PayerID. The funding wallet may differ from the profile wallet, and no profile wallet is required. Lookup requires no wallet connection, signature, or gas.": "साइन-इन खाते के PayerID के लिए नवीनतम 100 रिकॉर्ड पढ़ें। फंडिंग वॉलेट प्रोफ़ाइल वॉलेट से भिन्न हो सकता है, और किसी प्रोफ़ाइल वॉलेट की आवश्यकता नहीं है। लुकअप के लिए किसी वॉलेट कनेक्शन, हस्ताक्षर या गैस की आवश्यकता नहीं है।"
   }
 };

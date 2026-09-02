@@ -1,6 +1,6 @@
-# SmartPay3 for SmartLingo.net
+# SmartPay4 for SmartLingo.net
 
-`SmartPay3.sol` is the only supported SmartLingo on-chain checkout. Each site and EVM chain uses an independent deployment. The contract owns the payable rules, W1–W5 payout configuration, public transaction records, pause state, withdrawal controls, and immediate Owner transfer.
+`SmartPay4.sol` is the only supported SmartLingo on-chain checkout. Each site and EVM chain uses an independent deployment. The contract owns the payable rules, W1–W5 payout configuration, public transaction records, pause state, withdrawal controls, and immediate Owner transfer.
 
 ## Course-payment identifiers
 
@@ -10,13 +10,13 @@
 - Price-rule `secondId`: the empty string, so all languages share one price
 - Payment `secondId`: one supported learning-language code, such as `es`
 
-The public catalog has exactly nine fixed-term packages: three levels at 3, 6, and 12 months. Card payment supports all nine. SmartPay3 supports only the three 3-month packages on Polygon. A successful claim grants the selected 3-month level for the language recorded in the transaction `secondId`.
+The public catalog has exactly nine fixed-term packages: three levels at 3, 6, and 12 months. Card payment supports all nine. SmartPay4 supports only the three 3-month packages on Polygon. A successful claim grants the selected 3-month level for the language recorded in the transaction `secondId`.
 
 These identifiers are implementation details shown only in the administrator console. Customer pages display the subscription duration and token amounts.
 
 ## Authoritative price rule
 
-The admin database supplies the three eligible product labels, token decimals, and desired SmartPay3 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call supplies the selected learning language as `secondId` and the contract validates it against SmartLingo's 12 supported language codes.
+The admin database supplies the three eligible product labels, token decimals, and desired SmartPay4 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call supplies the selected learning language as `secondId` and the contract validates it against SmartLingo's 12 supported language codes.
 
 `paymentRule` and all other view functions use `eth_call`: no connected wallet, signature, or gas is required.
 
@@ -34,11 +34,11 @@ For a single-token rule, the secondary address and amounts are zero. For a dual-
 
 ## Public reads and transaction records
 
-Anyone can call `paymentRule`, `paymentRules`, `payoutConfiguration`, `transactionById`, and `latestTransactions` without gas. `latestTransactions(address wallet, uint256 maxCount)` accepts 1–100 records and returns newest first. Pass the zero address for the latest contract-wide records or a payer address for that wallet.
+Anyone can call `paymentRule`, `paymentRules`, `payoutConfiguration`, `transactionById`, `getTransactionsByPayerID`, and `getLatestTransactions` without gas. Both list functions accept 1–100 records and return newest first. `getTransactionsByPayerID(payerId, maxCount)` reads one signed-in account's records; `getLatestTransactions(maxCount)` is the administrator's contract-wide audit view.
 
-Each transaction records the ID, timestamp, payer wallet, the public six-character recipient RefID, product identifiers, primary token and amount, and secondary token and amount. RefID preserves the caller's letter case. SmartLingo compares it case-insensitively and requires the wallet, RefID, product, token pair, and unused TransactionID to match before granting or extending a subscription.
+Each transaction records the ID, timestamp, funding wallet, the signed-in account's public six-character PayerID, the permanent administrator's six-character product-owner RefID, product identifiers, primary token and amount, and secondary token and amount. Both IDs preserve letter case. SmartLingo compares them case-insensitively and requires PayerID, product-owner RefID, product, token pair, and unused TransactionID to match before granting or extending a subscription. The funding wallet remains audit data and is not an account identity.
 
-SmartLingo's signed-in checkout obtains the member RefID from the server and supplies it automatically. A third-party app may ask the payer for the recipient's visible six-character RefID and pass the entered case unchanged. The contract accepts upper- or lower-case unambiguous RefID characters but rejects every value that is not exactly six characters.
+SmartLingo's signed-in checkout obtains both identities from the server: `payerId` is the current member and `refId` is the verified permanent administrator who owns every SmartLingo course product. The connected wallet may be different from the profile wallet, and the profile may have no wallet. Third-party clients must obtain the same two server-authoritative IDs instead of deriving either identity from the connected wallet. The contract accepts upper- or lower-case unambiguous ID characters but rejects every value that is not exactly six characters.
 
 "Used" status is intentionally site-side: the immutable contract record stays publicly readable, while the SmartLingo database has a unique `(contract, TransactionID)` claim and marks the matching subscription record once. A member refresh therefore needs only free view calls; it never asks the payer to spend gas merely to mark a transaction used.
 
@@ -58,10 +58,10 @@ Ownership renunciation is disabled. After `transferOwnership(newOwner)` confirms
 
 Compile with `npm run contracts:compile`. The build produces:
 
-- `contracts/artifacts/SmartPay3.json`
-- `contracts/abi/SmartPay3.json`
-- `public/contracts/SmartPay3.abi.json`
+- `contracts/artifacts/SmartPay4.json`
+- `contracts/abi/SmartPay4.json`
+- `public/contracts/SmartPay4.abi.json`
 
 The browser deployment uses the repository artifact and requires the Owner to confirm the EVM transaction in TP Wallet or another compatible wallet. No private key or seed phrase belongs in the site, repository, terminal, or admin form. Optional source verification is off-chain, costs no gas, and is not a security audit.
 
-The public ABI is served at `/contracts/SmartPay3.abi.json`; the structured endpoint is `/api/billing/crypto/smartpay/abi`. Mobile integration examples are in `docs/smartpay3-mobile-integration.md`.
+The public ABI is served at `/contracts/SmartPay4.abi.json`; the structured endpoint is `/api/billing/crypto/smartpay/abi`. Mobile integration examples are in `docs/smartpay4-mobile-integration.md`.
