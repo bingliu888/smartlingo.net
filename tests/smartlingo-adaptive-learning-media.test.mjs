@@ -61,7 +61,9 @@ test("adaptive sentences are Luna-governed, cumulative, cached in D1, and releas
   assert.match(service, /only content words from that round's allowedWords/);
   assert.match(service, /safe-fallback/);
   assert.match(service, /timeoutMs: 6_000/);
-  assert.match(vocabularyRoute, /adaptiveSentenceRounds[\s\S]*\.catch\(\(\) => null\)/);
+  assert.match(vocabularyRoute, /cachedAdaptiveSentenceRounds[\s\S]*\.catch\(\(\) => null\)/);
+  assert.doesNotMatch(vocabularyRoute, /await adaptiveSentenceRounds/);
+  assert.match(vocabularyRoute, /missing AI-generated cache must never hold the interactive vocabulary/);
   assert.match(migration, /smartlingo_learning_content_releases/);
   assert.match(migration, /smartlingo_adaptive_sentence_sets/);
   assert.match(migration, /smartlingo_learning_media_assets/);
@@ -69,7 +71,7 @@ test("adaptive sentences are Luna-governed, cumulative, cached in D1, and releas
   assert.match(workflow, /GITHUB_SHA/);
   assert.ok(workflow.indexOf("Deploy Worker") < workflow.indexOf("Stamp adaptive learning and everyday dialogue releases"));
   assert.match(sprintRoute, /adaptiveSentenceRounds/);
-  assert.match(vocabularyRoute, /adaptiveSentenceRounds/);
+  assert.match(vocabularyRoute, /cachedAdaptiveSentenceRounds/);
   assert.match(vocabularyRoute, /learningReleaseId/);
   assert.match(vocabularyRoute, /sentenceSource/);
 });

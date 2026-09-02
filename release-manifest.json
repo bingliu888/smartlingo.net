@@ -1,71 +1,71 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-shared-profile-wallet-20260901",
+  "releaseId": "smartlingo-net-vocabulary-cache-fallback-20260902",
   "site": "smartlingo.net",
   "title": {
-    "en": "Shared profile wallet save",
-    "zh": "共享资料钱包保存"
+    "en": "Restore immediate course vocabulary loading",
+    "zh": "恢复课程词汇即时加载"
   },
   "purpose": {
-    "en": "Make SmartLingo's Profile save path explicitly accept the same payer wallet on multiple accounts while preserving account-specific RefID attribution.",
-    "zh": "让 SmartLingo 的资料保存路径明确接受多个账户使用同一付款钱包，同时保留按账户 RefID 归因。"
+    "en": "Prevent the signed-in 21-day vocabulary page from remaining on its loading state while a missing adaptive-sentence cache triggers synchronous AI generation.",
+    "zh": "避免登录后的 21 天词汇页在缺少自适应句子缓存时因同步触发人工智能生成而持续停留在加载状态。"
   },
   "features": {
     "en": [
-      "Save the same EVM payer wallet in two or more account profiles.",
-      "Keep payment attribution tied to both wallet and the account's unique RefID."
+      "Load an existing adaptive-sentence cache when one is already available.",
+      "Fall back immediately to the reviewed 120-sentence course catalog when no adaptive cache exists."
     ],
     "zh": [
-      "在两个或更多账户资料中保存同一 EVM 付款钱包。",
-      "付款归因继续同时匹配钱包与账户唯一 RefID。"
+      "已有自适应句子缓存时继续读取并使用。",
+      "没有自适应缓存时立即回退到已审核的每课程 120 句目录。"
     ]
   },
   "affected": {
     "en": [
-      "SmartLingo Profile wallet API, crypto-wallet API, checkout errors, and regression contracts.",
-      "Courses, learning records, certificates, rewards, referrals, and media are unchanged."
+      "Signed-in Beginner, Intermediate, and Advanced course vocabulary pages for all twelve learning languages.",
+      "Payment, referral, certificate, subscription, role, and provider settings are unchanged."
     ],
     "zh": [
-      "影响 SmartLingo 资料钱包接口、加密钱包接口、结账错误处理及回归契约。",
-      "课程、学习记录、证书、奖励、推荐及媒体均不变。"
+      "影响十二种学习语言中已登录用户的初期、中级和高级课程词汇页。",
+      "付款、推荐、证书、订阅、角色及服务商设置均不变。"
     ]
   },
   "changes": {
     "en": [
-      "Remove the obsolete Profile 409 response that treated a wallet as belonging to another subscribed account.",
-      "Keep wallet records keyed by user_id and wallet_address non-unique.",
-      "Remove unreachable single-owner checkout and localization residue."
+      "Extract a reusable D1 cache lookup from the adaptive-sentence service.",
+      "Remove synchronous AI generation from the vocabulary page's initial API response while preserving cached adaptive content and the graded-catalog fallback.",
+      "Add a regression contract that rejects reintroducing blocking adaptive generation on this route."
     ],
     "zh": [
-      "移除把钱包视为属于其他已订阅账户的过时资料保存 409 响应。",
-      "钱包记录继续以 user_id 为键，wallet_address 不设唯一约束。",
-      "移除无法触发的单一归属结账与本地化残留。"
+      "从自适应句子服务提取可复用的 D1 缓存查询。",
+      "从词汇页首个接口响应移除同步人工智能生成，同时保留已缓存的自适应内容和分级句子目录回退。",
+      "增加回归契约，防止该路由重新引入阻塞式自适应生成。"
     ]
   },
   "validation": {
     "en": [
-      "A fresh full D1 migration replay accepts two accounts with the same wallet address.",
-      "Profile source contracts, TypeScript, zero-warning ESLint, sensitive-data scan, and verified production build must pass."
+      "Run vocabulary, adaptive-learning, 4,320-sentence catalog, typecheck, lint, full repository tests, sensitive-data scan, D1 validation, and shared site gates.",
+      "After deployment, repeat the signed-in production vocabulary step in the user's real Chrome session and continue the four-language QA acceptance."
     ],
     "zh": [
-      "全新完整 D1 迁移重放已接受两个账户保存同一钱包地址。",
-      "资料源码契约、TypeScript、零警告 ESLint、敏感数据扫描及经验证的生产构建必须通过。"
+      "运行词汇、自适应学习、4,320 句目录、类型检查、代码检查、完整仓库测试、敏感数据扫描、D1 验证及共享站点门禁。",
+      "部署后在用户真实 Chrome 会话中重测登录后的生产词汇步骤，并继续四语言 QA 验收。"
     ]
   },
   "deferred": {
     "en": [
-      "No production wallet value, learning record, certificate, reward, payment rule, or provider configuration is changed."
+      "Adaptive sentence generation remains available to non-blocking generation paths; an uncached vocabulary request intentionally uses reviewed course sentences."
     ],
     "zh": [
-      "本次不修改生产钱包值、学习记录、证书、奖励、付款规则或服务商配置。"
+      "自适应句子生成仍供非阻塞生成路径使用；未缓存的词汇请求会有意采用已审核课程句子。"
     ]
   },
   "siteAdaptations": {
     "en": [
-      "Preserve SmartLingo's bilingual password component, Clerk app, Worker, D1, R2, RealtimeKit, course catalog, learning records, and payment resources."
+      "Preserve SmartLingo's Chinese interface, twelve learning languages, server-graded progress, Clerk identity, Worker, D1, R2, course catalog, and payment resources."
     ],
     "zh": [
-      "保留 SmartLingo 双语密码组件、Clerk 应用、Worker、D1、R2、RealtimeKit、课程目录、学习记录及付款资源。"
+      "保留 SmartLingo 中文界面、十二种学习语言、服务端评分进度、Clerk 身份、Worker、D1、R2、课程目录及付款资源。"
     ]
   }
 }

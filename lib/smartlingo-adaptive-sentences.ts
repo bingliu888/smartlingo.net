@@ -30,6 +30,14 @@ export type AdaptiveSentenceSet = {
   rounds: SmartLingoSentenceExercise[][];
 };
 
+type AdaptiveSentenceInput = {
+  database: Database;
+  language: SmartLingoLearningLanguage;
+  level: SmartLingoLevel;
+  uiLang: SmartLingoInterfaceLanguage;
+  roundVocabulary: readonly SprintVocabulary[][];
+};
+
 function stableHash(value: string) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) hash = Math.imul(hash ^ value.charCodeAt(index), 16777619);
@@ -109,22 +117,32 @@ function parseGenerated(value: string, cumulativeVocabulary: readonly SprintVoca
   return rounds;
 }
 
-export async function adaptiveSentenceRounds(input: {
-  database: Database;
-  language: SmartLingoLearningLanguage;
-  level: SmartLingoLevel;
-  uiLang: SmartLingoInterfaceLanguage;
-  roundVocabulary: readonly SprintVocabulary[][];
-}): Promise<AdaptiveSentenceSet> {
+async function adaptiveSentenceCacheIdentity(input: AdaptiveSentenceInput) {
   const release = await input.database.prepare(`SELECT release_id AS releaseId FROM smartlingo_learning_content_releases WHERE content_key='adaptive-sentences' LIMIT 1`).first<{ releaseId: string }>();
   const releaseId = release?.releaseId || "bootstrap-2026-08-23";
   const cumulative = input.roundVocabulary.map((_, index) => input.roundVocabulary.slice(0, index + 1).flat());
   const vocabularyIds = cumulative.map(round => round.map(word => word.id));
   const cacheKey = `adaptive:${releaseId}:${input.language}:${input.level}:${input.uiLang}:${stableHash(JSON.stringify(vocabularyIds))}`;
-  const cached = await input.database.prepare(`SELECT payload_json AS payloadJson,source_type AS sourceType FROM smartlingo_adaptive_sentence_sets WHERE cache_key=? AND release_id=? LIMIT 1`).bind(cacheKey, releaseId).first<{ payloadJson: string; sourceType: AdaptiveSentenceSet["sourceType"] }>();
+  return { releaseId, cumulative, vocabularyIds, cacheKey };
+}
+
+export async function cachedAdaptiveSentenceRounds(input: AdaptiveSentenceInput): Promise<AdaptiveSentenceSet | null> {
+  const { releaseId, cacheKey } = await adaptiveSentenceCacheIdentity(input);
+  return readCachedAdaptiveSentenceRounds(input.database, releaseId, cacheKey);
+}
+
+async function readCachedAdaptiveSentenceRounds(database: Database, releaseId: string, cacheKey: string) {
+  const cached = await database.prepare(`SELECT payload_json AS payloadJson,source_type AS sourceType FROM smartlingo_adaptive_sentence_sets WHERE cache_key=? AND release_id=? LIMIT 1`).bind(cacheKey, releaseId).first<{ payloadJson: string; sourceType: AdaptiveSentenceSet["sourceType"] }>();
   if (cached) {
     try { return { releaseId, sourceType: cached.sourceType, rounds: JSON.parse(cached.payloadJson) as SmartLingoSentenceExercise[][] }; } catch { /* regenerate corrupt cache */ }
   }
+  return null;
+}
+
+export async function adaptiveSentenceRounds(input: AdaptiveSentenceInput): Promise<AdaptiveSentenceSet> {
+  const { releaseId, cumulative, vocabularyIds, cacheKey } = await adaptiveSentenceCacheIdentity(input);
+  const cached = await readCachedAdaptiveSentenceRounds(input.database, releaseId, cacheKey);
+  if (cached) return cached;
   const fallbackRounds = cumulative.map((words, index) => safeFallback(words, input.language, input.level, index));
   const compactVocabulary = cumulative.map((words, roundIndex) => ({
     round: roundIndex + 1,

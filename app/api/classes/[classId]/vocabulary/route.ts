@@ -11,7 +11,7 @@ import {
 import { localDateKey, requireOfficialClassMembership, safeTimeZone } from "@/lib/smartlingo-learning-access";
 import { buildCourseSentenceBank, buildSentenceChoiceTokens, tokenizeSentence } from "@/lib/smartlingo-sentence-exercises";
 import type { SmartLingoLearningLanguage, SmartLingoLevel } from "@/lib/smartlingo-learning";
-import { adaptiveSentenceRounds } from "@/lib/smartlingo-adaptive-sentences";
+import { cachedAdaptiveSentenceRounds } from "@/lib/smartlingo-adaptive-sentences";
 import type { SmartLingoSentenceExercise } from "@/lib/smartlingo-sentence-exercises";
 import { compareVocabularyLearningOrder } from "@/lib/smartlingo-vocabulary-order";
 
@@ -245,7 +245,10 @@ async function responsePayload(database: ReturnType<typeof getDatabase>, userId:
   const selected = reuseSession ? storedDeck : proposed;
   if (!reuseSession || startWordId) await savePracticeSession(database, userId, access, localDate, selected.map(item => item.id));
   const sessionPosition = reuseSession ? Math.min(Math.max(0, Number(existingSession?.currentIndex || 0)), selected.length) : 0;
-  const adaptive = selected.length ? await adaptiveSentenceRounds({
+  // A missing AI-generated cache must never hold the interactive vocabulary
+  // page open. Use a previously generated set when present; otherwise the
+  // reviewed 120-sentence course catalog below is the immediate fallback.
+  const adaptive = selected.length ? await cachedAdaptiveSentenceRounds({
     database,
     language: access.targetLanguage as SmartLingoLearningLanguage,
     level: level as SmartLingoLevel,
