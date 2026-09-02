@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-smartpay4-payer-identity-20260902",
+  "releaseId": "smartlingo-net-smartpay4-payer-identity-security-20260902",
   "site": "smartlingo.net",
   "title": {
     "en": "SmartPay4 payer-identity checkout",
@@ -38,12 +38,14 @@
       "Removed SmartPay3 runtime contract, routes, styles, libraries, and public artifacts while retaining immutable migrations and historical provider compatibility.",
       "Added a server-authoritative permanent-administrator product-owner resolver and required PayerID plus owner RefID during preparation, payment, receipt verification, claim, and synchronization.",
       "Added migration 0178 for fresh SmartPay4 configuration and claims without copying the former SmartPay3 contract address."
+      ,"Pinned the transitive XML parser used by document preview to the patched 0.8.15 release after the production dependency audit identified the newly reported 0.8.14 advisory."
     ],
     "zh": [
       "新增站点专属 SmartPay4 合约、ABI、部署产物、公开 ABI 路由、PayerID 交易索引及独立的管理员全合约查询。",
       "移除 SmartPay3 运行时合约、路由、样式、库及公开产物，同时保留不可变迁移与历史付款提供方兼容。",
       "新增服务端权威的永久管理员产品 Owner 解析，并在准备、付款、收据验证、认领与同步全流程要求 PayerID 加 Owner RefID。",
       "新增 0178 迁移，用于全新的 SmartPay4 配置与付款认领，且不会复制旧 SmartPay3 合约地址。"
+      ,"生产依赖审计发现新公布的 0.8.14 安全通告后，将文档预览间接使用的 XML 解析器锁定到已修复的 0.8.15。"
     ]
   },
   "validation": {
