@@ -7,8 +7,9 @@ import { bytesToHex, createAccount, createAddressFromPrivateKey, hexToBytes } fr
 import { createVM, runTx } from "@ethereumjs/vm";
 import { decodeEventLog, decodeFunctionResult, encodeDeployData, encodeFunctionData } from "viem";
 
-const artifact=JSON.parse(await readFile(new URL("../contracts/artifacts/SmartPay4.json",import.meta.url),"utf8"));
+const artifact=JSON.parse(await readFile(new URL("../contracts/artifacts/SmartPay5.json",import.meta.url),"utf8"));
 const tokenArtifact=JSON.parse(await readFile(new URL("../contracts/artifacts/MockUSDC.json",import.meta.url),"utf8"));
+const burnTokenArtifact=JSON.parse(await readFile(new URL("../contracts/artifacts/MockBurnToken.json",import.meta.url),"utf8"));
 const ownerKey=hexToBytes(`0x${"11".repeat(32)}`);
 const payerKey=hexToBytes(`0x${"22".repeat(32)}`);
 const treasuryKey=hexToBytes(`0x${"33".repeat(32)}`);
@@ -60,10 +61,10 @@ async function deployCheckout(chain,{configure=true}={}){
   return {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance};
 }
 
-test("SmartPay4 is the only public ABI and exposes authoritative price reads",async()=>{
-  const publicAbi=JSON.parse(await readFile(new URL("../public/contracts/SmartPay4.abi.json",import.meta.url),"utf8"));
+test("SmartPay5 is the only public ABI and exposes authoritative price reads",async()=>{
+  const publicAbi=JSON.parse(await readFile(new URL("../public/contracts/SmartPay5.abi.json",import.meta.url),"utf8"));
   assert.deepEqual(publicAbi,artifact.abi);
-  assert.equal(artifact.contractName,"SmartPay4");
+  assert.equal(artifact.contractName,"SmartPay5");
   const rule=publicAbi.find(item=>item.type==="function"&&item.name==="paymentRule");
   assert.deepEqual(rule.inputs.map(input=>input.name),["primaryTokenAddress","secondaryTokenAddress","mainId","secondId"]);
   assert.deepEqual(rule.outputs.map(output=>output.name),["primaryTokenAmount","secondaryTokenAmount","minimumSecondaryBalance","enabled"]);
@@ -74,9 +75,11 @@ test("SmartPay4 is the only public ABI and exposes authoritative price reads",as
   assert.ok(publicAbi.some(item=>item.type==="function"&&item.name==="getTransactionsByPayerID"));
   assert.equal(publicAbi.some(item=>item.type==="function"&&item.name==="latestTransactions"),false);
   assert.equal(JSON.stringify(publicAbi).toLowerCase().includes("domain"),false);
+  const source=await readFile(new URL("../contracts/SmartPay5.sol",import.meta.url),"utf8");
+  assert.doesNotMatch(source,/TokenTransferAmountMismatch|_transferExact|balanceBefore|balanceAfter/);
 });
 
-test("SmartPay4 reads its rule and atomically records mixed, secondary-only, and primary-only payments",async()=>{
+test("SmartPay5 reads its rule and atomically records mixed, secondary-only, and primary-only payments",async()=>{
   const chain=await testChain();
   const {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance}=await deployCheckout(chain);
   const rule=await chain.call(contract,artifact.abi,"paymentRule",[primary.toString(),secondary.toString(),basicMainId,""]);
@@ -111,7 +114,33 @@ test("SmartPay4 reads its rule and atomically records mixed, secondary-only, and
   assert.deepEqual(latest[0].map(record=>record.payerId),rows.map(()=>payerId).toReversed());
 });
 
-test("SmartPay4 enforces secondary eligibility and exact single-token rules",async()=>{
+test("SmartPay5 accepts 30% burn GLC and keeps nominal language-scoped records",async()=>{
+  const chain=await testChain();
+  const primary=await chain.deploy(ownerKey,tokenArtifact);
+  const glc=await chain.deploy(ownerKey,burnTokenArtifact);
+  const contract=await chain.deploy(ownerKey,artifact,[owner.toString()]);
+  const payoutWallets=[owner.toString(),treasury.toString(),
+    createAddressFromPrivateKey(hexToBytes(`0x${"44".repeat(32)}`)).toString(),
+    createAddressFromPrivateKey(hexToBytes(`0x${"55".repeat(32)}`)).toString(),
+    createAddressFromPrivateKey(hexToBytes(`0x${"66".repeat(32)}`)).toString()];
+  const shares=[1000,1500,2000,2500,0];
+  const nominal=10_000_000n*10n**18n;
+  await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPayouts",args:[payoutWallets,shares]})});
+  await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),glc.toString(),basicMainId,"",30_000_000n,nominal,nominal,true]})});
+  await chain.send(ownerKey,{to:glc,data:encodeFunctionData({abi:burnTokenArtifact.abi,functionName:"mint",args:[payer.toString(),nominal]})});
+  await chain.send(payerKey,{to:glc,data:encodeFunctionData({abi:burnTokenArtifact.abi,functionName:"approve",args:[contract.toString(),nominal]})});
+  const result=await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),glc.toString(),basicMainId,"ja",0n,productOwnerRefId,payerId]})});
+  const decoded=result.receipt.logs.map(([address,topics,data])=>({address:bytesToHex(address),topics:topics.map(bytesToHex),data:bytesToHex(data)})).map(log=>{try{return decodeEventLog({abi:artifact.abi,...log});}catch{return null;}});
+  const recorded=decoded.find(item=>item?.eventName==="TransactionRecorded");
+  assert.equal(recorded.args.secondaryTokenAmount,nominal);
+  assert.equal(recorded.args.secondId,"ja");
+  const nominalSplits=[nominal/10n,nominal*15n/100n,nominal/5n,nominal/4n,nominal*3n/10n];
+  for(let index=0;index<payoutWallets.length;index+=1){
+    assert.equal(await chain.call(glc,burnTokenArtifact.abi,"balanceOf",[payoutWallets[index]]),nominalSplits[index]*70n/100n);
+  }
+});
+
+test("SmartPay5 enforces secondary eligibility and exact single-token rules",async()=>{
   const chain=await testChain();
   const {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance}=await deployCheckout(chain);
   await chain.send(ownerKey,{to:primary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"mint",args:[payer.toString(),fullPrimary*2n]})});
@@ -131,7 +160,7 @@ test("SmartPay4 enforces secondary eligibility and exact single-token rules",asy
   await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,basicMainId,"es",fullPrimary,0n,0n,true]}),expectFailure:true});
 });
 
-test("SmartPay4 owner operations transfer immediately and reject the former owner and every non-owner",async()=>{
+test("SmartPay5 owner operations transfer immediately and reject the former owner and every non-owner",async()=>{
   const chain=await testChain();
   const {primary,secondary,contract,fullPrimary,fullSecondary,minimumSecondaryBalance}=await deployCheckout(chain);
   const calls=[

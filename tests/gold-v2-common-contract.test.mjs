@@ -12,11 +12,11 @@ test("Gold v2 records reviewed common contracts and SmartLingo-only adapters", a
   assert.equal(migration.reviewedCanonical.site, "geniuswallet.pro");
   assert.ok(migration.commonContracts.some((item) => /silent viewers remain connected/i.test(item)));
   assert.ok(migration.commonContracts.some((item) => /shared payer-wallet attribution/i.test(item)));
-  assert.ok(migration.targetAdapters.some((item) => /SmartLingo-owned Clerk, D1, R2, RealtimeKit, SmartPay4/i.test(item)));
+  assert.ok(migration.targetAdapters.some((item) => /SmartLingo-owned Clerk, D1, R2, RealtimeKit, SmartPay5/i.test(item)));
 });
 
-test("identity and payment preserve account ownership with shared payer wallets and verified receipts", async () => {
-  const [migration, identity, wallet, profile, walletRoute, checkout, route, claim, receipt] = await Promise.all([
+test("identity and payment preserve account ownership while trusting verified SmartPay5 records", async () => {
+  const [migration, identity, wallet, profile, walletRoute, checkout, route, claim, server] = await Promise.all([
     read("drizzle/0175_gold_v2_identity_commerce.sql"),
     read("lib/auth.ts"),
     read("lib/wallet-binding.ts"),
@@ -25,7 +25,7 @@ test("identity and payment preserve account ownership with shared payer wallets 
     read("components/CryptoCheckout.tsx"),
     read("app/api/billing/crypto/smartpay/claim/route.ts"),
     read("lib/smartlingo-smartpay-claim.ts"),
-    read("lib/smartpay4-receipt-verification.ts"),
+    read("lib/smartpay5-server.ts"),
   ]);
   assert.match(migration, /user_id TEXT PRIMARY KEY/);
   assert.match(migration, /smartpay_wallet_lookup_idx/);
@@ -43,12 +43,14 @@ test("identity and payment preserve account ownership with shared payer wallets 
   assert.doesNotMatch(checkout, /another account with subscription history|WALLET_ALREADY_IN_USE/);
   assert.match(route, /boundedJsonBody/);
   assert.match(route, /consumeAccountRequestLimit/);
-  assert.match(claim, /verifySmartPay4Receipt/);
+  assert.match(claim, /smartPay5TransactionById/);
+  assert.match(claim, /smartPayRecordTimestamp/);
+  assert.doesNotMatch(claim, /PAYMENT_AMOUNT_MISMATCH|verifySmartPay5Receipt/);
   assert.match(claim, /'pending_sync'/);
   assert.match(claim, /ON CONFLICT\(contract_address,transaction_id\) DO NOTHING/);
   assert.match(claim, /confirmations < requiredConfirmations/);
-  assert.match(receipt, /SMARTPAY4_PAYOUT_EXECUTED_TOPIC/);
-  assert.match(receipt, /TRANSFER_TOPIC/);
+  assert.match(server, /smartPay5ReceiptByTransactionId/);
+  assert.match(server, /transactionById/);
 });
 
 test("generation-scoped tab sessions enforce room and publisher capacities", async () => {
@@ -120,7 +122,7 @@ test("Gold v2 requests and providers are bounded and maintenance runs every five
     read("lib/realtimekit.ts"),
     read("lib/stripe-course-subscription.ts"),
     read("lib/smartpay-source-verification.ts"),
-    read("app/api/contracts/smartpay4/route.ts"),
+    read("app/api/contracts/smartpay5/route.ts"),
     read("app/api/admin/smartpay/deployment/route.ts"),
     read("worker/index.ts"),
     read("wrangler.cloudflare.jsonc"),

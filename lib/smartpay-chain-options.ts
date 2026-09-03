@@ -18,11 +18,11 @@ export function smartPayChainLabel(chainId: number, fallback: string) {
   return SMARTPAY_CHAIN_LABELS[chainId] || fallback;
 }
 
-export function smartPayChainSettings<T extends Pick<CryptoPaymentSetting, "chainId" | "chainName" | "smartPay4Contract">>(settings: readonly T[]) {
+export function smartPayChainSettings<T extends Pick<CryptoPaymentSetting, "chainId" | "chainName" | "smartPay5Contract">>(settings: readonly T[]) {
   const byChain = new Map<number, T>();
   for (const setting of settings) {
     const current = byChain.get(setting.chainId);
-    if (!current || (!current.smartPay4Contract && setting.smartPay4Contract)) byChain.set(setting.chainId, setting);
+    if (!current || (!current.smartPay5Contract && setting.smartPay5Contract)) byChain.set(setting.chainId, setting);
   }
   const rank = (chainId: number) => {
     const index = SMARTPAY_CHAIN_ORDER.indexOf(chainId as (typeof SMARTPAY_CHAIN_ORDER)[number]);
@@ -32,7 +32,7 @@ export function smartPayChainSettings<T extends Pick<CryptoPaymentSetting, "chai
     || smartPayChainLabel(left.chainId, left.chainName).localeCompare(smartPayChainLabel(right.chainId, right.chainName)));
 }
 
-export function smartPayChainOptions<T extends Pick<CryptoPaymentSetting, "chainId" | "chainName" | "smartPay4Contract">>(settings: readonly T[]): SmartPayChainOption<T>[] {
+export function smartPayChainOptions<T extends Pick<CryptoPaymentSetting, "chainId" | "chainName" | "smartPay5Contract">>(settings: readonly T[]): SmartPayChainOption<T>[] {
   const configured = new Map(smartPayChainSettings(settings).map(setting => [setting.chainId, setting]));
   return SMARTPAY_CHAIN_ORDER.map(chainId => ({
     chainId,

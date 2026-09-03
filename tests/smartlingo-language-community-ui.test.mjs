@@ -93,7 +93,7 @@ test("home feature buttons and Choose course use canonical destination pages", a
   assert.match(subscriptionCatalog, /SMARTLINGO_COURSE_PACKAGES/);
   assert.match(subscriptionCatalog, /SMARTLINGO_COURSE_DURATIONS/);
   assert.match(subscriptionCatalog, /9 个固定期限套餐/);
-  assert.match(subscriptionCatalog, /SmartPay4 合约当前已启用/);
+  assert.match(subscriptionCatalog, /SmartPay5 合约当前已启用/);
   assert.match(subscriptionCatalog, /fixedCourseId\(language, tier\)/);
   assert.match(subscriptionCatalog, /billing\/card\/checkout/);
   assert.match(subscriptionCatalog, /programs\/\$\{language\}\/pay\/crypto/);

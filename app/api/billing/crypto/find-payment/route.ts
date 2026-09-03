@@ -5,7 +5,7 @@ import { cryptoPaymentSettingById } from "@/lib/crypto-payments";
 import { currentSmartPayCheckoutOption } from "@/lib/smartpay-checkout-server";
 import { smartLingoProductOwnerRefId } from "@/lib/smartpay-product-owner";
 import { ensureSmartPayRefId, normalizeSmartPayRefId } from "@/lib/smartpay-refid";
-import { smartPay4LatestTransactions } from "@/lib/smartpay4-server";
+import { smartPay5LatestTransactions } from "@/lib/smartpay5-server";
 
 export async function POST(request: Request) {
   const user = await getSessionUser(request);
@@ -23,14 +23,14 @@ export async function POST(request: Request) {
     ensureSmartPayRefId(user.id),
     smartLingoProductOwnerRefId(),
   ]);
-  if (!setting?.smartPay4Contract || !option) {
+  if (!setting?.smartPay5Contract || !option) {
     return Response.json({ error: "Choose a course payment option" }, { status: 400 });
   }
   try {
     const rpcUrl = await cryptoRpcUrl(setting.chainId);
-    const latest = await smartPay4LatestTransactions({
+    const latest = await smartPay5LatestTransactions({
       rpcUrl,
-      contract: setting.smartPay4Contract as Address,
+      contract: setting.smartPay5Contract as Address,
       payerId,
       maxCount: 100,
     });
@@ -39,9 +39,9 @@ export async function POST(request: Request) {
         || normalizeSmartPayRefId(record.payerId) !== normalizeSmartPayRefId(payerId)
         || normalizeSmartPayRefId(record.refId) !== normalizeSmartPayRefId(productOwnerRefId)) continue;
       const claim = await getDatabase().prepare(`SELECT user_id AS userId,
-        current_period_ends_at AS currentPeriodEnd FROM smartpay4_payment_claims
+        current_period_ends_at AS currentPeriodEnd FROM smartpay5_payment_claims
         WHERE lower(contract_address)=lower(?) AND lower(transaction_id)=lower(?) LIMIT 1`)
-        .bind(setting.smartPay4Contract, record.transactionId)
+        .bind(setting.smartPay5Contract, record.transactionId)
         .first<{ userId: string; currentPeriodEnd: number }>();
       if (claim && !body?.includeClaimed) continue;
       if (claim && claim.userId !== user.id) continue;

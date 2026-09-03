@@ -2,16 +2,17 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import {
-  SMARTPAY4_FACTORY_ADDRESS,
-  smartPay4DeploymentData,
-  smartPay4FactoryDeployment,
-  smartPay4DeploymentGasLimit,
+  SMARTPAY5_FACTORY_ADDRESS,
+  smartPay5DeploymentData,
+  smartPay5FactoryDeployment,
+  smartPay5DeploymentGasLimit,
 } from "../lib/smartpay-deployment.ts";
-import { smartPay4SourceVerificationPayload } from "../lib/smartpay-source-verification.ts";
-import { configuredSmartPay4CheckoutScopes, smartPayCheckoutDisplayAmount, smartPayOptionsForLanguage } from "../lib/smartpay-checkout.ts";
+import { smartPay5SourceVerificationPayload } from "../lib/smartpay-source-verification.ts";
+import { configuredSmartPay5CheckoutScopes, smartPayCheckoutDisplayAmount, smartPayOptionsForLanguage } from "../lib/smartpay-checkout.ts";
 import { smartPayWithdrawalPreflight } from "../lib/crypto-amount.ts";
 import { verifyCryptoPaymentWithConfirmations } from "../lib/crypto-payment-verification.ts";
 import { smartPayOwnerActionFeedback, smartPayOwnerConnectionError } from "../lib/smartpay-admin-wallet-ui.ts";
+import { smartPayRecordTimestamp } from "../lib/smartpay-record-timestamp.ts";
 
 const root = new URL("..", import.meta.url);
 const read = path => readFile(new URL(path, root), "utf8");
@@ -25,6 +26,12 @@ test("course reconciliation requires normalized payer identity and a language-sc
   assert.doesNotMatch(source, /smartlingo_course_annual|secondId:\s*classId/);
 });
 
+test("course access dates use the verified on-chain transaction timestamp", () => {
+  assert.equal(smartPayRecordTimestamp(1_725_000_000, 1_725_000_900), 1_725_000_000);
+  assert.equal(smartPayRecordTimestamp(1_725_001_000, 1_725_000_900), 1_725_000_900);
+  assert.equal(smartPayRecordTimestamp(Number.NaN, 1_725_000_900), 1_725_000_900);
+});
+
 test("checkout shows the full on-chain price before connection and the eligible split afterward", () => {
   const option = {
     key: "polygon-usdt:course_es_basic", settingId: "polygon-usdt", plan: "basic", months: 3,
@@ -33,7 +40,7 @@ test("checkout shows the full on-chain price before connection and the eligible 
     tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", tokenSymbol: "USDT", tokenDecimals: 6,
     tokenAmountAtomic: "30000000", tokenAmount: "30", mainId: "smartlingo_course_basic_3m",
     secondId: "es", minConfirmations: 12,
-    smartPay4Offer: {
+    smartPay5Offer: {
       mode: "dual", contractAddress: "0x2222222222222222222222222222222222222222",
       primaryTokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", primaryTokenSymbol: "USDT",
       primaryTokenDecimals: 6, primaryTokenAmountAtomic: "15000000", primaryTokenAmount: "15", primaryPercent: 50,
@@ -74,22 +81,22 @@ test("payment verification waits 6 seconds and retries three more times at 10 se
 });
 
 test("deployment bundle is reproducible and site-specific", async () => {
-  const artifact = JSON.parse(await read("contracts/artifacts/SmartPay4.json"));
-  const publicAbi = JSON.parse(await read("public/contracts/SmartPay4.abi.json"));
+  const artifact = JSON.parse(await read("contracts/artifacts/SmartPay5.json"));
+  const publicAbi = JSON.parse(await read("public/contracts/SmartPay5.abi.json"));
   assert.deepEqual(publicAbi, artifact.abi);
-  const creation = smartPay4DeploymentData({ ...artifact, constructorInputs: ["initialOwner"] }, owner, artifact.abi);
-  const deployment = smartPay4FactoryDeployment(creation, owner, 137, "smartlingo.net", "release-20260826");
-  assert.equal(deployment.factoryAddress, SMARTPAY4_FACTORY_ADDRESS);
+  const creation = smartPay5DeploymentData({ ...artifact, constructorInputs: ["initialOwner"] }, owner, artifact.abi);
+  const deployment = smartPay5FactoryDeployment(creation, owner, 137, "smartlingo.net", "release-20260826");
+  assert.equal(deployment.factoryAddress, SMARTPAY5_FACTORY_ADDRESS);
   assert.match(deployment.contractAddress, /^0x[0-9a-f]{40}$/i);
-  assert.equal(smartPay4DeploymentGasLimit("0x186a0"), "0x1e848");
-  const payload = smartPay4SourceVerificationPayload(artifact, owner);
-  assert.equal(payload.sourcify.contractIdentifier, "contracts/SmartPay4.sol:SmartPay4");
+  assert.equal(smartPay5DeploymentGasLimit("0x186a0"), "0x1e848");
+  const payload = smartPay5SourceVerificationPayload(artifact, owner);
+  assert.equal(payload.sourcify.contractIdentifier, "contracts/SmartPay5.sol:SmartPay5");
 });
 
-test("SmartPay4 stores three shared price products and records the selected learning language on payment", async () => {
+test("SmartPay5 stores three shared price products and records the selected learning language on payment", async () => {
   const [contract, presets, server, optionsRoute] = await Promise.all([
-    read("contracts/SmartPay4.sol"),
-    read("lib/smartpay4-presets.ts"),
+    read("contracts/SmartPay5.sol"),
+    read("lib/smartpay5-presets.ts"),
     read("lib/smartpay-checkout-server.ts"),
     read("app/api/billing/crypto/smartpay/options/route.ts"),
   ]);
@@ -112,12 +119,12 @@ test("user pages hide contract implementation names and admin identifiers", asyn
     read("components/SmartPayAdminConsole.tsx"),
     read("drizzle/0172_smartpay3_course_refid.sql"),
   ]);
-  const setting = { id: "polygon-usdt", enabled: 1, chainId: 137, smartPay4Contract: "0x2222222222222222222222222222222222222222" };
-  assert.deepEqual(configuredSmartPay4CheckoutScopes([setting]), [{ chainId: 137, contractAddress: setting.smartPay4Contract }]);
-  assert.doesNotMatch(checkout, />[^<{\n]*(SmartPay4|mainID|secondID|\bOPC\b)[^<{\n]*</i);
+  const setting = { id: "polygon-usdt", enabled: 1, chainId: 137, smartPay5Contract: "0x2222222222222222222222222222222222222222" };
+  assert.deepEqual(configuredSmartPay5CheckoutScopes([setting]), [{ chainId: 137, contractAddress: setting.smartPay5Contract }]);
+  assert.doesNotMatch(checkout, />[^<{\n]*(SmartPay5|mainID|secondID|\bOPC\b)[^<{\n]*</i);
   assert.doesNotMatch(checkout, /window\.confirm|USER_CANCELLED|confirm the balance prompt|确认余额提示/);
   assert.match(checkout, /wallet directly requests any required approval or payment/);
-  assert.doesNotMatch(account, />[^<{\n]*(SmartPay4|mainID|secondID|\bOPC\b)[^<{\n]*</i);
+  assert.doesNotMatch(account, />[^<{\n]*(SmartPay5|mainID|secondID|\bOPC\b)[^<{\n]*</i);
   assert.match(profile, /profile-copy-button/);
   assert.match(checkout, /prepared\.refId/);
   assert.match(checkout, /prepared\.payerId/);
@@ -129,15 +136,19 @@ test("user pages hide contract implementation names and admin identifiers", asyn
   });
 });
 
-test("retired SmartPay1 and SmartPay2 authored files and routes are absent", async () => {
+test("retired SmartPay1 through SmartPay4 authored files and routes are absent", async () => {
   for (const path of [
     "contracts/SmartPay1.sol", "contracts/SmartPay2.sol", "public/contracts/SmartPay1.abi.json",
     "public/contracts/SmartPay2.abi.json", "lib/smartpay.ts", "lib/smartpay2.ts",
     "app/api/contracts/smartpay1/route.ts", "app/api/contracts/smartpay2/route.ts",
+    "contracts/SmartPay4.sol", "contracts/abi/SmartPay4.json", "contracts/artifacts/SmartPay4.json",
+    "public/contracts/SmartPay4.abi.json", "lib/smartpay4.ts", "lib/smartpay4-server.ts",
+    "lib/smartpay4-presets.ts", "lib/smartpay4-receipt-locator.ts", "lib/smartpay4-receipt-verification.ts",
+    "lib/smartpay4-wallet-preflight.ts", "app/api/contracts/smartpay4/route.ts", "app/smartpay4.css",
   ]) await assert.rejects(access(new URL(path, root)), /ENOENT/);
 });
 
-test("a connected non-owner receives an immediate SmartPay4 owner reminder", () => {
+test("a connected non-owner receives an immediate SmartPay5 owner reminder", () => {
   const contractOwner = "0x1111111111111111111111111111111111111111";
   const connectedNonOwner = "0x2222222222222222222222222222222222222222";
   assert.equal(smartPayOwnerConnectionError(contractOwner, contractOwner, connectedNonOwner), "NOT_OWNER");
@@ -145,11 +156,11 @@ test("a connected non-owner receives an immediate SmartPay4 owner reminder", () 
   assert.equal(smartPayOwnerConnectionError(contractOwner, connectedNonOwner, contractOwner), "OWNER_FIELD_MISMATCH");
   assert.equal(smartPayOwnerConnectionError(contractOwner, contractOwner, contractOwner), null);
   assert.deepEqual(smartPayOwnerActionFeedback("en", "NOT_OWNER"), {
-    message: "Your connected wallet is not the SmartPay4 owner.",
+    message: "Your connected wallet is not the SmartPay5 owner.",
     interruptive: true,
   });
   assert.deepEqual(smartPayOwnerActionFeedback("zh", "NOT_OWNER"), {
-    message: "您连接的钱包不是 SmartPay4 Owner。",
+    message: "您连接的钱包不是 SmartPay5 Owner。",
     interruptive: true,
   });
 });

@@ -11,8 +11,8 @@ type StandardJsonInput = {
   settings: Record<string, unknown>;
 };
 
-export type SmartPay4VerificationArtifact = {
-  contractName: "SmartPay4";
+export type SmartPay5VerificationArtifact = {
+  contractName: "SmartPay5";
   sourceName: string;
   compiler: string;
   evmVersion: string;
@@ -21,22 +21,22 @@ export type SmartPay4VerificationArtifact = {
 
 export function smartPayCompilerVersion(value: string) {
   const match = /^(\d+\.\d+\.\d+\+commit\.[0-9a-f]+)/i.exec(value.trim());
-  if (!match) throw new Error("INVALID_SMARTPAY4_COMPILER_VERSION");
+  if (!match) throw new Error("INVALID_SMARTPAY5_COMPILER_VERSION");
   return match[1];
 }
 
-export function smartPay4SourceVerificationPayload(
-  artifact: SmartPay4VerificationArtifact,
+export function smartPay5SourceVerificationPayload(
+  artifact: SmartPay5VerificationArtifact,
   initialOwner: Address,
   creationTransactionHash?: Hex
 ) {
   const source = artifact.standardJsonInput?.sources?.[artifact.sourceName]?.content;
-  if (artifact.contractName !== "SmartPay4" || artifact.sourceName !== "contracts/SmartPay4.sol"
-    || artifact.standardJsonInput?.language !== "Solidity" || !source?.includes("contract SmartPay4")
+  if (artifact.contractName !== "SmartPay5" || artifact.sourceName !== "contracts/SmartPay5.sol"
+    || artifact.standardJsonInput?.language !== "Solidity" || !source?.includes("contract SmartPay5")
     || !Object.keys(artifact.standardJsonInput.sources || {}).some(name => name.startsWith("@openzeppelin/contracts/"))
     || !isAddress(initialOwner)
     || (creationTransactionHash != null && !/^0x[0-9a-f]{64}$/i.test(creationTransactionHash))) {
-    throw new Error("INVALID_SMARTPAY4_VERIFICATION_ARTIFACT");
+    throw new Error("INVALID_SMARTPAY5_VERIFICATION_ARTIFACT");
   }
   const compilerVersion = smartPayCompilerVersion(artifact.compiler);
   const contractIdentifier = `${artifact.sourceName}:${artifact.contractName}`;
@@ -88,7 +88,7 @@ export async function smartPayExplorerVerificationStatus(chainId: number, contra
     const response = await withExternalRequestTimeout((signal) => fetch(explorerUrl, {
       headers: {
         accept: "text/html,application/xhtml+xml",
-        "user-agent": "SmartLingo SmartPay4 source verification status"
+        "user-agent": "SmartLingo SmartPay5 source verification status"
       },
       cache: "no-store",
       signal,
@@ -109,7 +109,7 @@ export async function smartPayExplorerVerificationStatus(chainId: number, contra
 export function smartPaySourceDownloadUrls(chainId: number, contract: Address) {
   const query = `chainId=${chainId}&address=${encodeURIComponent(contract)}`;
   return {
-    source: `/api/contracts/smartpay4?${query}&file=source`,
-    standardJsonInput: `/api/contracts/smartpay4?${query}&file=standard-json`
+    source: `/api/contracts/smartpay5?${query}&file=source`,
+    standardJsonInput: `/api/contracts/smartpay5?${query}&file=standard-json`
   };
 }

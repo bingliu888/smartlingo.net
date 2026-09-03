@@ -135,11 +135,6 @@
   },
   {
     "inputs": [],
-    "name": "TokenTransferAmountMismatch",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "TransactionNotFound",
     "type": "error"
   },
@@ -604,7 +599,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct SmartPay4.TransactionRecord[]",
+        "internalType": "struct SmartPay5.TransactionRecord[]",
         "name": "page",
         "type": "tuple[]"
       },
@@ -690,7 +685,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct SmartPay4.TransactionRecord[]",
+        "internalType": "struct SmartPay5.TransactionRecord[]",
         "name": "page",
         "type": "tuple[]"
       },
@@ -905,7 +900,7 @@
             "type": "bool"
           }
         ],
-        "internalType": "struct SmartPay4.PaymentRule[]",
+        "internalType": "struct SmartPay5.PaymentRule[]",
         "name": "page",
         "type": "tuple[]"
       }
@@ -1098,7 +1093,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct SmartPay4.TransactionRecord",
+        "internalType": "struct SmartPay5.TransactionRecord",
         "name": "",
         "type": "tuple"
       }

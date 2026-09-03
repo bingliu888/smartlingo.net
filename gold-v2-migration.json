@@ -15,7 +15,7 @@
   },
   "commonContracts": [
     "password-first Clerk membership with optional email-code verification and preserved member-owned identity",
-    "server-authoritative SmartPay4 checkout, receipt replay protection, shared payer-wallet attribution, bounded provider calls, and idempotent entitlement credit",
+    "server-authoritative SmartPay5 checkout, receipt replay protection, shared payer-wallet attribution, bounded provider calls, and idempotent entitlement credit",
     "generation-scoped RealtimeKit capacity accounting for 100-person Group Call and nine-publisher staged modes",
     "two-hour provider generations with durable participant, room, recording, and storage cleanup",
     "silent viewers remain connected while the provider generation exists; a missing publisher alone never ends their room session",
@@ -26,12 +26,12 @@
   "targetAdapters": [
     "retain SmartLingo branding, twelve-language learning system, fixed official courses, AI study partners, vocabulary catalog, scoring, referrals, certificates, and learning records",
     "map the shared room contract to SmartLingo Course, classroom, teacher, co-host, learner, and existing /classrooms route family",
-    "retain SmartLingo-owned Clerk, D1, R2, RealtimeKit, SmartPay4, wallet, token, course price, domain, GitHub, and Cloudflare identifiers",
+    "retain SmartLingo-owned Clerk, D1, R2, RealtimeKit, SmartPay5, wallet, token, course price, domain, GitHub, and Cloudflare identifiers",
     "do not copy SmartMeeting, SmartNCT, or GeniusWallet production data, credentials, provider identifiers, prices, contracts, or release history"
   ],
   "requiredValidation": [
-    "all SmartLingo repository tests, TypeScript, zero-warning ESLint, SmartPay4 compilation, production build, artifact validation, and git whitespace checks pass",
-    "all 72 SmartLingo migrations apply to a fresh isolated D1 and the Gold v2 capacity, lifecycle, storage, and recovery objects are present",
+    "all SmartLingo repository tests, TypeScript, zero-warning ESLint, SmartPay5 compilation, production build, artifact validation, and git whitespace checks pass",
+    "all 74 SmartLingo migrations apply to a fresh isolated D1 and the Gold v2 capacity, lifecycle, storage, and recovery objects are present",
     "the 48,000-word twelve-language production vocabulary catalog and its pronunciation and learning-order invariants remain intact",
     "GitHub Actions validates before mutation, deploys the exact commit, probes HTTP and HTTPS apex/www routes, and writes matching Project evidence",
     "post-deploy SOL High browser acceptance covers public, authenticated, responsive, payment, Group Call, Webinar, media, sharing, Leave, and cleanup flows"

@@ -7,8 +7,8 @@ export async function smartLingoProductOwnerRefId() {
     ORDER BY clerk_identity_checked_at DESC LIMIT 1`)
     .bind(BOOTSTRAP_ADMIN_EMAIL)
     .first<{ id: string }>();
-  if (!owner) throw new Error("SMARTPAY4_PRODUCT_OWNER_UNAVAILABLE");
+  if (!owner) throw new Error("SMARTPAY5_PRODUCT_OWNER_UNAVAILABLE");
   const refId = normalizeSmartPayRefId(await ensureSmartPayRefId(owner.id));
-  if (!/^[A-HJ-NP-Z2-9]{6}$/.test(refId)) throw new Error("SMARTPAY4_PRODUCT_OWNER_UNAVAILABLE");
+  if (!/^[A-HJ-NP-Z2-9]{6}$/.test(refId)) throw new Error("SMARTPAY5_PRODUCT_OWNER_UNAVAILABLE");
   return refId;
 }

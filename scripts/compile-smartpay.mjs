@@ -4,10 +4,12 @@ import { fileURLToPath } from "node:url";
 import solc from "solc";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const entryPath = join(root, "contracts/SmartPay4.sol");
-const entryName = "contracts/SmartPay4.sol";
+const entryPath = join(root, "contracts/SmartPay5.sol");
+const entryName = "contracts/SmartPay5.sol";
 const mockPath = join(root, "contracts/test/MockUSDC.sol");
 const mockName = "contracts/test/MockUSDC.sol";
+const burnMockPath = join(root, "contracts/test/MockBurnToken.sol");
+const burnMockName = "contracts/test/MockBurnToken.sol";
 
 function importSource(importPath) {
   const candidates = [join(root, importPath), join(root, "node_modules", importPath)];
@@ -40,16 +42,18 @@ async function preload(path, seen = new Set()) {
   }
 }
 
-await Promise.all([preload(entryPath), preload(mockPath)]);
-const [source, mockSource] = await Promise.all([
+await Promise.all([preload(entryPath), preload(mockPath), preload(burnMockPath)]);
+const [source, mockSource, burnMockSource] = await Promise.all([
   readFile(entryPath, "utf8"),
-  readFile(mockPath, "utf8")
+  readFile(mockPath, "utf8"),
+  readFile(burnMockPath, "utf8")
 ]);
 const input = {
   language: "Solidity",
   sources: {
     [entryName]: { content: source },
-    [mockName]: { content: mockSource }
+    [mockName]: { content: mockSource },
+    [burnMockName]: { content: burnMockSource }
   },
   settings: {
     optimizer: { enabled: true, runs: 500 },
@@ -68,13 +72,15 @@ if (diagnostics.length) {
   throw new Error(diagnostics.map(item => item.formattedMessage || item.message).join("\n"));
 }
 
-const compiled = output.contracts?.[entryName]?.SmartPay4;
+const compiled = output.contracts?.[entryName]?.SmartPay5;
 const compiledMock = output.contracts?.[mockName]?.MockUSDC;
-if (!compiled?.abi || !compiled?.evm?.bytecode?.object) throw new Error("SmartPay4 compilation produced no artifact");
+const compiledBurnMock = output.contracts?.[burnMockName]?.MockBurnToken;
+if (!compiled?.abi || !compiled?.evm?.bytecode?.object) throw new Error("SmartPay5 compilation produced no artifact");
 if (!compiledMock?.abi || !compiledMock?.evm?.bytecode?.object) throw new Error("MockUSDC compilation produced no artifact");
+if (!compiledBurnMock?.abi || !compiledBurnMock?.evm?.bytecode?.object) throw new Error("MockBurnToken compilation produced no artifact");
 const deployedBytecodeBytes = compiled.evm.deployedBytecode.object.length / 2;
 if (deployedBytecodeBytes > 24_576) {
-  throw new Error(`SmartPay4 deployed bytecode is ${deployedBytecodeBytes} bytes and exceeds the EIP-170 limit`);
+  throw new Error(`SmartPay5 deployed bytecode is ${deployedBytecodeBytes} bytes and exceeds the EIP-170 limit`);
 }
 
 const abi = `${JSON.stringify(compiled.abi, null, 2)}\n`;
@@ -94,12 +100,12 @@ const verificationDiagnostics = (verificationOutput.errors || []).filter(item =>
 if (verificationDiagnostics.length) {
   throw new Error(verificationDiagnostics.map(item => item.formattedMessage || item.message).join("\n"));
 }
-const verificationBytecode = verificationOutput.contracts?.[entryName]?.SmartPay4?.evm?.bytecode?.object;
+const verificationBytecode = verificationOutput.contracts?.[entryName]?.SmartPay5?.evm?.bytecode?.object;
 if (!verificationBytecode || verificationBytecode !== compiled.evm.bytecode.object) {
-  throw new Error("SmartPay4 source-verification input does not reproduce the deployment bytecode");
+  throw new Error("SmartPay5 source-verification input does not reproduce the deployment bytecode");
 }
 const artifact = {
-  contractName: "SmartPay4",
+  contractName: "SmartPay5",
   sourceName: entryName,
   compiler: solc.version(),
   evmVersion: "paris",
@@ -119,12 +125,23 @@ const mockArtifact = {
   deployedBytecode: `0x${compiledMock.evm.deployedBytecode.object}`,
   metadata: JSON.parse(compiledMock.metadata)
 };
+const burnMockArtifact = {
+  contractName: "MockBurnToken",
+  sourceName: burnMockName,
+  compiler: solc.version(),
+  evmVersion: "paris",
+  abi: compiledBurnMock.abi,
+  bytecode: `0x${compiledBurnMock.evm.bytecode.object}`,
+  deployedBytecode: `0x${compiledBurnMock.evm.deployedBytecode.object}`,
+  metadata: JSON.parse(compiledBurnMock.metadata)
+};
 
 await mkdir(join(root, "contracts/abi"), { recursive: true });
 await mkdir(join(root, "contracts/artifacts"), { recursive: true });
 await mkdir(join(root, "public/contracts"), { recursive: true });
-await writeFile(join(root, "contracts/abi/SmartPay4.json"), abi);
-await writeFile(join(root, "public/contracts/SmartPay4.abi.json"), abi);
-await writeFile(join(root, "contracts/artifacts/SmartPay4.json"), `${JSON.stringify(artifact, null, 2)}\n`);
+await writeFile(join(root, "contracts/abi/SmartPay5.json"), abi);
+await writeFile(join(root, "public/contracts/SmartPay5.abi.json"), abi);
+await writeFile(join(root, "contracts/artifacts/SmartPay5.json"), `${JSON.stringify(artifact, null, 2)}\n`);
 await writeFile(join(root, "contracts/artifacts/MockUSDC.json"), `${JSON.stringify(mockArtifact, null, 2)}\n`);
-console.log(`Compiled SmartPay4 with ${solc.version()} (${compiled.abi.length} ABI entries, ${deployedBytecodeBytes} deployed bytes).`);
+await writeFile(join(root, "contracts/artifacts/MockBurnToken.json"), `${JSON.stringify(burnMockArtifact, null, 2)}\n`);
+console.log(`Compiled SmartPay5 with ${solc.version()} (${compiled.abi.length} ABI entries, ${deployedBytecodeBytes} deployed bytes).`);

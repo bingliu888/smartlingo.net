@@ -512,6 +512,13 @@
       "when": 1788393600000,
       "tag": "0178_smartpay4_payer_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "6",
+      "when": 1788480000000,
+      "tag": "0179_smartpay5_fee_token_support",
+      "breakpoints": true
     }
   ]
 }

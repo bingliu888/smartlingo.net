@@ -13,7 +13,7 @@ import {
 } from "./smartlingo-language-communities";
 import { eligibleCourseSupervisorByRefId } from "./course-supervisors";
 
-export type CoursePackagePaymentProvider = "stripe" | "smartpay4";
+export type CoursePackagePaymentProvider = "stripe" | "smartpay5";
 
 type CourseRow = {
   id: string;

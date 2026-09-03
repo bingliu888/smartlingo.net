@@ -1,89 +1,42 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-smartpay4-payer-identity-security-20260902",
+  "releaseId": "smartlingo-net-smartpay5-fee-token-support-20260903",
   "site": "smartlingo.net",
-  "title": {
-    "en": "SmartPay4 payer-identity checkout",
-    "zh": "SmartPay4 付款人身份结账"
-  },
+  "title": { "en": "SmartPay5 fee-token support", "zh": "SmartPay5 燃烧代币支持" },
   "purpose": {
-    "en": "Replace SmartPay3 with SmartPay4 so a signed-in SmartLingo member can fund a course purchase from any connected wallet while the chain record still identifies the payer and product owner.",
-    "zh": "以 SmartPay4 取代 SmartPay3，使已登录 SmartLingo 会员可用任意连接钱包为课程付款，同时链上记录仍明确付款人与产品 Owner。"
+    "en": "Migrate the verified SmartMeeting SmartPay5 fix so 30% burn-on-transfer GLC can fund SmartLingo course subscriptions without exact-recipient-balance reverts.",
+    "zh": "迁移已在 SmartMeeting 验证的 SmartPay5 修复，使转账自动燃烧 30% 的 GLC 可用于 SmartLingo 课程订阅，不再因收款余额必须精确增加而回滚。"
   },
   "features": {
-    "en": [
-      "Every payment now carries the signed-in member PayerID and the permanent administrator product-owner RefID as separate six-character identities.",
-      "Account payment recovery reads the SmartPay4 transaction map by PayerID instead of requiring a saved profile wallet.",
-      "The administrator receives an immediate bilingual reminder when an Owner-only action is attempted from a wallet that is not the SmartPay4 Owner."
-    ],
-    "zh": [
-      "每笔付款现在分别携带已登录会员的六位 PayerID 与永久管理员产品 Owner 的六位 RefID。",
-      "账户付款恢复改为按 PayerID 读取 SmartPay4 交易映射，不再要求个人资料保存钱包。",
-      "管理员使用非 SmartPay4 Owner 钱包执行 Owner 专属操作时，会立即收到双语提醒。"
-    ]
+    "en": ["SmartPay5 permits fee-on-transfer tokens while retaining on-chain product and payment-ratio rules.", "Claims trust the verified SmartPay5 transaction record for payerID, administrator refID, course mainID, learning-language secondID, token identity, and transaction time.", "Receipt transfer amounts are not revalidated; course access dates start from the on-chain transaction timestamp."],
+    "zh": ["SmartPay5 支持转账收费/燃烧代币，同时保留链上产品与付款比例规则。", "认领以已验证 SmartPay5 交易记录中的 payerID、管理员 refID、课程 mainID、学习语言 secondID、代币身份与交易时间为准。", "不再二次核验回执转账金额；课程权限日期以链上交易时间为起点。"]
   },
   "affected": {
-    "en": [
-      "SmartLingo's three supported three-month course products, twelve learning-language second IDs, Polygon payment administration, checkout, reconciliation, and account lookup are affected.",
-      "Card payments, course prices, existing SmartPay3 history, profile wallet editing, referrals, certificates, learning data, classrooms, header, footer, and branding are unchanged."
-    ],
-    "zh": [
-      "影响 SmartLingo 三个受支持的三个月课程产品、十二种学习语言 secondID、Polygon 付款管理、结账、核对与账户查询。",
-      "银行卡付款、课程价格、既有 SmartPay3 历史、个人资料钱包编辑、推荐、证书、学习数据、教室、页眉、页脚及品牌均不变。"
-    ]
+    "en": ["SmartLingo's three supported three-month course products, twelve learning-language secondIDs, Polygon SmartPay administration, checkout, reconciliation, and account lookup.", "Header, Footer, branding, course prices, card payments, classrooms, learning data, and historical SmartPay3/SmartPay4 claims remain unchanged."],
+    "zh": ["涉及 SmartLingo 三个三个月课程产品、十二种学习语言 secondID、Polygon SmartPay 管理、结账、核对与账户查询。", "Header、Footer、品牌、课程价格、银行卡付款、教室、学习数据及既有 SmartPay3/SmartPay4 认领均保持不变。"]
   },
   "changes": {
-    "en": [
-      "Added the site-specific SmartPay4 contract, ABI, deployment artifact, public ABI route, PayerID transaction index, and separate contract-wide administrator read.",
-      "Removed SmartPay3 runtime contract, routes, styles, libraries, and public artifacts while retaining immutable migrations and historical provider compatibility.",
-      "Added a server-authoritative permanent-administrator product-owner resolver and required PayerID plus owner RefID during preparation, payment, receipt verification, claim, and synchronization.",
-      "Added migration 0178 for fresh SmartPay4 configuration and claims without copying the former SmartPay3 contract address."
-      ,"Pinned the transitive XML parser used by document preview to the patched 0.8.15 release after the production dependency audit identified the newly reported 0.8.14 advisory."
-    ],
-    "zh": [
-      "新增站点专属 SmartPay4 合约、ABI、部署产物、公开 ABI 路由、PayerID 交易索引及独立的管理员全合约查询。",
-      "移除 SmartPay3 运行时合约、路由、样式、库及公开产物，同时保留不可变迁移与历史付款提供方兼容。",
-      "新增服务端权威的永久管理员产品 Owner 解析，并在准备、付款、收据验证、认领与同步全流程要求 PayerID 加 Owner RefID。",
-      "新增 0178 迁移，用于全新的 SmartPay4 配置与付款认领，且不会复制旧 SmartPay3 合约地址。"
-      ,"生产依赖审计发现新公布的 0.8.14 安全通告后，将文档预览间接使用的 XML 解析器锁定到已修复的 0.8.15。"
-    ]
+    "en": ["Replace SmartPay4 runtime source, ABI, deployment controls, settings, and current claim table name with SmartPay5.", "Remove recipient balance-delta and backend amount verification while retaining verified contract identity, transaction event, confirmations, payer/product/token matching, and site isolation.", "Add migration 0179, preserve prior claims and purchase history, allow SmartPay5 as a purchase provider, and add a five-wallet 30% burn-token regression."],
+    "zh": ["以 SmartPay5 替换 SmartPay4 的运行时源码、ABI、部署控制、设置及当前认领表名。", "移除收款余额增量与后端金额核验，同时保留合约身份、交易事件、确认数、付款人/产品/代币匹配及站点隔离验证。", "新增 0179 迁移，保留既有认领与购买历史，允许 SmartPay5 作为购买提供方，并新增五钱包 30% 燃烧代币回归测试。"]
   },
   "validation": {
-    "en": [
-      "The SmartPay4 Solidity contract compiled reproducibly with the reviewed artifact and passed mixed-token, single-token, identity, ownership, invalid-ID, and non-owner tests.",
-      "All focused payment, migration, multilingual interface, shared authentication, and site architecture contracts passed; TypeScript, zero-warning lint, D1 replay, and the production Worker build passed.",
-      "All 73 migrations applied exactly once in the local replay, no-op on the second run, and reported zero foreign-key violations."
-    ],
-    "zh": [
-      "SmartPay4 Solidity 合约以已审核产物可重现编译，并通过混合代币、单代币、身份、所有权、无效 ID 与非 Owner 测试。",
-      "付款、迁移、多语言界面、共享身份验证及站点架构的专项合约均通过；TypeScript、零警告 lint、D1 回放与生产 Worker 构建均通过。",
-      "本地回放中 73 个迁移均只应用一次，第二次运行无操作，外键违规为零。"
-    ]
+    "en": ["SmartPay5 must compile reproducibly and prove a nominal 10M burn-token course payment succeeds while all five payout wallets receive 70% of each nominal split.", "All 74 migrations must replay exactly once with zero foreign-key violations; the full Linux build, automated suite, deployment, and production availability checks must pass."],
+    "zh": ["SmartPay5 必须可重现编译，并证明名义 1000 万燃烧代币课程付款成功、五个收款钱包各收到名义分配的 70%。", "全部 74 个迁移必须仅应用一次且无外键违规；完整 Linux 构建、自动测试、部署与线上可用性检查必须通过。"]
   },
   "deferred": {
-    "en": [
-      "A new site-owned SmartPay4 contract must be deployed and configured by the administrator before live course-token payments resume; the user will perform the authenticated wallet acceptance test."
-    ],
-    "zh": [
-      "管理员必须先部署并配置新的站点专属 SmartPay4 合约，课程代币付款才会恢复；用户将执行登录态钱包验收测试。"
-    ]
+    "en": ["A new site-owned SmartPay5 contract must be deployed and configured before live token payments resume; the user will perform the authenticated wallet payment test."],
+    "zh": ["必须先部署并配置新的站点专属 SmartPay5 合约，真实代币付款才会恢复；用户将执行登录态钱包付款测试。"]
   },
   "siteAdaptations": {
-    "en": [
-      "SmartLingo keeps its three shared three-month price rules; the payment secondID remains the selected learning language and every course product's RefID remains the permanent administrator."
-    ],
-    "zh": [
-      "SmartLingo 保留三个共享的三个月价格规则；付款 secondID 仍是所选学习语言，每个课程产品的 RefID 仍是永久管理员。"
-    ]
+    "en": ["Preserve SmartLingo's three three-month rules, selected learning language as secondID, permanent administrator as product-owner refID, twelve supported language codes, site-local D1, and existing course prices."],
+    "zh": ["保留 SmartLingo 三个三个月规则、所选学习语言 secondID、永久管理员产品 Owner refID、十二种语言代码、站点独立 D1 与既有课程价格。"]
   },
   "dataMigration": {
     "included": true,
-    "migrations": [
-      "0178_smartpay4_payer_identity"
-    ],
+    "migrations": ["0179_smartpay5_fee_token_support"],
     "rollback": {
-      "en": "Restore the pre-release D1 snapshot and previous Worker together; existing SmartPay3 claims and purchase history remain retained for audit.",
-      "zh": "同时恢复发布前的 D1 快照与上一版 Worker；既有 SmartPay3 认领及购买历史仍保留用于审计。"
+      "en": "Restore the pre-release D1 snapshot and previous Worker together; historical SmartPay3 and SmartPay4 claims and purchases are retained in the migrated data.",
+      "zh": "同时恢复发布前的 D1 快照与上一版 Worker；迁移数据中保留既有 SmartPay3 与 SmartPay4 认领及购买记录。"
     }
   }
 }

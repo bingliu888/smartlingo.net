@@ -5,8 +5,8 @@ import { cryptoRpcUrl } from "@/lib/crypto-rpc";
 import { activeCryptoPaymentSettings, cryptoPaymentSettingById } from "@/lib/crypto-payments";
 import { smartLingoProductOwnerRefId } from "@/lib/smartpay-product-owner";
 import { ensureSmartPayRefId, normalizeSmartPayRefId } from "@/lib/smartpay-refid";
-import { smartPay4LatestTransactions, verifySmartPay4Identity } from "@/lib/smartpay4-server";
-import { smartPay4ExpectedTokenPair } from "@/lib/smartpay4-presets";
+import { smartPay5LatestTransactions, verifySmartPay5Identity } from "@/lib/smartpay5-server";
+import { smartPay5ExpectedTokenPair } from "@/lib/smartpay5-presets";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   if (!user) return Response.json({ error: "Sign in required" }, { status: 401 });
   const url = new URL(request.url);
   const setting = await cryptoPaymentSettingById(url.searchParams.get("settingId") || "");
-  if (!setting?.smartPay4Contract || !isAddress(setting.smartPay4Contract)) {
+  if (!setting?.smartPay5Contract || !isAddress(setting.smartPay5Contract)) {
     return Response.json({ error: "On-chain course payment is not configured for this token" }, { status: 409 });
   }
   const database = getDatabase();
@@ -35,11 +35,11 @@ export async function GET(request: Request) {
   }
   try {
     const rpcUrl = await cryptoRpcUrl(setting.chainId);
-    const contract = setting.smartPay4Contract as Address;
-    await verifySmartPay4Identity(rpcUrl, contract);
+    const contract = setting.smartPay5Contract as Address;
+    await verifySmartPay5Identity(rpcUrl, contract);
     const requestedLimit = Math.max(1, Math.min(100, Number(url.searchParams.get("limit") || 25) || 25));
     const maxCount = latestMode ? Math.min(25, requestedLimit) : requestedLimit;
-    const latest = await smartPay4LatestTransactions({
+    const latest = await smartPay5LatestTransactions({
       rpcUrl,
       contract,
       payerId: latestMode ? undefined : requestedPayerId,
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     if (latest.transactions.length) {
       const placeholders = latest.transactions.map(() => "?").join(",");
       const rows = await database.prepare(`SELECT transaction_id AS transactionId,user_id AS userId,
-          current_period_ends_at AS currentPeriodEnd FROM smartpay4_payment_claims
+          current_period_ends_at AS currentPeriodEnd FROM smartpay5_payment_claims
         WHERE lower(contract_address)=lower(?) AND lower(transaction_id) IN (${placeholders})`)
         .bind(contract, ...latest.transactions.map(item => item.transactionId.toLowerCase()))
         .all<ClaimRow>();
@@ -72,9 +72,9 @@ export async function GET(request: Request) {
       const claim = claims.get(record.transactionId.toLowerCase());
       const matchedSetting = settings.find(candidate => {
         if (candidate.chainId !== setting.chainId
-          || candidate.smartPay4Contract?.toLowerCase() !== contract.toLowerCase()
+          || candidate.smartPay5Contract?.toLowerCase() !== contract.toLowerCase()
           || candidate.tokenContract.toLowerCase() !== record.primaryTokenAddress.toLowerCase()) return false;
-        const pair = smartPay4ExpectedTokenPair(settings, candidate);
+        const pair = smartPay5ExpectedTokenPair(settings, candidate);
         return pair?.secondaryTokenAddress.toLowerCase() === record.secondaryTokenAddress.toLowerCase();
       }) || null;
       return {
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
       matchedMembers,
     }, { headers: { "cache-control": "private, no-store" } });
   } catch (error) {
-    console.warn("SmartPay4 transaction lookup failed", error instanceof Error ? error.message.slice(0, 160) : "unknown");
+    console.warn("SmartPay5 transaction lookup failed", error instanceof Error ? error.message.slice(0, 160) : "unknown");
     return Response.json({ error: "Blockchain transaction records are temporarily unavailable" }, { status: 503 });
   }
 }

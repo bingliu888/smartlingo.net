@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("SmartPay4 admin layout matches SmartMeeting and uses the connected wallet as Owner", async () => {
+test("SmartPay5 admin layout matches SmartMeeting and uses the connected wallet as Owner", async () => {
   const [page, dashboard, consoleSource] = await Promise.all([
     read("app/[lang]/admin/crypto-payments/page.tsx"),
     read("components/AdminDashboard.tsx"),

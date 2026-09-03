@@ -40,7 +40,7 @@ jobs:
           node scripts/release-manifest.mjs --require-current-commit
           npm run scan:sensitive
 
-      - name: Replay all 73 D1 migrations and verify Gold v2
+      - name: Replay all 74 D1 migrations and verify Gold v2 plus SmartPay5
         run: npm run db:validate
         env:
           NODE_OPTIONS: --disable-warning=ExperimentalWarning
@@ -64,7 +64,7 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Compile and verify SmartLingo SmartPay4
+      - name: Compile and verify SmartLingo SmartPay5
         run: npm run contracts:test
 
       - name: Verify production artifact
@@ -170,7 +170,7 @@ jobs:
           done
           echo "RESOLVED_REALTIMEKIT_APP_ID=$app_id" >> "$GITHUB_ENV"
 
-      - name: Compile reviewed SmartPay4 artifact for the exact release build
+      - name: Compile reviewed SmartPay5 artifact for the exact release build
         run: npm run contracts:compile
 
       - name: Audit production identity and course ownership before migration

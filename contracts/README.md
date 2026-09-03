@@ -1,6 +1,6 @@
-# SmartPay4 for SmartLingo.net
+# SmartPay5 for SmartLingo.net
 
-`SmartPay4.sol` is the only supported SmartLingo on-chain checkout. Each site and EVM chain uses an independent deployment. The contract owns the payable rules, W1–W5 payout configuration, public transaction records, pause state, withdrawal controls, and immediate Owner transfer.
+`SmartPay5.sol` is the only supported SmartLingo on-chain checkout. Each site and EVM chain uses an independent deployment. The contract owns the payable rules, W1–W5 payout configuration, public transaction records, pause state, withdrawal controls, and immediate Owner transfer.
 
 ## Course-payment identifiers
 
@@ -10,13 +10,13 @@
 - Price-rule `secondId`: the empty string, so all languages share one price
 - Payment `secondId`: one supported learning-language code, such as `es`
 
-The public catalog has exactly nine fixed-term packages: three levels at 3, 6, and 12 months. Card payment supports all nine. SmartPay4 supports only the three 3-month packages on Polygon. A successful claim grants the selected 3-month level for the language recorded in the transaction `secondId`.
+The public catalog has exactly nine fixed-term packages: three levels at 3, 6, and 12 months. Card payment supports all nine. SmartPay5 supports only the three 3-month packages on Polygon. A successful claim grants the selected 3-month level for the language recorded in the transaction `secondId`.
 
 These identifiers are implementation details shown only in the administrator console. Customer pages display the subscription duration and token amounts.
 
 ## Authoritative price rule
 
-The admin database supplies the three eligible product labels, token decimals, and desired SmartPay4 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call supplies the selected learning language as `secondId` and the contract validates it against SmartLingo's 12 supported language codes.
+The admin database supplies the three eligible product labels, token decimals, and desired SmartPay5 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call supplies the selected learning language as `secondId` and the contract validates it against SmartLingo's 12 supported language codes.
 
 `paymentRule` and all other view functions use `eth_call`: no connected wallet, signature, or gas is required.
 
@@ -58,10 +58,10 @@ Ownership renunciation is disabled. After `transferOwnership(newOwner)` confirms
 
 Compile with `npm run contracts:compile`. The build produces:
 
-- `contracts/artifacts/SmartPay4.json`
-- `contracts/abi/SmartPay4.json`
-- `public/contracts/SmartPay4.abi.json`
+- `contracts/artifacts/SmartPay5.json`
+- `contracts/abi/SmartPay5.json`
+- `public/contracts/SmartPay5.abi.json`
 
 The browser deployment uses the repository artifact and requires the Owner to confirm the EVM transaction in TP Wallet or another compatible wallet. No private key or seed phrase belongs in the site, repository, terminal, or admin form. Optional source verification is off-chain, costs no gas, and is not a security audit.
 
-The public ABI is served at `/contracts/SmartPay4.abi.json`; the structured endpoint is `/api/billing/crypto/smartpay/abi`. Mobile integration examples are in `docs/smartpay4-mobile-integration.md`.
+The public ABI is served at `/contracts/SmartPay5.abi.json`; the structured endpoint is `/api/billing/crypto/smartpay/abi`. Mobile integration examples are in `docs/smartpay5-mobile-integration.md`.

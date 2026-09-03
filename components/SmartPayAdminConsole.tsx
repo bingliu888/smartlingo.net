@@ -15,23 +15,23 @@ import type { SiteLanguage } from "../lib/site-locale";
 import { smartPayOwnerActionFeedback, smartPayOwnerConnectionError, smartPayOwnerWalletButton } from "../lib/smartpay-admin-wallet-ui";
 import { smartPayChainLabel, smartPayChainOptions, smartPayChainSettings } from "../lib/smartpay-chain-options";
 import {
-  requestSmartPay4Deployment,
-  smartPay4AddressFromReceipt,
-  smartPay4DeploymentData,
-  type SmartPay4DeploymentArtifact
+  requestSmartPay5Deployment,
+  smartPay5AddressFromReceipt,
+  smartPay5DeploymentData,
+  type SmartPay5DeploymentArtifact
 } from "../lib/smartpay-deployment";
 import { SMARTLINGO_WALLET_CONNECT } from "../lib/smartlingo-commerce-wallet";
-import { SMARTPAY4_ABI } from "../lib/smartpay4";
+import { SMARTPAY5_ABI } from "../lib/smartpay5";
 import { smartPayTransactionNeedsReconciliation } from "../lib/smartpay-reconciliation";
 import {
-  smartPay4RulePresets,
-  smartPay4RulePresetStatus,
-  type SmartPay4RulePreset
-} from "../lib/smartpay4-presets";
+  smartPay5RulePresets,
+  smartPay5RulePresetStatus,
+  type SmartPay5RulePreset
+} from "../lib/smartpay5-presets";
 
 type PayoutRow = { wallet: string; percent: string };
 type TokenState = { symbol: string; decimals: number; balanceAtomic: string | null; balance: string | null };
-type SmartPay4PaymentRule = {
+type SmartPay5PaymentRule = {
   primaryTokenAddress: string;
   secondaryTokenAddress: string;
   mainId: string;
@@ -72,7 +72,7 @@ type ContractState = {
   owner: string;
   paused: boolean;
   payouts: Array<{ wallet: string; shareBps: number }>;
-  rules: SmartPay4PaymentRule[];
+  rules: SmartPay5PaymentRule[];
   tokens: Record<string, TokenState>;
   totalTransactions: number;
   latestTransactions: TransactionRecord[];
@@ -123,8 +123,8 @@ export function SmartPayAdminConsole({
   const [settingId, setSettingId] = useState(initialChainSettings[0]?.id || "");
   const chainOptions = useMemo(() => smartPayChainOptions(settings), [settings]);
   const selected = settings.find(item => item.id === settingId) || settings[0];
-  const [contractAddress, setContractAddress] = useState(selected?.smartPay4Contract || "");
-  const [smartPay4UsdtPercent, setSmartPay4UsdtPercent] = useState(String(selected?.smartPay4UsdtPercent ?? 50));
+  const [contractAddress, setContractAddress] = useState(selected?.smartPay5Contract || "");
+  const [smartPay5UsdtPercent, setSmartPay5UsdtPercent] = useState(String(selected?.smartPay5UsdtPercent ?? 50));
   const [contractState, setContractState] = useState<ContractState | null>(null);
   const [provider, setProvider] = useState<EthereumProvider | null>(null);
   const [connectedWallet, setConnectedWallet] = useState("");
@@ -148,19 +148,19 @@ export function SmartPayAdminConsole({
   const activePayouts = lastPayoutIndex >= 0 ? payouts.slice(0, lastPayoutIndex + 1) : [];
   const explicitBps = activePayouts.slice(0, -1).map(row => toBps(row.percent));
   const remainingBps = 10_000 - explicitBps.reduce((sum, value) => sum + (Number.isFinite(value) ? value : 0), 0);
-  const selectedContract = selected?.smartPay4Contract || "";
-  const contractName = "SmartPay4";
-  const contractAbi = SMARTPAY4_ABI;
+  const selectedContract = selected?.smartPay5Contract || "";
+  const contractName = "SmartPay5";
+  const contractAbi = SMARTPAY5_ABI;
   const contractConfigured = Boolean(selectedContract && isAddress(selectedContract));
   const transactionReadReady = Boolean(contractState);
   const ownerWalletButton = smartPayOwnerWalletButton(locale, busy, connectedWallet);
   const selectedChainId = selected?.chainId;
-  const smartPay4Rules = useMemo(() => contractState?.rules || [], [contractState?.rules]);
-  const smartPay4Presets = useMemo(() => smartPay4RulePresets(settings, selectedChainId), [settings, selectedChainId]);
-  const smartPay4PresetRows = useMemo(() => smartPay4Presets.map(preset => ({
+  const smartPay5Rules = useMemo(() => contractState?.rules || [], [contractState?.rules]);
+  const smartPay5Presets = useMemo(() => smartPay5RulePresets(settings, selectedChainId), [settings, selectedChainId]);
+  const smartPay5PresetRows = useMemo(() => smartPay5Presets.map(preset => ({
     preset,
-    status: smartPay4RulePresetStatus(preset, smartPay4Rules)
-  })), [smartPay4Presets, smartPay4Rules]);
+    status: smartPay5RulePresetStatus(preset, smartPay5Rules)
+  })), [smartPay5Presets, smartPay5Rules]);
   const withdrawTokenOptions = useMemo(() => Object.entries(contractState?.tokens || {}), [contractState?.tokens]);
   const withdrawalPreflight = useMemo(() => withdrawTokenState && withdrawAmount
     ? smartPayWithdrawalPreflight(withdrawAmount, withdrawTokenState.decimals, withdrawTokenState.balanceAtomic)
@@ -189,7 +189,7 @@ export function SmartPayAdminConsole({
     let cancelled = false;
     if (!selectedChainId || !isAddress(selectedContract)) return () => { cancelled = true; };
     const query = new URLSearchParams({ chainId: String(selectedChainId), address: selectedContract, file: "status" });
-    void fetch(`/api/contracts/smartpay4?${query}`, { cache: "no-store" })
+    void fetch(`/api/contracts/smartpay5?${query}`, { cache: "no-store" })
       .then(response => response.json())
       .then((result: SourceVerificationResponse) => {
         if (cancelled) return;
@@ -248,8 +248,8 @@ export function SmartPayAdminConsole({
   function selectSetting(nextId: string) {
     const next = settings.find(item => item.id === nextId) || settings[0];
     setSettingId(next?.id || "");
-    setContractAddress(next?.smartPay4Contract || "");
-    setSmartPay4UsdtPercent(String(next?.smartPay4UsdtPercent ?? 50));
+    setContractAddress(next?.smartPay5Contract || "");
+    setSmartPay5UsdtPercent(String(next?.smartPay5UsdtPercent ?? 50));
     setWithdrawToken("");
     setWithdrawTokenState(null);
     setContractState(null);
@@ -290,20 +290,20 @@ export function SmartPayAdminConsole({
     const data = await response.json().catch(() => ({})) as { contractAddress?: string; error?: string };
     if (!response.ok || !data.contractAddress) throw new Error(data.error || "SAVE_FAILED");
     setSettings(current => current.map(item => item.chainId === selected.chainId
-      ? { ...item, smartPay4Contract: data.contractAddress || null }
+      ? { ...item, smartPay5Contract: data.contractAddress || null }
       : item));
     setContractAddress(data.contractAddress);
     return data.contractAddress;
   }
 
-  async function saveSmartPay4Percentage() {
+  async function saveSmartPay5Percentage() {
     if (!selected) return;
-    const percent = Number(smartPay4UsdtPercent);
+    const percent = Number(smartPay5UsdtPercent);
     if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
       setMessage(zh ? "USDT 比例必须是 0–100 的整数。" : "USDT percentage must be an integer from 0 to 100.");
       return;
     }
-    setBusy("save-smartpay4-percent");
+    setBusy("save-smartpay5-percent");
     try {
       const response = await fetch("/api/admin/crypto-payments/contract", {
         method: "PATCH",
@@ -312,12 +312,12 @@ export function SmartPayAdminConsole({
       });
       const data = await response.json().catch(() => ({})) as { updated?: boolean; error?: string };
       if (!response.ok || !data.updated) throw new Error(data.error || "SAVE_FAILED");
-      setSettings(current => current.map(item => ({ ...item, smartPay4UsdtPercent: percent })));
+      setSettings(current => current.map(item => ({ ...item, smartPay5UsdtPercent: percent })));
       setMessage(zh
-        ? `SmartPay4 比例已保存：${percent}% USDT + ${100 - percent}% GLC；无需 Owner 或链上确认。`
-        : `SmartPay4 ratio saved: ${percent}% USDT + ${100 - percent}% GLC. No Owner or on-chain confirmation is required.`);
+        ? `SmartPay5 比例已保存：${percent}% USDT + ${100 - percent}% GLC；无需 Owner 或链上确认。`
+        : `SmartPay5 ratio saved: ${percent}% USDT + ${100 - percent}% GLC. No Owner or on-chain confirmation is required.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : (zh ? "无法保存 SmartPay4 比例。" : "Unable to save the SmartPay4 ratio."));
+      setMessage(error instanceof Error ? error.message : (zh ? "无法保存 SmartPay5 比例。" : "Unable to save the SmartPay5 ratio."));
     } finally {
       setBusy("");
     }
@@ -388,11 +388,11 @@ export function SmartPayAdminConsole({
       const initialOwner = active.address as Address;
       setOwnerWallet(initialOwner);
       const artifactResponse = await fetch("/api/admin/smartpay/bundle", { cache: "no-store" });
-      const artifact = await artifactResponse.json().catch(() => ({})) as SmartPay4DeploymentArtifact & { error?: string };
+      const artifact = await artifactResponse.json().catch(() => ({})) as SmartPay5DeploymentArtifact & { error?: string };
       if (!artifactResponse.ok) throw new Error(artifact.error || "DEPLOYMENT_ARTIFACT_UNAVAILABLE");
-      const data = smartPay4DeploymentData(artifact, initialOwner, SMARTPAY4_ABI);
+      const data = smartPay5DeploymentData(artifact, initialOwner, SMARTPAY5_ABI);
       setMessage(zh ? `正在预估部署 Gas；随后请在钱包确认 ${contractName} 部署。` : `Estimating deployment gas; then confirm the ${contractName} deployment in your wallet.`);
-      const deployment = await requestSmartPay4Deployment(active.provider, initialOwner, data, {
+      const deployment = await requestSmartPay5Deployment(active.provider, initialOwner, data, {
         chainId: selected.chainId,
         siteScope: "smartlingo.net",
         deploymentId: crypto.randomUUID()
@@ -400,7 +400,7 @@ export function SmartPayAdminConsole({
       const { hash } = deployment;
       setMessage(zh ? "部署交易已发送，正在等待链上确认…" : "Deployment submitted. Waiting for on-chain confirmation…");
       const receipt = await waitForTransactionReceipt(active.provider, hash);
-      const deployedAddress = smartPay4AddressFromReceipt(receipt, deployment.contractAddress);
+      const deployedAddress = smartPay5AddressFromReceipt(receipt, deployment.contractAddress);
       setMessage(zh ? "合约已部署，正在验证并保存地址…" : "Contract deployed. Verifying and saving its address…");
       await verifyAndSaveContractAddress(deployedAddress);
       await refreshContractState(true);
@@ -588,7 +588,7 @@ export function SmartPayAdminConsole({
     } catch (error) {
       const reason = error instanceof Error ? error.message : "";
       setMessage(reason === "TOKEN_NOT_AVAILABLE"
-        ? (zh ? "请选择已在 SmartPay4 链上付款规则中的代币。" : "Select a token from an enabled SmartPay4 on-chain payment rule.")
+        ? (zh ? "请选择已在 SmartPay5 链上付款规则中的代币。" : "Select a token from an enabled SmartPay5 on-chain payment rule.")
         : (error instanceof Error ? error.message : (zh ? "无法读取代币。" : "Unable to read the token.")));
     } finally {
       setBusy("");
@@ -625,15 +625,15 @@ export function SmartPayAdminConsole({
       setMessage(reason === "BALANCE_UNAVAILABLE"
         ? (zh ? "暂时无法读取合约代币余额；未调用钱包。" : "The contract token balance is unavailable. The wallet was not called.")
         : reason === "TOKEN_NOT_AVAILABLE"
-          ? (zh ? "请选择已在 SmartPay4 链上付款规则中的代币。" : "Select a token from an enabled SmartPay4 on-chain payment rule.")
+          ? (zh ? "请选择已在 SmartPay5 链上付款规则中的代币。" : "Select a token from an enabled SmartPay5 on-chain payment rule.")
           : (zh ? "请输入符合代币精度的有效提款数量。" : "Enter a valid withdrawal amount for this token's decimals."));
     } finally {
       setBusy(current => current === "withdraw-check" ? "" : current);
     }
   }
 
-  async function confirmSmartPay4Preset(preset: SmartPay4RulePreset) {
-    const status = smartPay4RulePresetStatus(preset, smartPay4Rules);
+  async function confirmSmartPay5Preset(preset: SmartPay5RulePreset) {
+    const status = smartPay5RulePresetStatus(preset, smartPay5Rules);
     if (status.state === "configured") return;
     await sendOwnerTransaction(
       "setPaymentRule",
@@ -710,7 +710,7 @@ export function SmartPayAdminConsole({
 
   async function refreshTransactions(autoSync = true) {
     if (!transactionReadReady) {
-      setMessage(zh ? "请先部署并验证 SmartPay4，再读取交易。" : "Deploy and verify SmartPay4 before reading transactions.");
+      setMessage(zh ? "请先部署并验证 SmartPay5，再读取交易。" : "Deploy and verify SmartPay5 before reading transactions.");
       return;
     }
     setBusy("transactions");
@@ -789,7 +789,7 @@ export function SmartPayAdminConsole({
       <div className="admin-form-heading"><div><span>CONTRACT</span><h2>{zh ? "部署或导入合约" : "Deploy or import contract"}</h2></div></div>
       <label><span>{zh ? "部署链" : "Deployment chain"}</span><select value={selected?.id || ""} onChange={event => selectSetting(event.target.value)}>{chainOptions.map(option => <option key={option.chainId} value={option.setting?.id || `unconfigured:${option.chainId}`} disabled={!option.setting}>{option.label}</option>)}</select></label>
       <p className="smartpay-token-balance">{selectedContract ? (zh ? "当前合约" : "Current contract") + " · " + selectedContract : (zh ? `此网络尚未配置 ${contractName}。` : `${contractName} is not configured for this network.`)}</p>
-      <div className="smartpay-ratio-setting"><label><span>{zh ? "USDT 付款比例（0–100）" : "USDT payment percentage (0–100)"}</span><input inputMode="numeric" value={smartPay4UsdtPercent} onChange={event => setSmartPay4UsdtPercent(event.target.value)} /></label><button type="button" className="button ghost" onClick={() => void saveSmartPay4Percentage()} disabled={Boolean(busy)}>{busy === "save-smartpay4-percent" ? "…" : (zh ? "更新比例" : "Update ratio")}</button><small>{zh ? `当前输入表示 ${smartPay4UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay4UsdtPercent)) ? 100 - Number(smartPay4UsdtPercent) : "—"}% GLC。只保存本站数据库，不需要 Owner 或链上交易。` : `The current input means ${smartPay4UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay4UsdtPercent)) ? 100 - Number(smartPay4UsdtPercent) : "—"}% GLC. It is saved only in this site's database and requires no Owner or on-chain transaction.`}</small></div>
+      <div className="smartpay-ratio-setting"><label><span>{zh ? "USDT 付款比例（0–100）" : "USDT payment percentage (0–100)"}</span><input inputMode="numeric" value={smartPay5UsdtPercent} onChange={event => setSmartPay5UsdtPercent(event.target.value)} /></label><button type="button" className="button ghost" onClick={() => void saveSmartPay5Percentage()} disabled={Boolean(busy)}>{busy === "save-smartpay5-percent" ? "…" : (zh ? "更新比例" : "Update ratio")}</button><small>{zh ? `当前输入表示 ${smartPay5UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay5UsdtPercent)) ? 100 - Number(smartPay5UsdtPercent) : "—"}% GLC。只保存本站数据库，不需要 Owner 或链上交易。` : `The current input means ${smartPay5UsdtPercent || "0"}% USDT + ${Number.isFinite(Number(smartPay5UsdtPercent)) ? 100 - Number(smartPay5UsdtPercent) : "—"}% GLC. It is saved only in this site's database and requires no Owner or on-chain transaction.`}</small></div>
       <label className="toggle-field smartpay-source-toggle"><input type="checkbox" checked={publishSource} onChange={event => setPublishSource(event.target.checked)} disabled={Boolean(busy)}/><span>{zh ? "提交源码进行公开验证（默认开启）" : "Submit source code for public verification (default on)"}</span></label>
       <small className="smartpay-source-warning">{zh ? "开启：钱包部署确认后上传源码、执行链下字节码匹配，并开放源码与浏览器链接；不产生额外 Gas，也不等于审计。关闭：只提供 ABI 链接，源码不上传、不开放下载。" : "On: after wallet-confirmed deployment, upload source for an off-chain bytecode match and expose source and explorer links; this adds no gas and is not an audit. Off: provide only the ABI link, without uploading or exposing source."}</small>
       {contractConfigured ? <p className="flow-intro">{zh ? "需要新代码或重置链上配置时，可重新部署全新空合约；旧合约和历史记录不会删除。" : "Redeploy a new empty contract when code changes or on-chain configuration must be reset. The old contract and history are not deleted."}</p> : null}
@@ -848,11 +848,11 @@ export function SmartPayAdminConsole({
     <section className="smartpay-console-card smartpay-wide-card">
       <div className="admin-form-heading"><div><span>PAYMENT ITEMS</span><h2>{zh ? "后台付款项目与链上规则" : "Dashboard payment items & on-chain rules"}</h2></div><button type="button" onClick={() => void refreshContractState()} disabled={!contractConfigured || Boolean(busy)}>{busy === "refresh-contract" ? "…" : (zh ? "刷新链上规则" : "Refresh on-chain rules")}</button></div>
       <p>{zh ? "链上只保存初期、中级、高级三个 3 个月价格产品；所有学习语言共享同一价格规则，学生付款时选择的语言会单独记录为 secondID。USDT 项目保存 100% USDT、100% 等值 GLC 与 10 亿 GLC 门槛，实际 USDT 比例保存在本站数据库。" : "Only the three 3-month Beginner, Intermediate, and Advanced price products are stored on-chain. Every learning language shares the same price rule; the language selected at checkout is recorded separately as secondID. USDT rules store full USDT/GLC equivalents and the 1-billion-GLC threshold, while the active mix stays in this site's database."}</p>
-      {smartPay4PresetRows.length ? <div className="smartpay-rule-list smartpay-preset-list">{smartPay4PresetRows.map(({ preset, status }) => {
+      {smartPay5PresetRows.length ? <div className="smartpay-rule-list smartpay-preset-list">{smartPay5PresetRows.map(({ preset, status }) => {
         const key = `preset:${preset.key}`;
         const tier = preset.plan === "basic" ? (zh ? "初期课程" : "Beginner") : preset.plan === "intermediate" ? (zh ? "中级课程" : "Intermediate") : (zh ? "高级课程" : "Advanced");
-        return <article key={preset.key}><div><strong>{tier} · {preset.months} {zh ? "个月" : "months"} · {preset.mode === "dual" ? `${preset.primaryTokenSymbol} / ${preset.secondaryTokenSymbol}` : preset.primaryTokenSymbol}</strong><small>{preset.mainId} · {zh ? "语言由学生付款时选择" : "Language selected at checkout"}</small></div><div><b>{preset.mode === "dual" ? `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol} ↔ ${preset.secondaryTokenAmount} ${preset.secondaryTokenSymbol}` : `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol}`}</b><small>{preset.mode === "dual" ? `${zh ? `当前本站：${preset.primaryPercent}% / ${preset.secondaryPercent}%` : `Current site: ${preset.primaryPercent}% / ${preset.secondaryPercent}%`} · ${zh ? `门槛 ${preset.minimumSecondaryBalance} GLC` : `Threshold ${preset.minimumSecondaryBalance} GLC`}` : (zh ? "非 USDT · 100% 单币付款" : "Non-USDT · 100% single-token payment")}</small></div><span className={status.state === "configured" ? "rule-enabled" : "rule-disabled"}>{status.state === "configured" ? (zh ? "链上已配置" : "Configured") : status.state === "missing" ? (zh ? "链上缺失" : "Missing") : (zh ? "需要更新" : "Update needed")}</span>{status.state !== "configured" ? <button type="button" className="button primary" onClick={() => void confirmSmartPay4Preset(preset)} disabled={!contractState || Boolean(busy)}>{busy === key ? "…" : (zh ? "确认写入" : "Confirm on-chain")}</button> : null}</article>;
-      })}</div> : <p>{zh ? "所选链尚无可写入 SmartPay4 的后台付款项目。" : "No dashboard payment item is available for SmartPay4 on this chain."}</p>}
+        return <article key={preset.key}><div><strong>{tier} · {preset.months} {zh ? "个月" : "months"} · {preset.mode === "dual" ? `${preset.primaryTokenSymbol} / ${preset.secondaryTokenSymbol}` : preset.primaryTokenSymbol}</strong><small>{preset.mainId} · {zh ? "语言由学生付款时选择" : "Language selected at checkout"}</small></div><div><b>{preset.mode === "dual" ? `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol} ↔ ${preset.secondaryTokenAmount} ${preset.secondaryTokenSymbol}` : `${preset.primaryTokenAmount} ${preset.primaryTokenSymbol}`}</b><small>{preset.mode === "dual" ? `${zh ? `当前本站：${preset.primaryPercent}% / ${preset.secondaryPercent}%` : `Current site: ${preset.primaryPercent}% / ${preset.secondaryPercent}%`} · ${zh ? `门槛 ${preset.minimumSecondaryBalance} GLC` : `Threshold ${preset.minimumSecondaryBalance} GLC`}` : (zh ? "非 USDT · 100% 单币付款" : "Non-USDT · 100% single-token payment")}</small></div><span className={status.state === "configured" ? "rule-enabled" : "rule-disabled"}>{status.state === "configured" ? (zh ? "链上已配置" : "Configured") : status.state === "missing" ? (zh ? "链上缺失" : "Missing") : (zh ? "需要更新" : "Update needed")}</span>{status.state !== "configured" ? <button type="button" className="button primary" onClick={() => void confirmSmartPay5Preset(preset)} disabled={!contractState || Boolean(busy)}>{busy === key ? "…" : (zh ? "确认写入" : "Confirm on-chain")}</button> : null}</article>;
+      })}</div> : <p>{zh ? "所选链尚无可写入 SmartPay5 的后台付款项目。" : "No dashboard payment item is available for SmartPay5 on this chain."}</p>}
     </section>
 
     <section className="smartpay-console-card smartpay-wide-card">

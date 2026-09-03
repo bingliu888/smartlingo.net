@@ -20,7 +20,7 @@ export function smartPayOwnerActionFeedback(locale: SiteLanguage, reason: string
   const zh = locale === "zh";
   if (reason === "NOT_OWNER") {
     return {
-      message: zh ? "您连接的钱包不是 SmartPay4 Owner。" : "Your connected wallet is not the SmartPay4 owner.",
+      message: zh ? "您连接的钱包不是 SmartPay5 Owner。" : "Your connected wallet is not the SmartPay5 owner.",
       interruptive: true,
     };
   }

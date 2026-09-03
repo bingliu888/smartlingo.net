@@ -7,7 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @title SmartPay4
+/// @title SmartPay5
 /// @notice Site-specific flexible ERC-20 checkout for SmartLingo course packages.
 /// @dev SmartLingo stores one rule per three-month level and token mode. The
 ///      signed-in member supplies one supported learning-language code as secondId; it is
@@ -20,7 +20,10 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 ///      signed-in member receiving the course entitlement, while refId identifies
 ///      the permanent administrator who owns these SmartLingo products. The
 ///      connected wallet only signs and funds the transaction.
-contract SmartPay4 is Ownable, Pausable, ReentrancyGuard {
+///      Payout events and records store nominal rule amounts. Fee-on-transfer
+///      tokens may burn part of each transfer, so recipient balance deltas are
+///      intentionally not required to equal those nominal amounts.
+contract SmartPay5 is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     string public constant MAIN_ID_BASIC_3_MONTH = "smartlingo_course_basic_3m";
@@ -74,7 +77,6 @@ contract SmartPay4 is Ownable, Pausable, ReentrancyGuard {
     error PayoutsNotConfigured();
     error InvalidPaymentRatio();
     error SecondaryBalanceEligibilityNotMet();
-    error TokenTransferAmountMismatch();
     error OwnershipRenunciationDisabled();
     error UnsupportedPaymentProduct();
     error UnsupportedLearningLanguage();
@@ -447,12 +449,12 @@ contract SmartPay4 is Ownable, Pausable, ReentrancyGuard {
         for (uint256 index; index < finalIndex; ++index) {
             uint256 splitAmount = (tokenAmount * _payoutSharesBps[index]) / BPS_DENOMINATOR;
             if (splitAmount == 0) continue;
-            _transferExact(paymentToken, _payoutWallets[index], splitAmount);
+            paymentToken.safeTransferFrom(msg.sender, _payoutWallets[index], splitAmount);
             distributed += splitAmount;
             emit PayoutExecuted(transactionId, tokenAddress, _payoutWallets[index], splitAmount);
         }
         uint256 remainder = tokenAmount - distributed;
-        _transferExact(paymentToken, _payoutWallets[finalIndex], remainder);
+        paymentToken.safeTransferFrom(msg.sender, _payoutWallets[finalIndex], remainder);
         emit PayoutExecuted(transactionId, tokenAddress, _payoutWallets[finalIndex], remainder);
     }
 
@@ -525,14 +527,4 @@ contract SmartPay4 is Ownable, Pausable, ReentrancyGuard {
         emit PayoutConfigurationUpdated(payoutConfigHash, wallets, sharesBps);
     }
 
-    function _transferExact(IERC20 token, address wallet, uint256 tokenAmount) private {
-        uint256 balanceBefore = token.balanceOf(wallet);
-        token.safeTransferFrom(msg.sender, wallet, tokenAmount);
-        uint256 balanceAfter = token.balanceOf(wallet);
-        if (wallet == msg.sender) {
-            if (balanceAfter != balanceBefore) revert TokenTransferAmountMismatch();
-        } else if (balanceAfter - balanceBefore != tokenAmount) {
-            revert TokenTransferAmountMismatch();
-        }
-    }
 }
