@@ -25,20 +25,24 @@ export async function GET() {
     constructorInputs: ["initialOwner"],
     postDeploymentAdmin: true,
     maxPayoutWallets: 5,
+    payerId: {
+      public: true,
+      length: 6,
+      comparison: "case-insensitive",
+      websiteCheckout: "the signed-in learner's own public referral code"
+    },
     refId: {
       public: true,
       length: 6,
-      casePreservedOnChain: true,
       comparison: "case-insensitive",
-      websiteCheckout: "automatically supplied from the signed-in member profile",
-      thirdPartyCheckout: "supplied by the payer"
+      websiteCheckout: "the permanent administrator's public referral code as owner of every official SmartLingo language product"
     },
     mainIds: [
-      "bingacademy_membership_monthly",
-      "bingacademy_membership_six_month",
-      "bingacademy_membership_annual"
+      "smartlingo_course_basic_3m",
+      "smartlingo_course_intermediate_3m",
+      "smartlingo_course_advanced_3m"
     ],
-    subscriptionSecondId: "",
+    secondId: "the selected supported learning-language code; the permanent administrator owns each official language product",
     abi: SMARTPAY5_ABI
   });
 }

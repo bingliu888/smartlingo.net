@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-fflate-security-20260903",
+  "releaseId": "smartlingo-net-gold-v2-fflate-and-abi-metadata-20260903-v2",
   "site": "smartlingo.net",
-  "title": { "en": "Gold v2 dependency security sync", "zh": "Gold v2 依赖安全同步" },
+  "title": { "en": "Gold v2 dependency and SmartPay5 metadata correction", "zh": "Gold v2 依赖与 SmartPay5 元数据修正" },
   "purpose": {
-    "en": "Synchronize the patched fflate dependency identified while validating the shared SmartPay5 rollout.",
-    "zh": "同步共享 SmartPay5 发布验证中发现的 fflate 依赖安全修复。"
+    "en": "Keep the patched dependency release and correct SmartLingo's public SmartPay5 integration metadata to match its actual course products and ownership model.",
+    "zh": "保留依赖安全修复，并使 SmartLingo 的公开 SmartPay5 集成元数据与实际课程产品及所有权模型一致。"
   },
   "features": {
-    "en": ["Pin fflate 0.8.3 to remove GHSA-px8p-9vwx-vf98 from the production dependency graph."],
-    "zh": ["锁定 fflate 0.8.3，从生产依赖图中移除 GHSA-px8p-9vwx-vf98。"]
+    "en": ["Pin fflate 0.8.3 to remove GHSA-px8p-9vwx-vf98.", "Publish the three SmartLingo three-month course MainIDs, selected language SecondID semantics, signed-in PayerID, and permanent-administrator RefID semantics."],
+    "zh": ["锁定 fflate 0.8.3，移除 GHSA-px8p-9vwx-vf98。", "发布三个 SmartLingo 三个月课程 MainID、所选语言 SecondID、登录用户 PayerID 及永久管理员 RefID 的正确语义。"]
   },
   "affected": {
-    "en": ["Dependency resolution, lockfile, and the exact release record only."],
-    "zh": ["仅影响依赖解析、锁定文件和精确发布记录。"]
+    "en": ["Dependency resolution, public SmartPay5 ABI metadata, its regression contract, and the exact release record."],
+    "zh": ["影响依赖解析、公开 SmartPay5 ABI 元数据、对应回归合同及精确发布记录。"]
   },
   "changes": {
-    "en": ["Add an exact transitive dependency override without changing SmartLingo application behavior."],
-    "zh": ["新增精确的间接依赖覆盖，不改变 SmartLingo 应用行为。"]
+    "en": ["Remove stale BingAcademy identifiers and the obsolete member-profile RefID description from the SmartLingo ABI endpoint.", "Add a regression check that fails if cross-site identifiers or incorrect identity semantics return."],
+    "zh": ["从 SmartLingo ABI 接口移除残留的 BingAcademy 标识及过时的会员资料 RefID 描述。", "增加回归检查，防止跨站标识或错误身份语义再次出现。"]
   },
   "validation": {
-    "en": ["Require zero npm audit vulnerabilities, all repository gates, exact deployment, production probes, and matching private Project evidence; interactive browser testing is intentionally omitted for this portfolio sync."],
-    "zh": ["要求 npm 审计零漏洞、全部仓库门禁、精确部署、生产探测及匹配的私有 Project 证据；本次组合同步按要求不做交互式浏览器测试。"]
+    "en": ["Require zero npm audit vulnerabilities, 74-migration replay, all source contracts, exact WebKit matrix gate, exact deployment, production API probes, and matching private Project evidence; no manual realtime browser testing."],
+    "zh": ["要求 npm 审计零漏洞、74 个迁移重放、全部源码合同、精确 WebKit 矩阵门禁、精确部署、生产 API 探测及匹配的私有 Project 证据；不做手动实时浏览器测试。"]
   },
   "deferred": {
-    "en": ["No feature, database schema, contract, product, price, provider setting, or production data changes."],
-    "zh": ["不修改功能、数据库架构、合约、产品、价格、服务商设置或生产数据。"]
+    "en": ["No contract bytecode, payment rules, database schema, product price, provider setting, entitlement, or production data changes."],
+    "zh": ["不修改合约字节码、付款规则、数据库架构、产品价格、服务商设置、权益或生产数据。"]
   },
   "siteAdaptations": {
-    "en": ["Preserve SmartLingo branding, language-learning products, Clerk, RealtimeKit, SmartPay5, referral, certificate, header, footer, and independent infrastructure boundaries."],
-    "zh": ["保留 SmartLingo 品牌、语言学习产品、Clerk、RealtimeKit、SmartPay5、推荐、证书、页眉页脚及独立基础设施边界。"]
+    "en": ["Preserve SmartLingo branding, language-learning products, Clerk, RealtimeKit, SmartPay5 runtime, referral, certificate, header, footer, and independent infrastructure boundaries."],
+    "zh": ["保留 SmartLingo 品牌、语言学习产品、Clerk、RealtimeKit、SmartPay5 运行逻辑、推荐、证书、页眉页脚及独立基础设施边界。"]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "en": "No data migration is included; roll back only this dependency release if required.",
-      "zh": "不包含数据迁移；如有需要，仅回滚本次依赖发布。"
+      "en": "No data migration is included; roll back only this metadata release if required.",
+      "zh": "不包含数据迁移；如有需要，仅回滚本次元数据发布。"
     }
   }
 }

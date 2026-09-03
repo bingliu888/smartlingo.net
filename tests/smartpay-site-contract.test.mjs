@@ -94,11 +94,12 @@ test("deployment bundle is reproducible and site-specific", async () => {
 });
 
 test("SmartPay5 stores three shared price products and records the selected learning language on payment", async () => {
-  const [contract, presets, server, optionsRoute] = await Promise.all([
+  const [contract, presets, server, optionsRoute, abiRoute] = await Promise.all([
     read("contracts/SmartPay5.sol"),
     read("lib/smartpay5-presets.ts"),
     read("lib/smartpay-checkout-server.ts"),
     read("app/api/billing/crypto/smartpay/options/route.ts"),
+    read("app/api/billing/crypto/smartpay/abi/route.ts"),
   ]);
   for (const mainId of ["smartlingo_course_basic_3m", "smartlingo_course_intermediate_3m", "smartlingo_course_advanced_3m"]) {
     assert.match(contract, new RegExp(mainId));
@@ -109,6 +110,13 @@ test("SmartPay5 stores three shared price products and records the selected lear
   assert.match(presets, /cryptoSubscriptionRuleIds/);
   assert.match(server, /cryptoSubscriptionIdsForCourse\(languageCode, preset\.plan\)/);
   assert.match(optionsRoute, /Choose a supported learning language/);
+  assert.match(abiRoute, /smartlingo_course_basic_3m/);
+  assert.match(abiRoute, /smartlingo_course_intermediate_3m/);
+  assert.match(abiRoute, /smartlingo_course_advanced_3m/);
+  assert.match(abiRoute, /signed-in learner's own public referral code/);
+  assert.match(abiRoute, /permanent administrator's public referral code/);
+  assert.match(abiRoute, /selected supported learning-language code/);
+  assert.doesNotMatch(abiRoute, /bingacademy|automatically supplied from the signed-in member profile/);
 });
 
 test("user pages hide contract implementation names and admin identifiers", async () => {
