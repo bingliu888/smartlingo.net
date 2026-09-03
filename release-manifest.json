@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-qa21-day14-report-20260903",
+  "releaseId": "smartlingo-net-gold-v2-fflate-security-20260903",
   "site": "smartlingo.net",
-  "title": { "en": "21-day QA day-14 production report", "zh": "21 天 QA 第 14 天生产报告" },
+  "title": { "en": "Gold v2 dependency security sync", "zh": "Gold v2 依赖安全同步" },
   "purpose": {
-    "en": "Publish the bilingual administrator record for the September 3 real-Chrome, four-language learning acceptance run without exposing test identity or authentication data.",
-    "zh": "发布 9 月 3 日真实 Chrome 四语学习验收的双语管理员记录，且不暴露测试身份或认证数据。"
+    "en": "Synchronize the patched fflate dependency identified while validating the shared SmartPay5 rollout.",
+    "zh": "同步共享 SmartPay5 发布验证中发现的 fflate 依赖安全修复。"
   },
   "features": {
-    "en": ["Record Course, Play, Everyday Speaking, Rankings, and Score History evidence for English, Japanese, Spanish, and Italian.", "Record deterministic planned minutes, persisted measured minutes, deep-focus skills, Sprint scores, and the administrator-ledger verification blocker."],
-    "zh": ["记录英语、日语、西班牙语和意大利语的课程、Play、生活口语、排行榜与成绩记录证据。", "记录确定性计划分钟、持久化实测分钟、深度重点、Sprint 分数及管理员账本复核受阻项。"]
+    "en": ["Pin fflate 0.8.3 to remove GHSA-px8p-9vwx-vf98 from the production dependency graph."],
+    "zh": ["锁定 fflate 0.8.3，从生产依赖图中移除 GHSA-px8p-9vwx-vf98。"]
   },
   "affected": {
-    "en": ["Project report fallback and production runtime report merge for the September 3 delivery date.", "No learning implementation, identity, commerce, payment, referral, certificate, or database schema behavior changes."],
-    "zh": ["涉及 9 月 3 日交付日期的 Project 报告后备内容与生产运行时报告合并。", "不改动学习实现、身份、商务、支付、推荐、证书或数据库架构行为。"]
+    "en": ["Dependency resolution, lockfile, and the exact release record only."],
+    "zh": ["仅影响依赖解析、锁定文件和精确发布记录。"]
   },
   "changes": {
-    "en": ["Append one detailed bilingual day-14 QA report to the versioned Project document.", "Explicitly distinguish passed real-browser learning evidence from the blocked administrator read-only ledger confirmation."],
-    "zh": ["向版本化 Project 文档追加一份详细双语第 14 天 QA 报告。", "明确区分已通过的真实浏览器学习证据与受阻的管理员只读账本确认。"]
+    "en": ["Add an exact transitive dependency override without changing SmartLingo application behavior."],
+    "zh": ["新增精确的间接依赖覆盖，不改变 SmartLingo 应用行为。"]
   },
   "validation": {
-    "en": ["Run the sentence catalog contract, full repository release gate, sensitive-data scan, shared policy/architecture/base-feature/contracts gates, and production Project verification.", "Verify in real Chrome that the published September 3 Project report matches the exact report release."],
-    "zh": ["运行句子目录合同、完整仓库发布门禁、敏感信息扫描、共享政策/架构/基础功能/合同门禁及生产 Project 核验。", "在真实 Chrome 中核对已发布的 9 月 3 日 Project 报告与本次报告发布完全一致。"]
+    "en": ["Require zero npm audit vulnerabilities, all repository gates, exact deployment, production probes, and matching private Project evidence; interactive browser testing is intentionally omitted for this portfolio sync."],
+    "zh": ["要求 npm 审计零漏洞、全部仓库门禁、精确部署、生产探测及匹配的私有 Project 证据；本次组合同步按要求不做交互式浏览器测试。"]
   },
   "deferred": {
-    "en": ["Exact zero-change confirmation for payment, referral, and certificate ledgers remains blocked until the existing Cloudflare administrator read-only credential is available; no such UI action was entered."],
-    "zh": ["支付、推荐与证书账本的精确零变更确认在现有 Cloudflare 管理员只读凭据可用前保持受阻；本轮没有进入这些界面操作。"]
+    "en": ["No feature, database schema, contract, product, price, provider setting, or production data changes."],
+    "zh": ["不修改功能、数据库架构、合约、产品、价格、服务商设置或生产数据。"]
   },
   "siteAdaptations": {
-    "en": ["Preserve the Chinese-interface QA identity boundary, anonymized evidence, existing production learning data, and the site-local Project runtime contract."],
-    "zh": ["保留中文界面 QA 身份边界、匿名化证据、既有生产学习数据及站点独立 Project 运行时合同。"]
+    "en": ["Preserve SmartLingo branding, language-learning products, Clerk, RealtimeKit, SmartPay5, referral, certificate, header, footer, and independent infrastructure boundaries."],
+    "zh": ["保留 SmartLingo 品牌、语言学习产品、Clerk、RealtimeKit、SmartPay5、推荐、证书、页眉页脚及独立基础设施边界。"]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "en": "No data migration is included. Roll back only the report commit if the Project presentation regresses; retain all legitimate production learning records.",
-      "zh": "不包含数据迁移。如 Project 展示回归，仅回滚报告提交；保留全部合法生产学习记录。"
+      "en": "No data migration is included; roll back only this dependency release if required.",
+      "zh": "不包含数据迁移；如有需要，仅回滚本次依赖发布。"
     }
   }
 }
