@@ -415,6 +415,7 @@ contract SmartPay5 is Ownable, Pausable, ReentrancyGuard {
         if (value.length != REF_ID_BYTES) return false;
         for (uint256 index; index < value.length; ++index) {
             uint8 character = uint8(value[index]);
+            if (character >= 97 && character <= 122) character -= 32;
             bool validLetter = (character >= 65 && character <= 72)
                 || (character >= 74 && character <= 78)
                 || (character >= 80 && character <= 90);
@@ -425,7 +426,12 @@ contract SmartPay5 is Ownable, Pausable, ReentrancyGuard {
     }
 
     function _userIdKey(string memory userId) private pure returns (bytes32) {
-        return keccak256(bytes(userId));
+        bytes memory normalized = bytes(userId);
+        for (uint256 index; index < normalized.length; ++index) {
+            uint8 character = uint8(normalized[index]);
+            if (character >= 97 && character <= 122) normalized[index] = bytes1(character - 32);
+        }
+        return keccak256(normalized);
     }
 
     function _ruleKey(

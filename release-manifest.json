@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold-v2-fflate-and-abi-metadata-20260903-v2",
+  "releaseId": "smartlingo-net-smartpay5-case-insensitive-userids-20260903",
   "site": "smartlingo.net",
   "title": { "en": "Gold v2 dependency and SmartPay5 metadata correction", "zh": "Gold v2 依赖与 SmartPay5 元数据修正" },
   "purpose": {
@@ -20,8 +20,8 @@
     "zh": ["从 SmartLingo ABI 接口移除残留的 BingAcademy 标识及过时的会员资料 RefID 描述。", "增加回归检查，防止跨站标识或错误身份语义再次出现。"]
   },
   "validation": {
-    "en": ["Require zero npm audit vulnerabilities, 74-migration replay, all source contracts, exact WebKit matrix gate, exact deployment, production API probes, and matching private Project evidence; no manual realtime browser testing."],
-    "zh": ["要求 npm 审计零漏洞、74 个迁移重放、全部源码合同、精确 WebKit 矩阵门禁、精确部署、生产 API 探测及匹配的私有 Project 证据；不做手动实时浏览器测试。"]
+    "en": ["Require zero npm audit vulnerabilities, 74-migration replay, all source contracts, exact WebKit matrix gate, exact deployment, production API probes, and matching private Project evidence; no manual realtime browser testing.", "Verify uppercase and lowercase PayerID queries resolve the same SmartPay5 transaction index."],
+    "zh": ["要求 npm 审计零漏洞、74 个迁移重放、全部源码合同、精确 WebKit 矩阵门禁、精确部署、生产 API 探测及匹配的私有 Project 证据；不做手动实时浏览器测试。", "验证大写与小写 PayerID 查询解析到同一个 SmartPay5 交易索引。"]
   },
   "deferred": {
     "en": ["No contract bytecode, payment rules, database schema, product price, provider setting, entitlement, or production data changes."],

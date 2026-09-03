@@ -109,6 +109,7 @@ test("SmartPay5 reads its rule and atomically records mixed, secondary-only, and
   }
   const latest=await chain.call(contract,artifact.abi,"getTransactionsByPayerID",[payerId,100n]);
   assert.equal(latest[1],3n);
+  assert.equal((await chain.call(contract,artifact.abi,"getTransactionsByPayerID",[payerId.toLowerCase(),100n]))[1],3n);
   assert.deepEqual(latest[0].map(record=>record.transactionId),ids.toReversed());
   assert.deepEqual(latest[0].map(record=>record.refId),rows.map(()=>productOwnerRefId).toReversed());
   assert.deepEqual(latest[0].map(record=>record.payerId),rows.map(()=>payerId).toReversed());
