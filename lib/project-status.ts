@@ -407,6 +407,56 @@ export const projectReports: ProjectReport[] = [
       en: "When Chrome has real human voice input, retry from the same English speaking step, then complete all four languages' Course, Play, Everyday Speaking, planned durations, server scores, and administrator read-only ledger verification.",
     },
   },
+  {
+    date: "2026-09-03",
+    title: {
+      zh: "21 天真实学习验收第 14 天 · 四语通过，管理员账本复核受阻",
+      en: "21-day real-learning acceptance, day 14 · four languages pass, administrator ledger review blocked",
+    },
+    beta: {
+      zh: "查看四语课程、Play、生活口语与持久化成绩证据",
+      en: "Review four-language Course, Play, Everyday, and persisted-score evidence",
+    },
+    completed: 4,
+    summary: {
+      zh: "匿名化专用测试学员在正式站中文界面的真实 Chrome 会话中完成英语、日语、西班牙语和意大利语的课程五技能、五技能今日速成、智慧卡练习、当地日期智慧卡挑战、生活口语、排行榜与成绩记录。四语均达到当天确定性计划的有效学习分钟并各产生一条 80/100、+25 的合法今日速成记录。跟读始终关闭，没有请求麦克风权限。浏览器功能矩阵通过；由于本地环境没有 Cloudflare 管理员只读凭据，支付、推荐与证书账本的数据库级零变更复核保持受阻，不把它虚构为已确认。",
+      en: "The anonymized dedicated test learner completed Course five-skill interactions, a complete five-skill Today's Sprint, SmartCard Practice, the learner-local SmartCard Challenge, Everyday Speaking, Rankings, and Score History for English, Japanese, Spanish, and Italian in a real Chrome production session using the Chinese interface. Every language met its deterministic active-learning target and created one legitimate 80/100, +25 Today's Sprint record. Repeat After Me remained off and no microphone permission was requested. The browser feature matrix passed; database-level zero-change verification for payment, referral, and certificate ledgers remains blocked because the local environment has no Cloudflare administrator read-only credential, and this report does not fabricate that confirmation.",
+    },
+    validation: {
+      zh: [
+        "正式地址：https://smartlingo.net；太平洋日期 2026-09-03；匿名测试键 qa_test_learner_1；可见账户身份与中文界面已核对；生产浏览器控制台错误/警告为 0",
+        "句子合同通过：36 门正式课程各 120 个预构建句子，Listening 与 Writing 每天各 10 道唯一题；GitHub route preflight 33742003861 的 32/32 匿名路由检查成功，其产物只用于路由与确定性计划，不作为登录或学习证据",
+        "英语：计划 1 分钟，阅读重点，实测并持久化课程学习 4 分钟（阅读 2、对话 2）；词汇正确反馈，阅读与文本对话各 100，写作和听力均完成真实组句、显示正确反馈并把题号从 1/10 推进到 2/10；今日速成 80/100、+25，成绩记录与 Top 25 均持久化",
+        "日语：计划 5 分钟，写作重点，实测并持久化课程学习 12 分钟（词汇 8、阅读 2、对话 2）；写作正确反馈，听力显示错误反馈与正确答案并推进题号，阅读与文本对话各 100；今日速成 80/100、+25，成绩记录与 Top 25 均持久化",
+        "西班牙语：计划 5 分钟，听力重点，实测并持久化课程学习 5 分钟（词汇 1、阅读 2、对话 2）；听力显示错误反馈与正确答案，写作正确，阅读与文本对话各 100；今日速成 80/100、+25，成绩记录与 Top 25 均持久化",
+        "意大利语：计划 4 分钟，口语重点，实测并持久化课程学习 4 分钟（阅读 2、对话 2）；写作与听力组句正确，阅读与无麦克风文本对话各 100；今日速成 80/100、+25，成绩记录与 Top 25 均持久化",
+        "四语 Play 均保留六个活动入口、十二语言选择器及语言化链接；智慧卡完成答案→反馈→Continue，显示难度、常用度、视觉及正常/慢速音频；四语挑战均在 2026-09-03 当地日期题集中答对一题并显示 6 秒后自动推进；挑战没有 Check 或 Continue",
+        "四语生活口语各有 12 个中级与 12 个高级入口，初级机场场景保持目标语言；跟读默认关闭、用户语言语音默认关闭，正常 0.84× 与慢速 0.42× 状态可切换，场景媒体与对话可推进；全程未请求麦克风权限",
+        "首页“学习”进入中文用户面板；首页今日任务图片独立打开含十二语言、5/10/15/20 分钟且默认 10 分钟的对话框；用户面板显示四语今日速成、智慧卡练习、智慧卡挑战、生活口语、订阅课程、独立添加语言/添加课程及成绩记录入口；社区明确标注 Mika、Leo、Aya 为 AI 学习伙伴并说明成年自愿、大致地区及屏蔽/举报，“附近共学”未开启",
+        "没有进入支付、推荐或证书操作。管理员数据库只读复核失败于本地缺少 CLOUDFLARE_API_TOKEN；测试学员也没有管理员账本权限，因此这三类账本的精确零变更确认保持受阻。合法学习行为新增四条 Sprint 分数与各 +25 学习奖励，并产生正常课程/智慧卡/挑战/排行榜记录；未直接写入或模拟任何数据库活动",
+      ],
+      en: [
+        "Production URL: https://smartlingo.net; Pacific date: 2026-09-03; anonymized learner key: qa_test_learner_1; visible account identity and Chinese interface verified; production browser console errors/warnings: 0",
+        "Sentence contracts passed: all 36 official courses expose 120 prebuilt sentences, with ten unique daily Listening and Writing items; GitHub route preflight 33742003861 passed 32/32 anonymous route checks, and its artifact was used only for routes and the deterministic plan—not as login or learning evidence",
+        "English: 1 minute planned, Reading deep focus, 4 persisted Course minutes measured (Reading 2, Dialogue 2); vocabulary showed correct feedback, Reading and typed Dialogue scored 100, and real Writing and Listening sentence builders showed correct feedback and advanced 1/10 to 2/10; Today's Sprint scored 80/100 and +25, with Score History and Top 25 persistence",
+        "Japanese: 5 minutes planned, Writing deep focus, 12 persisted Course minutes measured (Vocabulary 8, Reading 2, Dialogue 2); Writing showed correct feedback, Listening showed incorrect feedback plus the correct answer and advanced, and Reading and typed Dialogue scored 100; Today's Sprint scored 80/100 and +25, with Score History and Top 25 persistence",
+        "Spanish: 5 minutes planned, Listening deep focus, 5 persisted Course minutes measured (Vocabulary 1, Reading 2, Dialogue 2); Listening showed incorrect feedback plus the correct answer, Writing was correct, and Reading and typed Dialogue scored 100; Today's Sprint scored 80/100 and +25, with Score History and Top 25 persistence",
+        "Italian: 4 minutes planned, Speaking deep focus, 4 persisted Course minutes measured (Reading 2, Dialogue 2); Writing and Listening sentence builders were correct, while Reading and no-microphone typed Dialogue scored 100; Today's Sprint scored 80/100 and +25, with Score History and Top 25 persistence",
+        "Each Play language retained all six activity tiles, the twelve-language picker, and language-scoped links; SmartCard completed an answer-feedback-Continue cycle with difficulty, frequency, visual, and normal/slow audio controls visible; every local-date Challenge answered one item correctly and displayed automatic advance after six seconds without Check or Continue",
+        "Every language exposed 12 Intermediate and 12 Advanced Everyday entries and preserved the target language in the Beginner airport scenario; Repeat After Me and user-language audio both defaulted off, Normal 0.84× and Slow 0.42× states switched distinctly, scenario media and dialogue advanced, and no microphone permission was requested",
+        "Home Learn opened /zh/dashboard; the independent Home Today image opened the twelve-language, 5/10/15/20-minute dialog with 10 minutes selected by default; Dashboard showed the four-language Sprint, SmartCard Practice, SmartCard Challenge, Everyday Speaking, subscribed Courses, independent Add Language/Add Course, and Score History entries; Community labeled Mika, Leo, and Aya as AI partners and explained adult opt-in, broad region matching, and block/report controls while Nearby remained off",
+        "No payment, referral, or certificate action was entered. Administrator read-only database verification failed because the local environment lacks CLOUDFLARE_API_TOKEN, and the test learner has no administrator ledger access, so exact zero-change confirmation for those three ledgers remains blocked. Legitimate UI behavior created four Sprint scores with +25 learning reward each and normal Course, SmartCard, Challenge, and leaderboard records; no database activity was directly inserted, edited, or simulated",
+      ],
+    },
+    rollback: {
+      zh: "本发布只增加不含私密数据的双语生产验收报告；如报告展示异常，可回滚报告提交，但不得改写已持久化的合法学习、挑战、奖励或排行榜记录。",
+      en: "This release adds only a bilingual production-acceptance report without private data. The report commit can be rolled back if its presentation regresses, but legitimate persisted learning, challenge, reward, and leaderboard records must not be rewritten.",
+    },
+    next: {
+      zh: "在获得现有 Cloudflare 管理员只读凭据的环境中复核本次测试学员的支付、推荐与证书账本；在此之前保留数据库级零变更确认为受阻，不影响已经由真实 Chrome 与服务器持久化证据通过的四语学习功能矩阵。",
+      en: "Verify the test learner's payment, referral, and certificate ledgers in an environment with the existing Cloudflare administrator read-only credential. Until then, keep database-level zero-change confirmation blocked without weakening the four-language learning feature matrix already passed by real Chrome and server-persisted evidence.",
+    },
+  },
 ];
 
 export const taskById = (id: string) => projectTasks.find(task => task.id === id);

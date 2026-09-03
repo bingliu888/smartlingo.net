@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-smartpay5-fee-token-support-20260903",
+  "releaseId": "smartlingo-net-qa21-day14-report-20260903",
   "site": "smartlingo.net",
-  "title": { "en": "SmartPay5 fee-token support", "zh": "SmartPay5 燃烧代币支持" },
+  "title": { "en": "21-day QA day-14 production report", "zh": "21 天 QA 第 14 天生产报告" },
   "purpose": {
-    "en": "Migrate the verified SmartMeeting SmartPay5 fix so 30% burn-on-transfer GLC can fund SmartLingo course subscriptions without exact-recipient-balance reverts.",
-    "zh": "迁移已在 SmartMeeting 验证的 SmartPay5 修复，使转账自动燃烧 30% 的 GLC 可用于 SmartLingo 课程订阅，不再因收款余额必须精确增加而回滚。"
+    "en": "Publish the bilingual administrator record for the September 3 real-Chrome, four-language learning acceptance run without exposing test identity or authentication data.",
+    "zh": "发布 9 月 3 日真实 Chrome 四语学习验收的双语管理员记录，且不暴露测试身份或认证数据。"
   },
   "features": {
-    "en": ["SmartPay5 permits fee-on-transfer tokens while retaining on-chain product and payment-ratio rules.", "Claims trust the verified SmartPay5 transaction record for payerID, administrator refID, course mainID, learning-language secondID, token identity, and transaction time.", "Receipt transfer amounts are not revalidated; course access dates start from the on-chain transaction timestamp."],
-    "zh": ["SmartPay5 支持转账收费/燃烧代币，同时保留链上产品与付款比例规则。", "认领以已验证 SmartPay5 交易记录中的 payerID、管理员 refID、课程 mainID、学习语言 secondID、代币身份与交易时间为准。", "不再二次核验回执转账金额；课程权限日期以链上交易时间为起点。"]
+    "en": ["Record Course, Play, Everyday Speaking, Rankings, and Score History evidence for English, Japanese, Spanish, and Italian.", "Record deterministic planned minutes, persisted measured minutes, deep-focus skills, Sprint scores, and the administrator-ledger verification blocker."],
+    "zh": ["记录英语、日语、西班牙语和意大利语的课程、Play、生活口语、排行榜与成绩记录证据。", "记录确定性计划分钟、持久化实测分钟、深度重点、Sprint 分数及管理员账本复核受阻项。"]
   },
   "affected": {
-    "en": ["SmartLingo's three supported three-month course products, twelve learning-language secondIDs, Polygon SmartPay administration, checkout, reconciliation, and account lookup.", "Header, Footer, branding, course prices, card payments, classrooms, learning data, and historical SmartPay3/SmartPay4 claims remain unchanged."],
-    "zh": ["涉及 SmartLingo 三个三个月课程产品、十二种学习语言 secondID、Polygon SmartPay 管理、结账、核对与账户查询。", "Header、Footer、品牌、课程价格、银行卡付款、教室、学习数据及既有 SmartPay3/SmartPay4 认领均保持不变。"]
+    "en": ["Project report fallback and production runtime report merge for the September 3 delivery date.", "No learning implementation, identity, commerce, payment, referral, certificate, or database schema behavior changes."],
+    "zh": ["涉及 9 月 3 日交付日期的 Project 报告后备内容与生产运行时报告合并。", "不改动学习实现、身份、商务、支付、推荐、证书或数据库架构行为。"]
   },
   "changes": {
-    "en": ["Replace SmartPay4 runtime source, ABI, deployment controls, settings, and current claim table name with SmartPay5.", "Remove recipient balance-delta and backend amount verification while retaining verified contract identity, transaction event, confirmations, payer/product/token matching, and site isolation.", "Add migration 0179, preserve prior claims and purchase history, allow SmartPay5 as a purchase provider, and add a five-wallet 30% burn-token regression."],
-    "zh": ["以 SmartPay5 替换 SmartPay4 的运行时源码、ABI、部署控制、设置及当前认领表名。", "移除收款余额增量与后端金额核验，同时保留合约身份、交易事件、确认数、付款人/产品/代币匹配及站点隔离验证。", "新增 0179 迁移，保留既有认领与购买历史，允许 SmartPay5 作为购买提供方，并新增五钱包 30% 燃烧代币回归测试。"]
+    "en": ["Append one detailed bilingual day-14 QA report to the versioned Project document.", "Explicitly distinguish passed real-browser learning evidence from the blocked administrator read-only ledger confirmation."],
+    "zh": ["向版本化 Project 文档追加一份详细双语第 14 天 QA 报告。", "明确区分已通过的真实浏览器学习证据与受阻的管理员只读账本确认。"]
   },
   "validation": {
-    "en": ["SmartPay5 must compile reproducibly and prove a nominal 10M burn-token course payment succeeds while all five payout wallets receive 70% of each nominal split.", "All 74 migrations must replay exactly once with zero foreign-key violations; the full Linux build, automated suite, deployment, and production availability checks must pass."],
-    "zh": ["SmartPay5 必须可重现编译，并证明名义 1000 万燃烧代币课程付款成功、五个收款钱包各收到名义分配的 70%。", "全部 74 个迁移必须仅应用一次且无外键违规；完整 Linux 构建、自动测试、部署与线上可用性检查必须通过。"]
+    "en": ["Run the sentence catalog contract, full repository release gate, sensitive-data scan, shared policy/architecture/base-feature/contracts gates, and production Project verification.", "Verify in real Chrome that the published September 3 Project report matches the exact report release."],
+    "zh": ["运行句子目录合同、完整仓库发布门禁、敏感信息扫描、共享政策/架构/基础功能/合同门禁及生产 Project 核验。", "在真实 Chrome 中核对已发布的 9 月 3 日 Project 报告与本次报告发布完全一致。"]
   },
   "deferred": {
-    "en": ["A new site-owned SmartPay5 contract must be deployed and configured before live token payments resume; the user will perform the authenticated wallet payment test."],
-    "zh": ["必须先部署并配置新的站点专属 SmartPay5 合约，真实代币付款才会恢复；用户将执行登录态钱包付款测试。"]
+    "en": ["Exact zero-change confirmation for payment, referral, and certificate ledgers remains blocked until the existing Cloudflare administrator read-only credential is available; no such UI action was entered."],
+    "zh": ["支付、推荐与证书账本的精确零变更确认在现有 Cloudflare 管理员只读凭据可用前保持受阻；本轮没有进入这些界面操作。"]
   },
   "siteAdaptations": {
-    "en": ["Preserve SmartLingo's three three-month rules, selected learning language as secondID, permanent administrator as product-owner refID, twelve supported language codes, site-local D1, and existing course prices."],
-    "zh": ["保留 SmartLingo 三个三个月规则、所选学习语言 secondID、永久管理员产品 Owner refID、十二种语言代码、站点独立 D1 与既有课程价格。"]
+    "en": ["Preserve the Chinese-interface QA identity boundary, anonymized evidence, existing production learning data, and the site-local Project runtime contract."],
+    "zh": ["保留中文界面 QA 身份边界、匿名化证据、既有生产学习数据及站点独立 Project 运行时合同。"]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": ["0179_smartpay5_fee_token_support"],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "en": "Restore the pre-release D1 snapshot and previous Worker together; historical SmartPay3 and SmartPay4 claims and purchases are retained in the migrated data.",
-      "zh": "同时恢复发布前的 D1 快照与上一版 Worker；迁移数据中保留既有 SmartPay3 与 SmartPay4 认领及购买记录。"
+      "en": "No data migration is included. Roll back only the report commit if the Project presentation regresses; retain all legitimate production learning records.",
+      "zh": "不包含数据迁移。如 Project 展示回归，仅回滚报告提交；保留全部合法生产学习记录。"
     }
   }
 }
