@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-smartpay5-case-insensitive-userids-20260903",
+  "releaseId": "smartlingo-net-qa-day-15-report-20260904",
   "site": "smartlingo.net",
-  "title": { "en": "Gold v2 dependency and SmartPay5 metadata correction", "zh": "Gold v2 依赖与 SmartPay5 元数据修正" },
+  "title": { "en": "21-day production learning QA, day 15", "zh": "21 天生产学习验收第 15 天" },
   "purpose": {
-    "en": "Keep the patched dependency release and correct SmartLingo's public SmartPay5 integration metadata to match its actual course products and ownership model.",
-    "zh": "保留依赖安全修复，并使 SmartLingo 的公开 SmartPay5 集成元数据与实际课程产品及所有权模型一致。"
+    "en": "Publish the non-secret bilingual administrator report for the September 4 real-Chrome four-language learning acceptance run and preserve its unresolved administrator-ledger boundary.",
+    "zh": "发布 9 月 4 日真实 Chrome 四语学习验收的非私密双语管理员报告，并保留尚未解决的管理员账本复核边界。"
   },
   "features": {
-    "en": ["Pin fflate 0.8.3 to remove GHSA-px8p-9vwx-vf98.", "Publish the three SmartLingo three-month course MainIDs, selected language SecondID semantics, signed-in PayerID, and permanent-administrator RefID semantics."],
-    "zh": ["锁定 fflate 0.8.3，移除 GHSA-px8p-9vwx-vf98。", "发布三个 SmartLingo 三个月课程 MainID、所选语言 SecondID、登录用户 PayerID 及永久管理员 RefID 的正确语义。"]
+    "en": ["Record Course, Sprint, SmartCard, Challenge, Everyday Speaking, Score History, Rankings, Dashboard, Home, and Community evidence for English, Japanese, Spanish, and Italian.", "Record exact persisted Sprint scores, planned minimum active-learning durations, deep-focus skills, no-microphone behavior, normal UI-created learning records, and the blocked administrator-only ledger review."],
+    "zh": ["记录英语、日语、西班牙语和意大利语的课程、速成、智慧卡、挑战、生活口语、成绩、排行、用户面板、首页与社区证据。", "记录精确持久化 Sprint 分数、计划最低有效学习时长、深度技能、无麦克风行为、正常 UI 学习记录及受阻的管理员账本复核。"]
   },
   "affected": {
-    "en": ["Dependency resolution, public SmartPay5 ABI metadata, its regression contract, and the exact release record."],
-    "zh": ["影响依赖解析、公开 SmartPay5 ABI 元数据、对应回归合同及精确发布记录。"]
+    "en": ["Administrator Project report for 2026-09-04 and the exact release record; no learning runtime, route, schema, provider, payment, referral, certificate, or entitlement behavior changes."],
+    "zh": ["影响 2026-09-04 管理员 Project 报告及精确发布记录；不修改学习运行逻辑、路由、架构、服务商、支付、推荐、证书或权益行为。"]
   },
   "changes": {
-    "en": ["Remove stale BingAcademy identifiers and the obsolete member-profile RefID description from the SmartLingo ABI endpoint.", "Add a regression check that fails if cross-site identifiers or incorrect identity semantics return."],
-    "zh": ["从 SmartLingo ABI 接口移除残留的 BingAcademy 标识及过时的会员资料 RefID 描述。", "增加回归检查，防止跨站标识或错误身份语义再次出现。"]
+    "en": ["Append one bilingual day-15 QA report derived from real signed-in production evidence.", "Disclose the missing Cloudflare administrator read-only credential and one non-reproduced Sprint navigation error without weakening or fabricating acceptance evidence."],
+    "zh": ["追加一份来自真实登录生产证据的双语第 15 天 QA 报告。", "披露缺少 Cloudflare 管理员只读凭据及一次未再次复现的 Sprint 导航错误，不削弱或虚构验收证据。"]
   },
   "validation": {
-    "en": ["Require zero npm audit vulnerabilities, 74-migration replay, all source contracts, exact WebKit matrix gate, exact deployment, production API probes, and matching private Project evidence; no manual realtime browser testing.", "Verify uppercase and lowercase PayerID queries resolve the same SmartPay5 transaction index."],
-    "zh": ["要求 npm 审计零漏洞、74 个迁移重放、全部源码合同、精确 WebKit 矩阵门禁、精确部署、生产 API 探测及匹配的私有 Project 证据；不做手动实时浏览器测试。", "验证大写与小写 PayerID 查询解析到同一个 SmartPay5 交易索引。"]
+    "en": ["Require the full repository release gate, shared site policy gates, exact deployment, production Project report verification, and sensitive-data checks.", "Real Chrome evidence must retain the Chinese interface, four language targets, Repeat After Me off, no microphone permission, legitimate server scores, and persisted Score History."],
+    "zh": ["要求完整仓库发布门禁、共享站点策略门禁、精确部署、生产 Project 报告核对及敏感数据检查。", "真实 Chrome 证据必须保持中文界面、四个目标语言、跟读关闭、不请求麦克风权限、合法服务器分数及持久化成绩记录。"]
   },
   "deferred": {
-    "en": ["No contract bytecode, payment rules, database schema, product price, provider setting, entitlement, or production data changes."],
-    "zh": ["不修改合约字节码、付款规则、数据库架构、产品价格、服务商设置、权益或生产数据。"]
+    "en": ["Administrator read-only confirmation that payment, referral, and certificate ledgers remained unchanged is blocked until the existing Cloudflare credential is available; no runtime defect fix is included."],
+    "zh": ["支付、推荐与证书账本未变的管理员只读确认在现有 Cloudflare 凭据可用前保持受阻；本次不包含运行缺陷修复。"]
   },
   "siteAdaptations": {
-    "en": ["Preserve SmartLingo branding, language-learning products, Clerk, RealtimeKit, SmartPay5 runtime, referral, certificate, header, footer, and independent infrastructure boundaries."],
-    "zh": ["保留 SmartLingo 品牌、语言学习产品、Clerk、RealtimeKit、SmartPay5 运行逻辑、推荐、证书、页眉页脚及独立基础设施边界。"]
+    "en": ["Preserve SmartLingo branding, all learning behavior and persisted activity, Clerk, RealtimeKit, SmartPay5, referral, certificate, header, footer, and independent infrastructure boundaries."],
+    "zh": ["保留 SmartLingo 品牌、全部学习行为与持久化活动、Clerk、RealtimeKit、SmartPay5、推荐、证书、页眉页脚及独立基础设施边界。"]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "en": "No data migration is included; roll back only this metadata release if required.",
-      "zh": "不包含数据迁移；如有需要，仅回滚本次元数据发布。"
+      "en": "No data migration is included; roll back only the report commit if its presentation regresses, without altering legitimate learning records.",
+      "zh": "不包含数据迁移；如报告展示异常，仅回滚报告提交，不得改写合法学习记录。"
     }
   }
 }
