@@ -7,8 +7,6 @@ import { claimSmartLingoCoursePayment } from "@/lib/smartlingo-smartpay-claim";
 type ClaimInput = {
   settingId?: string;
   paymentId?: string;
-  transactionId?: string;
-  txHash?: string;
   classId?: string;
   memberId?: string;
   supervisorRefId?: string;
@@ -18,8 +16,6 @@ export async function POST(request: Request) {
   try {
     const actor = await getSessionUser(request);
     if (!actor) return Response.json({ error: "Sign in required" }, { status: 401 });
-    if (!actor.emailVerified)
-      return Response.json({ error: "Verify your email before synchronizing a payment" }, { status: 403 });
     const limited = await consumeAccountRequestLimit({
       request,
       scope: "smartpay-claim",
@@ -37,7 +33,7 @@ export async function POST(request: Request) {
       actor,
       targetUserId: target || undefined,
       settingId: String(body.settingId || ""),
-      transactionId: String(body.paymentId || body.transactionId || body.txHash || ""),
+      transactionId: String(body.paymentId || ""),
       classId: body.classId ? String(body.classId) : undefined,
       supervisorRefId: body.supervisorRefId || undefined,
     }));

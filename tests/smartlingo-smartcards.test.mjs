@@ -296,8 +296,8 @@ test("database permits learning retries but awards one capped credit per deck ve
     const practiceDayColumns = database.prepare("PRAGMA table_info(smartlingo_smartcard_practice_session_days)").all().map(item => item.name);
     assert.deepEqual(questionSetUniqueColumns,["target_language","level","local_date"]);
     assert.ok(practiceDayColumns.includes("day_number"));
-    database.prepare(`INSERT INTO users(id,email,display_name,password_hash,preferred_language,role,created_at)
-      VALUES('card-learner','card-learner@example.invalid','Card Learner','disabled','en','member',1)`).run();
+    database.prepare(`INSERT INTO users(id,email,email_verified,display_name,password_hash,preferred_language,role,clerk_user_id,clerk_identity_checked_at,created_at)
+      VALUES('card-learner','card-learner@example.invalid',0,'Card Learner','disabled','en','member','card-learner',0,1)`).run();
     const insertAttempt = database.prepare(`INSERT INTO smartlingo_smartcard_challenge_attempts
       (id,deck_id,deck_version,attempt_number,challenger_user_id,score,correct_count,question_count,passed,reward_points,answer_fingerprint,local_date,created_at)
       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`);

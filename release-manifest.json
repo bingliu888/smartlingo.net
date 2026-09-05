@@ -1,42 +1,92 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-qa-day-15-report-20260904",
+  "releaseId": "smartlingo-net-gold3-v1-identity-classroom-payment-20260905-r1",
   "site": "smartlingo.net",
-  "title": { "en": "21-day production learning QA, day 15", "zh": "21 天生产学习验收第 15 天" },
+  "title": {
+    "en": "Gold 3 v1 identity, classroom, and payment hardening",
+    "zh": "Gold 3 v1 身份、课堂与付款加固"
+  },
   "purpose": {
-    "en": "Publish the non-secret bilingual administrator report for the September 4 real-Chrome four-language learning acceptance run and preserve its unresolved administrator-ledger boundary.",
-    "zh": "发布 9 月 4 日真实 Chrome 四语学习验收的非私密双语管理员报告，并保留尚未解决的管理员账本复核边界。"
+    "en": "Make Clerk the canonical request identity, bind classroom authority to verified members, and complete SmartPay5 receipt and atomic course-renewal hardening.",
+    "zh": "将 Clerk 设为每次请求的规范身份，把课堂权限绑定到已验证会员，并完成 SmartPay5 收据及课程原子续期加固。"
   },
   "features": {
-    "en": ["Record Course, Sprint, SmartCard, Challenge, Everyday Speaking, Score History, Rankings, Dashboard, Home, and Community evidence for English, Japanese, Spanish, and Italian.", "Record exact persisted Sprint scores, planned minimum active-learning durations, deep-focus skills, no-microphone behavior, normal UI-created learning records, and the blocked administrator-only ledger review."],
-    "zh": ["记录英语、日语、西班牙语和意大利语的课程、速成、智慧卡、挑战、生活口语、成绩、排行、用户面板、首页与社区证据。", "记录精确持久化 Sprint 分数、计划最低有效学习时长、深度技能、无麦克风行为、正常 UI 学习记录及受阻的管理员账本复核。"]
+    "en": [
+      "Extract the internal SmartPay5 TransactionID from the confirmed receipt event while retaining transaction-hash recovery.",
+      "Bound and rate-limit payment prepare and verify requests.",
+      "Calculate calendar-month course renewal from the latest committed access end inside the D1 write.",
+      "Authorize every request from the active Clerk primary identity and safely rekey compatible legacy member records.",
+      "Bind classroom cohost, invite, subscription, and stage-speaker grants only after a current verified Clerk session.",
+      "Use per-tab media capabilities so participants cannot impersonate or control another classroom device."
+    ],
+    "zh": [
+      "从已确认收据事件提取 SmartPay5 内部 TransactionID，同时保留交易哈希找回兼容。",
+      "限制付款准备与验证请求体大小并实施账户限流。",
+      "在 D1 写入内从最新已提交权益结束时间按日历月续期课程。",
+      "每次请求均以有效 Clerk 主身份授权，并安全重键兼容的旧会员记录。",
+      "课堂联合主持、邀请、订阅及上台发言权限仅在当前 Clerk 会话验证后绑定。",
+      "使用每标签页媒体能力令牌，防止参与者冒用或控制其他课堂设备。"
+    ]
   },
   "affected": {
-    "en": ["Administrator Project report for 2026-09-04 and the exact release record; no learning runtime, route, schema, provider, payment, referral, certificate, or entitlement behavior changes."],
-    "zh": ["影响 2026-09-04 管理员 Project 报告及精确发布记录；不修改学习运行逻辑、路由、架构、服务商、支付、推荐、证书或权益行为。"]
+    "en": [
+      "Clerk-to-D1 identity synchronization, classroom access and media controls, crypto checkout reconciliation, payment APIs, and course package persistence."
+    ],
+    "zh": [
+      "影响 Clerk 与 D1 身份同步、课堂访问及媒体控制、加密付款对账、付款 API 与课程套餐持久化。"
+    ]
   },
   "changes": {
-    "en": ["Append one bilingual day-15 QA report derived from real signed-in production evidence.", "Disclose the missing Cloudflare administrator read-only credential and one non-reproduced Sprint navigation error without weakening or fabricating acceptance evidence."],
-    "zh": ["追加一份来自真实登录生产证据的双语第 15 天 QA 报告。", "披露缺少 Cloudflare 管理员只读凭据及一次未再次复现的 Sprint 导航错误，不削弱或虚构验收证据。"]
+    "en": [
+      "Stop treating an EVM transaction hash as the SmartPay5 internal payment identifier.",
+      "Serialize concurrent course extensions with a SQL CTE and preserve end-of-month calendar semantics.",
+      "Keep SmartPay payer and recipient identifiers immutable while atomically rekeying site-local identity references.",
+      "Keep existing classroom rows backward-compatible during migrate-before-deploy and require verified identity binding before they grant authority.",
+      "Resume a daily Sprint draft only when it belongs to the current local date for that learner."
+    ],
+    "zh": [
+      "不再将 EVM 交易哈希误作 SmartPay5 内部付款标识。",
+      "使用 SQL CTE 串行化并发课程续期，并保留月底日历语义。",
+      "保持 SmartPay 付款人与收款人标识不可变，同时原子重键站点本地身份引用。",
+      "在先迁移后部署的窗口保持现有课堂记录向后兼容，并在授予权限前要求已验证身份绑定。",
+      "仅当每日 Sprint 草稿属于学习者当前本地日期时才恢复。"
+    ]
   },
   "validation": {
-    "en": ["Require the full repository release gate, shared site policy gates, exact deployment, production Project report verification, and sensitive-data checks.", "Real Chrome evidence must retain the Chinese interface, four language targets, Repeat After Me off, no microphone permission, legitimate server scores, and persisted Score History."],
-    "zh": ["要求完整仓库发布门禁、共享站点策略门禁、精确部署、生产 Project 报告核对及敏感数据检查。", "真实 Chrome 证据必须保持中文界面、四个目标语言、跟读关闭、不请求麦克风权限、合法服务器分数及持久化成绩记录。"]
+    "en": [
+      "Run identity and classroom security suites, receipt-event behavior tests, calendar-boundary and concurrency tests, all tracked D1 migrations twice, the full test suite, TypeScript, lint, sensitive-data scan, and the verified production build before deployment."
+    ],
+    "zh": [
+      "部署前运行身份与课堂安全测试、收据事件行为测试、日历边界与并发测试、全部 D1 迁移双次执行、完整测试、TypeScript、静态检查、敏感信息扫描及已验证生产构建。"
+    ]
   },
   "deferred": {
-    "en": ["Administrator read-only confirmation that payment, referral, and certificate ledgers remained unchanged is blocked until the existing Cloudflare credential is available; no runtime defect fix is included."],
-    "zh": ["支付、推荐与证书账本未变的管理员只读确认在现有 Cloudflare 凭据可用前保持受阻；本次不包含运行缺陷修复。"]
+    "en": [
+      "This portfolio rollout does not include a real-wallet payment or multiparty realtime browser acceptance; those remain explicit operator acceptance cases."
+    ],
+    "zh": [
+      "本轮多站发布不包含真实钱包付款或多人实时浏览器验收；这些仍由运营方按需专项验收。"
+    ]
   },
   "siteAdaptations": {
-    "en": ["Preserve SmartLingo branding, all learning behavior and persisted activity, Clerk, RealtimeKit, SmartPay5, referral, certificate, header, footer, and independent infrastructure boundaries."],
-    "zh": ["保留 SmartLingo 品牌、全部学习行为与持久化活动、Clerk、RealtimeKit、SmartPay5、推荐、证书、页眉页脚及独立基础设施边界。"]
+    "en": [
+      "Preserve the SmartLingo 12-language learning products, language-scoped course and price catalog, header, footer, referrals, certificates, Clerk, D1, R2, RealtimeKit, and independent infrastructure.",
+      "Use the SmartLingo-owned wallet connector namespace registered in the shared site manifest, without importing branding or runtime assets from another site."
+    ],
+    "zh": [
+      "保留 SmartLingo 的 12 语种学习产品、按语言区分的课程与价格目录、页眉页脚、推荐、证书、Clerk、D1、R2、RealtimeKit 及独立基础设施。",
+      "使用共享站点清单中登记的 SmartLingo 自有钱包连接器命名空间，不导入其他站点的品牌或运行资产。"
+    ]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": [
+      "0180_gold3_clerk_identity",
+      "0181_gold3_classroom_identity"
+    ],
     "rollback": {
-      "en": "No data migration is included; roll back only the report commit if its presentation regresses, without altering legitimate learning records.",
-      "zh": "不包含数据迁移；如报告展示异常，仅回滚报告提交，不得改写合法学习记录。"
+      "en": "Roll back the Worker to the previous verified release if required. The additive identity and classroom columns, indexes, and compatibility triggers may remain; review any completed Clerk user-ID rekeys before attempting manual data reversal, and never rewrite immutable SmartPay payerId or refId history.",
+      "zh": "如需回退，可将 Worker 回退到上一已验证版本。新增的身份与课堂字段、索引及兼容触发器可以保留；如已有 Clerk 用户 ID 重键，手工回退数据前须逐项审核，并绝不改写不可变的 SmartPay payerId 或 refId 历史。"
     }
   }
 }

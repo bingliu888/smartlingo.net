@@ -39,16 +39,16 @@ test("the Clerk session bridge can verify with the production secret key", async
   assert.doesNotMatch(bridge, /!jwtKey\)\s*return Response\.json/);
 });
 
-test("the Clerk session bridge records email verification while trusting only Clerk subject and safe request metadata", async () => {
+test("the Clerk session bridge records only the exact active primary identity", async () => {
   const [route, bridge] = await Promise.all([
     readFile(new URL("../app/api/auth/clerk-session/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/clerk-session-bridge.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(route, /createClerkClient\(keys\)\.users\.getUser\(userId\)/);
-  assert.match(bridge, /primaryEmail\?\.verification\?\.status === "verified"/);
+  assert.match(bridge, /resolveActiveClerkPrimaryEmail\(clerkUser\)/);
   assert.match(bridge, /createAppSession\([\s\S]*?emailVerified/);
-  assert.match(bridge, /clerkUser\.banned \|\| clerkUser\.locked/);
+  assert.match(bridge, /if \(!identity\).*Unauthorized/);
   assert.doesNotMatch(bridge, /payload\.email|payload\.name/);
   assert.match(bridge, /entries\.length !== 1 \|\| entries\[0\]\[0\] !== "language"/);
   assert.match(bridge, /const clerkSessionId = claims\.sid/);
@@ -68,45 +68,43 @@ test("the Clerk session bridge restricts authorized parties to production and sa
   assert.match(bridge, /authorizedParties = clerkAuthorizedParties/);
 });
 
-test("parallel Clerk session initialization creates users idempotently", async () => {
+test("Clerk synchronization keeps the subject canonical and preserves profile names", async () => {
   const auth = await readFile(
     new URL("../lib/auth.ts", import.meta.url),
     "utf8",
   );
 
-  const inserts = auth.match(/INSERT OR IGNORE INTO users/g) ?? [];
-  assert.equal(inserts.length, 1);
-  assert.match(auth, /WHERE clerk_user_id = \? AND NOT EXISTS/);
-  assert.match(auth, /UPDATE users SET clerk_user_id = \?/);
-  assert.match(auth, /email_verified, display_name, password_hash, preferred_language, clerk_user_id, clerk_identity_checked_at, created_at/);
-  assert.match(auth, /Unable to create or load Clerk user/);
+  assert.match(auth, /rekeyLinkedClerkUser/);
+  assert.match(auth, /bindVerifiedLegacyClerkUser/);
+  assert.match(auth, /ON CONFLICT\(id\) DO UPDATE SET[\s\S]*?clerk_user_id=excluded\.clerk_user_id/);
+  assert.doesNotMatch(auth, /DO UPDATE SET[\s\S]{0,300}display_name=excluded\.display_name/);
+  assert.match(auth, /WHERE u\.id=\? AND u\.clerk_user_id=\?/);
 });
 
 test("unverified Clerk members stay subject-bound and cannot receive permanent-email privileges", async () => {
   const [auth, access, migration] = await Promise.all([
     readFile(new URL("../lib/auth.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-access.ts", import.meta.url), "utf8"),
-    readFile(new URL("../drizzle/0171_clerk_email_verification.sql", import.meta.url), "utf8"),
+    readFile(new URL("../drizzle/0180_gold3_clerk_identity.sql", import.meta.url), "utf8"),
   ]);
 
-  assert.match(auth, /const emailUser = emailVerified \?/);
+  assert.match(auth, /input\.emailVerified && email === BOOTSTRAP_ADMIN_EMAIL/);
   assert.match(auth, /emailVerified \? 1 : 0/);
   assert.match(access, /user\.emailVerified === 1/);
   assert.match(access, /isBootstrapAdminEmail\(user\.email\)/);
-  assert.match(migration, /ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1/);
+  assert.match(migration, /VERIFIED_EMAIL_REQUIRES_FRESH_CLERK_IDENTITY/);
 });
 
-test("app sessions are short-lived, Clerk-linked, and reject legacy cookies", async () => {
+test("authorization reads the current Clerk user on every request and never trusts the compatibility cookie", async () => {
   const auth = await readFile(
     new URL("../lib/auth.ts", import.meta.url),
     "utf8",
   );
 
-  assert.match(auth, /export const SESSION_SECONDS = 60 \* 60 \* 24 \* 7/);
-  assert.match(auth, /INSERT INTO sessions \(id, user_id, clerk_session_id, expires_at, created_at\)/);
-  assert.match(auth, /DELETE FROM sessions WHERE clerk_session_id = \?/);
-  assert.match(auth, /s\.clerk_session_id IS NOT NULL/);
-  assert.match(auth, /return language === "en" \? "en" : "zh"/);
+  assert.match(auth, /const clerkUser = await currentUser\(\)\.catch\(\(\) => null\)/);
+  assert.match(auth, /resolveActiveClerkPrimaryEmail\(clerkUser\)/);
+  assert.doesNotMatch(auth, /FROM sessions|INSERT INTO sessions|expires_at>\?/);
+  assert.match(auth, /return `\$\{COOKIE_NAME\}=;[^`]*Max-Age=0`/);
 });
 
 test("anonymous session checks tolerate missing Clerk middleware context", async () => {
@@ -115,9 +113,7 @@ test("anonymous session checks tolerate missing Clerk middleware context", async
     "utf8",
   );
 
-  assert.match(auth, /process\.env\.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/);
-  assert.match(auth, /clerkUser = await currentUser\(\)/);
-  assert.match(auth, /catch\s*\{\s*clerkUser = null/);
+  assert.match(auth, /currentUser\(\)\.catch\(\(\) => null\)/);
 });
 
 test("missing Clerk configuration preserves public shells and route-level authorization", async () => {

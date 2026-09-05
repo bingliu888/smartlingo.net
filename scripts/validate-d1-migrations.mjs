@@ -106,14 +106,72 @@ function assertDatabaseIntegrity(database) {
   assert.equal(integrity.integrity_check, "ok");
 }
 
+function assertClerkIdentitySchema(database) {
+  const triggerSql = database.prepare(`SELECT sql FROM sqlite_master
+    WHERE type='trigger' AND name LIKE 'smartlingo%users_clerk_id_rekey'
+    ORDER BY name`).all().map(row => row.sql).join("\n");
+  assert.ok(triggerSql, "Clerk ID rekey trigger must exist");
+  const tables = database.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+  ).all().map(row => row.name);
+  for (const table of tables) {
+    const escaped = String(table).replaceAll('"', '""');
+    for (const foreignKey of database.prepare(`PRAGMA foreign_key_list("${escaped}")`).all()) {
+      if (foreignKey.table !== "users") continue;
+      assert.match(
+        triggerSql,
+        new RegExp(`UPDATE\\s+${table}\\s+SET\\s+${foreignKey.from}=NEW\\.id`, "i"),
+        `Clerk ID rekey must move ${table}.${foreignKey.from}`,
+      );
+    }
+  }
+  for (const [table, column] of [
+    ["class_deletion_jobs", "host_user_id"],
+    ["class_participant_bans", "user_id"],
+    ["class_recording_quota_reservations", "host_user_id"],
+    ["member_storage_quota_reservations", "host_user_id"],
+  ]) {
+    assert.match(
+      triggerSql,
+      new RegExp(`UPDATE\\s+${table}\\s+SET\\s+${column}=NEW\\.id`, "i"),
+      `Clerk ID rekey must move loose identity reference ${table}.${column}`,
+    );
+  }
+  assert.doesNotMatch(triggerSql, /SET\s+(?:payer_id|ref_id)=NEW\.id/i);
+}
+
 function runD1Smoke(database) {
   const now = 1_785_487_400;
 
   const insertUser = database.prepare(`
     INSERT INTO users
-      (id, email, clerk_user_id, display_name, password_hash, preferred_language, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      (id, email, clerk_user_id, email_verified, clerk_identity_checked_at,
+       display_name, password_hash, preferred_language, created_at)
+    VALUES (?, ?, ?, 0, 0, ?, ?, ?, ?)
   `);
+
+  assert.throws(
+    () => database.prepare(`INSERT INTO users
+      (id,email,clerk_user_id,display_name,password_hash,preferred_language,created_at)
+      VALUES('d1-unsafe-default','unsafe-default@example.invalid','user_unsafe_default',
+        'Unsafe default','disabled','en',?)`).run(now),
+    /VERIFIED_EMAIL_REQUIRES_FRESH_CLERK_IDENTITY/,
+  );
+
+  insertUser.run(
+    "d1-unsafe-update",
+    "unsafe-update@example.invalid",
+    "user_unsafe_update",
+    "Unsafe update",
+    "disabled",
+    "en",
+    now,
+  );
+  assert.throws(
+    () => database.prepare(`UPDATE users SET email_verified=1
+      WHERE id='d1-unsafe-update'`).run(),
+    /VERIFIED_EMAIL_REQUIRES_FRESH_CLERK_IDENTITY/,
+  );
 
   insertUser.run(
     "d1-smoke-user",
@@ -141,6 +199,32 @@ function runD1Smoke(database) {
     "disabled",
     "zh",
     now,
+  );
+  insertUser.run(
+    "d1-smoke-rekey-legacy",
+    "d1-smoke-rekey@example.invalid",
+    "user_d1_smoke_rekey",
+    "Rekey member",
+    "disabled",
+    "en",
+    now,
+  );
+  database.prepare(`INSERT INTO sessions
+    (id,user_id,clerk_session_id,expires_at,created_at)
+    VALUES('d1-smoke-rekey-session','d1-smoke-rekey-legacy',
+      'sess_d1_smoke_rekey',?,?)`).run(now + 3600, now);
+  database.prepare(`UPDATE users SET id='user_d1_smoke_rekey',
+      email_verified=1,clerk_identity_checked_at=?
+    WHERE id='d1-smoke-rekey-legacy'`).run(now);
+  assert.equal(
+    database.prepare("SELECT user_id AS userId FROM sessions WHERE id=?")
+      .get("d1-smoke-rekey-session").userId,
+    "user_d1_smoke_rekey",
+  );
+  assert.equal(
+    database.prepare("SELECT COUNT(*) AS count FROM users WHERE id=?")
+      .get("d1-smoke-rekey-legacy").count,
+    0,
   );
   database.prepare(`
     INSERT INTO sessions (id, user_id, clerk_session_id, expires_at, created_at)
@@ -1621,7 +1705,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0179_smartpay5_fee_token_support");
+  assert.equal(migrations.at(-1)?.tag, "0181_gold3_classroom_identity");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1637,6 +1721,7 @@ export function validateD1Migrations() {
     assert.equal(firstRun.applied.length, migrations.length);
     assert.deepEqual(firstRun.skipped, []);
     assertDatabaseIntegrity(database);
+    assertClerkIdentitySchema(database);
     const stateAfterFirstRun = migrationState(database);
 
     const secondRun = applyTrackedMigrations(database, migrations);

@@ -14,7 +14,7 @@ test("CI enforces zero-warning lint while excluding only generated assets and wo
   assert.match(packageJson, /eslint \. --max-warnings 0/);
   for (const generatedPath of [
     "public\\/pdf\\.worker\\.min\\.mjs",
-    "public\\/wallet-assets\\/greatlove-onboard\\.js",
+    "public\\/wallet-assets\\/smartlingo-onboard\\.js",
     "output\\/\\*\\*",
     "tmp\\/\\*\\*",
   ]) assert.match(config, new RegExp(generatedPath));

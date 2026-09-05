@@ -9,6 +9,7 @@ import {
   verifySmartPay5Identity,
 } from "./smartpay5-server";
 import { smartPay5ExpectedTokenPair } from "./smartpay5-presets";
+import { smartPay5SettingsForContract } from "./smartpay-checkout";
 import { smartPayRecipientMatches } from "./smartpay-reconciliation";
 import { smartPayRecordTimestamp } from "./smartpay-record-timestamp";
 import { smartLingoProductOwnerRefId } from "./smartpay-product-owner";
@@ -79,7 +80,13 @@ export async function claimSmartLingoCoursePayment(input: {
     throw new Error("PAYMENT_PACKAGE_MISMATCH");
   const classId = fixedCourseId(languageCode, plan);
   if (input.classId && input.classId !== classId) throw new Error("PAYMENT_COURSE_MISMATCH");
-  const tokenPair = smartPay5ExpectedTokenPair(await activeCryptoPaymentSettings(), setting);
+  const contractSettings = smartPay5SettingsForContract(
+    await activeCryptoPaymentSettings(),
+    setting.chainId,
+    contract,
+  );
+  const contractSetting = contractSettings.find(candidate => candidate.id === setting.id);
+  const tokenPair = contractSetting ? smartPay5ExpectedTokenPair(contractSettings, contractSetting) : null;
   if (!tokenPair
     || record.primaryTokenAddress.toLowerCase() !== setting.tokenContract.toLowerCase()
     || record.secondaryTokenAddress.toLowerCase() !== tokenPair.secondaryTokenAddress.toLowerCase())

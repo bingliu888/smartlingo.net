@@ -17,6 +17,7 @@ export type SmartPayCheckoutOption = {
 };
 
 const PLAN_ORDER: CryptoSubscriptionPlan[] = ["basic", "intermediate", "advanced"];
+const EVM_ADDRESS = /^0x[a-f0-9]{40}$/i;
 export const smartPayAvailablePlans = (options: readonly SmartPayCheckoutOption[]) => PLAN_ORDER.filter(plan => options.some(option => option.plan === plan));
 export const smartPayOptionsForPlan = (options: readonly SmartPayCheckoutOption[], plan: CryptoSubscriptionPlan) => options.filter(option => option.plan === plan);
 export const smartPayOptionsForLanguage = (options: readonly SmartPayCheckoutOption[], languageCode: string, lockedCourseId?: string) =>
@@ -48,4 +49,15 @@ export function configuredSmartPay5CheckoutScopes(settings: readonly CryptoPayme
     if (!scopes.has(key)) scopes.set(key, { chainId: setting.chainId, contractAddress: setting.smartPay5Contract! });
   }
   return [...scopes.values()];
+}
+
+export function smartPay5SettingsForContract(
+  settings: readonly CryptoPaymentSetting[],
+  chainId: number | undefined,
+  contractAddress: string | null | undefined,
+) {
+  const contract = String(contractAddress || "").trim().toLowerCase();
+  if (!Number.isInteger(chainId) || !EVM_ADDRESS.test(contract)) return [];
+  return settings.filter(item => item.chainId === chainId
+    && item.smartPay5Contract?.trim().toLowerCase() === contract);
 }

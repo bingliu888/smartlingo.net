@@ -9,8 +9,7 @@ export type ClerkSignUpAttemptResult = {
 };
 
 export type SignUpRequirementResolution =
-  | { kind: "password"; fields: ["password"]; message: string }
-  | { kind: "unsupported"; fields: string[]; message: string };
+  { kind: "unsupported"; fields: string[]; message: string };
 
 export type SignUpCompletionResolution =
   | { kind: "activated"; sessionId: string }
@@ -52,7 +51,7 @@ export type PasswordAuthResult<TSignIn, TSignUp> =
   | { flow: "sign-in"; result: TSignIn }
   | { flow: "sign-up"; result: TSignUp };
 
-export type ClerkAuthStep = "credentials" | "code" | "password-required" | "recovery-email" | "recovery-code";
+export type ClerkAuthStep = "credentials" | "code" | "recovery-email" | "recovery-code";
 export type ClerkAuthMethod = "code" | "password";
 
 export function clerkAuthStepView(
@@ -70,12 +69,10 @@ export function clerkAuthStepView(
         ? (zh ? "重置密码并登录" : "Reset password & sign in")
         : step === "code"
       ? (zh ? "验证并继续" : "Verify & continue")
-      : step === "password-required"
-        ? (zh ? "设置密码并登录" : "Create password & sign in")
-        : method === "code"
+      : method === "code"
           ? (zh ? "发送安全验证码" : "Send secure code")
           : (zh ? "使用密码继续" : "Continue with password"),
-    secondaryAction: step === "code" || step === "password-required" || step === "recovery-email" || step === "recovery-code"
+    secondaryAction: step === "code" || step === "recovery-email" || step === "recovery-code"
       ? (zh ? "更换邮箱" : "Use another email")
       : method === "code"
         ? (zh ? "改用密码" : "Use password instead")
@@ -127,16 +124,6 @@ export function resolveSignUpRequirements(
 ): SignUpRequirementResolution {
   const fields = [...new Set((missingFields ?? []).filter(Boolean))];
 
-  if (fields.length === 1 && fields[0] === "password") {
-    return {
-      kind: "password",
-      fields: ["password"],
-      message: lang === "zh"
-        ? "电子邮箱已验证。当前账户设置还要求新用户创建密码；设置后将自动完成登录。"
-        : "Your email is verified. The current account settings also require new users to create a password; sign-in will finish automatically after you set it.",
-    };
-  }
-
   const labels = fields.length
     ? fields.map(field => requirementLabels[lang][field] ?? field).join(lang === "zh" ? "、" : ", ")
     : (lang === "zh" ? "未知账户资料" : "unknown account details");
@@ -145,8 +132,8 @@ export function resolveSignUpRequirements(
     kind: "unsupported",
     fields,
     message: lang === "zh"
-      ? `电子邮箱已验证，但账户仍需完成：${labels}。请更换登录方式或联系管理员。`
-      : `Your email is verified, but the account still requires: ${labels}. Use another sign-in method or contact an administrator.`,
+      ? `账户创建仍被身份服务要求以下额外步骤：${labels}。这是配置漂移，请联系管理员修正；本站不会要求您额外创建密码。`
+      : `Account creation is still blocked by these extra identity-service requirements: ${labels}. This is configuration drift; contact an administrator to correct it. The site will not require an extra password.`,
   };
 }
 

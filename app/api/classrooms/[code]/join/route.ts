@@ -22,6 +22,12 @@ import {
 } from "@/lib/class-participant-session";
 import { ensureClassProviderGeneration } from "@/lib/class-provider-lifecycle";
 import { createProviderParticipant } from "@/lib/live-class-realtimekit";
+import { bindVerifiedStageSpeakers } from "@/lib/class-managers";
+import {
+  approvedWebinarMediaAllowed,
+  baseClassPublishAllowed,
+  type ClassMediaKind,
+} from "@/lib/class-publish-policy";
 import {
   blockedClassPasswordAttempt,
   clearClassPasswordFailures,
@@ -37,6 +43,8 @@ type JoinBody = {
   start?: unknown;
   screenShareCompanion?: unknown;
   sessionToken?: unknown;
+  mic?: unknown;
+  camera?: unknown;
 };
 
 function joinFailure(error: unknown) {
@@ -67,6 +75,16 @@ function joinFailure(error: unknown) {
   });
 }
 
+async function recoverableJoinFailure(error: unknown, rotatedSessionToken?: string) {
+  const failure = joinFailure(error);
+  if (!rotatedSessionToken) return failure;
+  const payload = await failure.json().catch(() => ({})) as Record<string, unknown>;
+  return Response.json({ ...payload, sessionToken: rotatedSessionToken }, {
+    status: failure.status,
+    headers: failure.headers,
+  });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ code: string }> },
@@ -93,6 +111,7 @@ export async function POST(
   const access = await classAccess(room, user, true);
   if (!access.allowed)
     return Response.json({ error: "Private course invitation required" }, { status: 403 });
+  if (room.realtimeMode === "livestream") await bindVerifiedStageSpeakers(user);
 
   if (room.hasPassword && !access.manager) {
     const blocked = await blockedClassPasswordAttempt(request, room.id, user?.id || null);
@@ -118,22 +137,32 @@ export async function POST(
     .trim().slice(0, 80) || "Guest";
   const wantsPublish = body.publish === true;
   const wantsStart = body.start === true;
+  const wantsMic = body.mic === true;
+  const wantsCamera = room.streamingMode === "video" && body.camera === true;
 
   if (wantsStart && !access.manager)
     return Response.json({ error: "Manager access required" }, { status: 403 });
 
-  let canPublish = access.manager
-    || room.classType === "private"
-    || room.realtimeMode === "group_call";
+  let canPublish = baseClassPublishAllowed(access.manager, room.realtimeMode);
+  let approvedMediaKinds: ClassMediaKind[] = [];
   if (room.realtimeMode === "webinar" && !canPublish) {
-    canPublish = Boolean(await db.prepare(
-      "SELECT 1 FROM live_class_stage_requests WHERE room_id=? AND identity=? AND status='approved' LIMIT 1",
-    ).bind(room.id, identity).first());
+    const approvals = await db.prepare(`SELECT media_kind AS mediaKind
+      FROM live_class_stage_requests WHERE room_id=? AND identity=?
+        AND status='approved' AND media_kind IN ('audio','video')`)
+      .bind(room.id, identity).run<{ mediaKind: ClassMediaKind }>();
+    approvedMediaKinds = (approvals.results || []).map((approval) => approval.mediaKind);
+    canPublish = wantsPublish
+      ? Boolean(wantsMic || wantsCamera)
+        && approvedWebinarMediaAllowed(
+          { mic: wantsMic, camera: wantsCamera },
+          approvedMediaKinds,
+        )
+      : approvedMediaKinds.length > 0;
   }
-  if (room.realtimeMode === "livestream" && !canPublish && user) {
+  if (room.realtimeMode === "livestream" && !canPublish && user?.emailVerified) {
     canPublish = Boolean(await db.prepare(
-      "SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND lower(member_email)=lower(?) LIMIT 1",
-    ).bind(room.id, user.email).first());
+      "SELECT 1 FROM live_class_stage_speakers WHERE room_id=? AND user_id=? LIMIT 1",
+    ).bind(room.id, user.id).first());
   }
   if (wantsPublish && !canPublish) {
     return Response.json({
@@ -235,11 +264,17 @@ export async function POST(
     if (publishing) await reservePublisher(reserved.session);
     attempt = await beginProviderParticipantAttempt(reserved.session, providerMeetingId);
     const allowedMedia = publishing
-      ? {
-          audio: true,
-          video: room.streamingMode === "video",
-          screenshare: access.manager && room.realtimeMode !== "livestream",
-        }
+      ? room.realtimeMode === "webinar" && !access.manager
+        ? {
+            audio: approvedMediaKinds.includes("audio"),
+            video: approvedMediaKinds.includes("video"),
+            screenshare: false,
+          }
+        : {
+            audio: true,
+            video: room.streamingMode === "video",
+            screenshare: access.manager && room.realtimeMode !== "livestream",
+          }
       : { audio: false, video: false, screenshare: false };
     const participant = await createProviderParticipant(
       providerMeetingId,
@@ -296,6 +331,6 @@ export async function POST(
   } catch (error) {
     if (attempt) await abandonDefiniteParticipantAttempt(attempt.id, error).catch(() => undefined);
     if (reserved) await revokeParticipantSession(reserved.session, "leave").catch(() => undefined);
-    return joinFailure(error);
+    return recoverableJoinFailure(error, reserved?.token);
   }
 }

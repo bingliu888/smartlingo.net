@@ -36,7 +36,8 @@ type Room = {
   classType: "public" | "trial" | "private";
 };
 type MediaUser = {
-  identity: string;
+  identity?: string;
+  self?: boolean;
   displayName: string;
   isMember: number;
   micOn: number;
@@ -57,12 +58,15 @@ type Media = {
   realtimeMode: RealtimeMode;
   manager: boolean;
   canPublish: boolean;
+  approvedMediaKinds?: Array<"audio" | "video">;
   hostOnline: boolean;
   participantLimit: number | null;
   publisherLimit: number | null;
   users: MediaUser[];
   requests: StageRequest[];
   speakers: Array<{ email: string }>;
+  hasOtherParticipants?: boolean;
+  hasAudience?: boolean;
 };
 type Message = {
   id: string;
@@ -671,7 +675,10 @@ function ConnectedRoom({
     const [m, c] = await Promise.all([
       fetch(
         `/api/classrooms/${room.code}/media?identity=${encodeURIComponent(identity)}`,
-        { cache: "no-store" },
+        {
+          cache: "no-store",
+          headers: sessionToken ? { "x-class-session-token": sessionToken } : {},
+        },
       ),
       fetch(`/api/classrooms/${room.code}/chat`, { cache: "no-store" }),
     ]);
@@ -749,12 +756,14 @@ function ConnectedRoom({
       if (
         !manager &&
         role === "viewer" &&
-        room.classType !== "private" &&
         room.realtimeMode === "webinar" &&
-        !media?.canPublish &&
         (nextMic || nextCamera)
       ) {
         const kind = nextCamera ? "video" : "audio";
+        if (media?.approvedMediaKinds?.includes(kind)) {
+          await onMedia(nextMic, nextCamera);
+          return;
+        }
         const response = await fetch(`/api/classrooms/${room.code}/media`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -1239,6 +1248,8 @@ export function LiveClassRoomClient({
               start,
               publish,
               sessionToken,
+              mic: nextMic,
+              camera: nextCamera,
             }),
           }),
           data = (await response.json().catch(() => ({}))) as {
@@ -1247,12 +1258,14 @@ export function LiveClassRoomClient({
             role?: Role;
             error?: string;
           };
+        provisionalSessionToken = data.sessionToken || "";
         if (!response.ok || !data.authToken || !data.sessionToken) {
+          if (provisionalSessionToken)
+            setSessionToken(provisionalSessionToken);
           if (data.error !== "STREAM_NOT_ACTIVE")
             setError(data.error || "Unable to connect");
           return;
         }
-        provisionalSessionToken = data.sessionToken;
         const next = await initClient({
           authToken: data.authToken,
           defaults: { audio: false, video: false },
@@ -1309,6 +1322,10 @@ export function LiveClassRoomClient({
             }),
             keepalive: true,
           }).catch(() => undefined);
+        // Keep the rotated device secret after releasing a provisional
+        // provider participant so a bounded retry can reclaim the same local
+        // identity without making that identity forgeable by another tab.
+        if (provisionalSessionToken) setSessionToken(provisionalSessionToken);
         setError(
           issue instanceof Error
             ? issue.message
@@ -1330,6 +1347,21 @@ export function LiveClassRoomClient({
           video: nextCamera ? { facingMode: "user" } : false,
         });
         await connect({ publish: true, nextMic, nextCamera, preparedAudioTrack: permission.getAudioTracks()[0], preparedVideoTrack: permission.getVideoTracks()[0] });
+        return;
+      }
+      if (room.realtimeMode === "webinar" && !manager && role === "member"
+        && ((nextMic && !mic) || (nextCamera && !camera))) {
+        const permission = await navigator.mediaDevices.getUserMedia({
+          audio: nextMic,
+          video: nextCamera ? { facingMode: "user" } : false,
+        });
+        await connect({
+          publish: true,
+          nextMic,
+          nextCamera,
+          preparedAudioTrack: permission.getAudioTracks()[0],
+          preparedVideoTrack: permission.getVideoTracks()[0],
+        });
         return;
       }
       const approval = await fetch(`/api/classrooms/${room.code}/media`, {
@@ -1382,7 +1414,7 @@ export function LiveClassRoomClient({
       setMic(nextMic);
       setCamera(nextCamera);
     },
-    [camera, client, connect, identity, mic, role, room.code, sessionToken],
+    [camera, client, connect, identity, manager, mic, role, room.code, room.realtimeMode, sessionToken],
   );
   const reportLeave = useCallback(() => {
     void fetch(`/api/classrooms/${room.code}/media`, {
@@ -1399,12 +1431,15 @@ export function LiveClassRoomClient({
   const confirmStillAlone = useCallback(async () => {
     const response = await fetch(
       `/api/classrooms/${room.code}/media?identity=${encodeURIComponent(identity)}`,
-      { cache: "no-store" },
+      {
+        cache: "no-store",
+        headers: sessionToken ? { "x-class-session-token": sessionToken } : {},
+      },
     );
     if (!response.ok) return false;
     const state = (await response.json()) as Media;
-    return !state.users.some((user) => user.identity !== identity);
-  }, [identity, room.code]);
+    return !state.hasOtherParticipants;
+  }, [identity, room.code, sessionToken]);
   useEffect(() => {
     let alive = true;
     let timer = 0;
@@ -1415,7 +1450,10 @@ export function LiveClassRoomClient({
       checking = true;
       try {
         const [mediaResponse, playlistResponse] = await Promise.all([
-          fetch(`/api/classrooms/${room.code}/media`, { cache: "no-store" }),
+          fetch(`/api/classrooms/${room.code}/media?identity=${encodeURIComponent(identity)}`, {
+            cache: "no-store",
+            headers: sessionToken ? { "x-class-session-token": sessionToken } : {},
+          }),
           fetch(`/api/classrooms/${room.code}/playlist`, { cache: "no-store" }),
         ]);
         if (!alive) return;
@@ -1430,13 +1468,7 @@ export function LiveClassRoomClient({
         setPlaylistEnabled(active);
         if (mediaState) {
           setHostOnline(Boolean(mediaState.hostOnline) || manager);
-          setHasAudience(
-            manager
-              ? mediaState.users.some(
-                  (user) => user.identity !== identity && !user.isManager,
-                )
-              : mediaState.users.some((user) => user.identity !== identity),
-          );
+          setHasAudience(Boolean(mediaState.hasAudience));
           const nextHumanStreamActive = Boolean(
             mediaState.users?.some((user) =>
               Boolean(user.micOn || user.cameraOn),
@@ -1476,7 +1508,7 @@ export function LiveClassRoomClient({
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [connect, disconnect, identity, joined, manager, room.code]);
+  }, [connect, disconnect, identity, joined, manager, room.code, sessionToken]);
   useEffect(() => {
     const cleanup = () => {
       const body = new Blob([JSON.stringify({ action: "leave", identity, sessionToken })], {

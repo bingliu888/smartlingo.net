@@ -4,7 +4,11 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import test from "node:test";
-import { loadReleaseManifest, releaseNotes } from "../scripts/release-manifest.mjs";
+import {
+  loadReleaseManifest,
+  releaseNotes,
+  releaseRollback,
+} from "../scripts/release-manifest.mjs";
 
 test("release manifest produces deployment-specific bilingual details", async () => {
   const manifest = loadReleaseManifest();
@@ -18,6 +22,18 @@ test("release manifest produces deployment-specific bilingual details", async ()
   const invalidPath = join(directory, "release-manifest.json");
   await writeFile(invalidPath, JSON.stringify({ ...manifest, title: { ...manifest.title, en: "Production release" } }));
   assert.throws(() => loadReleaseManifest(invalidPath), /too generic/);
+  assert.deepEqual(releaseRollback(manifest), manifest.dataMigration.rollback);
+
+  const rejects = async (value, pattern) => {
+    await writeFile(invalidPath, JSON.stringify(value));
+    assert.throws(() => loadReleaseManifest(invalidPath), pattern);
+  };
+  await rejects({ ...manifest, dataMigration: undefined }, /missing dataMigration policy/);
+  await rejects({ ...manifest, dataMigration: { ...manifest.dataMigration, included: "false" } }, /included must be boolean/);
+  await rejects({ ...manifest, dataMigration: { ...manifest.dataMigration, migrations: "none" } }, /migrations must be an array/);
+  await rejects({ ...manifest, dataMigration: { ...manifest.dataMigration, included: false, migrations: ["0181"] } }, /empty migrations array/);
+  await rejects({ ...manifest, dataMigration: { ...manifest.dataMigration, included: true, migrations: [] } }, /missing dataMigration\.migrations details/);
+  await rejects({ ...manifest, dataMigration: { ...manifest.dataMigration, rollback: { en: "rollback" } } }, /rollback\.zh/);
 });
 
 test("deployment workflow requires a fresh manifest and report code consumes it", async () => {
@@ -41,9 +57,11 @@ test("deployment workflow requires a fresh manifest and report code consumes it"
   }
   assert.ok(sources.some((source) => source.includes("./release-manifest.mjs")));
   const productionVerifier = await readFile("scripts/verify-production-release-report.mjs", "utf8");
-  assert.match(productionVerifier, /entry\.commit === commit/);
-  assert.match(productionVerifier, /String\(entry\.runId \|\| ""\) === runId/);
-  assert.match(productionVerifier, /manifest\.purpose\.en/);
+  assert.match(productionVerifier, /build\.commit !== commit/);
+  assert.match(productionVerifier, /builds\.at\(-1\)/);
+  assert.match(productionVerifier, /reports\.at\(-1\)/);
+  assert.match(productionVerifier, /releaseNotes\(manifest, "en"\)/);
+  assert.match(productionVerifier, /releaseRollback\(manifest\)/);
 });
 
 test("current-commit validation rejects stale and reused release manifests", async () => {

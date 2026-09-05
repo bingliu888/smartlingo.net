@@ -519,6 +519,20 @@
       "when": 1788480000000,
       "tag": "0179_smartpay5_fee_token_support",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1788566400000,
+      "tag": "0180_gold3_clerk_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "6",
+      "when": 1788566401000,
+      "tag": "0181_gold3_classroom_identity",
+      "breakpoints": true
     }
   ]
 }

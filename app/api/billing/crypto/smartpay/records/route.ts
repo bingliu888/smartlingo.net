@@ -1,5 +1,6 @@
 import { isAddress, type Address } from "viem";
 import { isPermanentAdmin } from "@/lib/admin-access";
+import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
 import { getDatabase, getSessionUser } from "@/lib/auth";
 import { cryptoRpcUrl } from "@/lib/crypto-rpc";
 import { activeCryptoPaymentSettings, cryptoPaymentSettingById } from "@/lib/crypto-payments";
@@ -7,6 +8,7 @@ import { smartLingoProductOwnerRefId } from "@/lib/smartpay-product-owner";
 import { ensureSmartPayRefId, normalizeSmartPayRefId } from "@/lib/smartpay-refid";
 import { smartPay5LatestTransactions, verifySmartPay5Identity } from "@/lib/smartpay5-server";
 import { smartPay5ExpectedTokenPair } from "@/lib/smartpay5-presets";
+import { smartPay5SettingsForContract } from "@/lib/smartpay-checkout";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,15 @@ type MatchedMember = { id: string; email: string; displayName: string; payerId: 
 export async function GET(request: Request) {
   const user = await getSessionUser(request);
   if (!user) return Response.json({ error: "Sign in required" }, { status: 401 });
+  const limited = await consumeAccountRequestLimit({
+    request,
+    scope: "smartpay-records",
+    userId: user.id,
+    limit: 20,
+    windowSeconds: 60,
+    unavailableMessage: "Payment protection is temporarily unavailable.",
+  });
+  if (limited) return limited;
   const url = new URL(request.url);
   const setting = await cryptoPaymentSettingById(url.searchParams.get("settingId") || "");
   if (!setting?.smartPay5Contract || !isAddress(setting.smartPay5Contract)) {
@@ -67,7 +78,11 @@ export async function GET(request: Request) {
       }
     }
     const productOwnerRefId = await smartLingoProductOwnerRefId();
-    const settings = await activeCryptoPaymentSettings();
+    const settings = smartPay5SettingsForContract(
+      await activeCryptoPaymentSettings(),
+      setting.chainId,
+      contract,
+    );
     const transactions = latest.transactions.map(record => {
       const claim = claims.get(record.transactionId.toLowerCase());
       const matchedSetting = settings.find(candidate => {

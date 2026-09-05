@@ -28,10 +28,3 @@ export async function ensureSmartPayRefId(userId: string) {
   }
   throw new Error("REF_ID_UNAVAILABLE");
 }
-
-export async function userBySmartPayRefId(refId: string) {
-  return getDatabase().prepare(`SELECT u.id,u.email,u.display_name AS displayName,u.wallet_address AS walletAddress
-    FROM smartpay_ref_ids r JOIN users u ON u.id=r.user_id
-    WHERE lower(r.ref_id)=lower(?) LIMIT 1`).bind(normalizeSmartPayRefId(refId))
-    .first<{ id: string; email: string; displayName: string; walletAddress: string | null }>();
-}

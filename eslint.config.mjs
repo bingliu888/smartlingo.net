@@ -28,7 +28,7 @@ const eslintConfig = defineConfig([
     "output/**",
     "tmp/**",
     "public/pdf.worker.min.mjs",
-    "public/wallet-assets/greatlove-onboard.js",
+    "public/wallet-assets/smartlingo-onboard.js",
   ]),
 ]);
 

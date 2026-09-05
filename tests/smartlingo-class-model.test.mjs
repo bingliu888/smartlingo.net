@@ -40,7 +40,8 @@ test("fixed-term purchases create durable learning access scoped to one language
   assert.match(paymentActions, /targetLanguage/);
   assert.match(paymentActions, /months===3/);
   assert.match(purchase, /fixedCourseId\(input\.targetLanguage, input\.packageTier\)/);
-  assert.match(purchase, /addCourseSubscriptionMonths\(accessStartsAt, input\.durationMonths\)/);
+  assert.match(purchase, /COURSE_SUBSCRIPTION_WINDOW_CTES/);
+  assert.match(purchase, /purchase\.access_ends_at/);
   assert.match(purchase, /smartlingo_course_package_purchases/);
   assert.match(purchase, /ensureCourseLearningEnrollment/);
   assert.match(classroom, /currentPeriodEndsAt\|\|0\)>now/);
@@ -54,8 +55,11 @@ test("fixed-term purchases create durable learning access scoped to one language
 
 test("admins and course co-hosts can edit while fixed price remains immutable", async () => {
   const detail = await read("../app/api/classes/[classId]/route.ts");
-  assert.match(detail, /isAdminUser\(user\)/);
-  assert.match(detail, /live_class_cohosts/);
+  const managers = await read("../lib/class-managers.ts");
+  assert.match(detail, /canManageClass\(/);
+  assert.match(managers, /user\.emailVerified===1/);
+  assert.match(managers, /user\.identityCheckedAt>Math\.floor/);
+  assert.match(managers, /live_class_cohosts WHERE room_id=\? AND user_id=\? AND identity_bound_at>0/);
   assert.match(detail, /update_official_course/);
   assert.doesNotMatch(detail.match(/if \(input\.action === "update_official_course"[\s\S]*?return Response\.json\(\{ ok: true/)?.[0] || "", /price_cents/);
 });

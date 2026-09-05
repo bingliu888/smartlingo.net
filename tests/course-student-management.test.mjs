@@ -19,9 +19,14 @@ test("course managers see course-scoped Trial and Subscribers controls", async (
 });
 
 test("manual subscription actions preserve accounts and platform roles", async () => {
-  const route = await read("../app/api/classes/[classId]/students/route.ts");
-  assert.match(route, /isAdminUser\(user\)/);
-  assert.match(route, /live_class_cohosts/);
+  const [route, managers] = await Promise.all([
+    read("../app/api/classes/[classId]/students/route.ts"),
+    read("../lib/class-managers.ts"),
+  ]);
+  assert.match(route, /canManageClass\(/);
+  assert.match(managers, /user\.emailVerified===1/);
+  assert.match(managers, /user\.identityCheckedAt>Math\.floor\(Date\.now\(\)\/1000\)-5\*60/);
+  assert.match(managers, /live_class_cohosts WHERE room_id=\? AND user_id=\? AND identity_bound_at>0/);
   assert.match(route, /class_kind='official_course'/);
   assert.match(route, /subscription\.status IN \('trialing','active'\)/);
   assert.match(route, /course_subscription\.manual_disable/);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { boundedJsonBody } from "../../../../lib/bounded-request-body";
 import { consumeAccountRequestLimit } from "../../../../lib/account-request-limit";
+import { resolveActiveClerkPrimaryEmail } from "../../../../lib/clerk-primary-identity";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +31,16 @@ export async function POST(request: Request) {
     return error instanceof Response ? error : NextResponse.json({error:"Invalid request"},{status:400});
   }
   const password = input?.password || "";
-  if (password.length < 8) {
+  if (password.length < 8 || password.length > 128) {
     return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
   }
 
   try {
     const clerk = await clerkClient();
     const user = await clerk.users.getUser(session.userId);
+    if (!resolveActiveClerkPrimaryEmail(user)) {
+      return NextResponse.json({ error: "Sign in is required" }, { status: 401 });
+    }
     if (user.passwordEnabled) {
       if (!input?.currentPassword)
         return NextResponse.json({code:"CURRENT_PASSWORD_REQUIRED",error:"Enter your current password"},{status:400});

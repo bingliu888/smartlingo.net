@@ -119,17 +119,19 @@ test("completed Clerk sign-up activates exactly the created session", async () =
   assert.deepEqual(result, { kind: "activated", sessionId: "sess_complete" });
 });
 
-test("password-only missing requirements remain user-controlled in both languages", async () => {
+test("password-only missing requirements are treated as configuration drift", async () => {
   for (const [lang, expected] of [
-    ["zh", "电子邮箱已验证。当前账户设置还要求新用户创建密码；设置后将自动完成登录。"],
-    ["en", "Your email is verified. The current account settings also require new users to create a password; sign-in will finish automatically after you set it."],
+    ["zh", /账户创建仍被身份服务要求以下额外步骤：密码.*配置漂移.*不会要求您额外创建密码/],
+    ["en", /Account creation is still blocked by these extra identity-service requirements: password.*configuration drift.*will not require an extra password/],
   ]) {
     const result = await requirements.completeSignUpAttempt(
       { status: "missing_requirements", createdSessionId: null, missingFields: ["password"] },
       lang,
       async () => assert.fail("missing requirements must not activate a session"),
     );
-    assert.deepEqual(result, { kind: "password", fields: ["password"], message: expected });
+    assert.equal(result.kind, "unsupported");
+    assert.deepEqual(result.fields, ["password"]);
+    assert.match(result.message, expected);
   }
 });
 
@@ -161,7 +163,7 @@ test("unsupported Clerk requirements are named and never silently completed", as
   );
 });
 
-test("the executable auth view model owns code, password-compatibility, and CAPTCHA states", () => {
+test("the executable auth view model owns code, recovery, and CAPTCHA states", () => {
   assert.deepEqual(requirements.clerkAuthStepView("code", "code", "zh"), {
     showCodeField: true,
     captchaElementId: "clerk-captcha",
@@ -174,7 +176,6 @@ test("the executable auth view model owns code, password-compatibility, and CAPT
     primaryAction: "Verify & continue",
     secondaryAction: "Use another email",
   });
-  assert.equal(requirements.clerkAuthStepView("password-required", "code", "zh").primaryAction, "设置密码并登录");
   assert.equal(requirements.clerkAuthStepView("credentials", "code", "en").primaryAction, "Send secure code");
   assert.deepEqual(requirements.clerkAuthStepView("recovery-email", "password", "en"), {
     showCodeField: false,
@@ -192,7 +193,8 @@ test("the form delegates live transitions to tested helpers and mounts Clerk CAP
   assert.match(form, /setFlow\(prepared\.flow\)/);
   assert.match(form, /setStep\("code"\)/);
   assert.match(form, /completeSignUpAttempt\(/);
-  assert.match(form, /signUp\.update\(\{ password \}\)/);
+  assert.doesNotMatch(form, /password-required|signUp\.update\(\{ password \}\)/);
+  assert.match(form, /Identity-service configuration needs administrator attention/);
   assert.match(form, /startPasswordSignInOrUp\(identifier, password/);
   assert.match(form, /createSignUp: \(value, secret\) => signUp\.create\(\{ emailAddress: value, password: secret \}\)/);
   assert.match(form, /strategy: "reset_password_email_code"/);

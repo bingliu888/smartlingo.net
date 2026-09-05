@@ -1,3 +1,6 @@
+import { resolveActiveClerkPrimaryEmail } from "./clerk-primary-identity";
+import { boundedJsonBody } from "./bounded-request-body";
+
 export type ClerkBridgeRuntime = {
   CLERK_SECRET_KEY?: string;
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
@@ -15,10 +18,12 @@ type ClerkBridgeUser = {
   firstName?: string | null;
   lastName?: string | null;
   username?: string | null;
-  primaryEmailAddress?: {
+  primaryEmailAddressId?: string | null;
+  emailAddresses?: Array<{
+    id: string;
     emailAddress: string;
     verification?: { status?: string | null } | null;
-  } | null;
+  }>;
 };
 
 type ClerkBridgeSession = { cookie: string };
@@ -70,15 +75,10 @@ export function clerkAuthorizedParties(request: Request, publishableKey: string)
 }
 
 async function readBridgeLanguage(request: Request): Promise<"en" | "zh" | null> {
-  try {
-    const payload = await request.json() as unknown;
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
-    const entries = Object.entries(payload);
-    if (entries.length !== 1 || entries[0][0] !== "language") return null;
-    return entries[0][1] === "en" || entries[0][1] === "zh" ? entries[0][1] : null;
-  } catch {
-    return null;
-  }
+  const payload = await boundedJsonBody<Record<string, unknown>>(request, 4 * 1024);
+  const entries = Object.entries(payload);
+  if (entries.length !== 1 || entries[0][0] !== "language") return null;
+  return entries[0][1] === "en" || entries[0][1] === "zh" ? entries[0][1] : null;
 }
 
 function bridgeErrorCode(error: unknown) {
@@ -111,7 +111,14 @@ export async function handleClerkSessionBridgeRequest(
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const language = await readBridgeLanguage(request);
+  let language: "en" | "zh" | null;
+  try {
+    language = await readBridgeLanguage(request);
+  } catch (error) {
+    return error instanceof Response
+      ? error
+      : Response.json({ error: "Invalid request" }, { status: 400 });
+  }
   if (!language) return Response.json({ error: "Invalid request" }, { status: 400 });
 
   try {
@@ -129,13 +136,9 @@ export async function handleClerkSessionBridgeRequest(
     }
 
     const clerkUser = await dependencies.getClerkUser(userId, { secretKey, publishableKey });
-    if (clerkUser.banned || clerkUser.locked) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const primaryEmail = clerkUser.primaryEmailAddress;
-    const email = primaryEmail?.emailAddress.trim().toLowerCase() ?? "";
-    const emailVerified = primaryEmail?.verification?.status === "verified";
-    if (!email) return Response.json({ error: "Email required" }, { status: 400 });
+    const identity = resolveActiveClerkPrimaryEmail(clerkUser);
+    if (!identity) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const { email, emailVerified } = identity;
 
     const name = emailVerified && email === "bingliu@cybeye.com"
       ? "Admin"

@@ -11,6 +11,10 @@ export default async function ClassDetailPage({params}:{params:Promise<{lang:str
   if(!room)notFound();
   const user=await getSessionUser();
   const access=await classAccess(room,user);
-  if(!access.allowed)redirect(`/${locale}/auth/login?returnTo=${encodeURIComponent(`/${locale}/classrooms/${code}`)}`);
+  if(!access.allowed){
+    if("reason" in access&&access.reason==="VERIFIED_EMAIL_REQUIRED")
+      redirect(`/${locale}/dashboard?notice=verify-email`);
+    redirect(`/${locale}/auth/login?returnTo=${encodeURIComponent(`/${locale}/classrooms/${code}`)}`);
+  }
 return <LiveClassSiteFrame lang={locale}><LiveClassShareStudio meeting={room} locale={locale} shareUrl={"https://smartlingo.net/" + locale + "/classrooms/" + room.code} embedded/></LiveClassSiteFrame>;
 }

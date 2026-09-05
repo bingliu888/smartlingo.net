@@ -55,7 +55,7 @@ test("email code state shows the destination and switches localized actions", as
     /needs_second_factor[\s\S]*?prepareSecondFactor[\s\S]*?新的安全码已发送至 \{identifier\}/,
   );
   assert.match(requirements, /step === "code"[\s\S]*?"验证并继续" : "Verify & continue"/);
-  assert.match(requirements, /step === "code" \|\| step === "password-required"[\s\S]*?"更换邮箱" : "Use another email"/);
+  assert.match(requirements, /step === "code" \|\| step === "recovery-email"[\s\S]*?"更换邮箱" : "Use another email"/);
   assert.match(form, /clerkAuthStepView\(step, method, baseLang\)/);
   assert.match(form, /t\("Verify & continue", "验证并继续"\)/);
   assert.match(form, /t\("Use another email", "更换邮箱"\)/);

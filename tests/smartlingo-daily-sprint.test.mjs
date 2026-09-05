@@ -174,6 +174,9 @@ test("anonymous Sprint resumes its matching short cookie while signed-in members
   assert.match(sprintClient, /action: "checkpoint"/);
   assert.match(sprintRoute, /progress_json AS progressJson/);
   assert.match(sprintRoute, /run\.status='in_progress' ORDER BY run\.started_at DESC LIMIT 1/);
+  assert.match(sprintRoute, /!value\.anonymous && value\.user && !body\.fresh/);
+  assert.match(sprintRoute, /run\.local_date=\?/);
+  assert.match(sprintRoute, /currentLocalDate/);
   assert.match(anonymousSprint, /smartlingo-anonymous-sprint/);
   assert.match(sprintRoute, /Set-Cookie/);
   assert.match(anonymousSprint, /ANONYMOUS_SPRINT_MAX_AGE = 7200/);

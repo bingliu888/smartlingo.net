@@ -30,11 +30,12 @@ test("identity and payment preserve account ownership while trusting verified Sm
   assert.match(migration, /user_id TEXT PRIMARY KEY/);
   assert.match(migration, /smartpay_wallet_lookup_idx/);
   assert.doesNotMatch(migration, /wallet_address TEXT NOT NULL UNIQUE/);
-  assert.match(identity, /prepareClerkEmailOwnership/);
-  assert.match(identity, /role=CASE WHEN role='admin' THEN 'member' ELSE role END/);
-  assert.match(identity, /prepareAndEnsureClerkUser/);
-  assert.ok(identity.indexOf("await prepareClerkEmailOwnership", identity.indexOf("async function prepareAndEnsureClerkUser"))
-    < identity.indexOf("return ensureClerkUser", identity.indexOf("async function prepareAndEnsureClerkUser")));
+  assert.match(identity, /resolveActiveClerkPrimaryEmail/);
+  assert.match(identity, /synchronizeClerkIdentity/);
+  assert.match(identity, /rekeyLinkedClerkUser/);
+  assert.match(identity, /bindVerifiedLegacyClerkUser/);
+  assert.match(identity, /const clerkUser = await currentUser\(\)\.catch\(\(\) => null\)/);
+  assert.doesNotMatch(identity, /FROM sessions|INSERT INTO sessions/);
   assert.match(wallet, /ON CONFLICT\(user_id\)/);
   assert.doesNotMatch(wallet, /WALLET_ALREADY_IN_USE/);
   assert.match(profile, /bindSmartPayWallet\(user\.id, walletAddress\)/);

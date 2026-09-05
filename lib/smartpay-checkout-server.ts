@@ -2,7 +2,7 @@ import type { Address } from "viem";
 import { atomicTokenAmountToDisplay } from "./crypto-amount";
 import { cryptoRpcUrl } from "./crypto-rpc";
 import { activeCryptoSettings, type CryptoPaymentSetting } from "./crypto-settings";
-import { availableSmartPayCheckoutIdentity, configuredSmartPay5CheckoutScopes, type SmartPayCheckoutOption } from "./smartpay-checkout";
+import { availableSmartPayCheckoutIdentity, configuredSmartPay5CheckoutScopes, smartPay5SettingsForContract, type SmartPayCheckoutOption } from "./smartpay-checkout";
 import { cryptoSubscriptionIdsForCourse } from "./crypto-subscription";
 import { smartPay5RulePresets, smartPay5RulePresetStatus } from "./smartpay5-presets";
 import { smartPay5PaymentRules, smartPay5PayoutConfigurationRaw, verifySmartPay5Identity } from "./smartpay5-server";
@@ -27,7 +27,8 @@ export async function currentSmartPayCheckoutOptions(
     if (!identity || identity.paused) return [] as SmartPayCheckoutOption[];
     const [payouts, rules] = await Promise.all([smartPay5PayoutConfigurationRaw(rpcUrl, contractAddress), smartPay5PaymentRules(rpcUrl, contractAddress)]);
     if (!payouts.length) return [] as SmartPayCheckoutOption[];
-    return smartPay5RulePresets(settings, scope.chainId).flatMap(preset => {
+    const contractSettings = smartPay5SettingsForContract(settings, scope.chainId, contractAddress);
+    return smartPay5RulePresets(contractSettings, scope.chainId).flatMap(preset => {
       const rule = smartPay5RulePresetStatus(preset, rules).rule;
       if (!rule?.enabled || BigInt(rule.primaryTokenAmount) <= 0n) return [];
       const fullPrimary = BigInt(rule.primaryTokenAmount), fullSecondary = BigInt(rule.secondaryTokenAmount);

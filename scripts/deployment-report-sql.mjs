@@ -1,22 +1,10 @@
-import { loadReleaseManifest, releaseNotes } from "./release-manifest.mjs";
+import { loadReleaseManifest, releaseNotes, releaseRollback } from "./release-manifest.mjs";
 
 const manifest = loadReleaseManifest();
 const titleEn = manifest.title.en;
 const titleZh = manifest.title.zh;
-const notesEn = [
-  ...releaseNotes(manifest, "en"),
-  ...(manifest.dataMigration?.included ? [
-    `Data migration: ${manifest.dataMigration.migrations.join(", ")}`,
-    `Rollback: ${manifest.dataMigration.rollback.en}`,
-  ] : []),
-];
-const notesZh = [
-  ...releaseNotes(manifest, "zh"),
-  ...(manifest.dataMigration?.included ? [
-    `数据迁移: ${manifest.dataMigration.migrations.join("、")}`,
-    `回退: ${manifest.dataMigration.rollback.zh}`,
-  ] : []),
-];
+const notesEn = releaseNotes(manifest, "en");
+const notesZh = releaseNotes(manifest, "zh");
 const commit = String(process.env.GITHUB_SHA || "").trim();
 const runId = String(process.env.GITHUB_RUN_ID || "").trim();
 const repository = String(process.env.GITHUB_REPOSITORY || "bingliu888/smartlingo.net").trim();
@@ -30,10 +18,7 @@ const editionDate = `${part("year")}-${part("month")}-${part("day")}`;
 const timestamp = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZoneName: "short" }).format(now);
 const exactEvidenceZh = `精确部署 commit ${commit}；GitHub Actions ${runId}（${runUrl}）`;
 const exactEvidenceEn = `Exact deployment commit ${commit}; GitHub Actions ${runId} (${runUrl})`;
-const rollback = manifest.dataMigration?.included ? manifest.dataMigration.rollback : {
-  zh: "本次没有数据迁移；如需回退，只需恢复上一版 Cloudflare Worker。",
-  en: "This release has no data migration; rollback only requires restoring the prior Cloudflare Worker.",
-};
+const rollback = releaseRollback(manifest);
 const report = {
   date: editionDate,
   title: { zh: `${titleZh} · ${timestamp}`, en: `${titleEn} · ${timestamp}` },

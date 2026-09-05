@@ -1,6 +1,6 @@
 import { getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-access";
-import { canManageClass, paidClassAccess } from "@/lib/class-managers";
+import { bindVerifiedClassInvites, canManageClass, paidClassAccess } from "@/lib/class-managers";
 import { verifyStoredClassPassword } from "@/lib/class-password";
 
 export type ClassType = "public" | "trial" | "private";
@@ -74,7 +74,8 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
     WHERE linked.room_id=? AND (c.owner_user_id=? OR (m.status='active' AND
       ((s.status='active' AND s.current_period_ends_at>unixepoch()) OR (s.status='trialing' AND s.trial_ends_at>unixepoch())))) LIMIT 1`).bind(user.id,user.id,room.id,user.id).first();
   if(courseMember)return {allowed:true,admin:false,host,manager};
-  const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND lower(email)=lower(?) LIMIT 1").bind(room.id,user.email).first();
+  await bindVerifiedClassInvites(user);
+  const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND user_id=? LIMIT 1").bind(room.id,user.id).first();
   return {allowed:Boolean(invited),admin:false,host:false,manager:false};
 }
 

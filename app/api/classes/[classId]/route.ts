@@ -1,5 +1,6 @@
 import { getDatabase, getSessionUser } from "../../../../lib/auth";
 import { isAdminUser } from "../../../../lib/admin-access";
+import { canManageClass } from "../../../../lib/class-managers";
 import { cleanMultiline, cleanText } from "../../../../lib/smartlingo-classes";
 import { courseSupervisorIdentity } from "../../../../lib/course-supervisors";
 
@@ -76,9 +77,9 @@ export async function GET(
   const isOwner = detail.ownerUserId === user.id;
   const room = await getDatabase().prepare(`SELECT room_id AS roomId FROM smartlingo_course_classrooms WHERE course_id=? LIMIT 1`)
     .bind(classId).first<{ roomId: string }>();
-  const coAdmin = room ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
-    .bind(room.roomId, user.id).first() : null;
-  const canManage = isOwner || await isAdminUser(user) || Boolean(coAdmin);
+  const canManage = room
+    ? await canManageClass({ id: room.roomId, hostUserId: detail.ownerUserId }, user)
+    : isOwner || await isAdminUser(user);
   const supervisor = await courseSupervisorIdentity(user.id, true);
   if (!isOwner && !membership && detail.visibility !== "public") {
     return Response.json({ error: "This private course is available by invitation only." }, { status: 403 });
@@ -121,9 +122,10 @@ export async function PATCH(
   if (!current) return Response.json({ error: "Course not found" }, { status: 404 });
   const linkedRoom = await getDatabase().prepare(`SELECT cc.room_id AS roomId FROM smartlingo_course_classrooms cc WHERE cc.course_id=? LIMIT 1`)
     .bind(classId).first<{ roomId: string }>();
-  const coAdmin = linkedRoom ? await getDatabase().prepare(`SELECT 1 FROM live_class_cohosts WHERE room_id=? AND user_id=? LIMIT 1`)
-    .bind(linkedRoom.roomId, user.id).first() : null;
-  if (current.ownerUserId !== user.id && !await isAdminUser(user) && !coAdmin) {
+  const canManage = linkedRoom
+    ? await canManageClass({ id: linkedRoom.roomId, hostUserId: current.ownerUserId }, user)
+    : current.ownerUserId === user.id || await isAdminUser(user);
+  if (!canManage) {
     return Response.json({ error: "Course administrator access required" }, { status: 403 });
   }
   const now = Math.floor(Date.now() / 1000);

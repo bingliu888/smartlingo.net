@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
+import { encodeAbiParameters, encodeEventTopics, parseAbiItem } from "viem";
 import {
   SMARTPAY5_FACTORY_ADDRESS,
   smartPay5DeploymentData,
@@ -8,15 +9,49 @@ import {
   smartPay5DeploymentGasLimit,
 } from "../lib/smartpay-deployment.ts";
 import { smartPay5SourceVerificationPayload } from "../lib/smartpay-source-verification.ts";
-import { configuredSmartPay5CheckoutScopes, smartPayCheckoutDisplayAmount, smartPayOptionsForLanguage } from "../lib/smartpay-checkout.ts";
+import { configuredSmartPay5CheckoutScopes, smartPay5SettingsForContract, smartPayCheckoutDisplayAmount, smartPayOptionsForLanguage } from "../lib/smartpay-checkout.ts";
 import { smartPayWithdrawalPreflight } from "../lib/crypto-amount.ts";
 import { verifyCryptoPaymentWithConfirmations } from "../lib/crypto-payment-verification.ts";
 import { smartPayOwnerActionFeedback, smartPayOwnerConnectionError } from "../lib/smartpay-admin-wallet-ui.ts";
 import { smartPayRecordTimestamp } from "../lib/smartpay-record-timestamp.ts";
+import { smartPay5TransactionIdFromReceipt } from "../lib/smartpay5-receipt-transaction.ts";
 
 const root = new URL("..", import.meta.url);
 const read = path => readFile(new URL(path, root), "utf8");
 const owner = "0x1111111111111111111111111111111111111111";
+
+test("wallet receipt logs yield the internal TransactionID instead of the transaction hash", () => {
+  const transactionId = `0x${"ab".repeat(32)}`;
+  const contract = "0x2222222222222222222222222222222222222222";
+  const wallet = "0x3333333333333333333333333333333333333333";
+  const primaryToken = "0x4444444444444444444444444444444444444444";
+  const secondaryToken = "0x5555555555555555555555555555555555555555";
+  const event = parseAbiItem("event TransactionRecorded(bytes32 indexed transactionId, uint64 timestamp, address indexed wallet, string payerId, string refId, string mainId, string secondId, address indexed primaryTokenAddress, uint256 primaryTokenAmount, address secondaryTokenAddress, uint256 secondaryTokenAmount)");
+  const topics = encodeEventTopics({ abi: [event], eventName: "TransactionRecorded", args: { transactionId, wallet, primaryTokenAddress: primaryToken } });
+  const data = encodeAbiParameters([
+    { type: "uint64" }, { type: "string" }, { type: "string" }, { type: "string" }, { type: "string" },
+    { type: "uint256" }, { type: "address" }, { type: "uint256" },
+  ], [1n, "PAYER2", "OWNER2", "smartlingo_course_basic_3m", "es", 30_000_000n, secondaryToken, 0n]);
+  assert.equal(smartPay5TransactionIdFromReceipt([{ address: contract, topics, data }], contract), transactionId);
+  assert.equal(smartPay5TransactionIdFromReceipt([], contract), null);
+  assert.equal(smartPay5TransactionIdFromReceipt([{ address: contract, topics, data }, { address: contract, topics, data }], contract), null);
+  assert.equal(smartPay5TransactionIdFromReceipt([{ address: owner, topics, data }], contract), null);
+});
+
+test("payment rails remain isolated to their configured SmartPay5 contract", () => {
+  const first = "0x1111111111111111111111111111111111111111";
+  const second = "0x2222222222222222222222222222222222222222";
+  const settings = [
+    { id: "first-usdt", chainId: 137, smartPay5Contract: first },
+    { id: "first-glc", chainId: 137, smartPay5Contract: first.toUpperCase().replace("0X", "0x") },
+    { id: "second-usdt", chainId: 137, smartPay5Contract: second },
+    { id: "other-chain", chainId: 1, smartPay5Contract: first },
+    { id: "unbound", chainId: 137, smartPay5Contract: null },
+  ];
+  assert.deepEqual(smartPay5SettingsForContract(settings, 137, first).map(item => item.id), ["first-usdt", "first-glc"]);
+  assert.deepEqual(smartPay5SettingsForContract(settings, 137, second).map(item => item.id), ["second-usdt"]);
+  assert.deepEqual(smartPay5SettingsForContract(settings, 137, "not-an-address"), []);
+});
 
 test("course reconciliation requires normalized payer identity and a language-scoped three-month package", async () => {
   const source = await read("lib/smartpay-reconciliation.ts");
@@ -78,6 +113,36 @@ test("payment verification waits 6 seconds and retries three more times at 10 se
   assert.equal(calls, 4);
   assert.equal(result.attemptsUsed, 4);
   assert.deepEqual(pauses, [6000, 10000, 10000, 10000]);
+});
+
+test("payment verification clamps caller-controlled polling attempts and delays", async () => {
+  const pauses = [];
+  let calls = 0;
+  const result = await verifyCryptoPaymentWithConfirmations({
+    settingId: "polygon-usdt", plan: "basic", classId: "course_es_basic", txHash: `0x${"cd".repeat(32)}`,
+    attempts: Number.POSITIVE_INFINITY, initialDelayMs: 99_000, intervalMs: 99_000,
+    fetcher: async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: "pending" }), { status: 425, headers: { "content-type": "application/json" } });
+    },
+    pause: async milliseconds => { pauses.push(milliseconds); },
+  });
+  assert.equal(calls, 4);
+  assert.equal(result.attemptsUsed, 4);
+  assert.deepEqual(pauses, [10_000, 30_000, 30_000, 30_000]);
+});
+
+test("the production wallet connector namespace and fallback metadata are SmartLingo-owned", async () => {
+  const [client, bundle] = await Promise.all([
+    read("lib/evm-wallet-client.ts"),
+    read("public/wallet-assets/smartlingo-onboard.js"),
+  ]);
+  assert.match(client, /SmartLingoWalletOnboard/);
+  assert.doesNotMatch(client, /GreatLoveAutoSwapOnboard/);
+  assert.match(bundle, /SmartLingoWalletOnboard/);
+  assert.match(bundle, /SmartLingo wallet connection/);
+  assert.doesNotMatch(bundle, /GreatLove|AutoSwap/i);
+  await assert.rejects(access(new URL("public/wallet-assets/greatlove-onboard.js", root)), /ENOENT/);
 });
 
 test("deployment bundle is reproducible and site-specific", async () => {
@@ -153,6 +218,7 @@ test("retired SmartPay1 through SmartPay4 authored files and routes are absent",
     "public/contracts/SmartPay4.abi.json", "lib/smartpay4.ts", "lib/smartpay4-server.ts",
     "lib/smartpay4-presets.ts", "lib/smartpay4-receipt-locator.ts", "lib/smartpay4-receipt-verification.ts",
     "lib/smartpay4-wallet-preflight.ts", "app/api/contracts/smartpay4/route.ts", "app/smartpay4.css",
+    "app/api/billing/crypto/balance/route.ts",
   ]) await assert.rejects(access(new URL(path, root)), /ENOENT/);
 });
 

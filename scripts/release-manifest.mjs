@@ -29,25 +29,41 @@ export function loadReleaseManifest(path = "release-manifest.json") {
     text(manifest.purpose?.[language], `purpose.${language}`);
     for (const section of REQUIRED_SECTIONS) list(manifest[section]?.[language], `${section}.${language}`);
   }
-  if (manifest.dataMigration?.included) {
+  if (!manifest.dataMigration
+    || typeof manifest.dataMigration !== "object"
+    || Array.isArray(manifest.dataMigration))
+    throw new Error("Release manifest is missing dataMigration policy.");
+  if (typeof manifest.dataMigration.included !== "boolean")
+    throw new Error("Release manifest dataMigration.included must be boolean.");
+  if (!Array.isArray(manifest.dataMigration.migrations))
+    throw new Error("Release manifest dataMigration.migrations must be an array.");
+  if (manifest.dataMigration.included) {
     list(manifest.dataMigration.migrations, "dataMigration.migrations");
-    text(manifest.dataMigration.rollback?.en, "dataMigration.rollback.en");
-    text(manifest.dataMigration.rollback?.zh, "dataMigration.rollback.zh");
-  }
+  } else if (manifest.dataMigration.migrations.length !== 0)
+    throw new Error("Release manifest without a data migration must declare an empty migrations array.");
+  text(manifest.dataMigration.rollback?.en, "dataMigration.rollback.en");
+  text(manifest.dataMigration.rollback?.zh, "dataMigration.rollback.zh");
   return manifest;
 }
 
 const LABELS = {
-  en: { purpose: "Purpose", features: "Feature / fix", affected: "Affected scope", changes: "Implementation", validation: "Validation", deferred: "Deferred / limitation", siteAdaptations: "Site adaptation" },
-  zh: { purpose: "部署目的", features: "功能 / 修复", affected: "影响范围", changes: "实现变化", validation: "验证", deferred: "延后 / 限制", siteAdaptations: "站点适配" },
+  en: { purpose: "Purpose", features: "Feature / fix", affected: "Affected scope", changes: "Implementation", validation: "Validation", deferred: "Deferred / limitation", siteAdaptations: "Site adaptation", migration: "Data migration", rollback: "Rollback" },
+  zh: { purpose: "部署目的", features: "功能 / 修复", affected: "影响范围", changes: "实现变化", validation: "验证", deferred: "延后 / 限制", siteAdaptations: "站点适配", migration: "数据迁移", rollback: "回退" },
 };
+
+export function releaseRollback(manifest) {
+  return manifest.dataMigration.rollback;
+}
 
 export function releaseNotes(manifest, language = "en") {
   const lang = language === "zh" ? "zh" : "en";
   const labels = LABELS[lang];
+  const rollback = releaseRollback(manifest);
   return [
     `${labels.purpose}: ${manifest.purpose[lang]}`,
     ...REQUIRED_SECTIONS.flatMap((section) => manifest[section][lang].map((item) => `${labels[section]}: ${item}`)),
+    `${labels.migration}: ${manifest.dataMigration?.included ? manifest.dataMigration.migrations.join(lang === "zh" ? "、" : ", ") : (lang === "zh" ? "本次发布无数据迁移" : "None for this release")}`,
+    `${labels.rollback}: ${rollback[lang]}`,
   ];
 }
 

@@ -1,19 +1,21 @@
 import assert from "node:assert/strict";
+import { build } from "esbuild";
+import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import ts from "typescript";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 async function importTypeScriptModule(path) {
-  const source = await read(path);
-  const output = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-  }).outputText;
-  return import(`data:text/javascript;base64,${Buffer.from(output).toString("base64")}`);
+  const result = await build({
+    entryPoints: [fileURLToPath(new URL(path, import.meta.url))],
+    bundle: true,
+    format: "esm",
+    platform: "node",
+    target: "node22",
+    write: false,
+  });
+  return import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString("base64")}`);
 }
 
 const bridge = await importTypeScriptModule("../lib/clerk-session-bridge.ts");
@@ -49,13 +51,11 @@ function dependencies(overrides = {}) {
       locked: false,
       firstName: "Inert",
       lastName: "Member",
-      primaryEmailAddress: {
-        emailAddress: "MEMBER@EXAMPLE.COM",
-        verification: { status: "verified" },
-      },
+      primaryEmailAddressId: "idn_primary",
+      emailAddresses: [{ id: "idn_primary", emailAddress: "MEMBER@EXAMPLE.COM", verification: { status: "verified" } }],
     }),
     createAppSession: async () => ({
-      cookie: "smartlingo_session=inert-app-cookie; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800",
+      cookie: "smartlingo_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0",
     }),
     referralCodeFromRequest: () => "LINGO_TEST",
     clearReferralCookie: () => "smartlingo_referral_code=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0",
@@ -64,7 +64,7 @@ function dependencies(overrides = {}) {
   };
 }
 
-test("the bridge verifies an inert Clerk token, trusts verified profile data, and sets both cookies", async () => {
+test("the bridge verifies an inert Clerk token, trusts the exact primary identity, and expires compatibility state", async () => {
   const calls = [];
   const response = await bridge.handleClerkSessionBridgeRequest(request(), dependencies({
     verifyClerkToken: async (token, options) => {
@@ -76,15 +76,13 @@ test("the bridge verifies an inert Clerk token, trusts verified profile data, an
       return {
         firstName: "Inert",
         lastName: "Member",
-        primaryEmailAddress: {
-          emailAddress: "MEMBER@EXAMPLE.COM",
-          verification: { status: "verified" },
-        },
+        primaryEmailAddressId: "idn_primary",
+        emailAddresses: [{ id: "idn_primary", emailAddress: "MEMBER@EXAMPLE.COM", verification: { status: "verified" } }],
       };
     },
     createAppSession: async (...args) => {
       calls.push(["session", ...args]);
-      return { cookie: "smartlingo_session=inert-app-cookie; Path=/; HttpOnly; Secure; SameSite=Lax" };
+      return { cookie: "smartlingo_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" };
     },
   }));
 
@@ -120,7 +118,7 @@ test("the bridge verifies an inert Clerk token, trusts verified profile data, an
   const setCookies = typeof response.headers.getSetCookie === "function"
     ? response.headers.getSetCookie()
     : [response.headers.get("set-cookie") ?? ""];
-  assert.match(setCookies.join("\n"), /smartlingo_session=inert-app-cookie/);
+  assert.match(setCookies.join("\n"), /smartlingo_session=;[^\n]*Max-Age=0/);
   assert.match(setCookies.join("\n"), /smartlingo_referral_code=;/);
 });
 
@@ -175,6 +173,22 @@ test("the bridge rejects missing configuration, malformed bodies, and incomplete
   );
   assert.equal(malformedBody.status, 400);
 
+  const oversizedBody = await bridge.handleClerkSessionBridgeRequest(
+    new Request("http://localhost/api/auth/clerk-session", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer inert-session-token",
+        "content-type": "application/json",
+        "content-length": "4097",
+      },
+      body: JSON.stringify({ language: "zh" }),
+    }),
+    dependencies({
+      verifyClerkToken: async () => assert.fail("an oversized body must be rejected before token verification"),
+    }),
+  );
+  assert.equal(oversizedBody.status, 413);
+
   const incompleteClaims = await bridge.handleClerkSessionBridgeRequest(
     request(),
     dependencies({ verifyClerkToken: async () => ({ sub: "user_inert" }) }),
@@ -187,10 +201,8 @@ test("the bridge accepts an unverified member by Clerk subject while rejecting b
   const unverified = await bridge.handleClerkSessionBridgeRequest(request(), dependencies({
     getClerkUser: async () => ({
       firstName: "Unverified",
-      primaryEmailAddress: {
-        emailAddress: "member@example.com",
-        verification: { status: "unverified" },
-      },
+      primaryEmailAddressId: "idn_primary",
+      emailAddresses: [{ id: "idn_primary", emailAddress: "member@example.com", verification: { status: "unverified" } }],
     }),
     createAppSession: async (...args) => {
       appSessionCalls.push(args);
@@ -212,10 +224,8 @@ test("the bridge accepts an unverified member by Clerk subject while rejecting b
     const response = await bridge.handleClerkSessionBridgeRequest(request(), dependencies({
       getClerkUser: async () => ({
         ...state,
-        primaryEmailAddress: {
-          emailAddress: "member@example.com",
-          verification: { status: "verified" },
-        },
+        primaryEmailAddressId: "idn_primary",
+        emailAddresses: [{ id: "idn_primary", emailAddress: "member@example.com", verification: { status: "verified" } }],
       }),
       createAppSession: async () => assert.fail("blocked Clerk users must not create app sessions"),
     }));
@@ -250,6 +260,22 @@ test("verification failures fail closed and log only bounded error details", asy
   assert.doesNotMatch(logs[1].message, /[\r\n\t]/);
 });
 
+test("the bridge rejects a missing or mismatched primary email instead of falling back", async () => {
+  for (const clerkUser of [
+    { emailAddresses: [{ id: "idn_secondary", emailAddress: "member@example.com", verification: { status: "verified" } }] },
+    {
+      primaryEmailAddressId: "idn_primary",
+      emailAddresses: [{ id: "idn_secondary", emailAddress: "member@example.com", verification: { status: "verified" } }],
+    },
+  ]) {
+    const response = await bridge.handleClerkSessionBridgeRequest(request(), dependencies({
+      getClerkUser: async () => clerkUser,
+      createAppSession: async () => assert.fail("an unresolved primary identity must not create app state"),
+    }));
+    assert.equal(response.status, 401);
+  }
+});
+
 test("the production route delegates to the tested bridge with Clerk and D1 adapters", async () => {
   const route = await read("../app/api/auth/clerk-session/route.ts");
   assert.match(route, /handleClerkSessionBridgeRequest\(request/);
@@ -257,4 +283,6 @@ test("the production route delegates to the tested bridge with Clerk and D1 adap
   assert.match(route, /getClerkUser: \(userId, keys\) => createClerkClient\(keys\)\.users\.getUser\(userId\)/);
   assert.match(route, /createAppSession: createSessionForClerkUser/);
   assert.doesNotMatch(route, /payload\.email|payload\.name/);
+  const bridgeHandlerSource = await read("../lib/clerk-session-bridge.ts");
+  assert.match(bridgeHandlerSource, /boundedJsonBody<Record<string, unknown>>\(request, 4 \* 1024\)/);
 });

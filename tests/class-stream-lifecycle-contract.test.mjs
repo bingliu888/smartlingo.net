@@ -19,7 +19,9 @@ test("a publisher leaving keeps silent viewers and the provider generation alive
   assert.match(client, /humanStreamActive/);
   assert.match(client, /<LoneParticipantGuard/);
   assert.match(client, /confirmStillAlone=\{confirmStillAlone\}/);
-  assert.match(client, /user\.identity !== identity && !user\.isManager/);
+  assert.match(client, /return !state\.hasOtherParticipants/);
+  assert.match(media, /classMediaIdentityProjection\(identity, access\.manager\)/);
+  assert.match(media, /hasOtherParticipants: activeUsers\.some/);
   assert.match(media, /isManager: Boolean\(userId && managerIds\.has\(userId\)\)/);
 });
 
@@ -29,6 +31,10 @@ test("participant reservation trusts persisted D1 state and failed clients relea
   assert.match(sessions, /inserted\?\.active && inserted\.tokenHash === tokenHash/);
   assert.match(client, /let provisionalSessionToken = ""/);
   assert.match(client, /sessionToken: provisionalSessionToken/);
+  assert.match(client, /provisionalSessionToken = data\.sessionToken \|\| ""/);
+  assert.match(client, /setSessionToken\(provisionalSessionToken\)/);
+  const join = fs.readFileSync(new URL("../app/api/classrooms/[code]/join/route.ts", import.meta.url), "utf8");
+  assert.match(join, /recoverableJoinFailure\(error, reserved\?\.token\)/);
   assert.match(client, /keepalive: true/);
 });
 

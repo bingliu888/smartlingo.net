@@ -1,5 +1,8 @@
 import { createId, getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-access";
+import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
+import { boundedJsonBody } from "@/lib/bounded-request-body";
+import { canManageClass, verifiedRegisteredUser } from "@/lib/class-managers";
 import { cleanText } from "@/lib/smartlingo-classes";
 import { courseSupervisorIdentity } from "@/lib/course-supervisors";
 
@@ -31,9 +34,10 @@ async function managerContext(request: Request, classIdValue: string) {
     LEFT JOIN smartlingo_course_classrooms classroom ON classroom.course_id=c.id
     WHERE c.id=? AND c.class_kind='official_course' LIMIT 1`).bind(classId).first<Course>();
   if (!course) return { response: Response.json({ error: "Course not found" }, { status: 404 }) };
-  const coHost = course.roomId ? await database.prepare(`SELECT 1 FROM live_class_cohosts
-    WHERE room_id=? AND user_id=? LIMIT 1`).bind(course.roomId, user.id).first() : null;
-  if (course.ownerUserId !== user.id && !await isAdminUser(user) && !coHost) {
+  const canManage = course.roomId
+    ? await canManageClass({ id: course.roomId, hostUserId: course.ownerUserId }, user)
+    : course.ownerUserId === user.id || await isAdminUser(user);
+  if (!canManage) {
     return { response: Response.json({ error: "Course administrator access required" }, { status: 403 }) };
   }
   return { user, course, database };
@@ -99,14 +103,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ clas
 export async function POST(request: Request, { params }: { params: Promise<{ classId: string }> }) {
   const value = await managerContext(request, (await params).classId);
   if ("response" in value) return value.response;
-  const body = await request.json().catch(() => null) as { email?: unknown } | null;
+  const limited = await consumeAccountRequestLimit({
+    request,
+    scope: `class-students:${value.course.id}`,
+    limit: 60,
+    windowSeconds: 60 * 60,
+    userId: value.user.id,
+  });
+  if (limited) return limited;
+  let body: { email?: unknown };
+  try { body = await boundedJsonBody<{ email?: unknown }>(request, 4 * 1024); }
+  catch (error) {
+    return error instanceof Response ? error : Response.json({ error: "Invalid request" }, { status: 400 });
+  }
   const email = cleanText(body?.email, 254).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return Response.json({ error: "Valid registered member email required" }, { status: 400 });
   }
-  const target = await value.database.prepare(`SELECT id,email FROM users WHERE lower(email)=? LIMIT 1`)
-    .bind(email).first<{ id: string; email: string }>();
-  if (!target) return Response.json({ error: "Registered member not found" }, { status: 404 });
+  let target: Awaited<ReturnType<typeof verifiedRegisteredUser>>;
+  try { target = await verifiedRegisteredUser(email); }
+  catch (error) {
+    if (error instanceof Error && error.message === "MEMBER_NOT_FOUND")
+      return Response.json({ error: "Verified registered member not found" }, { status: 404 });
+    return Response.json({ error: "Valid registered member email required" }, { status: 400 });
+  }
   const existing = await value.database.prepare(`SELECT status FROM smartlingo_course_subscriptions
     WHERE class_id=? AND user_id=? LIMIT 1`).bind(value.course.id, target.id).first<{ status: string }>();
   if (existing?.status === "active") {
@@ -119,7 +139,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
 export async function PATCH(request: Request, { params }: { params: Promise<{ classId: string }> }) {
   const value = await managerContext(request, (await params).classId);
   if ("response" in value) return value.response;
-  const body = await request.json().catch(() => null) as { userId?: unknown; action?: unknown } | null;
+  const limited = await consumeAccountRequestLimit({
+    request,
+    scope: `class-students:${value.course.id}`,
+    limit: 60,
+    windowSeconds: 60 * 60,
+    userId: value.user.id,
+  });
+  if (limited) return limited;
+  let body: { userId?: unknown; action?: unknown };
+  try { body = await boundedJsonBody<{ userId?: unknown; action?: unknown }>(request, 4 * 1024); }
+  catch (error) {
+    return error instanceof Response ? error : Response.json({ error: "Invalid request" }, { status: 400 });
+  }
   const userId = cleanText(body?.userId, 160);
   const action = body?.action;
   if (!userId || (action !== "enable" && action !== "disable")) {

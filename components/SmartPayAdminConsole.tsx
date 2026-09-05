@@ -22,6 +22,7 @@ import {
 } from "../lib/smartpay-deployment";
 import { SMARTLINGO_WALLET_CONNECT } from "../lib/smartlingo-commerce-wallet";
 import { SMARTPAY5_ABI } from "../lib/smartpay5";
+import { smartPay5SettingsForContract } from "../lib/smartpay-checkout";
 import { smartPayTransactionNeedsReconciliation } from "../lib/smartpay-reconciliation";
 import {
   smartPay5RulePresets,
@@ -156,7 +157,14 @@ export function SmartPayAdminConsole({
   const ownerWalletButton = smartPayOwnerWalletButton(locale, busy, connectedWallet);
   const selectedChainId = selected?.chainId;
   const smartPay5Rules = useMemo(() => contractState?.rules || [], [contractState?.rules]);
-  const smartPay5Presets = useMemo(() => smartPay5RulePresets(settings, selectedChainId), [settings, selectedChainId]);
+  const smartPay5PresetSettings = useMemo(
+    () => smartPay5SettingsForContract(settings, selectedChainId, selectedContract),
+    [settings, selectedChainId, selectedContract],
+  );
+  const smartPay5Presets = useMemo(
+    () => smartPay5RulePresets(smartPay5PresetSettings, selectedChainId),
+    [smartPay5PresetSettings, selectedChainId],
+  );
   const smartPay5PresetRows = useMemo(() => smartPay5Presets.map(preset => ({
     preset,
     status: smartPay5RulePresetStatus(preset, smartPay5Rules)
@@ -669,6 +677,7 @@ export function SmartPayAdminConsole({
     for (const record of eligible) {
       const paymentTokenAddress = record.primaryTokenAddress;
       const paymentSetting = settings.find(item => item.chainId === selected.chainId
+        && item.smartPay5Contract?.toLowerCase() === selectedContract.toLowerCase()
         && paymentTokenAddress && item.tokenContract.toLowerCase() === paymentTokenAddress.toLowerCase());
       if (!paymentSetting) continue;
       const response = await fetch("/api/billing/crypto/smartpay/claim", {

@@ -1,11 +1,11 @@
 import { createId, getDatabase } from "./auth";
 import {
-  addCourseSubscriptionMonths,
   courseSubscriptionPackage,
   fixedCourseId,
   type SmartLingoCourseDurationMonths,
   type SmartLingoPackageTier,
 } from "./smartlingo-course-packages";
+import { COURSE_SUBSCRIPTION_WINDOW_CTES } from "./course-subscription-window";
 import { ensureCourseLearningEnrollment } from "./course-learning-enrollment";
 import {
   isSmartLingoCommunityLanguage,
@@ -74,30 +74,29 @@ export async function recordCoursePackagePurchase(input: {
     .bind(input.classId).first<CourseRow>();
   if (!course || course.targetLanguage !== input.targetLanguage || course.packageTier !== input.packageTier) throw new Error("COURSE_UNAVAILABLE");
 
-  const current = await database.prepare(`SELECT trial_ends_at AS trialEnds,current_period_ends_at AS periodEnds
-    FROM smartlingo_course_subscriptions WHERE class_id=? AND user_id=? LIMIT 1`).bind(input.classId, input.userId)
-    .first<{ trialEnds: number; periodEnds: number | null }>();
   const now = input.paidAt || Math.floor(Date.now() / 1000);
-  const accessStartsAt = Math.max(now, Number(current?.trialEnds || 0), Number(current?.periodEnds || 0));
-  const accessEndsAt = addCourseSubscriptionMonths(accessStartsAt, input.durationMonths);
   const purchaseId = createId();
   const statements = [
-    database.prepare(`INSERT INTO smartlingo_course_package_purchases
+    database.prepare(`WITH ${COURSE_SUBSCRIPTION_WINDOW_CTES}
+      INSERT INTO smartlingo_course_package_purchases
       (id,user_id,class_id,target_language,package_id,package_tier,duration_months,price_cents,currency,provider,provider_reference,
        access_starts_at,access_ends_at,status,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?, 'USD',?,?,?,?,'paid',?,?)`)
-      .bind(purchaseId,input.userId,input.classId,input.targetLanguage,selectedPackage.id,input.packageTier,input.durationMonths,
-        input.priceCents,input.provider,providerReference,accessStartsAt,accessEndsAt,now,now),
+      SELECT ?,?,?,?,?,?,?,?,'USD',?,?,start_at,access_ends_at,'paid',?,? FROM access_window`)
+      .bind(now,input.classId,input.userId,input.durationMonths,purchaseId,input.userId,input.classId,input.targetLanguage,selectedPackage.id,
+        input.packageTier,input.durationMonths,input.priceCents,input.provider,providerReference,now,now),
     database.prepare(`INSERT INTO smartlingo_course_subscriptions
       (id,class_id,user_id,status,monthly_price_cents,trial_started_at,trial_ends_at,current_period_ends_at,supervisor_user_id,supervisor_ref_id,created_at,updated_at)
-      VALUES(?,?,?,'active',?,?,?,?,?,?,?,?)
+      SELECT ?,?,?,'active',?,?,?,purchase.access_ends_at,?,?,?,?
+      FROM smartlingo_course_package_purchases purchase
+      WHERE purchase.provider=? AND purchase.provider_reference=?
       ON CONFLICT(class_id,user_id) DO UPDATE SET status='active',monthly_price_cents=excluded.monthly_price_cents,
         trial_started_at=excluded.trial_started_at,trial_ends_at=excluded.trial_ends_at,
         current_period_ends_at=excluded.current_period_ends_at,
         supervisor_user_id=COALESCE(smartlingo_course_subscriptions.supervisor_user_id,excluded.supervisor_user_id),
         supervisor_ref_id=COALESCE(smartlingo_course_subscriptions.supervisor_ref_id,excluded.supervisor_ref_id),
         updated_at=excluded.updated_at`)
-      .bind(createId(),input.classId,input.userId,input.priceCents,now,now,accessEndsAt,supervisor?.userId||null,supervisor?.refId||null,now,now),
+      .bind(createId(),input.classId,input.userId,input.priceCents,now,now,supervisor?.userId||null,supervisor?.refId||null,
+        now,now,input.provider,providerReference),
     database.prepare(`INSERT INTO smartlingo_language_class_members(id,class_id,user_id,role,status,joined_at,updated_at)
       VALUES(?,?,?,'student','active',?,?) ON CONFLICT(class_id,user_id) DO UPDATE SET role='student',status='active',updated_at=excluded.updated_at`)
       .bind(createId(),input.classId,input.userId,now,now),
@@ -118,12 +117,17 @@ export async function recordCoursePackagePurchase(input: {
       && concurrent.targetLanguage === input.targetLanguage && concurrent.packageTier === input.packageTier
       && concurrent.durationMonths === input.durationMonths) {
       if (concurrent.status !== "paid") throw new Error("PAYMENT_NOT_ACTIVE");
+      await ensureCourseLearningEnrollment(database, course, input.userId, now);
       return { alreadyRecorded: true, status: concurrent.status, accessStartsAt: concurrent.accessStartsAt, accessEndsAt: concurrent.accessEndsAt };
     }
     throw error;
   }
+  const recorded = await database.prepare(`SELECT access_starts_at AS accessStartsAt,access_ends_at AS accessEndsAt,status
+    FROM smartlingo_course_package_purchases WHERE provider=? AND provider_reference=? LIMIT 1`)
+    .bind(input.provider,providerReference).first<{ accessStartsAt: number; accessEndsAt: number; status: string }>();
+  if (!recorded || recorded.status !== "paid") throw new Error("PAYMENT_NOT_ACTIVE");
   await ensureCourseLearningEnrollment(database, course, input.userId, now);
-  return { alreadyRecorded: false, status: "paid", accessStartsAt, accessEndsAt };
+  return { alreadyRecorded: false, status: recorded.status, accessStartsAt: recorded.accessStartsAt, accessEndsAt: recorded.accessEndsAt };
 }
 
 export async function markCoursePackagePaymentStatus(providerReference: string, status: "refunded" | "disputed") {

@@ -22,7 +22,7 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [code, setCode] = useState("");
   const [method, setMethod] = useState<"code" | "password">("password");
-  const [step, setStep] = useState<"credentials" | "code" | "password-required" | "recovery-email" | "recovery-code">("credentials");
+  const [step, setStep] = useState<"credentials" | "code" | "recovery-email" | "recovery-code">("credentials");
   const [flow, setFlow] = useState<"sign-in" | "sign-up" | "second-factor" | "recovery" | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -39,12 +39,10 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
         ? t("Reset password & sign in", "重置密码并登录")
         : step === "code"
           ? t("Verify & continue", "验证并继续")
-          : step === "password-required"
-            ? t("Create password & sign in", "设置密码并登录")
-            : method === "code"
+          : method === "code"
               ? t("Send secure code", "发送安全验证码")
               : t("Continue with password", "使用密码继续"),
-    secondaryAction: step === "code" || step === "password-required" || step === "recovery-email" || step === "recovery-code"
+    secondaryAction: step === "code" || step === "recovery-email" || step === "recovery-code"
       ? t("Use another email", "更换邮箱")
       : method === "code"
         ? t("Use password instead", "改用密码")
@@ -94,20 +92,9 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
       sessionId => activateSession(setActiveSignUp, sessionId),
     );
     if (resolution.kind === "activated") return;
-    if (resolution.kind === "password") {
-      setStep("password-required");
-      setCode("");
-      setPassword("");
-      setPasswordConfirmation("");
-      setMessage(t(
-        "Your email is verified. The current account settings also require new users to create a password; sign-in will finish automatically after you set it.",
-        "电子邮箱已验证。当前账户设置还要求新用户创建密码；设置后将自动完成登录。",
-      ));
-      return;
-    }
     throw new Error(t(
-      "Your account requires additional information before sign-in can finish. Use another sign-in method or contact an administrator.",
-      "账户仍需补充资料才能完成登录。请更换登录方式或联系管理员。",
+      "Identity-service configuration needs administrator attention. This site will not require an extra password.",
+      "身份服务配置需要管理员处理。本站不会要求您额外创建密码。",
     ));
   }
 
@@ -181,11 +168,6 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
       } else if (flow === "sign-in") {
         const result = await signIn.attemptFirstFactor({ strategy: "email_code", code });
         await finishSignIn(result, identifier);
-      } else if (step === "password-required" && flow === "sign-up") {
-        if (password.length < 8) throw new Error(t("Your password must be at least 8 characters.", "密码至少需要 8 个字符。"));
-        if (password !== passwordConfirmation) throw new Error(t("The passwords do not match.", "两次输入的密码不一致。"));
-        const result = await signUp.update({ password });
-        await finishSignUp(result);
       } else {
         const result = await signUp.attemptEmailAddressVerification({ code });
         await finishSignUp(result);
@@ -199,9 +181,9 @@ export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang:
 
   if (userId) return <p className="form-message success" role="status">{t("Connecting your secure session…", "正在连接安全会话…")}</p>;
   return <form className="auth-form" onSubmit={submit}>
-    <label>{t("Email address", "电子邮箱")}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} disabled={step === "code" || step === "password-required" || step === "recovery-code"} required /></label>
-    {((method === "password" && step === "credentials") || step === "password-required" || step === "recovery-code") && <PasswordInput lang={lang} label={step === "credentials" ? t("Password", "密码") : t("New password", "新密码")} autoComplete={step === "credentials" ? "current-password" : "new-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required />}
-    {(step === "password-required" || step === "recovery-code") && <PasswordInput lang={lang} label={t("Confirm new password", "确认新密码")} autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={event => setPasswordConfirmation(event.target.value)} required />}
+    <label>{t("Email address", "电子邮箱")}<input type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} disabled={step === "code" || step === "recovery-code"} required /></label>
+    {((method === "password" && step === "credentials") || step === "recovery-code") && <PasswordInput lang={lang} label={step === "credentials" ? t("Password", "密码") : t("New password", "新密码")} autoComplete={step === "credentials" ? "current-password" : "new-password"} minLength={8} value={password} onChange={event => setPassword(event.target.value)} required />}
+    {step === "recovery-code" && <PasswordInput lang={lang} label={t("Confirm new password", "确认新密码")} autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={event => setPasswordConfirmation(event.target.value)} required />}
     {method === "password" && step === "credentials" && <button className="form-link auth-forgot-password" type="button" onClick={startRecovery}>{t("Forgot password?", "忘记密码？")}</button>}
     {authView.showCodeField && <label>{t("One-time code", "一次性验证码")}<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, ""))} required /></label>}
     {error && <p className="form-message error" role="alert">{error}</p>}{message && <p className="form-message success" role="status">{message}</p>}

@@ -17,6 +17,7 @@ export async function verifyCryptoPaymentWithConfirmations(input: {
   plan: CryptoSubscriptionPlan;
   classId: string;
   txHash: string;
+  paymentId?: string;
   memberId?: string;
   supervisorRefId?: string;
   attempts?: number;
@@ -35,9 +36,12 @@ export async function verifyCryptoPaymentWithConfirmations(input: {
 }) {
   const fetcher = input.fetcher || fetch;
   const pause = input.pause || (milliseconds => new Promise(resolve => globalThis.setTimeout(resolve, milliseconds)));
-  const attempts = Math.max(1, input.attempts ?? 4);
-  const initialDelayMs = Math.max(0, input.initialDelayMs ?? 0);
-  const intervalMs = Math.max(0, input.intervalMs ?? 10_000);
+  const requestedAttempts = Number.isFinite(input.attempts) ? Math.floor(input.attempts!) : 4;
+  const requestedInitialDelay = Number.isFinite(input.initialDelayMs) ? Math.floor(input.initialDelayMs!) : 0;
+  const requestedInterval = Number.isFinite(input.intervalMs) ? Math.floor(input.intervalMs!) : 10_000;
+  const attempts = Math.min(4, Math.max(1, requestedAttempts));
+  const initialDelayMs = Math.min(10_000, Math.max(0, requestedInitialDelay));
+  const intervalMs = Math.min(30_000, Math.max(0, requestedInterval));
   if (initialDelayMs > 0) {
     input.onInitialWait?.(initialDelayMs);
     await pause(initialDelayMs);
@@ -55,6 +59,7 @@ export async function verifyCryptoPaymentWithConfirmations(input: {
           classId: input.classId,
           settingId: input.settingId,
           txHash: input.txHash,
+          ...(input.paymentId ? { paymentId: input.paymentId } : {}),
           ...(input.memberId ? { memberId: input.memberId } : {}),
           ...(input.supervisorRefId ? { supervisorRefId: input.supervisorRefId } : {}),
         })

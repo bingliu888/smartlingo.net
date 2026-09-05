@@ -16,6 +16,7 @@ import { SMARTLINGO_WALLET_CONNECT } from "../lib/smartlingo-commerce-wallet";
 import type { CryptoSubscriptionPlan } from "../lib/crypto-subscription";
 import type { SubscriptionPlan } from "../lib/subscription-plans";
 import { SMARTPAY5_ABI } from "../lib/smartpay5";
+import { smartPay5TransactionIdFromReceipt } from "../lib/smartpay5-receipt-transaction";
 import { readSmartPay5WalletPreflight, type SmartPay5WalletPreflight } from "../lib/smartpay5-wallet-preflight";
 
 type Plan = CryptoSubscriptionPlan;
@@ -23,8 +24,8 @@ type Status = { signedIn: boolean; cryptoSettings?: CryptoPaymentSetting[]; plan
 type CheckoutOptionsResponse = { options?: SmartPayCheckoutOption[]; error?: string };
 type PreparedCheckoutOption = SmartPayCheckoutOption & { refId: string; payerId: string };
 type ExistingPayment = {
-  txHash: string;
-  paymentId?: string;
+  paymentId: string;
+  txHash?: string;
   claimed?: boolean;
   verified?: boolean;
   timestamp?: number;
@@ -195,7 +196,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     });
     const data = await response.json().catch(() => ({})) as ExistingPayment & { error?: string };
     if (response.status === 404) return null;
-    if (!response.ok || !data.txHash) throw new Error(data.error || "PAYMENT_LOOKUP_FAILED");
+    if (!response.ok || !/^0x[a-f0-9]{64}$/i.test(data.paymentId || "")) throw new Error(data.error || "PAYMENT_LOOKUP_FAILED");
     return data;
   }
 
@@ -211,30 +212,13 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
           .replace("{date}", new Date(payment.currentPeriodEnd * 1000).toLocaleDateString(locale)));
         return;
       }
-      const response = payment.paymentId
-        ? await fetch("/api/billing/crypto/smartpay/claim", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ settingId: selectedOption.settingId, paymentId: payment.paymentId, classId: activeCourseId, supervisorRefId })
-        })
-        : null;
-      const directResult = response
-        ? await response.json().catch(() => ({})) as { verified?: boolean; currentPeriodEnd?: number | null; error?: string }
-        : null;
-      const result = response?.ok && directResult?.verified
-        ? directResult
-        : (await verifyCryptoPaymentWithConfirmations({
-          plan,
-          classId: activeCourseId,
-          settingId: selectedOption.settingId,
-          txHash: payment.txHash,
-          supervisorRefId,
-          onRetry: ({ retryNumber }) => setMessage(t(
-            "Reconciliation is not ready. Retry {retryNumber} of 3 will run in 10 seconds.",
-            "核对暂未完成；10 秒后进行第 {retryNumber} / 3 次重试。",
-          ).replace("{retryNumber}", String(retryNumber)))
-        })).data;
-      if (!result.verified) throw new Error(result.error || directResult?.error || "PAYMENT_VERIFICATION_FAILED");
+      const response = await fetch("/api/billing/crypto/smartpay/claim", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ settingId: selectedOption.settingId, paymentId: payment.paymentId, classId: activeCourseId, supervisorRefId })
+      });
+      const result = await response.json().catch(() => ({})) as { verified?: boolean; currentPeriodEnd?: number | null; error?: string };
+      if (!response.ok || !result.verified) throw new Error(result.error || "PAYMENT_VERIFICATION_FAILED");
       const currentPeriodEnd = result.currentPeriodEnd || payment.currentPeriodEnd || null;
       setExistingPayment({ ...payment, claimed: true, verified: true, currentPeriodEnd });
       setPendingPaymentHash("");
@@ -243,7 +227,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         ? t("Payment confirmed. The subscription is active through {date}.", "付款已确认，订阅至 {date}。")
           .replace("{date}", new Date(currentPeriodEnd * 1000).toLocaleDateString(locale))
         : t("Payment confirmed. The subscription is now active.", "付款已确认，订阅现已生效。"));
-      await loadStatus();
+      await loadStatus().catch(() => undefined);
     } catch {
       setMessage(t("Unable to reconcile the existing payment right now.", "暂时无法核对已有付款。"));
     } finally {
@@ -337,7 +321,6 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       const previous = await lookupExistingPayment("new-payment");
       if (previous) {
         setExistingPayment(previous);
-        setTxHash(previous.txHash);
         setMessage(t("An unreconciled payment for this option was found. Reconcile it first to avoid paying twice.", "已找到尚未入账的同项目付款。请先核对该付款，避免重复支付。"));
         return;
       }
@@ -388,9 +371,11 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         submittedHash = hash;
         setTxHash(hash);
         setPendingPaymentHash(hash);
-        await waitForTransactionReceipt(provider, hash);
+        const receipt = await waitForTransactionReceipt(provider, hash);
+        const paymentId = smartPay5TransactionIdFromReceipt(receipt.logs || [], prepared.contractAddress);
+        if (!paymentId) throw new Error("PAYMENT_RECORD_NOT_FOUND");
         setMessage(t("The payment is on-chain. Reading the transaction record and updating the subscription.", "付款已上链，正在读取交易记录并更新订阅。"));
-        await verify(hash, true);
+        await verify(hash, true, paymentId);
         return;
     } catch (error) {
       const reason = error instanceof Error ? error.message : "";
@@ -417,10 +402,10 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
     }
   }
 
-  async function verify(candidateHash?: string, afterSuccessfulPayment = false) {
+  async function verify(candidateHash?: string, afterSuccessfulPayment = false, paymentId?: string) {
     if (!selectedOption) return;
     setBusy("verify");
-    let hash = (candidateHash || txHash).trim().toLowerCase();
+    const hash = (candidateHash || txHash).trim().toLowerCase();
     if (!/^0x[a-f0-9]{64}$/.test(hash)) {
       let existing: ExistingPayment | null = null;
       try {
@@ -436,12 +421,8 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         return;
       }
       setExistingPayment(existing);
-      if (existing.paymentId) {
-        await reconcileExistingPayment(existing);
-        return;
-      }
-      hash = existing.txHash;
-      setTxHash(hash);
+      await reconcileExistingPayment(existing);
+      return;
     }
     setMessage(t("Transaction found. Waiting for confirmations and updating your subscription…", "交易已找到，正在等待链上确认并更新订阅…"));
     const { data } = await verifyCryptoPaymentWithConfirmations({
@@ -449,6 +430,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
       classId: activeCourseId,
       settingId: selectedOption.settingId,
       txHash: hash,
+      paymentId,
       supervisorRefId,
       initialDelayMs: afterSuccessfulPayment ? 6_000 : 0,
       onInitialWait: () => setMessage(t("The payment is confirmed on-chain. The first transaction-record check will run in 6 seconds. Do not pay again.", "付款已确认上链；6 秒后首次读取交易记录。请勿重复付款。")),
@@ -457,12 +439,13 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         "链上记录尚未完成核对；10 秒后进行第 {retryNumber} / 3 次重试。请勿重复付款。",
       ).replace("{retryNumber}", String(retryNumber)))
     });
-    if (data.verified) {
+    const confirmedPaymentId = data.paymentId || paymentId || "";
+    if (data.verified && /^0x[a-f0-9]{64}$/i.test(confirmedPaymentId)) {
       setPendingPaymentHash("");
       setConfirmedUntil(data.currentPeriodEnd || null);
       setExistingPayment(current => current ? { ...current, claimed: true, verified: true, currentPeriodEnd: data.currentPeriodEnd } : {
         txHash: hash,
-        paymentId: data.paymentId || undefined,
+        paymentId: confirmedPaymentId,
         claimed: true,
         verified: true,
         currentPeriodEnd: data.currentPeriodEnd
@@ -471,7 +454,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
         ? t("Transaction confirmed. The subscription is active through {date}.", "交易已确认，订阅至 {date}。")
           .replace("{date}", new Date(data.currentPeriodEnd * 1000).toLocaleDateString(locale))
         : t("The transaction record was verified. Your subscription is active.", "交易记录已验证，订阅现已生效。"));
-      await loadStatus();
+      await loadStatus().catch(() => undefined);
     } else {
       setPendingPaymentHash(hash);
       setMessage(t(
@@ -534,7 +517,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
           <button type="button" className="button ghost" disabled={preflightBusy || Boolean(busy)} onClick={() => walletProvider && void refreshConnectedPreflight(walletProvider, wallet)}>{preflightBusy ? "…" : t("Refresh balances & gas", "刷新余额与 Gas")}</button>
           {existingPayment ? <div className={`existing-crypto-payment${existingPayment.claimed ? " confirmed" : ""}`} role="status">
             <strong>{existingPayment.claimed ? t("Confirmed payment found", "已找到已确认付款") : t("Unreconciled payment found", "已找到尚未入账付款")}</strong>
-            <span>{existingPayment.timestamp ? new Date(existingPayment.timestamp * 1000).toLocaleString(locale) : t("On-chain payment", "链上付款")} · {existingPayment.txHash.slice(0, 12)}…</span>
+            <span>{existingPayment.timestamp ? new Date(existingPayment.timestamp * 1000).toLocaleString(locale) : t("On-chain payment", "链上付款")} · {existingPayment.txHash ? "Tx" : "TransactionID"} {(existingPayment.txHash || existingPayment.paymentId).slice(0, 12)}…</span>
             {existingPayment.currentPeriodEnd ? <small>{t("Current subscription through {date}", "当前订阅至 {date}").replace("{date}", new Date(existingPayment.currentPeriodEnd * 1000).toLocaleDateString(locale))}</small> : null}
             {existingPaymentAction(existingPayment.claimed) === "reconcile" ? <button type="button" className="button primary" disabled={Boolean(busy)} onClick={() => void reconcileExistingPayment(existingPayment)}>{busy === "verify" ? "…" : t("Reconcile unreconciled payment", "核对尚未入账付款")}</button> : null}
           </div> : pendingPaymentHash ? <div className="existing-crypto-payment pending" role="status">

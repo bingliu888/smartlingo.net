@@ -1,7 +1,6 @@
-import { clearReferralCookie, clearSessionCookie, deleteCurrentSession } from "../../../../lib/auth";
+import { clearReferralCookie, clearSessionCookie } from "../../../../lib/auth";
 
-export async function POST(request: Request) {
-  await deleteCurrentSession(request);
+export async function POST() {
   const headers = new Headers();
   headers.append("set-cookie", clearSessionCookie());
   headers.append("set-cookie", clearReferralCookie());

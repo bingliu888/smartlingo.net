@@ -6,6 +6,7 @@ import {
   removeProviderParticipant,
   type MeetingParticipantRole,
 } from "./live-class-realtimekit";
+import { participantIdentityTokenMatches } from "./class-media-identity";
 
 export const PARTICIPANT_SESSION_TTL_SECONDS = 90;
 export const PARTICIPANT_SESSION_PER_HUMAN_LIMIT = 4;
@@ -147,9 +148,13 @@ export async function reserveParticipantSession(input: {
     `${SESSION_SELECT} WHERE room_id=? AND media_identity=? LIMIT 1`,
   ).bind(input.room.id, input.mediaIdentity).first<ClassParticipantSession>();
   let expectedTokenHash = "";
-  if (previous?.active && previous.lastSeenAt > staleBefore) {
+  if (previous) {
     const supplied = participantSessionToken(input.request, input.currentToken);
-    if (!supplied || await classSessionTokenHash(supplied) !== previous.tokenHash)
+    const suppliedHash = supplied ? await classSessionTokenHash(supplied) : null;
+    // A media identity is a per-device capability, not a client-selected
+    // nickname. Even after Leave or expiry, only the holder of the prior
+    // secret may rotate that identity and inherit its webinar approvals.
+    if (!participantIdentityTokenMatches(previous.tokenHash, suppliedHash))
       throw new Error("PARTICIPANT_SESSION_CONFLICT");
     expectedTokenHash = previous.tokenHash;
   }

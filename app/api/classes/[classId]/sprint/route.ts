@@ -42,11 +42,12 @@ export async function POST(request: Request, { params }: Params) {
     const resumedAnonymous = value.anonymous && !body.fresh
       ? resumeAnonymousSprintState(parseAnonymousSprintCookie(request.headers.get("cookie")), { classId, language, durationMinutes: selectedDuration, dayNumber }, now)
       : null;
-    if (!value.anonymous && value.user) {
+    const currentLocalDate = localDateKey(now,zone);
+    if (!value.anonymous && value.user && !body.fresh) {
       const saved = await value.database.prepare(`SELECT run.id,run.plan_json AS planJson,run.progress_json AS progressJson FROM smartlingo_daily_sprint_runs run
         JOIN smartlingo_daily_sprint_run_days run_day ON run_day.run_id=run.id
-        WHERE run.user_id=? AND run.class_id=? AND run.duration_minutes=? AND run_day.day_number=? AND run.status='in_progress' ORDER BY run.started_at DESC LIMIT 1`)
-        .bind(value.user.id,classId,selectedDuration,dayNumber).first<{ id: string; planJson: string; progressJson: string }>();
+        WHERE run.user_id=? AND run.class_id=? AND run.duration_minutes=? AND run_day.day_number=? AND run.local_date=? AND run.status='in_progress' ORDER BY run.started_at DESC LIMIT 1`)
+        .bind(value.user.id,classId,selectedDuration,dayNumber,currentLocalDate).first<{ id: string; planJson: string; progressJson: string }>();
       if (saved) return Response.json({ runId: saved.id, plan: sanitizeSprintPlan(JSON.parse(saved.planJson) as SprintPlan), progress: JSON.parse(saved.progressJson || "{}"), courseTitle: value.course.title, anonymous: false, resumed: true, dayNumber });
     }
     const runId = resumedAnonymous?.runId || createId();
@@ -66,7 +67,7 @@ export async function POST(request: Request, { params }: Params) {
       value.database.prepare(`INSERT INTO smartlingo_daily_sprint_runs
         (id,user_id,class_id,target_language,level,duration_minutes,round_count,local_date,time_zone,plan_json,status,started_at)
         VALUES(?,?,?,?,?,?,?,?,?,?,'in_progress',?)`)
-        .bind(runId,value.user.id,classId,language,courseLevel,selectedDuration,plan.rounds.length,localDateKey(now,zone),zone,JSON.stringify(plan),now),
+        .bind(runId,value.user.id,classId,language,courseLevel,selectedDuration,plan.rounds.length,currentLocalDate,zone,JSON.stringify(plan),now),
       value.database.prepare(`INSERT INTO smartlingo_daily_sprint_run_days(run_id,day_number,created_at) VALUES(?,?,?)`).bind(runId,dayNumber,now),
     ]);
     const progress = resumedAnonymous ? {

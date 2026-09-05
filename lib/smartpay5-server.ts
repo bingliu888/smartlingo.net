@@ -30,6 +30,8 @@ type ContractPaymentRule = {
   enabled: boolean;
 };
 
+const MAX_SMARTPAY5_RULES = 500n;
+
 async function ethCall(rpcUrl: string, contract: Address, functionName: string, args: readonly unknown[] = []) {
   const data = encodeFunctionData({ abi: SMARTPAY5_ABI, functionName, args });
   return cryptoRpc<Hex>(rpcUrl, "eth_call", [{ to: contract, data }, "latest"]);
@@ -85,7 +87,9 @@ export async function smartPay5PayoutConfigurationRaw(rpcUrl: string, contract: 
 
 export async function smartPay5PaymentRules(rpcUrl: string, contract: Address) {
   const countData = await ethCall(rpcUrl, contract, "paymentRuleCount");
-  const count = Number(decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "paymentRuleCount", data: countData }) as bigint);
+  const rawCount = decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "paymentRuleCount", data: countData }) as bigint;
+  if (rawCount > MAX_SMARTPAY5_RULES) throw new Error("SMARTPAY5_RULE_LIMIT_EXCEEDED");
+  const count = Number(rawCount);
   const records: ContractPaymentRule[] = [];
   for (let offset = 0; offset < count; offset += 100) {
     const pageData = await ethCall(rpcUrl, contract, "paymentRules", [BigInt(offset), BigInt(Math.min(100, count - offset))]);

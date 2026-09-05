@@ -18,6 +18,9 @@ test("a validated platform referral survives sign-up in one secure cookie", () =
   assert.match(referralRouteSource, /auth\/sign-up\?referral=invalid/);
   assert.match(authSource, /REFERRAL_COOKIE_NAME = "smartlingo_referral_code"/);
   assert.match(authSource, /HttpOnly; Secure; SameSite=Lax/);
+  assert.match(authSource, /\^\[A-Z0-9_-\]\{6,32\}\$/);
+  assert.match(authSource, /slice\(0, 32\)/);
+  assert.match(referralRouteSource, /\^\[A-Z0-9_-\]\{6,32\}\$/);
   assert.match(bridgeSource, /referralCodeFromRequest,/);
   assert.match(bridgeSource, /clearReferralCookie,/);
   assert.match(bridgeHandlerSource, /dependencies\.referralCodeFromRequest\(request\)/);

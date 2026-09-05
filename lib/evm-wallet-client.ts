@@ -24,6 +24,8 @@ export type EthereumTransactionReceipt = {
   contractAddress?: string;
   to?: string | null;
   transactionHash?: string;
+  blockNumber?: string;
+  logs?: Array<{ address?: string; topics?: string[]; data?: string }>;
 };
 
 export type WalletChain = {
@@ -42,7 +44,7 @@ type WalletConnector = {
 
 declare global {
   interface Window {
-    GreatLoveAutoSwapOnboard?: WalletConnector;
+    SmartLingoWalletOnboard?: WalletConnector;
     ethereum?: InjectedEthereumProvider;
     tokenpocket?: { ethereum?: InjectedEthereumProvider };
     web3?: { currentProvider?: EthereumProvider };
@@ -62,7 +64,7 @@ export function walletChain(setting: Pick<CryptoPaymentSetting, "chainId" | "cha
 }
 
 async function loadWalletConnector(scriptId: string): Promise<WalletConnector> {
-  if (window.GreatLoveAutoSwapOnboard) return window.GreatLoveAutoSwapOnboard;
+  if (window.SmartLingoWalletOnboard) return window.SmartLingoWalletOnboard;
   await new Promise<void>((resolve, reject) => {
     const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
     if (existing) {
@@ -72,14 +74,14 @@ async function loadWalletConnector(scriptId: string): Promise<WalletConnector> {
     }
     const script = document.createElement("script");
     script.id = scriptId;
-    script.src = "/wallet-assets/greatlove-onboard.js";
+    script.src = "/wallet-assets/smartlingo-onboard.js";
     script.async = true;
     script.addEventListener("load", () => resolve(), { once: true });
     script.addEventListener("error", () => reject(new Error("WALLET_CONNECTOR_UNAVAILABLE")), { once: true });
     document.body.appendChild(script);
   });
-  if (!window.GreatLoveAutoSwapOnboard) throw new Error("WALLET_CONNECTOR_UNAVAILABLE");
-  return window.GreatLoveAutoSwapOnboard;
+  if (!window.SmartLingoWalletOnboard) throw new Error("WALLET_CONNECTOR_UNAVAILABLE");
+  return window.SmartLingoWalletOnboard;
 }
 
 const walletAddress = (value: unknown) => Array.isArray(value)
