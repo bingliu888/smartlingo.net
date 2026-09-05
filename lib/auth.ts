@@ -8,6 +8,7 @@ import {
   rebindPermanentAdminClerkId,
   rekeyLinkedClerkUser,
 } from "@/lib/permanent-admin-rebind";
+import { getLoopbackLayoutFixtureUser } from "@/lib/layout-fixture-auth";
 
 const COOKIE_NAME = "smartlingo_session";
 const REFERRAL_COOKIE_NAME = "smartlingo_referral_code";
@@ -290,8 +291,13 @@ export async function createSessionForClerkUser(
   return { cookie: clearSessionCookie() };
 }
 
-export async function getSessionUser(_request?: Request): Promise<SessionUser | null> {
-  void _request;
+export async function getSessionUser(request?: Request): Promise<SessionUser | null> {
+  const layoutFixtureUser = await getLoopbackLayoutFixtureUser<SessionUser>({
+    database: db,
+    request,
+    selection: sessionUserSelection,
+  });
+  if (layoutFixtureUser) return layoutFixtureUser;
   const clerkUser = await currentUser().catch(() => null);
   const identity = resolveActiveClerkPrimaryEmail(clerkUser);
   if (!clerkUser || !identity) return null;

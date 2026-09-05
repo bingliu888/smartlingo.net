@@ -27,6 +27,7 @@ interface Env {
   REALTIMEKIT_LIVESTREAM_VIEWER_PRESET?: string;
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
   CLERK_SECRET_KEY?: string;
+  SMARTLINGO_RUNTIME_LAYOUT_FIXTURE_TOKEN?: string;
   MIGRATION_EXPORT_SECRET?: string;
   IMAGES: {
     input(stream: ReadableStream): {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold3-v1-identity-classroom-payment-20260905-r2",
+  "releaseId": "smartlingo-net-gold3-v1-identity-classroom-payment-20260905-r3",
   "site": "smartlingo.net",
   "title": {
     "en": "Gold 3 v1 identity, classroom, and payment hardening",
@@ -43,7 +43,8 @@
       "Keep SmartPay payer and recipient identifiers immutable while atomically rekeying site-local identity references.",
       "Keep existing classroom rows backward-compatible during migrate-before-deploy and require verified identity binding before they grant authority.",
       "Resume a daily Sprint draft only when it belongs to the current local date for that learner.",
-      "Normalize generated SmartLingo wallet asset whitespace so the exact release passes the repository integrity gate."
+      "Normalize generated SmartLingo wallet asset whitespace so the exact release passes the repository integrity gate.",
+      "Keep protected-page layout coverage after the Clerk-only identity cutover through a random per-run, loopback-only D1 fixture that cannot authorize production requests."
     ],
     "zh": [
       "不再将 EVM 交易哈希误作 SmartPay5 内部付款标识。",
@@ -51,7 +52,8 @@
       "保持 SmartPay 付款人与收款人标识不可变，同时原子重键站点本地身份引用。",
       "在先迁移后部署的窗口保持现有课堂记录向后兼容，并在授予权限前要求已验证身份绑定。",
       "仅当每日 Sprint 草稿属于学习者当前本地日期时才恢复。",
-      "清理 SmartLingo 钱包生成资产的行尾空格，使精确发布通过仓库完整性闸门。"
+      "清理 SmartLingo 钱包生成资产的行尾空格，使精确发布通过仓库完整性闸门。",
+      "Clerk 单一身份切换后，使用每次随机、仅限本机回环地址的 D1 临时身份继续覆盖受保护页面布局，且该入口无法授权生产请求。"
     ]
   },
   "validation": {

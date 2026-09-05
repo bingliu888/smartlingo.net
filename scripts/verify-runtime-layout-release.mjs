@@ -162,6 +162,7 @@ async function main() {
       main: join(projectRoot, "dist", "server", "index.js"),
       compatibility_date: "2026-05-15",
       compatibility_flags: ["nodejs_compat"],
+      vars: { SMARTLINGO_RUNTIME_LAYOUT_FIXTURE_TOKEN: token },
       no_bundle: true,
       find_additional_modules: true,
       rules: [{ type: "ESModule", globs: ["**/*.js", "**/*.mjs"] }],
@@ -178,9 +179,9 @@ async function main() {
 INSERT INTO users (id,email,email_verified,display_name,password_hash,preferred_language,
  clerk_user_id,clerk_identity_checked_at,role,created_at) VALUES
  ('layout-user','bingliu@cybeye.com',1,'Layout Learner','disabled-local-fixture','en',
-  'layout-clerk-user',unixepoch(),'admin',1785680000),
+  'layout-user',unixepoch(),'admin',1785680000),
  ('layout-peer','layout-peer@smartlingo.invalid',1,'Layout Peer','disabled-local-fixture','zh',
-  'layout-clerk-peer',unixepoch(),'member',1785680001);
+  'layout-peer',unixepoch(),'member',1785680001);
 INSERT INTO sessions (id,user_id,clerk_session_id,expires_at,created_at) VALUES
  ('${sessionHash}','layout-user','layout-local-session',4102444800,1785680002);
 INSERT INTO smartlingo_course_subscriptions

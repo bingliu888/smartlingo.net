@@ -13,6 +13,7 @@ import {
 const swiftSource = await readFile(new URL("../scripts/measure-runtime-layout.swift", import.meta.url), "utf8");
 const runnerSource = await readFile(new URL("../scripts/verify-runtime-layout-webkit.mjs", import.meta.url), "utf8");
 const releaseSource = await readFile(new URL("../scripts/verify-runtime-layout-release.mjs", import.meta.url), "utf8");
+const fixtureAuthSource = await readFile(new URL("../lib/layout-fixture-auth.ts", import.meta.url), "utf8");
 const packageSource = await readFile(new URL("../package.json", import.meta.url), "utf8");
 
 test("runtime layout matrix pins both path locales and all five required viewports", () => {
@@ -164,6 +165,9 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /const common = \["--local", "--persist-to", state, "--config", config\]/);
   assert.doesNotMatch(releaseSource, /--remote/);
   assert.match(releaseSource, /database_id: "00000000-0000-4000-8000-000000000001"/);
+  assert.match(releaseSource, /vars: \{ SMARTLINGO_RUNTIME_LAYOUT_FIXTURE_TOKEN: token \}/);
+  assert.match(releaseSource, /'layout-user',unixepoch\(\),'admin'/);
+  assert.match(releaseSource, /'layout-peer',unixepoch\(\),'member'/);
   assert.doesNotMatch(releaseSource, /\broutes:/);
   assert.match(releaseSource, /WRANGLER_SEND_METRICS: "false"/);
   assert.match(releaseSource, /WRANGLER_REGISTRY_PATH: join\(work, "registry"\)/);
@@ -180,6 +184,12 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /const publicReadApis = \[/);
   assert.match(releaseSource, /rm\(work, \{ recursive: true, force: true \}\)/);
   assert.match(packageSource, /"validate:layout": "node scripts\/verify-runtime-layout-release\.mjs"/);
+  assert.match(fixtureAuthSource, /SMARTLINGO_RUNTIME_LAYOUT_FIXTURE_TOKEN/);
+  assert.match(fixtureAuthSource, /hostname !== "127\.0\.0\.1" && hostname !== "localhost"/);
+  assert.match(fixtureAuthSource, /sameSecret\(suppliedToken, expectedToken\)/);
+  assert.match(fixtureAuthSource, /u\.id=u\.clerk_user_id AND u\.email_verified=1/);
+  assert.match(fixtureAuthSource, /s\.expires_at>\?/);
+  assert.doesNotMatch(fixtureAuthSource, /process\.env/);
 });
 
 test("full release matrix uses bounded fresh-WebKit batches and one merged count", () => {
