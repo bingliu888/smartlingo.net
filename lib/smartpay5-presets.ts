@@ -1,6 +1,7 @@
 import { atomicTokenAmountToDisplay, tokenAmountToAtomic } from "./crypto-amount";
 import type { CryptoPaymentSetting } from "./crypto-settings";
 import { cryptoSubscriptionRuleIds, type CryptoSubscriptionPlan } from "./crypto-subscription";
+import { smartPay5RulePresetStatus as compareSmartPay5RulePreset } from "./smartpay5-rule-state";
 
 const TIERS: CryptoSubscriptionPlan[] = ["basic", "intermediate", "advanced"];
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -73,12 +74,5 @@ export function smartPay5RulePresets(settings: readonly CryptoPaymentSetting[], 
 }
 
 export function smartPay5RulePresetStatus(preset: SmartPay5RulePreset, rules: readonly ComparableSmartPay5Rule[]) {
-  const rule = rules.find(candidate => candidate.primaryTokenAddress.toLowerCase() === preset.primaryTokenAddress.toLowerCase()
-    && candidate.secondaryTokenAddress.toLowerCase() === preset.secondaryTokenAddress.toLowerCase()
-    && candidate.mainId === preset.mainId && candidate.secondId === preset.secondId) || null;
-  if (!rule) return { state: "missing" as const, rule };
-  const configured = rule.enabled && rule.primaryTokenAmount === preset.primaryTokenAmountAtomic
-    && rule.secondaryTokenAmount === preset.secondaryTokenAmountAtomic
-    && rule.minimumSecondaryBalance === preset.minimumSecondaryBalanceAtomic;
-  return { state: configured ? "configured" as const : "different" as const, rule };
+  return compareSmartPay5RulePreset(preset, rules);
 }

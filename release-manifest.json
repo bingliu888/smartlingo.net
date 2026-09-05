@@ -1,96 +1,17 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-gold3-v1-identity-classroom-payment-20260905-r3",
+  "releaseId": "smartlingo-net-smartpay5-db-product-control-20260905-r1",
   "site": "smartlingo.net",
-  "title": {
-    "en": "Gold 3 v1 identity, classroom, and payment hardening",
-    "zh": "Gold 3 v1 身份、课堂与付款加固"
-  },
-  "purpose": {
-    "en": "Make Clerk the canonical request identity, bind classroom authority to verified members, and complete SmartPay5 receipt and atomic course-renewal hardening.",
-    "zh": "将 Clerk 设为每次请求的规范身份，把课堂权限绑定到已验证会员，并完成 SmartPay5 收据及课程原子续期加固。"
-  },
-  "features": {
-    "en": [
-      "Extract the internal SmartPay5 TransactionID from the confirmed receipt event while retaining transaction-hash recovery.",
-      "Bound and rate-limit payment prepare and verify requests.",
-      "Calculate calendar-month course renewal from the latest committed access end inside the D1 write.",
-      "Authorize every request from the active Clerk primary identity and safely rekey compatible legacy member records.",
-      "Bind classroom cohost, invite, subscription, and stage-speaker grants only after a current verified Clerk session.",
-      "Use per-tab media capabilities so participants cannot impersonate or control another classroom device."
-    ],
-    "zh": [
-      "从已确认收据事件提取 SmartPay5 内部 TransactionID，同时保留交易哈希找回兼容。",
-      "限制付款准备与验证请求体大小并实施账户限流。",
-      "在 D1 写入内从最新已提交权益结束时间按日历月续期课程。",
-      "每次请求均以有效 Clerk 主身份授权，并安全重键兼容的旧会员记录。",
-      "课堂联合主持、邀请、订阅及上台发言权限仅在当前 Clerk 会话验证后绑定。",
-      "使用每标签页媒体能力令牌，防止参与者冒用或控制其他课堂设备。"
-    ]
-  },
-  "affected": {
-    "en": [
-      "Clerk-to-D1 identity synchronization, classroom access and media controls, crypto checkout reconciliation, payment APIs, and course package persistence."
-    ],
-    "zh": [
-      "影响 Clerk 与 D1 身份同步、课堂访问及媒体控制、加密付款对账、付款 API 与课程套餐持久化。"
-    ]
-  },
+  "title": { "en": "SmartPay5 explicit course product controls", "zh": "SmartPay5 课程产品明确控制" },
+  "purpose": { "en": "Require an explicitly confirmed database fingerprint before a SmartLingo course payment item can be selected.", "zh": "要求 SmartLingo 课程付款项目具备数据库明确确认指纹后才可选择。" },
+  "features": { "en": ["Stop a confirmed shared course price without a wallet call and restore it only through on-chain Re-confirm verification."], "zh": ["无需调用钱包即可 Stop 已确认的共用课程价格，并仅在链上 Re-confirm 核验后恢复。"] },
+  "affected": { "en": ["SmartPay5 admin payment items, language-specific course payment options, and payment preparation."], "zh": ["SmartPay5 后台付款项目、按语言区分的课程付款选项及付款准备。"] },
   "changes": {
-    "en": [
-      "Stop treating an EVM transaction hash as the SmartPay5 internal payment identifier.",
-      "Serialize concurrent course extensions with a SQL CTE and preserve end-of-month calendar semantics.",
-      "Keep SmartPay payer and recipient identifiers immutable while atomically rekeying site-local identity references.",
-      "Keep existing classroom rows backward-compatible during migrate-before-deploy and require verified identity binding before they grant authority.",
-      "Resume a daily Sprint draft only when it belongs to the current local date for that learner.",
-      "Normalize generated SmartLingo wallet asset whitespace so the exact release passes the repository integrity gate.",
-      "Keep protected-page layout coverage after the Clerk-only identity cutover through a random per-run, loopback-only D1 fixture that cannot authorize production requests."
-    ],
-    "zh": [
-      "不再将 EVM 交易哈希误作 SmartPay5 内部付款标识。",
-      "使用 SQL CTE 串行化并发课程续期，并保留月底日历语义。",
-      "保持 SmartPay 付款人与收款人标识不可变，同时原子重键站点本地身份引用。",
-      "在先迁移后部署的窗口保持现有课堂记录向后兼容，并在授予权限前要求已验证身份绑定。",
-      "仅当每日 Sprint 草稿属于学习者当前本地日期时才恢复。",
-      "清理 SmartLingo 钱包生成资产的行尾空格，使精确发布通过仓库完整性闸门。",
-      "Clerk 单一身份切换后，使用每次随机、仅限本机回环地址的 D1 临时身份继续覆盖受保护页面布局，且该入口无法授权生产请求。"
-    ]
+    "en": ["Fail closed when no database record exists and invalidate stale fingerprints after product changes.", "Use one database state source while retaining language-selected course secondID generation at checkout.", "Remove the global pause action from the admin UI while leaving contract code and ABI unchanged."],
+    "zh": ["数据库无记录时默认关闭，产品变化后旧指纹自动失效。", "使用统一数据库状态源，同时保留结账时按学习语言生成课程 secondID 的逻辑。", "从后台界面移除全局暂停操作，合约代码及 ABI 保持不变。"]
   },
-  "validation": {
-    "en": [
-      "Run identity and classroom security suites, receipt-event behavior tests, calendar-boundary and concurrency tests, all tracked D1 migrations twice, the full test suite, TypeScript, lint, sensitive-data scan, and the verified production build before deployment."
-    ],
-    "zh": [
-      "部署前运行身份与课堂安全测试、收据事件行为测试、日历边界与并发测试、全部 D1 迁移双次执行、完整测试、TypeScript、静态检查、敏感信息扫描及已验证生产构建。"
-    ]
-  },
-  "deferred": {
-    "en": [
-      "This portfolio rollout does not include a real-wallet payment or multiparty realtime browser acceptance; those remain explicit operator acceptance cases."
-    ],
-    "zh": [
-      "本轮多站发布不包含真实钱包付款或多人实时浏览器验收；这些仍由运营方按需专项验收。"
-    ]
-  },
-  "siteAdaptations": {
-    "en": [
-      "Preserve the SmartLingo 12-language learning products, language-scoped course and price catalog, header, footer, referrals, certificates, Clerk, D1, R2, RealtimeKit, and independent infrastructure.",
-      "Use the SmartLingo-owned wallet connector namespace registered in the shared site manifest, without importing branding or runtime assets from another site."
-    ],
-    "zh": [
-      "保留 SmartLingo 的 12 语种学习产品、按语言区分的课程与价格目录、页眉页脚、推荐、证书、Clerk、D1、R2、RealtimeKit 及独立基础设施。",
-      "使用共享站点清单中登记的 SmartLingo 自有钱包连接器命名空间，不导入其他站点的品牌或运行资产。"
-    ]
-  },
-  "dataMigration": {
-    "included": true,
-    "migrations": [
-      "0180_gold3_clerk_identity",
-      "0181_gold3_classroom_identity"
-    ],
-    "rollback": {
-      "en": "Roll back the Worker to the previous verified release if required. The additive identity and classroom columns, indexes, and compatibility triggers may remain; review any completed Clerk user-ID rekeys before attempting manual data reversal, and never rewrite immutable SmartPay payerId or refId history.",
-      "zh": "如需回退，可将 Worker 回退到上一已验证版本。新增的身份与课堂字段、索引及兼容触发器可以保留；如已有 Clerk 用户 ID 重键，手工回退数据前须逐项审核，并绝不改写不可变的 SmartPay payerId 或 refId 历史。"
-    }
-  }
+  "validation": { "en": ["Run focused SmartPay5 state and language checkout tests, D1 migration replay, TypeScript, lint, build, and repository tests before publication."], "zh": ["发布前运行 SmartPay5 状态及语言结账专项、D1 迁移重放、TypeScript、lint、构建及仓库测试。"] },
+  "deferred": { "en": ["Real-wallet and browser acceptance are intentionally left to the site owner; contract redeployment is not required."], "zh": ["真实钱包及浏览器验收按要求由站点负责人执行；无需重新部署合约。"] },
+  "siteAdaptations": { "en": ["Preserve SmartLingo language communities, shared three-month tier prices, language-specific course secondIDs, classrooms, referrals, certificates, and independent infrastructure."], "zh": ["保留 SmartLingo 语言社区、共用三个月分级价格、按语言生成的课程 secondID、课堂、推荐、证书及独立基础设施。"] },
+  "dataMigration": { "included": true, "migrations": ["0182_smartpay5_payment_item_states.sql"], "rollback": { "en": "Roll back the application release before removing the new state table; existing SmartPay5 contract rules are untouched.", "zh": "如需回退，先回退应用版本再移除新状态表；现有 SmartPay5 链上规则不受影响。" } }
 }

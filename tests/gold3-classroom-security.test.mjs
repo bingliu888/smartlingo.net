@@ -123,7 +123,7 @@ test("legacy classroom grants remain unbound until the verified-user binding pat
 
 test("tracked classroom migrations pass fresh D1 replay and a second no-op", () => {
   const result = validateD1Migrations();
-  assert.equal(result.newestMigration, "0181_gold3_classroom_identity");
+  assert.equal(result.newestMigration, "0182_smartpay5_payment_item_states");
   assert.equal(result.firstRunApplied, result.migrationCount);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
@@ -177,8 +177,8 @@ test("Gold 3 classroom migration is additive and deployment applies D1 before bu
 
   assert.doesNotMatch(migration, /DROP\s+(?:TABLE|COLUMN)/i);
   assert.deepEqual(journal.entries.slice(-2).map(({ idx, tag }) => ({ idx, tag })), [
-    { idx: 74, tag: "0180_gold3_clerk_identity" },
     { idx: 75, tag: "0181_gold3_classroom_identity" },
+    { idx: 76, tag: "0182_smartpay5_payment_item_states" },
   ]);
   assert.ok(migrationStep >= 0 && migrationStep < buildStep && buildStep < deployStep);
 });

@@ -1,11 +1,11 @@
 import type { Address } from "viem";
 import { atomicTokenAmountToDisplay } from "./crypto-amount";
-import { cryptoRpcUrl } from "./crypto-rpc";
 import { activeCryptoSettings, type CryptoPaymentSetting } from "./crypto-settings";
-import { availableSmartPayCheckoutIdentity, configuredSmartPay5CheckoutScopes, smartPay5SettingsForContract, type SmartPayCheckoutOption } from "./smartpay-checkout";
+import { configuredSmartPay5CheckoutScopes, smartPay5SettingsForContract, type SmartPayCheckoutOption } from "./smartpay-checkout";
 import { cryptoSubscriptionIdsForCourse } from "./crypto-subscription";
-import { smartPay5RulePresets, smartPay5RulePresetStatus } from "./smartpay5-presets";
-import { smartPay5PaymentRules, smartPay5PayoutConfigurationRaw, verifySmartPay5Identity } from "./smartpay5-server";
+import { smartPay5EnabledPresets } from "./smartpay5-confirmation-control";
+import { smartPay5PaymentItemDatabaseState } from "./smartpay5-confirmation-store";
+import { smartPay5RulePresets } from "./smartpay5-presets";
 import { fixedCourseId } from "./smartlingo-course-packages";
 import {
   isSmartLingoCommunityLanguage,
@@ -20,18 +20,13 @@ export async function currentSmartPayCheckoutOptions(
   const settings = inputSettings ? [...inputSettings] : await activeCryptoSettings();
   const languages = selectedLanguage ? [selectedLanguage] : SMARTLINGO_COMMUNITY_LANGUAGE_CODES;
   return (await Promise.all(configuredSmartPay5CheckoutScopes(settings).map(async scope => {
-    const rpcUrl = await cryptoRpcUrl(scope.chainId);
-    if (!rpcUrl) return [] as SmartPayCheckoutOption[];
     const contractAddress = scope.contractAddress as Address;
-    const identity = await availableSmartPayCheckoutIdentity(() => verifySmartPay5Identity(rpcUrl, contractAddress));
-    if (!identity || identity.paused) return [] as SmartPayCheckoutOption[];
-    const [payouts, rules] = await Promise.all([smartPay5PayoutConfigurationRaw(rpcUrl, contractAddress), smartPay5PaymentRules(rpcUrl, contractAddress)]);
-    if (!payouts.length) return [] as SmartPayCheckoutOption[];
     const contractSettings = smartPay5SettingsForContract(settings, scope.chainId, contractAddress);
-    return smartPay5RulePresets(contractSettings, scope.chainId).flatMap(preset => {
-      const rule = smartPay5RulePresetStatus(preset, rules).rule;
-      if (!rule?.enabled || BigInt(rule.primaryTokenAmount) <= 0n) return [];
-      const fullPrimary = BigInt(rule.primaryTokenAmount), fullSecondary = BigInt(rule.secondaryTokenAmount);
+    const presets = smartPay5RulePresets(contractSettings, scope.chainId);
+    const state = await smartPay5PaymentItemDatabaseState(scope.chainId, presets);
+    return smartPay5EnabledPresets(presets, state.enabledPresetKeys).flatMap(preset => {
+      const fullPrimary = BigInt(preset.primaryTokenAmountAtomic), fullSecondary = BigInt(preset.secondaryTokenAmountAtomic);
+      if (fullPrimary <= 0n) return [];
       if (preset.mode === "dual" ? fullSecondary <= 0n : fullSecondary !== 0n) return [];
       const primaryNumerator = fullPrimary * BigInt(preset.primaryPercent);
       const secondaryNumerator = fullSecondary * BigInt(preset.secondaryPercent);
@@ -57,8 +52,8 @@ export async function currentSmartPayCheckoutOptions(
             secondaryTokenAddress: preset.secondaryTokenAddress, secondaryTokenSymbol: preset.secondaryTokenSymbol,
             secondaryTokenDecimals: preset.secondaryTokenDecimals, secondaryTokenAmountAtomic: secondaryAtomic.toString(),
             secondaryTokenAmount: atomicTokenAmountToDisplay(secondaryAtomic, preset.secondaryTokenDecimals), secondaryPercent: preset.secondaryPercent,
-            minimumSecondaryBalanceAtomic: rule.minimumSecondaryBalance,
-            minimumSecondaryBalance: atomicTokenAmountToDisplay(BigInt(rule.minimumSecondaryBalance), preset.secondaryTokenDecimals),
+            minimumSecondaryBalanceAtomic: preset.minimumSecondaryBalanceAtomic,
+            minimumSecondaryBalance: preset.minimumSecondaryBalance,
             mainId: ids.mainId, secondId: ids.secondId, minConfirmations,
           },
         } satisfies SmartPayCheckoutOption;
