@@ -39394,7 +39394,7 @@ export const BEGINNER_SEMANTIC_CONCEPTS = [
       "su"
     ],
     "meaningsZh": [
-      "u的亚种"
+      "他的；她的；它的；他们的；您的（用于名词前）"
     ],
     "mediaTier": "semantic-svg",
     "sheet": 14,

@@ -540,6 +540,13 @@
       "when": 1788566402000,
       "tag": "0182_smartpay5_payment_item_states",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "6",
+      "when": 1788775200000,
+      "tag": "0183_spanish_su_possessive_gloss",
+      "breakpoints": true
     }
   ]
 }

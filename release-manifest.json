@@ -1,79 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-challenge-single-submit-20260907-r1",
+  "releaseId": "smartlingo-net-spanish-su-gloss-20260907-r2",
   "site": "smartlingo.net",
   "title": {
-    "zh": "智慧卡挑战反馈期间防止重复提交",
-    "en": "Prevent repeated SmartCard challenge submissions during feedback"
+    "zh": "修正西班牙语 su 的学习释义",
+    "en": "Correct the Spanish learner gloss for su"
   },
   "purpose": {
-    "zh": "修复真实 QA 发现的挑战答案已提交后旧倒计时再次提交并覆盖反馈的问题。",
-    "en": "Fix the stale countdown resubmitting an answered challenge question and replacing its feedback during real QA."
+    "zh": "修复真实西班牙语 Sprint 第 2 天中 su 被显示为“u的亚种”的内容错误。",
+    "en": "Fix the incorrect Chinese gloss for su observed in the signed-in Spanish day-two Sprint."
   },
   "features": {
     "zh": [
-      "同一挑战会话中的每题只允许一个进行中或成功的提交。",
-      "失败请求解除该题锁定，并恢复所选答案的重试能力。"
+      "su 显示名词前的物主限定词含义；同步中文提示和视觉目录。"
     ],
     "en": [
-      "Allow one pending or successful submission per question in a challenge session.",
-      "Unlock failed requests and allow the selected answer to be retried."
+      "Show the possessive meaning used before nouns; synchronize learner prompts and visual metadata."
     ]
   },
   "affected": {
     "zh": [
-      "十二种目标语言的智慧卡限时挑战；普通练习仅恢复网络失败后的可重试选项。"
+      "西班牙语初级词汇、每日速成和共享词汇视觉；其他语言的同形词不变。"
     ],
     "en": [
-      "Timed SmartCard challenges in twelve target languages; ordinary practice only regains its selected option after a failed request."
+      "Spanish beginner vocabulary, Sprint and vocabulary visuals; same-form words in other languages are unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "使用同步提交门阻止旧 React 倒计时闭包在六秒反馈期间重新发送同一题。",
-      "保留服务端判分、当地日期题组及六秒自动推进，未写入合成学习成绩。"
+      "依据 RAE su 词条新增 0183 幂等数据修正，保留词汇身份和学习记录。",
+      "同步常用释义源、视觉源与生成目录，并纳入词库审计重放。"
     ],
     "en": [
-      "Use a synchronous submission gate to stop stale React countdown callbacks from resending a question during the six-second feedback interval.",
-      "Keep server grading, local-date question sets and automatic six-second progression; no synthetic learning scores are written."
+      "Add idempotent migration 0183 based on the RAE su entry, preserving vocabulary IDs and learning records.",
+      "Synchronize common overrides, visual source and generated catalog; include the correction in vocabulary audit replay."
     ]
   },
   "validation": {
     "zh": [
-      "回归覆盖请求进行中及成功反馈期间的重复倒计时，以及网络失败后的重试。",
-      "执行构建、全仓测试、lint、类型检查、D1 迁移重放、SmartPay5 合约测试、依赖审计和共享站点门禁。",
-      "中英文智慧卡页面在 390×844、430×932、820×1180、1180×820、1440×900 实际 Chrome 视口无横向溢出；发布后重测挑战。"
+      "专项测试验证西班牙语释义、意大利语同形词隔离和重复执行无变更。",
+      "执行完整构建、测试、lint、类型、迁移、合约、依赖、布局和共享站点门禁；发布后返回真实 Sprint 验证。"
     ],
     "en": [
-      "Regression coverage includes duplicate countdown submissions during pending requests and successful feedback, and retry after failure.",
-      "Run build, repository tests, lint, typecheck, D1 migration replay, SmartPay5 contract tests, dependency audit and shared site gates.",
-      "Chinese and English SmartCard pages show no horizontal overflow at five required real Chrome viewports; retest the challenge after deployment."
+      "Focused tests verify the Spanish meaning, isolation of Italian su and idempotency.",
+      "Run complete build, tests, lint, types, migrations, contracts, dependency, layout and shared-site gates; retest the real Sprint after deployment."
     ]
   },
   "deferred": {
     "zh": [
-      "每日四语言完整验收单独记录；本修复发布记录不代表整日 QA 通过。",
-      "计划任务保持跟读关闭，不请求麦克风权限。"
+      "本发布不代表每日四语言 QA 全部通过；完整真实会话记录另行报告。",
+      "跟读保持关闭，未请求麦克风权限。"
     ],
     "en": [
-      "The complete four-language daily acceptance is reported separately; this fix release does not claim a passing daily QA run.",
-      "Scheduled QA leaves repeat-after-me off and does not request microphone permission."
+      "This release does not claim a passing four-language daily QA run; the complete real-session report is separate.",
+      "Repeat-after-me remains off; no microphone permission requested."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "此修复属于 SmartLingo 学习挑战的站点专属逻辑；不迁移其他网站。"
+      "SmartLingo 专属学习内容修正，无跨站迁移。"
     ],
     "en": [
-      "This is SmartLingo-specific learning challenge logic; no other site is migrated."
+      "SmartLingo-specific learning-content correction; no cross-site rollout."
     ]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": [
+      "0183_spanish_su_possessive_gloss.sql"
+    ],
     "rollback": {
-      "zh": "回退应用至上一已验证提交，无数据库迁移或账本回写。",
-      "en": "Roll back the application to the previous verified commit; no database migration or ledger rewrite is needed."
+      "zh": "应用可回退至前一已验证提交；正确释义保留。若需更改数据，使用新的前向修正，不回写学习或账本。",
+      "en": "Revert application to the previous verified commit while retaining the corrected gloss. Any data correction must use a new forward migration without rewriting activity or ledgers."
     }
   }
 }

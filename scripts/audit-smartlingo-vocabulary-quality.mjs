@@ -76,6 +76,7 @@ for (const name of [
   ...afterCatalog,
   "0153_english_beginner_away_gloss.sql",
   "0154_vocabulary_learner_quality_sweep.sql",
+  "0183_spanish_su_possessive_gloss.sql",
 ]) database.exec(migration(name));
 
 const rows = database.prepare(`SELECT id,target_language AS language,level,sequence,form,

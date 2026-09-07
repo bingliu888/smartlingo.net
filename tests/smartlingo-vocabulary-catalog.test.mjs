@@ -55,6 +55,7 @@ test("all 48,000 published rows pass level, phonetic, aid, and provenance gates"
     learnerQualitySweepFile,
     frequencyDegreeFile,
     gradeOrderFile,
+    "0183_spanish_su_possessive_gloss.sql",
   ]) database.exec(readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
 
   const totals = database.prepare(`SELECT COUNT(*) AS total,COUNT(DISTINCT target_language) AS languages,
