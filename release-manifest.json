@@ -1,17 +1,79 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-smartpay5-db-product-control-20260905-r1",
+  "releaseId": "smartlingo-net-challenge-single-submit-20260907-r1",
   "site": "smartlingo.net",
-  "title": { "en": "SmartPay5 explicit course product controls", "zh": "SmartPay5 课程产品明确控制" },
-  "purpose": { "en": "Require an explicitly confirmed database fingerprint before a SmartLingo course payment item can be selected.", "zh": "要求 SmartLingo 课程付款项目具备数据库明确确认指纹后才可选择。" },
-  "features": { "en": ["Stop a confirmed shared course price without a wallet call and restore it only through on-chain Re-confirm verification."], "zh": ["无需调用钱包即可 Stop 已确认的共用课程价格，并仅在链上 Re-confirm 核验后恢复。"] },
-  "affected": { "en": ["SmartPay5 admin payment items, language-specific course payment options, and payment preparation."], "zh": ["SmartPay5 后台付款项目、按语言区分的课程付款选项及付款准备。"] },
-  "changes": {
-    "en": ["Fail closed when no database record exists and invalidate stale fingerprints after product changes.", "Use one database state source while retaining language-selected course secondID generation at checkout.", "Remove the global pause action from the admin UI while leaving contract code and ABI unchanged."],
-    "zh": ["数据库无记录时默认关闭，产品变化后旧指纹自动失效。", "使用统一数据库状态源，同时保留结账时按学习语言生成课程 secondID 的逻辑。", "从后台界面移除全局暂停操作，合约代码及 ABI 保持不变。"]
+  "title": {
+    "zh": "智慧卡挑战反馈期间防止重复提交",
+    "en": "Prevent repeated SmartCard challenge submissions during feedback"
   },
-  "validation": { "en": ["Run focused SmartPay5 state and language checkout tests, D1 migration replay, TypeScript, lint, build, and repository tests before publication."], "zh": ["发布前运行 SmartPay5 状态及语言结账专项、D1 迁移重放、TypeScript、lint、构建及仓库测试。"] },
-  "deferred": { "en": ["Real-wallet and browser acceptance are intentionally left to the site owner; contract redeployment is not required."], "zh": ["真实钱包及浏览器验收按要求由站点负责人执行；无需重新部署合约。"] },
-  "siteAdaptations": { "en": ["Preserve SmartLingo language communities, shared three-month tier prices, language-specific course secondIDs, classrooms, referrals, certificates, and independent infrastructure."], "zh": ["保留 SmartLingo 语言社区、共用三个月分级价格、按语言生成的课程 secondID、课堂、推荐、证书及独立基础设施。"] },
-  "dataMigration": { "included": true, "migrations": ["0182_smartpay5_payment_item_states.sql"], "rollback": { "en": "Roll back the application release before removing the new state table; existing SmartPay5 contract rules are untouched.", "zh": "如需回退，先回退应用版本再移除新状态表；现有 SmartPay5 链上规则不受影响。" } }
+  "purpose": {
+    "zh": "修复真实 QA 发现的挑战答案已提交后旧倒计时再次提交并覆盖反馈的问题。",
+    "en": "Fix the stale countdown resubmitting an answered challenge question and replacing its feedback during real QA."
+  },
+  "features": {
+    "zh": [
+      "同一挑战会话中的每题只允许一个进行中或成功的提交。",
+      "失败请求解除该题锁定，并恢复所选答案的重试能力。"
+    ],
+    "en": [
+      "Allow one pending or successful submission per question in a challenge session.",
+      "Unlock failed requests and allow the selected answer to be retried."
+    ]
+  },
+  "affected": {
+    "zh": [
+      "十二种目标语言的智慧卡限时挑战；普通练习仅恢复网络失败后的可重试选项。"
+    ],
+    "en": [
+      "Timed SmartCard challenges in twelve target languages; ordinary practice only regains its selected option after a failed request."
+    ]
+  },
+  "changes": {
+    "zh": [
+      "使用同步提交门阻止旧 React 倒计时闭包在六秒反馈期间重新发送同一题。",
+      "保留服务端判分、当地日期题组及六秒自动推进，未写入合成学习成绩。"
+    ],
+    "en": [
+      "Use a synchronous submission gate to stop stale React countdown callbacks from resending a question during the six-second feedback interval.",
+      "Keep server grading, local-date question sets and automatic six-second progression; no synthetic learning scores are written."
+    ]
+  },
+  "validation": {
+    "zh": [
+      "回归覆盖请求进行中及成功反馈期间的重复倒计时，以及网络失败后的重试。",
+      "执行构建、全仓测试、lint、类型检查、D1 迁移重放、SmartPay5 合约测试、依赖审计和共享站点门禁。",
+      "中英文智慧卡页面在 390×844、430×932、820×1180、1180×820、1440×900 实际 Chrome 视口无横向溢出；发布后重测挑战。"
+    ],
+    "en": [
+      "Regression coverage includes duplicate countdown submissions during pending requests and successful feedback, and retry after failure.",
+      "Run build, repository tests, lint, typecheck, D1 migration replay, SmartPay5 contract tests, dependency audit and shared site gates.",
+      "Chinese and English SmartCard pages show no horizontal overflow at five required real Chrome viewports; retest the challenge after deployment."
+    ]
+  },
+  "deferred": {
+    "zh": [
+      "每日四语言完整验收单独记录；本修复发布记录不代表整日 QA 通过。",
+      "计划任务保持跟读关闭，不请求麦克风权限。"
+    ],
+    "en": [
+      "The complete four-language daily acceptance is reported separately; this fix release does not claim a passing daily QA run.",
+      "Scheduled QA leaves repeat-after-me off and does not request microphone permission."
+    ]
+  },
+  "siteAdaptations": {
+    "zh": [
+      "此修复属于 SmartLingo 学习挑战的站点专属逻辑；不迁移其他网站。"
+    ],
+    "en": [
+      "This is SmartLingo-specific learning challenge logic; no other site is migrated."
+    ]
+  },
+  "dataMigration": {
+    "included": false,
+    "migrations": [],
+    "rollback": {
+      "zh": "回退应用至上一已验证提交，无数据库迁移或账本回写。",
+      "en": "Roll back the application to the previous verified commit; no database migration or ledger rewrite is needed."
+    }
+  }
 }

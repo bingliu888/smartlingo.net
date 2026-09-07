@@ -7,6 +7,7 @@ import { beginnerVocabularyImageKey } from "@/lib/smartlingo-vocabulary-images";
 import { VocabularyPicture } from "./VocabularyPicture";
 import { speakLearningText } from "@/lib/smartlingo-speech";
 import { vocabularyGradeLabel } from "@/lib/smartlingo-vocabulary-order";
+import { createChallengeSubmissionGate } from "@/lib/smartlingo-challenge-submission";
 type Card = {
     id: string;
     form: string;
@@ -135,6 +136,7 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice", d
     const claimAttempted = useRef(false);
     const challengeStarted = useRef(false);
     const timeoutSubmitted = useRef(false);
+    const challengeSubmissions = useRef(createChallengeSubmissionGate());
     const microphoneApproved = useRef(false);
     const speechAwarded = useRef(false);
     const challengeClock = useRef({ date: "", timeZone: "" });
@@ -187,7 +189,10 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice", d
     else
         void finish(); }
     async function choose(answerId: string) { if (!card || busy || phase !== "answer")
-        return; setBusy(true); evidence.current[index].choices.push(answerId); setChosenIds(current => [...current, answerId]); try {
+        return;
+        const questionKey = `${challengeSessionId}:${index}:${card.id}`;
+        if (gameMode === "challenge" && !challengeSubmissions.current.acquire(questionKey)) return;
+        setBusy(true); evidence.current[index].choices.push(answerId); setChosenIds(current => [...current, answerId]); try {
         const result = await post({ action: "check-answer", cardId: card.id, answerId, gameMode, sessionId: challengeSessionId });
         if(gameMode==="challenge"){
             setAnswerChecked(true); celebrateScore(result.correct?1:-1,false); setMessage(result.correct?(zh?"答对了！6 秒后进入下一题。":"Correct! Next question in 6 seconds."):(result.timedOut?(zh?"时间到，本题失败。6 秒后继续。":"Time is up. Next question in 6 seconds."):(zh?"本题答错。6 秒后进入下一题。":"Incorrect. Next question in 6 seconds.")));
@@ -212,6 +217,8 @@ export function PublicSmartCardChallenge({ lang, token, gameMode = "practice", d
         }
     }
     catch {
+        if (gameMode === "challenge") challengeSubmissions.current.retry(questionKey);
+        setChosenIds(current => current.filter(id => id !== answerId));
         setMessage(zh ? "网络暂时忙，请再点一次。" : "The network is busy. Please try again.");
     }
     finally {
