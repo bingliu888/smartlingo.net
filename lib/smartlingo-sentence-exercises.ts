@@ -47,7 +47,11 @@ function italianDestination(place: string) {
 const TARGET_BUILDERS: Record<SmartLingoLearningLanguage, TargetBuilder> = {
   zh: p => [`${p}在哪里？`, `我在找${p}。`, `请告诉我怎么去${p}。`, `${p}离这里远吗？`, `${p}现在开门吗？`, `我需要去${p}。`, `请带我去${p}。`, `我们可以在${p}见面吗？`, `去${p}要多长时间？`, `谢谢你帮我找到${p}。`],
   en: p => [`Where is ${p}?`, `I am looking for ${p}.`, `Please show me how to get to ${p}.`, `Is ${p} far from here?`, `Is ${p} open now?`, `I need to go to ${p}.`, `Please take me to ${p}.`, `Can we meet at ${p}?`, `How long does it take to reach ${p}?`, `Thank you for helping me find ${p}.`],
-  es: p => [`¿Dónde está ${p}?`, `Estoy buscando ${p}.`, `Por favor, dígame cómo llegar a ${p}.`, `¿Está ${p} lejos de aquí?`, `¿Está abierto ${p} ahora?`, `Necesito ir a ${p}.`, `Por favor, lléveme a ${p}.`, `¿Podemos encontrarnos en ${p}?`, `¿Cuánto se tarda en llegar a ${p}?`, `Gracias por ayudarme a encontrar ${p}.`],
+  es: p => {
+    const destination = p.startsWith("el ") ? `al ${p.slice(3)}` : `a ${p}`;
+    const open = p.startsWith("la ") ? "abierta" : "abierto";
+    return [`¿Dónde está ${p}?`, `Estoy buscando ${p}.`, `Por favor, dígame cómo llegar ${destination}.`, `¿Está ${p} lejos de aquí?`, `¿Está ${open} ${p} ahora?`, `Necesito ir ${destination}.`, `Por favor, lléveme ${destination}.`, `¿Podemos encontrarnos en ${p}?`, `¿Cuánto se tarda en llegar ${destination}?`, `Gracias por ayudarme a encontrar ${p}.`];
+  },
   ja: p => [`${p}はどこですか。`, `${p}を探しています。`, `${p}への行き方を教えてください。`, `${p}はここから遠いですか。`, `${p}は今開いていますか。`, `${p}へ行く必要があります。`, `${p}へ連れて行ってください。`, `${p}で会えますか。`, `${p}までどのくらいかかりますか。`, `${p}を探すのを手伝ってくれてありがとうございます。`],
   ko: p => [`${p}은 어디예요?`, `${p}을 찾고 있어요.`, `${p}에 가는 길을 알려 주세요.`, `${p}은 여기서 멀어요?`, `${p}은 지금 열려 있어요?`, `${p}에 가야 해요.`, `${p}에 데려다 주세요.`, `${p}에서 만날 수 있어요?`, `${p}까지 얼마나 걸려요?`, `${p}을 찾는 것을 도와주셔서 감사합니다.`],
   fr: p => [`Où se trouve ${p} ?`, `Je cherche ${p}.`, `Montrez-moi comment aller à ${p}, s’il vous plaît.`, `${p} est loin d’ici ?`, `${p} est ouvert maintenant ?`, `Je dois aller à ${p}.`, `Emmenez-moi à ${p}, s’il vous plaît.`, `Pouvons-nous nous retrouver à ${p} ?`, `Combien de temps faut-il pour aller à ${p} ?`, `Merci de m’aider à trouver ${p}.`],

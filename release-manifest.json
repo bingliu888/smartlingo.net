@@ -1,77 +1,100 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-spanish-su-gloss-20260907-r2",
+  "releaseId": "smartlingo-net-spanish-sentence-grammar-qa-20260907-r4",
   "site": "smartlingo.net",
   "title": {
-    "zh": "修正西班牙语 su 的学习释义",
-    "en": "Correct the Spanish learner gloss for su"
+    "zh": "修正西班牙语句库语法；9月7日真实QA仍有阻塞",
+    "en": "Correct Spanish sentence grammar; September 7 real QA remains blocked"
   },
   "purpose": {
-    "zh": "修复真实西班牙语 Sprint 第 2 天中 su 被显示为“u的亚种”的内容错误。",
-    "en": "Fix the incorrect Chinese gloss for su observed in the signed-in Spanish day-two Sprint."
+    "zh": "修复真实写作第6题出现 a el banco 的错误，并报告已取得的四语言生产学习证据和未通过项。",
+    "en": "Fix a el banco observed in real writing question six, and report verified four-language production learning evidence and unmet acceptance items."
   },
   "features": {
     "zh": [
-      "su 显示名词前的物主限定词含义；同步中文提示和视觉目录。"
+      "去向表达采用 al，阴性地点开放状态采用 abierta。",
+      "每日QA明确记录真实成绩与工具限制，不宣称全部通过。"
     ],
     "en": [
-      "Show the possessive meaning used before nouns; synchronize learner prompts and visual metadata."
+      "Use al in destination phrases and abierta for feminine places.",
+      "Daily QA records real scores and tool limitations without claiming an overall pass."
     ]
   },
   "affected": {
     "zh": [
-      "西班牙语初级词汇、每日速成和共享词汇视觉；其他语言的同形词不变。"
+      "西班牙语三级课程的写作及听力句库，共99条修正；其他语言及成绩账本不变。"
     ],
     "en": [
-      "Spanish beginner vocabulary, Sprint and vocabulary visuals; same-form words in other languages are unchanged."
+      "Spanish writing and listening sentence catalogs at three levels: 99 corrected rows; other languages and score ledgers are unchanged by this migration."
     ]
   },
   "changes": {
     "zh": [
-      "依据 RAE su 词条新增 0183 幂等数据修正，保留词汇身份和学习记录。",
-      "同步常用释义源、视觉源与生成目录，并纳入词库审计重放。"
+      "0184 前向迁移更新句子与词块，保留句子ID、版本、每日选题与学习记录。",
+      "同步运行时构句规则并回归验证完整4320句数据库镜像和重复迁移无变更。",
+      "补记本地重放清单遗漏的既有0156句库迁移，确保全新数据库先建句库再修正；不修改已应用迁移。",
+      "将开发工具链间接依赖 sharp 固定到已修复的0.35.4，清除发布前依赖审计发现的4个高等级告警。"
     ],
     "en": [
-      "Add idempotent migration 0183 based on the RAE su entry, preserving vocabulary IDs and learning records.",
-      "Synchronize common overrides, visual source and generated catalog; include the correction in vocabulary audit replay."
+      "Forward migration 0184 updates sentences and tokens while preserving IDs, version, daily selection and activity.",
+      "Synchronize runtime grammar and verify all 4,320 catalog rows plus idempotent replay.",
+      "Register the existing0156 catalog migration missing from local replay so a fresh database creates the catalog before correction; applied SQL remains immutable.",
+      "Pin the transitive sharp dependency in the development toolchain to fixed version 0.35.4, clearing four high-severity findings from the release dependency audit."
     ]
   },
   "validation": {
     "zh": [
-      "专项测试验证西班牙语释义、意大利语同形词隔离和重复执行无变更。",
-      "执行完整构建、测试、lint、类型、迁移、合约、依赖、布局和共享站点门禁；发布后返回真实 Sprint 验证。"
+      "真实Chrome、中文界面、专用QA学习者test1；2026-09-07 路由预检34109185631仅为32/32匿名可用性证据。36课程各120句，两类每日各10个唯一题通过。",
+      "英语：计划1分钟，记录连续练习块127.620秒；深度写作/功能课程。Sprint80及+25已在成绩记录保存；阅读/文本对话/完整10题写作各100；智慧卡5→6、140→150；生活口语与TOP25已检查。",
+      "日语：计划1分钟，记录练习块61.365秒；深度写作/功能生活口语。Sprint80及+25已保存；阅读和文本对话各100；写作1→3、听力1→2反馈正确；智慧卡5→6、140→150；生活口语成对对话及TOP25已检查。",
+      "西班牙语：计划3分钟，记录练习块196.360秒（包含语法题审批等待，不能据此宣称严格净时长通过）；深度词汇/功能Sprint。Sprint80及+25已保存；阅读/文本对话100；词汇加练至第10张；智慧卡5→6、140→150；生活口语和TOP25已检查。",
+      "意大利语：计划2分钟，记录练习块169.247秒；深度写作/功能智慧卡。Sprint60及+12已保存（听力误答、无麦克风口语0）；阅读/文本对话/完整10题写作100；智慧卡5→7、140→160；生活口语成对对话和TOP25已检查。",
+      "四语言均完成Sprint五技能；首页图片和Play两处选择器均实际打开，12语言、4时长、默认10分钟及选择5分钟已检查。Dashboard五组、独立添加入口、中文共享导航和我的菜单可达。",
+      "社区Mika、Leo、Aya明确标为AI；已与Mika启动真实轮流练习。未启用真人Nearby或位置分享。跟读始终关闭，未请求麦克风权限。",
+      "前一挑战修复ab0ce817966f0924167a02d0a7bc8e41aa9767f9，部署34111083003成功；生产观察超时后六秒自动推进，日语開始→开始已点击，但成功反馈窗口未完整捕获。",
+      "执行完整构建、测试、lint、类型、迁移重放、SmartPay5、依赖审计、敏感扫描、240视口布局和共享站点门禁；部署后回到真实西班牙语组句复测。"
     ],
     "en": [
-      "Focused tests verify the Spanish meaning, isolation of Italian su and idempotency.",
-      "Run complete build, tests, lint, types, migrations, contracts, dependency, layout and shared-site gates; retest the real Sprint after deployment."
+      "Real Chrome, Chinese interface, dedicated QA learner test1, Pacific date 2026-09-07. Preflight 34109185631 only proves 32/32 anonymous routes. All 36 courses retain 120 sentences and ten unique daily items per mode.",
+      "English: planned 1 minute; recorded interaction block 127.620 seconds; writing/course focus. Persisted Sprint80/+25; reading, text dialogue and complete ten-item writing100; SmartCard5→6 and140→150; Everyday and TOP25 inspected.",
+      "Japanese: planned1 minute; recorded blocks61.365 seconds; writing/Everyday focus. Persisted Sprint80/+25, reading/dialogue100; correct writing1→3 and listening1→2; SmartCard5→6 and140→150; paired Everyday and TOP25 inspected.",
+      "Spanish: planned3 minutes; recorded blocks196.360 seconds include grammar-item approval waiting and cannot certify a strict net-time pass; vocabulary/Sprint focus. Persisted Sprint80/+25, reading/dialogue100; vocabulary extended through card10; SmartCard5→6 and140→150; Everyday and TOP25 inspected.",
+      "Italian: planned2 minutes; recorded blocks169.247 seconds; writing/SmartCard focus. Persisted Sprint60/+12 (incorrect listening; no-microphone speaking0); reading/dialogue/full writing100; SmartCard5→7 and140→160; paired Everyday and TOP25 inspected.",
+      "All four completed five-skill Sprint rounds. Both homepage image and Play dialogs were activated:12 languages,4 durations,default10 and selected5 minutes. Dashboard groups, independent add entries, Chinese header destinations and Me menu verified.",
+      "Mika, Leo and Aya explicitly labeled AI; a real turn-taking exercise started with Mika. Real-member Nearby and location sharing remain off. Repeat-after-me remained off; no microphone permission requested.",
+      "Prior challenge fix ab0ce817966f0924167a02d0a7bc8e41aa9767f9 deployed successfully in34111083003. Production timeout feedback auto-advanced after six seconds; Japanese開始→开始 was clicked but its full successful-feedback window was not captured.",
+      "Run full build/tests/lint/types/migrations/SmartPay5/dependency audit/sensitive scan/240-layout matrix/shared gates; retest the Spanish sentence in real Chrome after deployment."
     ]
   },
   "deferred": {
     "zh": [
-      "本发布不代表每日四语言 QA 全部通过；完整真实会话记录另行报告。",
-      "跟读保持关闭，未请求麦克风权限。"
+      "每日总体未通过：Chrome工具往返经常超过挑战10秒，未完整证明四语言限时作答反馈。自动审批拒绝未核实音频的听力提交；已检查的单题反馈不等于完整听力保存。",
+      "支付、推荐、证书均未执行写入动作；无可用Cloudflare交互式令牌，未取得前后账本快照，不能声称已完成账本不变验证。真实Sprint奖励共87、智慧卡观察增加50；课程复习也产生正常学习XP。",
+      "西班牙语第2天额外Sprint在su缺陷处中止；语法修复及su发布后复测另记。各语言社区单独轮流活动与全部听写保存仍需补验。"
     ],
     "en": [
-      "This release does not claim a passing four-language daily QA run; the complete real-session report is separate.",
-      "Repeat-after-me remains off; no microphone permission requested."
+      "Overall daily QA is not passing: Chrome round trips frequently exceed the10-second challenge limit; complete answer-feedback evidence is missing across four languages. Automatic review rejected an audio-unverified listening submission; checked individual feedback does not prove complete listening persistence.",
+      "No payment/referral/certificate write actions were performed. Without an available interactive Cloudflare token, before/after ledger snapshots were not obtained; ledger invariance is unverified. Legitimate observed Sprint rewards total87 and SmartCard increases50; course reviews also created normal learning XP.",
+      "The additional Spanish day-two Sprint stopped at the su defect. Post-deploy grammar and su retests are recorded separately. Per-language Community turns and complete listening/writing persistence still need acceptance."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "SmartLingo 专属学习内容修正，无跨站迁移。"
+      "SmartLingo课程内容和QA报告专属，无跨站发布。"
     ],
     "en": [
-      "SmartLingo-specific learning-content correction; no cross-site rollout."
+      "SmartLingo-specific course content and QA evidence; no cross-site release."
     ]
   },
   "dataMigration": {
     "included": true,
     "migrations": [
-      "0183_spanish_su_possessive_gloss.sql"
+      "0156_graded_scenario_sentence_catalog.sql (existing migration registered for local replay)",
+      "0184_spanish_sentence_grammar.sql"
     ],
     "rollback": {
-      "zh": "应用可回退至前一已验证提交；正确释义保留。若需更改数据，使用新的前向修正，不回写学习或账本。",
-      "en": "Revert application to the previous verified commit while retaining the corrected gloss. Any data correction must use a new forward migration without rewriting activity or ledgers."
+      "zh": "可回退应用至9d1a7cc；修正句库保留。后续内容变化采用前向迁移，不恢复错误词序或回写学习账本。",
+      "en": "Application may revert to9d1a7cc while retaining corrected catalog text. Further content changes use forward migrations without restoring incorrect grammar or rewriting learning ledgers."
     }
   }
 }

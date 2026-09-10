@@ -547,6 +547,20 @@
       "when": 1788775200000,
       "tag": "0183_spanish_su_possessive_gloss",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1788775200500,
+      "tag": "0156_graded_scenario_sentence_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "6",
+      "when": 1788775201000,
+      "tag": "0184_spanish_sentence_grammar",
+      "breakpoints": true
     }
   ]
 }

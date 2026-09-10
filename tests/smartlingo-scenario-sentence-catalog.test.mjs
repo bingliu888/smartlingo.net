@@ -15,8 +15,24 @@ const sql = readFileSync(new URL("../drizzle/0156_graded_scenario_sentence_catal
 function catalog() {
   const database = new DatabaseSync(":memory:");
   database.exec(sql);
+  database.exec(readFileSync(new URL("../drizzle/0184_spanish_sentence_grammar.sql", import.meta.url), "utf8"));
   return database;
 }
+
+test("Spanish destinations contract al and opening descriptions agree with the place", () => {
+  for (const level of levels) {
+    const rows = buildCourseSentenceBank("es", level);
+    assert.ok(rows.find(row => row.scenario === "bank" && row.functionId === "need").targetSentence.startsWith("Necesito ir al banco."));
+    assert.ok(rows.find(row => row.scenario === "school" && row.functionId === "need").targetSentence.startsWith("Necesito ir a la escuela."));
+    assert.ok(rows.find(row => row.scenario === "cafe" && row.functionId === "hours").targetSentence.startsWith("¿Está abierta la cafetería ahora?"));
+    for (const row of rows) assert.doesNotMatch(row.targetSentence, /\ba el\b|\babierto la\b/);
+  }
+  const database = catalog();
+  const before = database.prepare("SELECT * FROM smartlingo_scenario_sentences ORDER BY id").all();
+  database.exec(readFileSync(new URL("../drizzle/0184_spanish_sentence_grammar.sql", import.meta.url), "utf8"));
+  assert.deepEqual(database.prepare("SELECT * FROM smartlingo_scenario_sentences ORDER BY id").all(), before);
+  database.close();
+});
 
 test("graded scenario catalog contains 4,320 published rows with complete course coverage", () => {
   const database = catalog();

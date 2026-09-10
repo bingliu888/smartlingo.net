@@ -123,7 +123,7 @@ test("legacy classroom grants remain unbound until the verified-user binding pat
 
 test("tracked classroom migrations pass fresh D1 replay and a second no-op", () => {
   const result = validateD1Migrations();
-  assert.equal(result.newestMigration, "0183_spanish_su_possessive_gloss");
+  assert.equal(result.newestMigration, "0184_spanish_sentence_grammar");
   assert.equal(result.firstRunApplied, result.migrationCount);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
@@ -176,10 +176,12 @@ test("Gold 3 classroom migration is additive and deployment applies D1 before bu
   const deployStep = workflow.indexOf("- name: Deploy Worker");
 
   assert.doesNotMatch(migration, /DROP\s+(?:TABLE|COLUMN)/i);
-  assert.deepEqual(journal.entries.slice(-3).map(({ idx, tag }) => ({ idx, tag })), [
+  assert.deepEqual(journal.entries.slice(-5).map(({ idx, tag }) => ({ idx, tag })), [
     { idx: 75, tag: "0181_gold3_classroom_identity" },
     { idx: 76, tag: "0182_smartpay5_payment_item_states" },
     { idx: 77, tag: "0183_spanish_su_possessive_gloss" },
+    { idx: 78, tag: "0156_graded_scenario_sentence_catalog" },
+    { idx: 79, tag: "0184_spanish_sentence_grammar" },
   ]);
   assert.ok(migrationStep >= 0 && migrationStep < buildStep && buildStep < deployStep);
 });
