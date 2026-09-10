@@ -19,6 +19,21 @@ test("SmartLingo classroom data and media are isolated", () => {
   assert.doesNotMatch(config, /6600026b-1e03-40e9-a8cf-49802ca50c2d/);
 });
 
+test("classroom media controls follow live tracks and repair missing receivers",()=>{
+  const client=read("components/live-class-room-client.tsx");
+  const css=read("app/[lang]/classrooms/classrooms.css");
+  assert.match(client,/createLocalMediaHealthMonitor/);
+  assert.match(client,/createRemoteMediaRecovery/);
+  assert.match(client,/client\.participants\.subscribe\(ids, \["audio"\]\)/);
+  assert.match(client,/client\.participants\.subscribe\(ids, \["video"\]\)/);
+  assert.doesNotMatch(client,/participants\.subscribe\(ids, \["audio", "video"\]\)/);
+  assert.match(client,/pendingMedia\?\.mic \?\? mic/);
+  assert.match(client,/playbackConfirmed \? "on" : "pending"/);
+  assert.match(client,/mediaOperationBusy\.current/);
+  assert.match(client,/addingSecondDevice/);
+  assert.match(css,/button\.pending\{border-color:#d86b19;background:#e77820/);
+});
+
 test("classroom publishing honors group, webinar, and livestream contracts",()=>{
   const rooms=read("lib/live-classrooms.ts");
   const join=read("app/api/classrooms/[code]/join/route.ts");

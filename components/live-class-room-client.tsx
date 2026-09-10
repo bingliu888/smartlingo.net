@@ -26,6 +26,11 @@ import {
 } from "@/lib/class-realtime-participant-state";
 import { classRoomWaitingCopy } from "@/lib/class-room-waiting-copy";
 import { classPollDelay } from "@/lib/realtime-client-budget";
+import {
+  createLocalMediaHealthMonitor,
+  publishedLocalTrackIsLive,
+} from "@/lib/local-media-health";
+import { createRemoteMediaRecovery } from "@/lib/remote-media-recovery";
 
 type RealtimeMode = "group_call" | "webinar" | "livestream";
 type Room = {
@@ -172,36 +177,60 @@ function SpeakerIcon({ off = false }: { off?: boolean }) {
 }
 
 function AudioTrack({
+  id,
   track,
   enabled,
   onBlocked,
+  onPlaybackChange,
 }: {
+  id: string;
   track: MediaStreamTrack;
   enabled: boolean;
   onBlocked: () => void;
+  onPlaybackChange: (id: string, playing: boolean) => void;
 }) {
   const ref = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     const audio = ref.current;
     if (!audio) return;
+    const playing = () => onPlaybackChange(id, true),
+      stopped = () => onPlaybackChange(id, false);
+    audio.addEventListener("playing", playing);
+    audio.addEventListener("pause", stopped);
+    audio.addEventListener("ended", stopped);
+    audio.addEventListener("emptied", stopped);
     audio.srcObject = new MediaStream([track]);
-    if (enabled) void audio.play().catch(onBlocked);
-    else audio.pause();
+    if (enabled)
+      void audio.play().catch(() => {
+        stopped();
+        onBlocked();
+      });
+    else {
+      audio.pause();
+      stopped();
+    }
     return () => {
       audio.pause();
       audio.srcObject = null;
+      stopped();
+      audio.removeEventListener("playing", playing);
+      audio.removeEventListener("pause", stopped);
+      audio.removeEventListener("ended", stopped);
+      audio.removeEventListener("emptied", stopped);
     };
-  }, [enabled, onBlocked, track]);
+  }, [enabled, id, onBlocked, onPlaybackChange, track]);
   return <audio ref={ref} autoPlay={enabled} />;
 }
 function ParticipantsAudio({
   client,
   enabled,
   onBlocked,
+  onPlaybackChange,
 }: {
   client: RTKClient;
   enabled: boolean;
   onBlocked: () => void;
+  onPlaybackChange: (id: string, playing: boolean) => void;
 }) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -231,9 +260,11 @@ function ParticipantsAudio({
       {[...peers.values()].map((peer) => (
         <AudioTrack
           key={peer.id}
+          id={`participant:${peer.id}`}
           track={peer.track}
           enabled={enabled}
           onBlocked={onBlocked}
+          onPlaybackChange={onPlaybackChange}
         />
       ))}
     </>
@@ -243,10 +274,12 @@ function LivestreamPlayer({
   client,
   enabled,
   onBlocked,
+  onPlaybackChange,
 }: {
   client: RTKClient;
   enabled: boolean;
   onBlocked: () => void;
+  onPlaybackChange: (id: string, playing: boolean) => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null),
     [url, setUrl] = useState(""),
@@ -268,6 +301,12 @@ function LivestreamPlayer({
   useEffect(() => {
     const video = ref.current;
     if (!video || !url || state !== "LIVESTREAMING") return;
+    const playing = () => onPlaybackChange("livestream", true),
+      stopped = () => onPlaybackChange("livestream", false);
+    video.addEventListener("playing", playing);
+    video.addEventListener("pause", stopped);
+    video.addEventListener("ended", stopped);
+    video.addEventListener("emptied", stopped);
     const source = `${url}?dvrEnabled=true`;
     video.muted = !enabled;
     let hls: Hls | null = null;
@@ -277,24 +316,41 @@ function LivestreamPlayer({
       hls.attachMedia(video);
       hls.on(
         Hls.Events.MANIFEST_PARSED,
-        () => void video.play().catch(onBlocked),
+        () =>
+          void video.play().catch(() => {
+            stopped();
+            onBlocked();
+          }),
       );
     } else {
       video.src = source;
-      void video.play().catch(onBlocked);
+      void video.play().catch(() => {
+        stopped();
+        onBlocked();
+      });
     }
     return () => {
       video.pause();
+      stopped();
+      video.removeEventListener("playing", playing);
+      video.removeEventListener("pause", stopped);
+      video.removeEventListener("ended", stopped);
+      video.removeEventListener("emptied", stopped);
       if (hls) hls.destroy();
       else video.removeAttribute("src");
     };
-  }, [enabled, onBlocked, state, url]);
+  }, [enabled, onBlocked, onPlaybackChange, state, url]);
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
     video.muted = !enabled;
-    if (enabled) void video.play().catch(onBlocked);
-  }, [enabled, onBlocked]);
+    if (enabled)
+      void video.play().catch(() => {
+        onPlaybackChange("livestream", false);
+        onBlocked();
+      });
+    else onPlaybackChange("livestream", false);
+  }, [enabled, onBlocked, onPlaybackChange]);
   return (
     <div className="class-livestream-player" data-state={state}>
       <video ref={ref} autoPlay playsInline muted={!enabled} />
@@ -366,14 +422,6 @@ function RemoteVideo({
       const current = readPeer();
       if (alive)
         setPeer((previous) => (previous === current ? previous : current));
-      if (
-        !current?.videoEnabled ||
-        !current.videoTrack ||
-        current.videoTrack.readyState !== "live"
-      )
-        void client.participants
-          .subscribe([peerId], ["audio", "video"])
-          .catch(() => undefined);
     };
     reconcile();
     const timer = window.setInterval(reconcile, 500);
@@ -472,8 +520,6 @@ function VideoGrid({
             ? current
             : ids,
         );
-        if (ids.length)
-          await client.participants.subscribe(ids, ["audio", "video"]);
         setRevision((value) => value + 1);
       } catch {}
     };
@@ -602,6 +648,8 @@ function ConnectedRoom({
   role,
   mic,
   camera,
+  micLive,
+  cameraLive,
   lang,
   onMedia,
   onLeave,
@@ -615,6 +663,8 @@ function ConnectedRoom({
   role: Role;
   mic: boolean;
   camera: boolean;
+  micLive: boolean;
+  cameraLive: boolean;
   lang: "en" | "zh";
   onMedia: (mic: boolean, camera: boolean) => Promise<void>;
   onLeave: () => void;
@@ -630,9 +680,21 @@ function ConnectedRoom({
     [confirmLeave, setConfirmLeave] = useState(false),
     [recordings, setRecordings] = useState<RecordingArtifact[]>([]),
     [recordingActive, setRecordingActive] = useState(false),
-    [recordingBusy, setRecordingBusy] = useState(false);
-  const subscribedPeers = useRef(new Set<string>());
-  const cameraBeforeScreenShare = useRef(false);
+    [recordingBusy, setRecordingBusy] = useState(false),
+    [changingMedia, setChangingMedia] = useState(false),
+    [pendingMedia, setPendingMedia] = useState<{ mic: boolean; camera: boolean } | null>(null),
+    [playbackConfirmed, setPlaybackConfirmed] = useState(false);
+  const audioSubscribedPeers = useRef(new Set<string>()),
+    videoSubscribedPeers = useRef(new Set<string>()),
+    cameraBeforeScreenShare = useRef(false),
+    changingMediaRef = useRef(false),
+    playingSources = useRef(new Set<string>());
+  const onPlaybackChange = useCallback((id: string, playing: boolean) => {
+    if (playing) playingSources.current.add(id);
+    else playingSources.current.delete(id);
+    setPlaybackConfirmed(playingSources.current.size > 0);
+  }, []);
+  const onPlaybackBlocked = useCallback(() => setBlocked(true), []);
   useEffect(() => {
     const started = Date.now();
     const timer = window.setInterval(
@@ -645,29 +707,67 @@ function ConnectedRoom({
     if (room.realtimeMode === "livestream" && role === "viewer") return;
     let alive = true;
     const setViewMode = client.participants.setViewMode;
-    if (typeof setViewMode === "function")
-      void setViewMode
-        .call(client.participants, "MANUAL")
-        .catch(() => undefined);
-    const subscribe = async () => {
-      const joined = client.participants.joined.toArray(),
-        peers = joined.length
-          ? joined
-          : await client.participants.getAllJoinedPeers("", 100, 0),
-        ids = peers
-          .map((peer) => peer.id)
-          .filter((id) => id && !subscribedPeers.current.has(id));
-      if (!alive || !ids.length) return;
-      await client.participants.subscribe(ids, ["audio", "video"]);
-      ids.forEach((id) => subscribedPeers.current.add(id));
+    const peers = (kind: "audio" | "video") => {
+      const map = new Map<
+        string,
+        {
+          id: string;
+          enabled?: boolean;
+          track?: MediaStreamTrack;
+        }
+      >();
+      [
+        client.participants.joined,
+        client.participants.active,
+        client.participants.audioSubscribed,
+        client.participants.videoSubscribed,
+      ].forEach((participants) =>
+        participants.toArray().forEach((peer) => {
+          if (!peer.id || peer.id === client.self.id) return;
+          map.set(peer.id, {
+            id: peer.id,
+            enabled:
+              kind === "audio" ? peer.audioEnabled : peer.videoEnabled,
+            track: (kind === "audio"
+              ? peer.audioTrack
+              : peer.videoTrack) as MediaStreamTrack | undefined,
+          });
+        }),
+      );
+      return [...map.values()];
     };
-    void subscribe().catch(() => undefined);
+    const audioRecovery = createRemoteMediaRecovery({
+        peers: () => peers("audio"),
+        subscribed: audioSubscribedPeers.current,
+        subscribe: (ids) => client.participants.subscribe(ids, ["audio"]),
+        unsubscribe: (ids) => client.participants.unsubscribe(ids, ["audio"]),
+      }),
+      videoRecovery = createRemoteMediaRecovery({
+        peers: () => peers("video"),
+        subscribed: videoSubscribedPeers.current,
+        subscribe: (ids) => client.participants.subscribe(ids, ["video"]),
+        unsubscribe: (ids) => client.participants.unsubscribe(ids, ["video"]),
+      }),
+      reconcile = () => {
+        if (!alive) return;
+        void audioRecovery.reconcile();
+        void videoRecovery.reconcile();
+      };
+    void (async () => {
+      if (typeof setViewMode === "function")
+        await setViewMode
+          .call(client.participants, "MANUAL")
+          .catch(() => undefined);
+      reconcile();
+    })();
     const timer = window.setInterval(
-      () => void subscribe().catch(() => undefined),
-      3000,
+      reconcile,
+      2000,
     );
     return () => {
       alive = false;
+      audioRecovery.stop();
+      videoRecovery.stop();
       window.clearInterval(timer);
     };
   }, [client, role, room.realtimeMode]);
@@ -751,6 +851,10 @@ function ConnectedRoom({
         .catch(() => setError("Unable to start livestream delivery."));
   }, [client, manager, room.realtimeMode]);
   async function change(nextMic: boolean, nextCamera: boolean) {
+    if (changingMediaRef.current) return;
+    changingMediaRef.current = true;
+    setChangingMedia(true);
+    setPendingMedia({ mic: nextMic, camera: nextCamera });
     setError("");
     try {
       if (
@@ -792,6 +896,10 @@ function ConnectedRoom({
       setError(
         issue instanceof Error ? issue.message : "Unable to change media",
       );
+    } finally {
+      changingMediaRef.current = false;
+      setChangingMedia(false);
+      setPendingMedia(null);
     }
   }
   async function send(event: React.FormEvent) {
@@ -890,7 +998,16 @@ function ConnectedRoom({
         </div>
         <nav>
           <button
-            className={mic ? "on" : ""}
+            className={
+              (pendingMedia?.mic ?? mic)
+                ? !pendingMedia && micLive
+                  ? "on"
+                  : "pending"
+                : ""
+            }
+            disabled={changingMedia}
+            aria-busy={Boolean(pendingMedia?.mic)}
+            aria-pressed={!pendingMedia && micLive}
             onClick={() => void change(!mic, camera)}
             aria-label={lang === "zh" ? "麦克风" : "Microphone"}
           >
@@ -898,7 +1015,16 @@ function ConnectedRoom({
           </button>
           {room.streamingMode === "video" && (
             <button
-              className={camera ? "on" : ""}
+              className={
+                (pendingMedia?.camera ?? camera)
+                  ? !pendingMedia && cameraLive
+                    ? "on"
+                    : "pending"
+                  : ""
+              }
+              disabled={changingMedia}
+              aria-busy={Boolean(pendingMedia?.camera)}
+              aria-pressed={!pendingMedia && cameraLive}
               onClick={() => void change(mic, !camera)}
               aria-label={lang === "zh" ? "摄像头" : "Camera"}
             >
@@ -961,7 +1087,9 @@ function ConnectedRoom({
             />
           )}
           <button
-            className={listening ? "on" : ""}
+            className={
+              listening ? (playbackConfirmed ? "on" : "pending") : ""
+            }
             onClick={() => {
               setListening((value) => !value);
               setBlocked(false);
@@ -1054,14 +1182,16 @@ function ConnectedRoom({
         <LivestreamPlayer
           client={client}
           enabled={listening}
-          onBlocked={() => setBlocked(true)}
+          onBlocked={onPlaybackBlocked}
+          onPlaybackChange={onPlaybackChange}
         />
       ) : (
         <>
           <ParticipantsAudio
             client={client}
             enabled={listening}
-            onBlocked={() => setBlocked(true)}
+            onBlocked={onPlaybackBlocked}
+            onPlaybackChange={onPlaybackChange}
           />
           {room.streamingMode === "video" && (
             <VideoGrid
@@ -1172,7 +1302,16 @@ export function LiveClassRoomClient({
     [humanStreamActive, setHumanStreamActive] = useState(false),
     [humanStreamSeen, setHumanStreamSeen] = useState(false),
     [hasAudience, setHasAudience] = useState(true),
-    joining = useRef(false);
+    [localTrackHealth, setLocalTrackHealth] = useState({
+      audio: false,
+      video: false,
+    }),
+    joining = useRef(false),
+    mediaOperationBusy = useRef(false),
+    mediaIntent = useRef({ mic: false, camera: false });
+  useEffect(() => {
+    mediaIntent.current = { mic, camera };
+  }, [camera, mic]);
   const disconnect = useCallback(
     async (report = true) => {
       const audioTrack = client?.self.audioTrack,
@@ -1207,6 +1346,8 @@ export function LiveClassRoomClient({
         }).catch(() => undefined);
       setMic(false);
       setCamera(false);
+      mediaIntent.current = { mic: false, camera: false };
+      setLocalTrackHealth({ audio: false, video: false });
       setJoined(false);
       setSessionToken("");
     },
@@ -1307,6 +1448,11 @@ export function LiveClassRoomClient({
         setRole(data.role || "viewer");
         setMic(nextMic);
         setCamera(nextCamera);
+        mediaIntent.current = { mic: nextMic, camera: nextCamera };
+        setLocalTrackHealth({
+          audio: publishedLocalTrackIsLive(next?.self, "audio"),
+          video: publishedLocalTrackIsLive(next?.self, "video"),
+        });
         setJoined(true);
       } catch (issue) {
         preparedAudioTrack?.stop();
@@ -1340,7 +1486,22 @@ export function LiveClassRoomClient({
   );
   const changeMedia = useCallback(
     async (nextMic: boolean, nextCamera: boolean) => {
+      if (mediaOperationBusy.current) return;
+      mediaOperationBusy.current = true;
+      try {
       if (nextMic || nextCamera) setLocalPublisherStarted(true);
+      const addingSecondDevice = Boolean(
+        client && joined &&
+          ((nextMic && !mic && camera) || (nextCamera && !camera && mic)),
+      );
+      if (addingSecondDevice) {
+        const permission = await navigator.mediaDevices.getUserMedia({
+          audio: nextMic,
+          video: nextCamera ? { facingMode: "user" } : false,
+        });
+        await connect({ publish: true, nextMic, nextCamera, preparedAudioTrack: permission.getAudioTracks()[0], preparedVideoTrack: permission.getVideoTracks()[0] });
+        return;
+      }
       if (role === "viewer" && (nextMic || nextCamera)) {
         const permission = await navigator.mediaDevices.getUserMedia({
           audio: nextMic,
@@ -1413,9 +1574,57 @@ export function LiveClassRoomClient({
       if (!response.ok) throw new Error("Unable to synchronize media state");
       setMic(nextMic);
       setCamera(nextCamera);
+      mediaIntent.current = { mic: nextMic, camera: nextCamera };
+      setLocalTrackHealth({
+        audio: publishedLocalTrackIsLive(client?.self, "audio"),
+        video: publishedLocalTrackIsLive(client?.self, "video"),
+      });
+      } finally {
+        mediaOperationBusy.current = false;
+      }
     },
-    [camera, client, connect, identity, manager, mic, role, room.code, room.realtimeMode, sessionToken],
+    [camera, client, connect, identity, joined, manager, mic, role, room.code, room.realtimeMode, sessionToken],
   );
+  useEffect(() => {
+    if (!joined || !client) {
+      setLocalTrackHealth({ audio: false, video: false });
+      return;
+    }
+    const monitor = createLocalMediaHealthMonitor({
+      snapshot: () => ({
+        audio: { expected: !mediaOperationBusy.current && mediaIntent.current.mic, live: publishedLocalTrackIsLive(client.self, "audio") },
+        video: { expected: !mediaOperationBusy.current && mediaIntent.current.camera, live: publishedLocalTrackIsLive(client.self, "video") },
+      }),
+      onHealth: (health) => setLocalTrackHealth((current) =>
+        current.audio === health.audio.live && current.video === health.video.live
+          ? current : { audio: health.audio.live, video: health.video.live }),
+      onStale: async (kinds) => {
+        if (mediaOperationBusy.current) return;
+        const next = { ...mediaIntent.current };
+        for (const kind of kinds) {
+          if (kind === "audio") { await client.self.disableAudio().catch(() => undefined); client.self.audioTrack?.stop(); next.mic = false; }
+          else { await client.self.disableVideo().catch(() => undefined); client.self.videoTrack?.stop(); next.camera = false; }
+        }
+        mediaIntent.current = next;
+        setMic(next.mic); setCamera(next.camera);
+        setLocalTrackHealth({ audio: publishedLocalTrackIsLive(client.self, "audio"), video: publishedLocalTrackIsLive(client.self, "video") });
+        await fetch(`/api/classrooms/${room.code}/media`, {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "media", identity, sessionToken, mic: next.mic, camera: next.camera }),
+        }).catch(() => undefined);
+        setError(lang === "zh" ? "麦克风或摄像头实时轨道已中断；按钮已同步为关闭，请再次点击恢复。" : "A microphone or camera track stopped. Its control is now off; tap it again to restore.");
+      },
+    });
+    const reconcile = () => void monitor.reconcile();
+    client.self.on("audioUpdate", reconcile); client.self.on("videoUpdate", reconcile);
+    document.addEventListener("visibilitychange", reconcile);
+    const timer = window.setInterval(reconcile, 2_000), first = window.setTimeout(reconcile, 0);
+    return () => {
+      monitor.stop(); window.clearTimeout(first); window.clearInterval(timer);
+      client.self.off("audioUpdate", reconcile); client.self.off("videoUpdate", reconcile);
+      document.removeEventListener("visibilitychange", reconcile);
+    };
+  }, [client, identity, joined, lang, room.code, sessionToken]);
   const reportLeave = useCallback(() => {
     void fetch(`/api/classrooms/${room.code}/media`, {
       method: "POST",
@@ -1585,6 +1794,8 @@ export function LiveClassRoomClient({
           role={role}
           mic={mic}
           camera={camera}
+          micLive={localTrackHealth.audio}
+          cameraLive={localTrackHealth.video}
           lang={lang}
           onMedia={changeMedia}
           onLeave={() => void leave()}
