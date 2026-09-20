@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
+const GIT_BINARY = process.env.GIT_BINARY || "git";
 const REQUIRED_SECTIONS = ["features", "affected", "changes", "validation", "deferred", "siteAdaptations"];
 const GENERIC_TITLES = new Set(["production release", "deployment", "maintenance", "successful deployment"]);
 
@@ -70,16 +71,16 @@ export function releaseNotes(manifest, language = "en") {
 function requireCurrentCommitManifest(manifest) {
   let hasParent = false;
   try {
-    execFileSync("git", ["rev-parse", "--verify", "HEAD^"], { stdio: "ignore" });
+    execFileSync(GIT_BINARY, ["rev-parse", "--verify", "HEAD^"], { stdio: "ignore" });
     hasParent = true;
   } catch {
-    const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], { encoding: "utf8" }).trim();
+    const shallow = execFileSync(GIT_BINARY, ["rev-parse", "--is-shallow-repository"], { encoding: "utf8" }).trim();
     if (shallow === "true") throw new Error("Release validation requires checkout history for at least two commits.");
   }
-  const changed = execFileSync("git", ["diff-tree", ...(hasParent ? [] : ["--root"]), "--no-commit-id", "--name-only", "-r", "HEAD", "--", "release-manifest.json"], { encoding: "utf8" }).trim();
+  const changed = execFileSync(GIT_BINARY, ["diff-tree", ...(hasParent ? [] : ["--root"]), "--no-commit-id", "--name-only", "-r", "HEAD", "--", "release-manifest.json"], { encoding: "utf8" }).trim();
   if (!changed) throw new Error("release-manifest.json must be updated in the deployment commit.");
   if (hasParent) {
-    const previous = JSON.parse(execFileSync("git", ["show", "HEAD^:release-manifest.json"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
+    const previous = JSON.parse(execFileSync(GIT_BINARY, ["show", "HEAD^:release-manifest.json"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
     if (previous.releaseId === manifest.releaseId) throw new Error("releaseId must change for every new deployment.");
   }
 }

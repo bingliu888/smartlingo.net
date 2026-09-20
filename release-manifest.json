@@ -1,43 +1,35 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-compact-wallet-refresh-20260919-r2",
+  "releaseId": "smartlingo-net-reown-managed-project-20260920-r3",
   "site": "smartlingo.net",
   "title": {
-    "zh": "钱包余额刷新入口聚焦优化",
-    "en": "Focused wallet balance refresh control"
+    "zh": "SmartLingo 可管理的钱包连接身份",
+    "en": "Managed WalletConnect identity for SmartLingo"
   },
   "purpose": {
-    "zh": "将占满结账宽度的余额刷新按钮改为钱包地址后的标准小刷新图标，使授权与付款成为清晰的主操作。",
-    "en": "Replace the full-width balance refresh button with a standard compact icon beside the wallet address so approval and payment remain the clear primary actions."
+    "zh": "将 SmartLingo 课程付款钱包发现切换到全站可管理的公开 Reown 项目，同时保留本站全部商务隔离边界。",
+    "en": "Move SmartLingo course-payment wallet discovery to the portfolio-managed public Reown project while preserving every site-specific commerce boundary."
   },
   "features": {
     "zh": [
-      "钱包地址后提供 32 像素标准刷新图标，并保留授权状态刷新、忙碌和禁用行为。",
-      "每次点击继续只发起一笔授权或付款交易，授权确认后等待链上额度同步。",
-      "保留站内余额、合约模拟与费用预检，由钱包在确认页计算最终 Gas limit。",
-      "服务端用交易哈希、TransactionID、收款身份和代币规则共同验证付款。"
+      "使用生产域名白名单已包含 smartlingo.net 的可管理 Reown WalletConnect Project ID。",
+      "增加契约测试，拒绝已停用的项目 ID 和依赖环境变量的钱包连接身份。"
     ],
     "en": [
-      "Provide a standard 32-pixel refresh icon beside the wallet address while preserving approval-status refresh, busy, and disabled behavior.",
-      "Continue to submit only one approval or payment transaction per click and wait for allowance propagation after confirmation.",
-      "Keep balance, contract simulation, and fee preflight while letting the wallet calculate the final gas limit.",
-      "Verify payment server-side against the transaction hash, TransactionID, recipient identity, and token rule."
+      "Use the managed Reown WalletConnect Project ID whose production domain allowlist includes smartlingo.net.",
+      "Add a contract test that rejects the retired project ID and environment-dependent WalletConnect identity."
     ]
   },
   "affected": {
-    "zh": ["SmartLingo 课程加密付款与权益入账"],
-    "en": ["SmartLingo course crypto checkout and entitlement reconciliation"]
+    "zh": ["SmartLingo 课程加密结账与管理员付款界面的 WalletConnect 钱包发现"],
+    "en": ["SmartLingo WalletConnect wallet discovery on course crypto checkout and admin payment surfaces"]
   },
   "changes": {
     "zh": [
-      "移除占满宽度的余额刷新按钮，并把同一刷新逻辑放到已连接钱包地址后的无障碍图标按钮。",
-      "Polygon 公共 RPC 增加独立供应商容错，避免单一节点异常阻塞权益核对。",
-      "保留 SmartLingo 独立课程、定价、合约与支付数据，不复制其他站点配置。"
+      "仅替换公开 Reown 项目标识；SmartLingo 课程、价格、合约、收款方、代币、密钥、数据及云资源均保持不变。"
     ],
     "en": [
-      "Remove the full-width balance refresh button and move the same refresh behavior into an accessible icon button beside the connected wallet address.",
-      "Add independent Polygon public RPC failover so one provider cannot strand entitlement reconciliation.",
-      "Preserve SmartLingo-specific courses, prices, contracts, and payment data without copying configuration from another site."
+      "Replace only the public Reown project identifier; keep SmartLingo courses, prices, contracts, payees, tokens, keys, data, and cloud resources unchanged."
     ]
   },
   "validation": {
