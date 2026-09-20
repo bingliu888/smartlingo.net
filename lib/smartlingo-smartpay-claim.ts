@@ -37,6 +37,7 @@ export async function claimSmartLingoCoursePayment(input: {
   targetUserId?: string;
   settingId: string;
   transactionId: string;
+  transactionHash?: string;
   classId?: string;
   supervisorRefId?: string | null;
 }) {
@@ -48,6 +49,8 @@ export async function claimSmartLingoCoursePayment(input: {
   const contract = setting.smartPay5Contract as Address;
   const transactionId = input.transactionId.trim().toLowerCase();
   if (!/^0x[a-f0-9]{64}$/.test(transactionId)) throw new Error("INVALID_TRANSACTION_ID");
+  const transactionHash = input.transactionHash?.trim().toLowerCase() || "";
+  if (transactionHash && !/^0x[a-f0-9]{64}$/.test(transactionHash)) throw new Error("INVALID_TRANSACTION_HASH");
 
   const existing = await database.prepare(`SELECT user_id AS userId,class_id AS classId,
     entitlement_status AS entitlementStatus,current_period_ends_at AS currentPeriodEnd
@@ -97,6 +100,7 @@ export async function claimSmartLingoCoursePayment(input: {
     contract,
     transactionId: transactionId as Hex,
     timestamp: record.timestamp,
+    transactionHash: transactionHash ? transactionHash as Hex : undefined,
   });
   const latestBlock = BigInt(await cryptoRpc<string>(rpcUrl, "eth_blockNumber", []));
   const receiptBlock = BigInt(receipt.blockNumber!);

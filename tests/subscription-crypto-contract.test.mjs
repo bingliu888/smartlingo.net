@@ -35,8 +35,10 @@ test("course prices, public catalog, and language or course-scoped wallet checko
   assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
   for (const marker of [
     "Connect wallet", "connectEvmWallet", "SMARTPAY5_ABI", "prepared.refId",
-    "eth_sendTransaction", "Refresh balances & gas", "Transaction hash", "lockedCourseId",
+    "sendEvmWalletTransaction", "waitForSmartPayApprovalTransition", "Refresh balances & gas", "Transaction hash", "lockedCourseId",
   ]) assert.ok(checkout.includes(marker), `missing ${marker}`);
+  assert.doesNotMatch(checkout, /for \(let approvals/);
+  assert.doesNotMatch(checkout, /provider\.request\(\{ method: "eth_sendTransaction"/);
   assert.match(checkout, /activeCourseId = selectedOption\?\.classId/);
   assert.match(checkout, /smartPayOptionsForLanguage/);
   assert.match(catalog, /Use crypto payment/);
@@ -101,6 +103,7 @@ test("site-isolated rails grant only the selected language and three-month crypt
   assert.doesNotMatch(claim, /PAYMENT_AMOUNT_MISMATCH|primaryTokenAmount\s*[!=]==?|secondaryTokenAmount\s*[!=]==?/);
   assert.doesNotMatch(claim, /record\.wallet.*(?:actor|target|profile)|wallet_address/);
   assert.match(claimRoute, /transactionId: String\(body\.paymentId \|\| ""\)/);
+  assert.match(claimRoute, /transactionHash: body\.transactionHash/);
   assert.doesNotMatch(claimRoute, /body\.(?:txHash|transactionId)/);
   assert.doesNotMatch(claimRoute, /emailVerified/);
   assert.match(findPayment, /boundedJsonBody/);
@@ -111,6 +114,8 @@ test("site-isolated rails grant only the selected language and three-month crypt
   assert.doesNotMatch(findPayment, /record\.(?:primary|secondary)TokenAmount\s*[!=]==?/);
   assert.doesNotMatch(findPayment, /txHash:\s*record\.transactionId/);
   assert.match(verify, /smartPay5TransactionIdFromReceipt/);
+  assert.match(verify, /transactionHash:/);
+  assert.match(claim, /transactionHash: transactionHash \?/);
   assert.doesNotMatch(verify, /emailVerified/);
   assert.match(verification, /Math\.min\(4, Math\.max\(1, requestedAttempts\)\)/);
   assert.match(purchase, /INSERT INTO smartlingo_course_subscriptions/);

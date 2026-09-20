@@ -8,6 +8,14 @@ export type EthereumProvider = {
   removeListener?(event: string, listener: (...args: unknown[]) => void): void;
 };
 
+export type EvmWalletTransaction = {
+  from: string;
+  to: string;
+  data: string;
+  gas?: string;
+  value?: string;
+};
+
 type InjectedEthereumProvider = EthereumProvider & {
   providers?: EthereumProvider[];
   isTokenPocket?: boolean;
@@ -87,6 +95,18 @@ async function loadWalletConnector(scriptId: string): Promise<WalletConnector> {
 const walletAddress = (value: unknown) => Array.isArray(value)
   ? value.find(account => typeof account === "string" && /^0x[a-fA-F0-9]{40}$/.test(account)) || ""
   : "";
+
+export async function currentEvmWalletAddress(provider: EthereumProvider) {
+  return walletAddress(await provider.request({ method: "eth_accounts" }));
+}
+
+/** Retain site-side simulation and balance checks, while allowing the active
+ * EIP-1193 wallet to calculate the final gas limit for its confirmation UI. */
+export async function sendEvmWalletTransaction(provider: EthereumProvider, transaction: EvmWalletTransaction) {
+  const params = { ...transaction };
+  delete params.gas;
+  return provider.request({ method: "eth_sendTransaction", params: [params] });
+}
 
 const tokenPocketProvider = (provider: EthereumProvider, label = "") => {
   const flags = provider as InjectedEthereumProvider & { isTokenpocket?: boolean };

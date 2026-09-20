@@ -27,3 +27,19 @@ export function walletRpcErrorData(error: unknown) {
   }
   return null;
 }
+
+export function walletRpcErrorCode(error: unknown) {
+  const pending: unknown[] = [error];
+  const seen = new Set<unknown>();
+  while (pending.length) {
+    const value = pending.shift();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    if (typeof value !== "object") continue;
+    const record = value as Record<string, unknown>;
+    if (typeof record.code === "number") return record.code;
+    if (typeof record.code === "string" && /^-?\d+$/.test(record.code)) return Number(record.code);
+    for (const key of ["data", "error", "cause", "originalError"]) if (record[key] != null) pending.push(record[key]);
+  }
+  return null;
+}

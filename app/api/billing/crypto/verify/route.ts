@@ -34,16 +34,16 @@ export async function POST(request: Request) {
     const body = await boundedJsonBody<VerifyInput>(request, 8 * 1024);
     const settingId = String(body.settingId || "");
     let paymentId = String(body.paymentId || "").trim().toLowerCase();
+    const transactionHash = String(body.txHash || "").trim().toLowerCase();
     if (!/^0x[a-f0-9]{64}$/.test(paymentId)) {
-      const txHash = String(body.txHash || "").trim().toLowerCase();
-      if (!/^0x[a-f0-9]{64}$/.test(txHash))
+      if (!/^0x[a-f0-9]{64}$/.test(transactionHash))
         return Response.json({ error: "Enter a valid transaction hash" }, { status: 400 });
       const setting = await cryptoPaymentSettingById(settingId);
       if (!setting?.smartPay5Contract || !isAddress(setting.smartPay5Contract))
         return Response.json({ error: "The selected on-chain course rule is unavailable" }, { status: 409 });
       const rpcUrl = await cryptoRpcUrl(setting.chainId);
       if (!rpcUrl) return Response.json({ error: "RPC_UNAVAILABLE" }, { status: 503 });
-      const receipt = await cryptoRpc<Receipt>(rpcUrl, "eth_getTransactionReceipt", [txHash]);
+      const receipt = await cryptoRpc<Receipt>(rpcUrl, "eth_getTransactionReceipt", [transactionHash]);
       if (!receipt?.status) return Response.json({ error: "Transaction receipt is still propagating" }, { status: 425 });
       if (receipt.status !== "0x1") return Response.json({ error: "Transaction is not confirmed successfully" }, { status: 422 });
       paymentId = smartPay5TransactionIdFromReceipt(receipt.logs || [], setting.smartPay5Contract as Address) || "";
@@ -53,6 +53,7 @@ export async function POST(request: Request) {
       actor,
       settingId,
       transactionId: paymentId,
+      transactionHash: /^0x[a-f0-9]{64}$/.test(transactionHash) ? transactionHash : undefined,
       classId: String(body.classId || ""),
       supervisorRefId: body.supervisorRefId || undefined,
     }));

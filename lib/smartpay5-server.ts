@@ -4,6 +4,7 @@ import smartPay5ArtifactJson from "../contracts/artifacts/SmartPay5.json";
 import { cryptoRpc } from "./crypto-rpc";
 import { SMARTPAY5_ABI, SMARTPAY5_TRANSACTION_RECORDED_TOPIC } from "./smartpay5";
 import { locateSmartPay5Receipt } from "./smartpay5-receipt-locator";
+import { smartPay5TransactionIdFromReceipt } from "./smartpay5-receipt-transaction";
 
 type ContractTransactionRecord = {
   transactionId: Hex;
@@ -64,10 +65,30 @@ export async function smartPay5ReceiptByTransactionId(input: {
   contract: Address;
   transactionId: Hex;
   timestamp: number;
+  transactionHash?: Hex;
 }) {
+  async function rpc<T>(method: string, params: unknown[]) {
+    return cryptoRpc<T>(input.rpcUrl, method, params);
+  }
+  if (input.transactionHash) {
+    const receipt = await rpc<{
+      transactionHash?: string;
+      status?: string;
+      blockNumber?: string;
+      logs?: { address?: string; topics?: string[]; data?: string }[];
+    }>("eth_getTransactionReceipt", [input.transactionHash]);
+    const receiptTransactionId = smartPay5TransactionIdFromReceipt(receipt.logs || [], input.contract);
+    if (!receipt.transactionHash
+      || receipt.transactionHash.toLowerCase() !== input.transactionHash.toLowerCase()
+      || receipt.status !== "0x1"
+      || !receipt.blockNumber
+      || receiptTransactionId?.toLowerCase() !== input.transactionId.toLowerCase()) {
+      throw new Error("TRANSACTION_RECEIPT_INVALID");
+    }
+    return receipt;
+  }
   return locateSmartPay5Receipt({
-    rpc: <T>(method: string, params: unknown[]) =>
-      cryptoRpc<T>(input.rpcUrl, method, params),
+    rpc,
     contract: input.contract,
     transactionId: input.transactionId,
     transactionTopic: SMARTPAY5_TRANSACTION_RECORDED_TOPIC,

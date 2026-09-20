@@ -1,72 +1,60 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-realtime-media-track-recovery-20260909-r1",
+  "releaseId": "smartlingo-net-smartpay-wallet-reconciliation-20260919-r1",
   "site": "smartlingo.net",
   "title": {
-    "zh": "实时音视频轨道自愈与真实设备状态",
-    "en": "Realtime media track recovery and truthful device status"
+    "zh": "链上授权、付款与课程入账可靠性",
+    "en": "Reliable on-chain approval, payment, and course reconciliation"
   },
   "purpose": {
-    "zh": "修复SmartLingo.net中远端摄像头或麦克风订阅卡住，以及本机设备图标与实际媒体轨道不同步的问题。",
-    "en": "Fix stuck remote camera or microphone subscriptions in SmartLingo.net and keep local device controls synchronized with actual media tracks."
+    "zh": "将代币授权与付款拆成独立钱包操作，并以精确交易哈希可靠核对 SmartLingo 课程权益。",
+    "en": "Separate token approvals from payment and reconcile SmartLingo course access against the exact transaction hash."
   },
   "features": {
     "zh": [
-      "音频与视频订阅独立恢复，持续缺轨 6 秒后只重建失效接收器。",
-      "麦克风、摄像头和扬声器以灰、橙、绿显示关闭、等待确认和真实工作状态。",
-      "本机每 2 秒检查真实发布轨道；设备中断时同步关闭并允许用户重连。"
+      "每次点击只发起一笔授权或付款交易，授权确认后等待链上额度同步。",
+      "保留站内余额、合约模拟与费用预检，由钱包在确认页计算最终 Gas limit。",
+      "服务端用交易哈希、TransactionID、收款身份和代币规则共同验证付款。"
     ],
     "en": [
-      "Recover audio and video subscriptions independently, rebuilding only a missing receiver after a sustained six-second gap.",
-      "Show microphone, camera and speaker as gray, orange or green for off, awaiting confirmation or actually working.",
-      "Check real local publishing tracks every two seconds; sync interrupted devices off and allow a clean reconnect."
+      "Submit only one approval or payment transaction per click and wait for allowance propagation after confirmation.",
+      "Keep balance, contract simulation, and fee preflight while letting the wallet calculate the final gas limit.",
+      "Verify payment server-side against the transaction hash, TransactionID, recipient identity, and token rule."
     ]
   },
   "affected": {
-    "zh": [
-      "语言课堂和实时课程"
-    ],
-    "en": [
-      "SmartLingo.net language classrooms and live courses"
-    ]
+    "zh": ["SmartLingo 课程加密付款与权益入账"],
+    "en": ["SmartLingo course crypto checkout and entitlement reconciliation"]
   },
   "changes": {
     "zh": [
-      "订阅成功后才缓存参与者，并在真实轨道缺失时执行单媒体取消订阅和重新订阅。",
-      "串行执行设备按钮操作，避免快速点击产生交错状态；Safari 添加第二个设备时以两条已批准轨道重新连接。",
-      "扬声器绿色状态由 HTML 媒体元素实际播放事件确认。"
+      "增加钱包账户一致性检查、重复授权防护和钱包错误状态提示。",
+      "Polygon 公共 RPC 增加独立供应商容错，避免单一节点异常阻塞权益核对。",
+      "保留 SmartLingo 独立课程、定价、合约与支付数据，不复制其他站点配置。"
     ],
     "en": [
-      "Cache participants only after subscription succeeds and rebuild one media kind when its real track remains absent.",
-      "Serialize device operations and reconnect with both approved tracks when Safari adds a second device.",
-      "Confirm the green speaker state from actual HTML media playing events."
+      "Add active-account validation, duplicate-approval protection, and actionable wallet error states.",
+      "Add independent Polygon public RPC failover so one provider cannot strand entitlement reconciliation.",
+      "Preserve SmartLingo-specific courses, prices, contracts, and payment data without copying configuration from another site."
     ]
   },
   "validation": {
     "zh": [
-      "辅助模块单元测试、完整 TypeScript 检查、零警告 lint、完整自动测试和生产构建。",
-      "按用户要求不执行多人实时浏览器测试。"
+      "运行支付契约测试、完整自动测试、零警告 lint、生产构建和共享站点门禁。",
+      "未执行真实付款，也未启动实时音视频测试。"
     ],
     "en": [
-      "Helper unit tests, complete TypeScript checks, zero-warning lint, full automated tests and production build.",
-      "Per the user request, no multi-user realtime browser test was run."
+      "Run payment contract tests, the full automated suite, zero-warning lint, production build, and shared site gates.",
+      "No real payment was made and no realtime audio/video test was started."
     ]
   },
   "deferred": {
-    "zh": [
-      "实体设备、浏览器权限切换及多人网络抖动场景留待实际会议运行观察。"
-    ],
-    "en": [
-      "Physical-device, browser-permission and multi-participant network-handoff scenarios remain for live operational observation."
-    ]
+    "zh": ["真实钱包签名与链上付款由站点所有者按需执行。"],
+    "en": ["Live wallet signing and on-chain payment remain owner-operated when needed."]
   },
   "siteAdaptations": {
-    "zh": [
-      "保留 SmartLingo.net 的品牌、业务数据、权限和支付逻辑，仅适配现有实时会议组件。"
-    ],
-    "en": [
-      "Preserve SmartLingo.net branding, business data, permissions and payment logic while adapting its existing realtime meeting component."
-    ]
+    "zh": ["适配 SmartLingo 按语言和课程授予三个月访问权的现有业务模型。"],
+    "en": ["Adapted to the existing SmartLingo language- and course-scoped three-month access model."]
   },
   "dataMigration": {
     "included": false,

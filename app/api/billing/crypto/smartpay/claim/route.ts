@@ -7,6 +7,7 @@ import { claimSmartLingoCoursePayment } from "@/lib/smartlingo-smartpay-claim";
 type ClaimInput = {
   settingId?: string;
   paymentId?: string;
+  transactionHash?: string;
   classId?: string;
   memberId?: string;
   supervisorRefId?: string;
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       targetUserId: target || undefined,
       settingId: String(body.settingId || ""),
       transactionId: String(body.paymentId || ""),
+      transactionHash: body.transactionHash ? String(body.transactionHash) : undefined,
       classId: body.classId ? String(body.classId) : undefined,
       supervisorRefId: body.supervisorRefId || undefined,
     }));
