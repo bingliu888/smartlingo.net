@@ -1,23 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-net-smartpay-wallet-reconciliation-20260919-r1",
+  "releaseId": "smartlingo-net-compact-wallet-refresh-20260919-r2",
   "site": "smartlingo.net",
   "title": {
-    "zh": "链上授权、付款与课程入账可靠性",
-    "en": "Reliable on-chain approval, payment, and course reconciliation"
+    "zh": "钱包余额刷新入口聚焦优化",
+    "en": "Focused wallet balance refresh control"
   },
   "purpose": {
-    "zh": "将代币授权与付款拆成独立钱包操作，并以精确交易哈希可靠核对 SmartLingo 课程权益。",
-    "en": "Separate token approvals from payment and reconcile SmartLingo course access against the exact transaction hash."
+    "zh": "将占满结账宽度的余额刷新按钮改为钱包地址后的标准小刷新图标，使授权与付款成为清晰的主操作。",
+    "en": "Replace the full-width balance refresh button with a standard compact icon beside the wallet address so approval and payment remain the clear primary actions."
   },
   "features": {
     "zh": [
-      "每次点击只发起一笔授权或付款交易，授权确认后等待链上额度同步。",
+      "钱包地址后提供 32 像素标准刷新图标，并保留授权状态刷新、忙碌和禁用行为。",
+      "每次点击继续只发起一笔授权或付款交易，授权确认后等待链上额度同步。",
       "保留站内余额、合约模拟与费用预检，由钱包在确认页计算最终 Gas limit。",
       "服务端用交易哈希、TransactionID、收款身份和代币规则共同验证付款。"
     ],
     "en": [
-      "Submit only one approval or payment transaction per click and wait for allowance propagation after confirmation.",
+      "Provide a standard 32-pixel refresh icon beside the wallet address while preserving approval-status refresh, busy, and disabled behavior.",
+      "Continue to submit only one approval or payment transaction per click and wait for allowance propagation after confirmation.",
       "Keep balance, contract simulation, and fee preflight while letting the wallet calculate the final gas limit.",
       "Verify payment server-side against the transaction hash, TransactionID, recipient identity, and token rule."
     ]
@@ -28,12 +30,12 @@
   },
   "changes": {
     "zh": [
-      "增加钱包账户一致性检查、重复授权防护和钱包错误状态提示。",
+      "移除占满宽度的余额刷新按钮，并把同一刷新逻辑放到已连接钱包地址后的无障碍图标按钮。",
       "Polygon 公共 RPC 增加独立供应商容错，避免单一节点异常阻塞权益核对。",
       "保留 SmartLingo 独立课程、定价、合约与支付数据，不复制其他站点配置。"
     ],
     "en": [
-      "Add active-account validation, duplicate-approval protection, and actionable wallet error states.",
+      "Remove the full-width balance refresh button and move the same refresh behavior into an accessible icon button beside the connected wallet address.",
       "Add independent Polygon public RPC failover so one provider cannot strand entitlement reconciliation.",
       "Preserve SmartLingo-specific courses, prices, contracts, and payment data without copying configuration from another site."
     ]
