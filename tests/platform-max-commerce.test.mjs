@@ -43,9 +43,12 @@ test("member dashboard reuses the Konectible plan and credit summary pattern", a
 });
 
 test("Stripe and SmartPay complete the same server-authoritative products", async () => {
-  const [checkout, complete, fulfillment, presets, options, claim] = await Promise.all([
+  const [checkout, complete, webhook, runtime, workflow, fulfillment, presets, options, claim] = await Promise.all([
     read("../app/api/billing/platform/stripe/checkout/route.ts"),
     read("../app/api/billing/platform/stripe/complete/route.ts"),
+    read("../app/api/billing/platform/stripe/webhook/route.ts"),
+    read("../lib/stripe-runtime.ts"),
+    read("../.github/workflows/deploy-cloudflare.yml"),
     read("../lib/platform-entitlements.ts"),
     read("../lib/smartpay5-presets.ts"),
     read("../app/api/billing/crypto/smartpay/options/route.ts"),
@@ -57,6 +60,13 @@ test("Stripe and SmartPay complete the same server-authoritative products", asyn
   assert.match(checkout, /idempotency-key/);
   assert.doesNotMatch(checkout, /mode: "subscription"|recurring/);
   assert.match(complete, /fulfillPlatformProduct/);
+  assert.match(runtime, /STRIPE_SECRET_KEY\?\.trim\(\) && env\.STRIPE_WEBHOOK_SECRET\?\.trim\(\)/);
+  assert.match(webhook, /validStripeSignature/);
+  assert.match(webhook, /checkout\.session\.completed/);
+  assert.match(webhook, /checkout\.session\.async_payment_succeeded/);
+  assert.match(webhook, /fulfillPlatformProduct/);
+  assert.match(workflow, /wrangler secret put STRIPE_SECRET_KEY/);
+  assert.match(workflow, /wrangler secret put STRIPE_WEBHOOK_SECRET/);
   assert.match(fulfillment, /addAigcCredits/);
   assert.match(fulfillment, /cadence='max'/);
   assert.match(presets, /SMARTLINGO_PLATFORM_PRODUCTS/);

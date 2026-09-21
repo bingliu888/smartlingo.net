@@ -3,6 +3,7 @@ import { boundedJsonBody } from "@/lib/bounded-request-body";
 import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
 import { platformProduct } from "@/lib/platform-commerce";
 import { runtimeValue, stripeRequest } from "@/lib/stripe";
+import { stripeCommerceConfigured } from "@/lib/stripe-runtime";
 
 const CHECKOUT_SECONDS = 35 * 60;
 
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     const body = await boundedJsonBody<{ productId?: unknown; locale?: unknown }>(request, 8 * 1024);
     const product = platformProduct(body.productId);
     if (!product) return Response.json({ error: "Choose a valid product" }, { status: 400 });
-    if (!await runtimeValue("STRIPE_SECRET_KEY")) return Response.json({ error: "STRIPE_NOT_CONFIGURED" }, { status: 503 });
+    if (!await runtimeValue("STRIPE_SECRET_KEY") || !await stripeCommerceConfigured()) return Response.json({ error: "STRIPE_NOT_CONFIGURED" }, { status: 503 });
     const now = Math.floor(Date.now() / 1_000);
     const database = getDatabase();
     await database.prepare("UPDATE smartlingo_platform_checkout_intents SET status='expired',updated_at=? WHERE user_id=? AND status='pending' AND expires_at<=?")

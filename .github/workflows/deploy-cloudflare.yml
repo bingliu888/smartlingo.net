@@ -113,6 +113,8 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_REALTIME_API_TOKEN: ${{ secrets.CLOUDFLARE_REALTIME_API_TOKEN }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -135,6 +137,8 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_REALTIME_API_TOKEN"
+          test -n "$STRIPE_SECRET_KEY"
+          test -n "$STRIPE_WEBHOOK_SECRET"
           node scripts/release-manifest.mjs --require-current-commit
 
       - name: Verify site-owned RealtimeKit app and presets before migration
@@ -230,6 +234,13 @@ jobs:
           set -euo pipefail
           printf '%s' "$CLOUDFLARE_REALTIME_API_TOKEN" | npx wrangler secret put CLOUDFLARE_REALTIME_API_TOKEN --config wrangler.cloudflare.jsonc
           test "$RESOLVED_REALTIMEKIT_APP_ID" = "816eb53a-1dc8-4939-9716-500747e385db"
+
+      - name: Configure SmartLingo Stripe runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$STRIPE_SECRET_KEY" | npx wrangler secret put STRIPE_SECRET_KEY --config wrangler.cloudflare.jsonc
+          printf '%s' "$STRIPE_WEBHOOK_SECRET" | npx wrangler secret put STRIPE_WEBHOOK_SECRET --config wrangler.cloudflare.jsonc
 
       - name: Build exact production Worker
         run: npm run build
