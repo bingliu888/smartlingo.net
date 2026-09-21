@@ -750,6 +750,12 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
       const evidencePath = join(evidenceDirectory, "runtime-layout-failures.json");
       await mkdir(evidenceDirectory, { recursive: true });
       await writeFile(evidencePath, `${JSON.stringify({ baseURL: options.baseURL, failures }, null, 2)}\n`);
+      const issueCounts = failures.flatMap(failure => failure.issues).reduce((counts, issue) => {
+        counts[issue.code] = (counts[issue.code] || 0) + 1;
+        return counts;
+      }, {});
+      process.stderr.write(`WebKit layout issue counts: ${JSON.stringify(issueCounts)}\n`);
+      process.stderr.write(`First WebKit layout failures: ${JSON.stringify(failures.slice(0, 12))}\n`);
       fail(`${failures.length} rendered layout combination(s) failed; evidence: ${evidencePath}`);
     }
     process.stdout.write(`WebKit runtime layout verified: ${reports.length}/${expectedCount} · ${selectedRoutes.length} routes · 2 languages · 5 viewports · ${options.baseURL}\n`);
