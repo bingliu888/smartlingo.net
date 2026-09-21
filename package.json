@@ -11,7 +11,7 @@
     "build": "bash scripts/build-verified.sh",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "contracts:compile": "node scripts/compile-smartpay.mjs",
-    "contracts:test": "npm run contracts:compile && node --test tests/smartpay-contract.test.mjs",
+    "contracts:test": "npm run contracts:compile && node --test tests/smartpay-platform-products.test.mjs tests/smartpay-product-control.test.mjs tests/free-max-commerce-contract.test.mjs",
     "test": "npm run build && node --test tests/*.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "scan:sensitive": "node scripts/scan-sensitive-data.mjs",
