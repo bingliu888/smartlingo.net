@@ -13,16 +13,20 @@ test("platform catalog has exactly two fixed-term Max offers and one credit pack
   ]);
 });
 
-test("public plans follow the status, two Max cards, and credit-band hierarchy", async () => {
-  const [page, plans, css, footer] = await Promise.all([
+test("public plans follow the status, two Max cards, credit band, and verified payment-choice hierarchy", async () => {
+  const [page, plans, chooser, paymentPage, css, footer] = await Promise.all([
     read("../app/[lang]/pricing/page.tsx"),
     read("../components/PlatformPlans.tsx"),
+    read("../components/PaymentMethodChooser.tsx"),
+    read("../app/[lang]/pricing/pay/[product]/page.tsx"),
     read("../app/globals.css"),
     read("../components/SiteFooter.tsx"),
   ]);
   assert.match(page, /<PlatformPlans/);
   assert.match(footer, /\/pricing/);
-  for (const marker of ["platform-status-card", "platform-max-card", "aigc-credit-card", "Choose payment method", "Crypto Pay", "Card \/ bank"]) assert.match(plans, new RegExp(marker));
+  for (const marker of ["platform-status-card", "platform-max-card", "aigc-credit-card", "Choose payment method", "pricing/pay/"]) assert.match(plans, new RegExp(marker));
+  for (const marker of ["Credit card or US bank account", "Crypto", "SmartPay5", "payment-method-grid"]) assert.match(chooser, new RegExp(marker));
+  assert.match(paymentPage, /stripeCommerceConfigured\(\)/);
   assert.match(plans, /every Beginner course stays free with ads/i);
   assert.match(plans, /7-day Max trial/);
   assert.match(plans, /platform-free-card/);

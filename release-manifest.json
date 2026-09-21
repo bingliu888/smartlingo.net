@@ -1,25 +1,27 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-stripe-readiness-20260921-r1",
+  "releaseId": "smartlingo-verified-payment-choice-20260921-r2",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo Stripe 生产结账修复",
-    "en": "SmartLingo Stripe production checkout recovery"
+    "zh": "SmartLingo 已验证付款方式页面迁移",
+    "en": "SmartLingo verified payment-method page migration"
   },
   "purpose": {
-    "zh": "恢复 SmartLingo Max 与 AIGC 额度包的 Stripe 卡片和银行账户结账，并以站点专用最小权限密钥和签名 Webhook 完成可靠入账。",
-    "en": "Restore Stripe card and bank-account checkout for SmartLingo Max and AIGC credit packs with a site-specific least-privilege key and signed webhook fulfillment."
+    "zh": "直接迁移 SmartMeeting 已验证的独立付款方式选择页，让 Max 与 AIGC 额度包明确显示 Stripe 信用卡、美国银行账户及 SmartPay5 加密货币付款。",
+    "en": "Directly migrate the verified SmartMeeting standalone payment-method chooser so Max and AIGC credit packs clearly expose Stripe card, US bank-account, and SmartPay5 crypto payment."
   },
   "features": {
     "zh": [
       "沿用已在 SmartMeeting 与 Mahj 验证的双机密部署模式，在发布前要求 Stripe API 密钥与 Webhook 签名密钥同时存在。",
       "新增签名校验的 Stripe Checkout Webhook，处理成功、异步成功、异步失败和过期事件，并复用现有统一权益入账逻辑。",
       "GitHub Actions 将两个加密机密同步到 SmartLingo 的 Cloudflare Worker；Stripe 托管 Checkout 不添加域名白名单。"
+      ,"价格卡片现在进入从 SmartMeeting 迁移的独立付款方式页面；页面明确分开 Stripe 信用卡/美国银行账户与 SmartPay5 加密货币，并支持全部界面语言。"
     ],
     "en": [
       "Reuse the dual-secret deployment pattern verified on SmartMeeting and Mahj, requiring both the Stripe API key and webhook signing secret before release.",
       "Add a signature-verified Stripe Checkout webhook for completed, asynchronous success, asynchronous failure, and expired events while reusing the existing unified entitlement fulfillment.",
       "Synchronize both encrypted GitHub secrets to the SmartLingo Cloudflare Worker; Stripe-hosted Checkout does not add a payment-method domain allowlist."
+      ,"Pricing cards now enter the standalone payment-method page migrated from SmartMeeting; it clearly separates Stripe card/US bank account from SmartPay5 crypto and supports every interface language."
     ]
   },
   "affected": {

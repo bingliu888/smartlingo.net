@@ -11,7 +11,6 @@ export function PlatformPlans({ lang, checkout, sessionId, compact = false }: { 
   const t = useCallback((english: string, chinese: string) => interfaceText(lang, english, chinese), [lang]);
   const [state, setState] = useState<PlatformState>({});
   const [busy, setBusy] = useState(checkout === "success" && sessionId ? "complete" : "");
-  const [paymentChoice, setPaymentChoice] = useState<SmartLingoPlatformProductId | "">("");
   const [message, setMessage] = useState(checkout === "cancelled" ? t("Stripe checkout was cancelled. No charge was made.", "Stripe 结账已取消，未产生费用。") : "");
 
   useEffect(() => {
@@ -29,24 +28,11 @@ export function PlatformPlans({ lang, checkout, sessionId, compact = false }: { 
     return () => { active = false; };
   }, [checkout, sessionId, t]);
 
-  async function cardCheckout(productId: SmartLingoPlatformProductId) {
-    setBusy(productId); setMessage("");
-    const response = await fetch("/api/billing/platform/stripe/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ productId, locale: lang }) });
-    const data = await response.json().catch(() => ({})) as { url?: string; error?: string };
-    if (response.status === 401) { window.location.assign(`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/pricing`)}`); return; }
-    if (response.ok && data.url) window.location.assign(data.url);
-    else { setMessage(data.error === "STRIPE_NOT_CONFIGURED" ? t("Stripe is being configured; crypto payment remains available.", "Stripe 正在配置；仍可使用加密货币付款。") : t("Unable to open Stripe checkout.", "暂时无法打开 Stripe 结账。")); setBusy(""); }
-  }
-
   const maxProducts = SMARTLINGO_PLATFORM_PRODUCTS.filter(item => item.kind === "max");
   const credit = SMARTLINGO_PLATFORM_PRODUCTS.find(item => item.kind === "aigc")!;
   const maxActive = Boolean(state.platformPlan?.maxActive);
   const remainingDays = Number(state.platformPlan?.remainingDays || 0);
-  const paymentActions = (productId: SmartLingoPlatformProductId) => paymentChoice === productId ? <div className="platform-payment-actions">
-    <button disabled={Boolean(busy)} onClick={() => void cardCheckout(productId)}>{busy === productId ? "…" : t("Card / bank", "银行卡 / 银行账户")}</button>
-    <Link href={`/${lang}/pricing/crypto?product=${productId}`}>{t("Crypto Pay", "加密货币付款")}</Link>
-    <button className="platform-payment-cancel" onClick={() => setPaymentChoice("")}>{t("Cancel", "取消")}</button>
-  </div> : <button className="platform-payment-chooser" onClick={() => setPaymentChoice(productId)}>{t("Choose payment method", "选择付款方式")} →</button>;
+  const paymentActions = (productId: SmartLingoPlatformProductId) => <Link className="platform-payment-chooser" href={`/${lang}/pricing/pay/${productId}?returnTo=${encodeURIComponent(`/${lang}/pricing`)}`}>{t("Choose payment method", "选择付款方式")} →</Link>;
 
   return <section className={`platform-pricing${compact ? " platform-pricing-compact" : ""}`}>
     <header className="platform-pricing-heading"><p className="section-kicker">{t("SMARTLINGO MEMBERSHIP", "SMARTLINGO 会员方案")}</p><h1>{t("Learn Beginner free. Go further with Max.", "初级永久免费，用 Max 更进一步。")}</h1><p>{t("Free includes every Beginner course with ads. Opening an Intermediate or Advanced course starts one 7-day Max trial; after it ends, Max is required to continue those levels. Max removes ads and never renews automatically.", "免费方案包含全部带广告的初级课程。首次进入中级或高级课程会自动开始一次 7 天 Max 试用；试用结束后需开通 Max 才能继续这些等级。Max 去除广告且不会自动续费。")}</p></header>

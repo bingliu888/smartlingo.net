@@ -15,14 +15,25 @@ test("SmartLingo commerce exposes only two Max terms and one independent AIGC cr
   assert.equal(smartPay5GlcDisplayAmountForUsdCents(11_900), "120000000");
   assert.equal(smartPay5GlcDisplayAmountForUsdCents(19_900), "200000000");
   assert.equal(smartPay5GlcDisplayAmountForUsdCents(1_000), "10000000");
-  const [plans, presets, options, stripeCheckout, claim] = await Promise.all([
+  const [plans, presets, options, stripeCheckout, claim, pricing, paymentPage, chooser] = await Promise.all([
     read("../lib/subscription-plans.ts"), read("../lib/smartpay5-presets.ts"),
     read("../app/api/billing/crypto/smartpay/options/route.ts"),
     read("../app/api/billing/platform/stripe/checkout/route.ts"), read("../lib/smartlingo-smartpay-claim.ts"),
+    read("../components/PlatformPlans.tsx"), read("../app/[lang]/pricing/pay/[product]/page.tsx"),
+    read("../components/PaymentMethodChooser.tsx"),
   ]);
   for (const id of ["max_6m", "max_12m", "aigc_1000"]) assert.match(`${plans}\n${presets}`, new RegExp(id));
   assert.match(options, /platformProduct\(product\)/);
   assert.match(stripeCheckout, /payment_method_types\[1\].*us_bank_account/s);
+  assert.match(stripeCheckout, /pricing\/pay\/\$\{product\.id\}/);
+  assert.match(pricing, /pricing\/pay\/\$\{productId\}/);
+  assert.match(paymentPage, /requestUser\(\)/);
+  assert.match(paymentPage, /auth\/login\?returnTo=/);
+  assert.match(chooser, /Credit card or US bank account/);
+  assert.match(chooser, /no Stripe or Link account required/);
+  assert.match(chooser, /window\.location\.assign\(payload\.url\)/);
+  assert.match(chooser, /payment-method-grid/);
+  assert.match(chooser, /role="alert"/);
   assert.match(claim, /fulfillPlatformProduct/);
   assert.doesNotMatch(`${plans}\n${presets}\n${options}`, /smartlingo_course_(?:basic|intermediate|advanced)_3m/);
 });

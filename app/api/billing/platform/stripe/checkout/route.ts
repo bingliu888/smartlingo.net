@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (request.headers.get("origin") !== new URL(request.url).origin) return Response.json({ error: "Invalid origin" }, { status: 403 });
     const limited = await consumeAccountRequestLimit({ request, scope: "platform-stripe-checkout", userId: user.id, limit: 10, windowSeconds: 60, unavailableMessage: "Payment protection is temporarily unavailable." });
     if (limited) return limited;
-    const body = await boundedJsonBody<{ productId?: unknown; locale?: unknown }>(request, 8 * 1024);
+    const body = await boundedJsonBody<{ productId?: unknown; locale?: unknown; returnTo?: unknown }>(request, 8 * 1024);
     const product = platformProduct(body.productId);
     if (!product) return Response.json({ error: "Choose a valid product" }, { status: 400 });
     if (!await runtimeValue("STRIPE_SECRET_KEY") || !await stripeCommerceConfigured()) return Response.json({ error: "STRIPE_NOT_CONFIGURED" }, { status: 503 });
@@ -35,10 +35,13 @@ export async function POST(request: Request) {
       .bind(intentId, user.id, product.id, product.usdCents, `smartlingo-platform-v1-${intentId}`, expiresAt, now, now).run();
     const locale = String(body.locale || user.preferredLanguage || "en").replace(/[^a-z-]/gi, "").slice(0, 12) || "en";
     const origin = new URL(request.url).origin;
+    const requestedReturnTo = String(body.returnTo || "");
+    const returnTo = /^\/(?!\/)[A-Za-z0-9/_?&=.%#-]*$/.test(requestedReturnTo) ? requestedReturnTo : `/${locale}/pricing`;
+    const paymentPage = `/${locale}/pricing/pay/${product.id}?returnTo=${encodeURIComponent(returnTo)}`;
     const form = new URLSearchParams({
       mode: "payment",
-      success_url: `${origin}/${locale}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/${locale}/pricing?checkout=cancelled`,
+      success_url: `${origin}${paymentPage}&checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}${paymentPage}&checkout=cancelled`,
       client_reference_id: user.id,
       customer_email: user.email,
       "payment_method_types[0]": "card",
