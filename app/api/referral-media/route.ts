@@ -13,6 +13,7 @@ import {
   generateSmartAiImage,
   safeSmartAiError,
 } from "../../../lib/smartlingo-ai-gateway";
+import { consumeAigcCredits, refundAigcCredits, SMARTLINGO_AIGC_CREDIT_COSTS } from "../../../lib/aigc-credits";
 
 const STYLE_PROMPTS: Record<string, string> = {
   anime: "A polished contemporary anime illustration about international learners building workplace English and career skills, with learning cards, subtle certificate motifs, connected nodes, deep green and mint color, warm cinematic light and mature editorial composition.",
@@ -127,10 +128,16 @@ export async function POST(request: Request) {
     "Do not show visa guarantees, job guarantees, official-government seals, financial-gain promises, political campaign symbols, gambling, weapons, alcohol, scams or hostile imagery.",
   ].filter(Boolean).join(" ");
 
+  const reference = `aigc:image:${user.id}:${crypto.randomUUID()}`;
+  let debited = false;
   try {
+    const balance = await consumeAigcCredits({ userId: user.id, credits: SMARTLINGO_AIGC_CREDIT_COSTS.image, reason: "aigc_image", providerReference: reference });
+    debited = true;
     const image = await generateSmartAiImage({ subject: `user:${user.id}`, prompt });
-    return Response.json({ image: `data:image/png;base64,${image.value}` });
+    return Response.json({ image: `data:image/png;base64,${image.value}`, balance, cost: SMARTLINGO_AIGC_CREDIT_COSTS.image });
   } catch (error) {
+    if (error instanceof Error && error.message === "AIGC_CREDITS_REQUIRED") return Response.json({ error: zh ? "AIGC 额度不足。" : "AIGC credits required.", code: "AIGC_CREDITS_REQUIRED", required: SMARTLINGO_AIGC_CREDIT_COSTS.image }, { status: 402 });
+    if (debited) await refundAigcCredits({ userId: user.id, credits: SMARTLINGO_AIGC_CREDIT_COSTS.image, reason: "aigc_image_refund", providerReference: reference }).catch(() => undefined);
     const safe = safeSmartAiError(error, zh ? "zh" : "en", "image");
     return Response.json(
       { error: safe.message, code: safe.code },

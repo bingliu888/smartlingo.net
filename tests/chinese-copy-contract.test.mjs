@@ -80,7 +80,7 @@ test("Chinese My Courses, catalog, pricing, and retired Admin UI are truthful", 
   assert.match(packages, /初期课程/);
   assert.match(packages, /中级课程/);
   assert.match(packages, /高级课程/);
-  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(pricing, /<PlatformPlans/);
   assert.match(programs, /建立真正可用的词汇、阅读、写作、听力与对话能力/);
   assert.match(planner, /设备语音播放 · 登录后麦克风与实时语音/);
   assert.match(programs, /选择课程/);

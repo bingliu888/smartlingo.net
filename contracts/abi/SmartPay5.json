@@ -442,6 +442,19 @@
   },
   {
     "inputs": [],
+    "name": "MAIN_ID_AIGC_1000",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "MAIN_ID_BASIC_3_MONTH",
     "outputs": [
       {
@@ -456,6 +469,32 @@
   {
     "inputs": [],
     "name": "MAIN_ID_INTERMEDIATE_3_MONTH",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAIN_ID_MAX_12_MONTH",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAIN_ID_MAX_6_MONTH",
     "outputs": [
       {
         "internalType": "string",
@@ -500,6 +539,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PLATFORM_SECOND_ID",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
       }
     ],
     "stateMutability": "view",

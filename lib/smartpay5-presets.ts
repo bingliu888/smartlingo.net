@@ -1,9 +1,10 @@
 import { atomicTokenAmountToDisplay, tokenAmountToAtomic } from "./crypto-amount";
 import type { CryptoPaymentSetting } from "./crypto-settings";
-import { cryptoSubscriptionRuleIds, type CryptoSubscriptionPlan } from "./crypto-subscription";
+import { smartPayRuleIdsForPlan, type CryptoSubscriptionPlan, type SmartPayPlan } from "./crypto-subscription";
+import { SMARTLINGO_PLATFORM_PRODUCTS, platformProduct } from "./platform-commerce";
 import { smartPay5RulePresetStatus as compareSmartPay5RulePreset } from "./smartpay5-rule-state";
 
-const TIERS: CryptoSubscriptionPlan[] = ["basic", "intermediate", "advanced"];
+const TIERS: SmartPayPlan[] = ["basic", "intermediate", "advanced", ...SMARTLINGO_PLATFORM_PRODUCTS.map(item => item.id)];
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const SMARTPAY5_MINIMUM_GLC_DISPLAY = "1000000000";
 export const SMARTPAY5_GLC_PER_USDT = 1_000_000n;
@@ -12,7 +13,7 @@ const amountKey = (tier: CryptoSubscriptionPlan): "basicTokenAmount" | "intermed
   tier === "basic" ? "basicTokenAmount" : tier === "intermediate" ? "intermediateTokenAmount" : "advancedTokenAmount";
 
 export type SmartPay5RulePreset = {
-  key: string; mode: "dual" | "single"; chainId: 137; plan: CryptoSubscriptionPlan; months: 3;
+  key: string; mode: "dual" | "single"; chainId: 137; plan: SmartPayPlan; months: number;
   mainId: string; secondId: "";
   primarySettingId: string; primarySettingLabel: string; primaryTokenAddress: string; primaryTokenSymbol: string;
   primaryTokenDecimals: number; primaryTokenAmount: string; primaryTokenAmountAtomic: string;
@@ -43,8 +44,12 @@ export function smartPay5RulePresets(settings: readonly CryptoPaymentSetting[], 
     const isUsdt = setting.tokenSymbol.toUpperCase() === "USDT";
     if (isUsdt && !glc) continue;
     for (const plan of TIERS) {
-      const ids = cryptoSubscriptionRuleIds(plan);
-      const fullPrimary = tokenAmountToAtomic(setting[amountKey(plan)], setting.tokenDecimals);
+      const ids = smartPayRuleIdsForPlan(plan);
+      const product = platformProduct(plan);
+      const displayAmount = product
+        ? (isUsdt ? String(product.usdCents / 100) : String((product.usdCents / 100) * Number(SMARTPAY5_GLC_PER_USDT)))
+        : setting[amountKey(plan as CryptoSubscriptionPlan)];
+      const fullPrimary = tokenAmountToAtomic(displayAmount, setting.tokenDecimals);
       const percent = Number.isInteger(setting.smartPay5UsdtPercent) ? setting.smartPay5UsdtPercent : 50;
       if (percent < 0 || percent > 100) throw new Error("SMARTPAY5_INVALID_USDT_PERCENT");
       let fullSecondary = 0n;
@@ -55,7 +60,7 @@ export function smartPay5RulePresets(settings: readonly CryptoPaymentSetting[], 
         fullSecondary = numerator / denominator;
       }
       rows.push({
-        key: `${setting.id}:${glc?.id || "single"}:${plan}`, mode: isUsdt ? "dual" : "single", chainId: 137, plan, months: 3,
+        key: `${setting.id}:${glc?.id || "single"}:${plan}`, mode: isUsdt ? "dual" : "single", chainId: 137, plan, months: product?.months || 3,
         mainId: ids.mainId, secondId: ids.secondId,
         primarySettingId: setting.id, primarySettingLabel: setting.label, primaryTokenAddress: setting.tokenContract,
         primaryTokenSymbol: setting.tokenSymbol, primaryTokenDecimals: setting.tokenDecimals,

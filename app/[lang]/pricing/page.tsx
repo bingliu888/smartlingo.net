@@ -1,8 +1,13 @@
 import { notFound } from "next/navigation";
-import { redirect } from "next/navigation";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { PlatformPlans } from "@/components/PlatformPlans";
+import { isInterfaceLanguage, safeInterfaceLanguage } from "@/lib/interface-locale";
 
-export default async function PricingPage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function PricingPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ checkout?: string; session_id?: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
-  redirect(`/${lang}/programs`);
+  if (!isInterfaceLanguage(lang)) notFound();
+  const locale = safeInterfaceLanguage(lang);
+  const query = await searchParams;
+  return <main className="billing-page platform-pricing-page"><SiteHeader lang={locale}/><PlatformPlans lang={locale} checkout={query.checkout} sessionId={query.session_id}/><SiteFooter lang={locale}/></main>;
 }

@@ -19,6 +19,7 @@ const treasury=createAddressFromPrivateKey(treasuryKey);
 const zeroAddress="0x0000000000000000000000000000000000000000";
 const basicMainId="smartlingo_course_basic_3m";
 const intermediateMainId="smartlingo_course_intermediate_3m";
+const max6MainId="smartlingo_platform_max_6m";
 const productOwnerRefId="ADM234";
 const payerId="USR234";
 
@@ -159,6 +160,23 @@ test("SmartPay5 enforces secondary eligibility and exact single-token rules",asy
   await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,intermediateMainId,"xx",fullPrimary,productOwnerRefId,payerId]}),expectFailure:true});
   await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,"smartlingo_course_basic_6m","",fullPrimary,0n,0n,true]}),expectFailure:true});
   await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,basicMainId,"es",fullPrimary,0n,0n,true]}),expectFailure:true});
+});
+
+test("SmartPay5 accepts platform-scoped Max payments without accepting a fake language scope",async()=>{
+  const chain=await testChain();
+  const primary=await chain.deploy(ownerKey,tokenArtifact);
+  const contract=await chain.deploy(ownerKey,artifact,[owner.toString()]);
+  const amount=59_000_000n;
+  await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPayouts",args:[[owner.toString()],[0]]})});
+  await chain.send(ownerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"setPaymentRule",args:[primary.toString(),zeroAddress,max6MainId,"",amount,0n,0n,true]})});
+  await chain.send(ownerKey,{to:primary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"mint",args:[payer.toString(),amount*2n]})});
+  await chain.send(payerKey,{to:primary,data:encodeFunctionData({abi:tokenArtifact.abi,functionName:"approve",args:[contract.toString(),amount*2n]})});
+  const result=await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,max6MainId,"platform",amount,productOwnerRefId,payerId]})});
+  const decoded=result.receipt.logs.map(([address,topics,data])=>({address:bytesToHex(address),topics:topics.map(bytesToHex),data:bytesToHex(data)})).map(log=>{try{return decodeEventLog({abi:artifact.abi,...log});}catch{return null;}});
+  const recorded=decoded.find(item=>item?.eventName==="TransactionRecorded");
+  assert.equal(recorded.args.mainId,max6MainId);
+  assert.equal(recorded.args.secondId,"platform");
+  await chain.send(payerKey,{to:contract,data:encodeFunctionData({abi:artifact.abi,functionName:"pay",args:[primary.toString(),zeroAddress,max6MainId,"en",amount,productOwnerRefId,payerId]}),expectFailure:true});
 });
 
 test("SmartPay5 owner operations transfer immediately and reject the former owner and every non-owner",async()=>{

@@ -8,6 +8,7 @@ type Platform = {
     code?: string | null;
     url?: string | null;
   } | null;
+  aigcCredits?: number;
 };
 
 const COPY = {
@@ -40,6 +41,12 @@ const COPY = {
     clipFailed: "短片生成失败，请重试或分享图片。",
     imageFailed: "图片生成失败，请稍后重试。",
     imageLoadFailed: "背景图片无法载入，请重新生成。",
+    credits: "人工智能生成额度",
+    creditRequired: "人工智能生成额度不足，请先购买额度包。",
+    audioText: "音频朗读文本",
+    audioPlaceholder: "输入要生成的语言学习旁白或对话…",
+    generateAudio: "生成 AI 音频（10 额度）",
+    generatingAudio: "正在生成音频…",
   },
   en: {
     eyebrow: "AI INVITE STUDIO",
@@ -70,6 +77,12 @@ const COPY = {
     clipFailed: "The clip could not be created. Please retry or share the image.",
     imageFailed: "Generation failed. Please try again.",
     imageLoadFailed: "The background could not be loaded. Please generate it again.",
+    credits: "AIGC credits",
+    creditRequired: "More AIGC credits are required. Buy a credit pack first.",
+    audioText: "Audio narration text",
+    audioPlaceholder: "Enter language-learning narration or dialogue…",
+    generateAudio: "Generate AI audio (10 credits)",
+    generatingAudio: "Generating audio…",
   },
 } as const;
 
@@ -92,6 +105,9 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
   const [clipUrl, setClipUrl] = useState("");
   const [clipType, setClipType] = useState("");
   const [notice, setNotice] = useState("");
+  const [audioText, setAudioText] = useState("");
+  const [audioBusy, setAudioBusy] = useState(false);
+  const [audioUrl, setAudioUrl] = useState("");
   const zh = lang === "zh";
   const t = COPY[lang];
   const referralUrl = platform?.referral?.url?.trim() || "";
@@ -107,6 +123,7 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
   useEffect(() => () => {
     if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current);
   }, []);
+  useEffect(() => () => { if (audioUrl) URL.revokeObjectURL(audioUrl); }, [audioUrl]);
 
   function clearClip() {
     if (clipUrlRef.current) URL.revokeObjectURL(clipUrlRef.current);
@@ -166,9 +183,10 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.image) {
-        setNotice(zh ? t.imageFailed : result.error || t.imageFailed);
+        setNotice(response.status === 402 ? t.creditRequired : result.error || t.imageFailed);
         return;
       }
+      if (Number.isFinite(Number(result.balance))) setPlatform(current => current ? { ...current, aigcCredits: Number(result.balance) } : current);
       setBackground(result.image);
       if (referralUrl) {
         if (!(await draw(result.image))) setNotice(t.imageLoadFailed);
@@ -213,6 +231,21 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
     link.click();
     setNotice(zh ? "图片已下载，推荐链接也已复制。请在微信、Telegram、Messenger、X 或 Facebook 中附加图片并粘贴链接。" : "The image was downloaded and the referral link copied. Attach the image in WeChat, Telegram, Messenger, X, or Facebook and paste the link.");
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function generateAudio() {
+    if (!audioText.trim()) return;
+    setAudioBusy(true); setNotice("");
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+    try {
+      const requestId = `${Date.now()}_${crypto.randomUUID().replaceAll("-", "")}`;
+      const response = await fetch("/api/aigc/audio", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: audioText, requestId }) });
+      if (!response.ok) { setNotice(response.status === 402 ? t.creditRequired : (zh ? "音频生成失败，请稍后重试。" : "Audio generation failed. Try again later.")); return; }
+      const blob = await response.blob();
+      const next = URL.createObjectURL(blob); setAudioUrl(next);
+      const balance = Number(response.headers.get("x-smartlingo-credit-balance"));
+      if (Number.isFinite(balance)) setPlatform(current => current ? { ...current, aigcCredits: balance } : current);
+    } finally { setAudioBusy(false); }
   }
 
   async function makeClip() {
@@ -295,6 +328,11 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
       const actualType = recorder.mimeType || mimeType;
       const blob = new Blob(chunks, { type: actualType });
       if (!blob.size) throw new Error("empty recording");
+      const requestId = `${Date.now()}_${crypto.randomUUID().replaceAll("-", "")}`;
+      const debit = await fetch("/api/aigc/credits", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "video", requestId }) });
+      const debitData = await debit.json().catch(() => ({})) as { balance?: number; error?: string };
+      if (!debit.ok) { setNotice(debit.status === 402 ? t.creditRequired : t.clipFailed); return; }
+      setPlatform(current => current ? { ...current, aigcCredits: debitData.balance } : current);
       const url = URL.createObjectURL(blob);
       clipUrlRef.current = url;
       setClipUrl(url);
@@ -364,6 +402,7 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
         <p className="eyebrow jade">{t.eyebrow}</p>
         <h1>{t.title}</h1>
         <p>{t.description}</p>
+        <p className="aigc-balance-line"><strong>{t.credits}: {platform.aigcCredits ?? 0}</strong> · {zh ? "图片 20 · 音频 10 · 视频 200" : "Image 20 · Audio 10 · Video 200"}</p>
         <label>{t.style}
           <select value={style} onChange={(event) => setStyle(event.target.value)}>
             <option value="anime">{t.anime}</option>
@@ -377,6 +416,9 @@ export function ShareStudio({ lang }: { lang: "en" | "zh" }) {
           <small>{t.promptHelp}</small>
         </label>
         <button onClick={generate} disabled={busy}>{busy ? t.generating : background ? t.retry : t.generate}</button>
+        <label>{t.audioText}<textarea maxLength={4000} rows={4} value={audioText} onChange={event => setAudioText(event.target.value)} placeholder={t.audioPlaceholder}/></label>
+        <button onClick={generateAudio} disabled={audioBusy || !audioText.trim()}>{audioBusy ? t.generatingAudio : t.generateAudio}</button>
+        {audioUrl && <audio controls src={audioUrl}/>}
         {notice && <p className="share-notice" aria-live="polite">{notice}</p>}
       </div>
       <div className="share-preview">

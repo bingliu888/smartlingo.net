@@ -17,7 +17,8 @@ test("SmartPay5 course payment items fail closed while preserving language-speci
   assert.match(admin, /stopSmartPay5Preset/); assert.doesNotMatch(admin, /sendOwnerTransaction\(contractState\?\.paused \? "unpause" : "pause"/);
   assert.match(route, /smartPay5RulePresetStatus\(preset, rules\)\.state !== "configured"/); assert.match(route, /enabled=0/); assert.match(route, /enabled=1/);
   assert.match(checkout, /smartPay5PaymentItemDatabaseState/); assert.match(checkout, /smartPay5EnabledPresets\(presets, state\.enabledPresetKeys\)/);
-  assert.match(checkout, /cryptoSubscriptionIdsForCourse\(languageCode, preset\.plan\)/);
+  assert.match(checkout, /smartPayIdsForPlan\(preset\.plan, languageCode\)/);
+  assert.match(checkout, /const targets = platform \? \["platform"\] : languages/);
   assert.doesNotMatch(checkout, /smartPay5PaymentRules|verifySmartPay5Identity|smartPay5PayoutConfigurationRaw/);
   assert.doesNotMatch(optionsRoute, /smartpay5_payment_item_states|enabledPresetKeys/); assert.doesNotMatch(prepareRoute, /smartpay5_payment_item_states|enabledPresetKeys/);
   const db = new DatabaseSync(":memory:"); db.exec(migration);

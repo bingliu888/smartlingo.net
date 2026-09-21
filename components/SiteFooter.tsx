@@ -18,7 +18,7 @@ export function SiteFooter({ lang }: { lang: InterfaceLanguage }) {
         <Link href={`/${lang}/privacy`}>{t.privacy}</Link>
         <Link href={`/${lang}/terms`}>{t.terms}</Link>
         <Link href={`/${lang}/disclaimer`}>{disclaimerFor(lang).label}</Link>
-        <Link href={`/${lang}/programs`}>{subscriptionLabelFor(lang)}</Link>
+        <Link href={`/${lang}/pricing`}>{subscriptionLabelFor(lang)}</Link>
         <Link href={`/${lang}/project`}>{t.project}</Link>
       </nav>
     </footer>

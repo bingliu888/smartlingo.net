@@ -16,6 +16,6 @@ test("SmartPay5 admin layout matches SmartMeeting and uses the connected wallet 
   assert.match(consoleSource, /setConnectedWallet\(result\.address\)/);
   assert.match(consoleSource, /setOwnerWallet\(result\.address\)/);
   assert.match(consoleSource, /const initialOwner = active\.address/);
-  assert.match(consoleSource, /Only the three 3-month Beginner, Intermediate, and Advanced price products are stored on-chain/);
+  assert.match(consoleSource, /Three 3-month course products plus Max 6-month, Max annual, and the 1,000-credit AIGC pack are stored as separate on-chain items/);
   assert.doesNotMatch(consoleSource, /classId: record\.secondId/);
 });

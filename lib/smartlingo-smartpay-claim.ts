@@ -13,10 +13,12 @@ import { smartPay5SettingsForContract } from "./smartpay-checkout";
 import { smartPayRecipientMatches } from "./smartpay-reconciliation";
 import { smartPayRecordTimestamp } from "./smartpay-record-timestamp";
 import { smartLingoProductOwnerRefId } from "./smartpay-product-owner";
-import { cryptoSubscriptionPlanForIds, SMARTLINGO_CRYPTO_MONTHS } from "./crypto-subscription";
+import { smartPayPlanForIds, SMARTLINGO_CRYPTO_MONTHS } from "./crypto-subscription";
 import { courseSubscriptionPackage, fixedCourseId } from "./smartlingo-course-packages";
-import { isSmartLingoCommunityLanguage } from "./smartlingo-language-communities";
+import { isSmartLingoCommunityLanguage, type SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
 import { recordCoursePackagePurchase } from "./course-package-purchase";
+import { platformProduct, type SmartLingoPlatformProductId } from "./platform-commerce";
+import { fulfillPlatformProduct } from "./platform-entitlements";
 
 type ExistingClaim = {
   userId: string;
@@ -57,14 +59,20 @@ export async function claimSmartLingoCoursePayment(input: {
     FROM smartpay5_payment_claims WHERE lower(contract_address)=lower(?)
       AND lower(transaction_id)=lower(?) LIMIT 1`)
     .bind(contract, transactionId).first<ExistingClaim>();
-  if (existing && existing.userId !== targetUserId)
+  const existingPlatform = await database.prepare(`SELECT user_id AS userId,'platform:'||product_id AS classId,
+    entitlement_status AS entitlementStatus,current_period_ends_at AS currentPeriodEnd
+    FROM smartlingo_platform_smartpay_claims WHERE lower(contract_address)=lower(?)
+      AND lower(transaction_id)=lower(?) LIMIT 1`)
+    .bind(contract, transactionId).first<ExistingClaim>();
+  const prior = existing || existingPlatform;
+  if (prior && prior.userId !== targetUserId)
     throw new Error("TRANSACTION_ALREADY_CLAIMED");
-  if (existing?.entitlementStatus === "synced" && existing.currentPeriodEnd > 0) {
+  if (prior?.entitlementStatus === "synced") {
     return {
       verified: true,
       alreadyRecorded: true,
-      classId: existing.classId,
-      currentPeriodEnd: existing.currentPeriodEnd,
+      classId: prior.classId,
+      currentPeriodEnd: prior.currentPeriodEnd || null,
       paymentId: transactionId,
     };
   }
@@ -78,10 +86,12 @@ export async function claimSmartLingoCoursePayment(input: {
     throw new Error("PAYMENT_RECIPIENT_MISMATCH");
 
   const languageCode = record.secondId;
-  const plan = cryptoSubscriptionPlanForIds(record.mainId, languageCode);
-  if (!plan || !isSmartLingoCommunityLanguage(languageCode))
+  const plan = smartPayPlanForIds(record.mainId, languageCode);
+  if (!plan)
     throw new Error("PAYMENT_PACKAGE_MISMATCH");
-  const classId = fixedCourseId(languageCode, plan);
+  const product = platformProduct(plan);
+  if (!product && !isSmartLingoCommunityLanguage(languageCode)) throw new Error("PAYMENT_PACKAGE_MISMATCH");
+  const classId = product ? `platform:${product.id}` : fixedCourseId(languageCode as SmartLingoCommunityLanguage, plan as "basic"|"intermediate"|"advanced");
   if (input.classId && input.classId !== classId) throw new Error("PAYMENT_COURSE_MISMATCH");
   const contractSettings = smartPay5SettingsForContract(
     await activeCryptoPaymentSettings(),
@@ -109,6 +119,33 @@ export async function claimSmartLingoCoursePayment(input: {
   if (confirmations < requiredConfirmations)
     throw new Error(`PAYMENT_CONFIRMATIONS_PENDING:${requiredConfirmations - confirmations}`);
 
+  const now = Math.floor(Date.now() / 1_000);
+  const paymentTime = smartPayRecordTimestamp(record.timestamp, now);
+  if (product) {
+    await database.prepare(`INSERT INTO smartlingo_platform_smartpay_claims(
+      id,user_id,setting_id,contract_address,transaction_id,payer_wallet,payer_id,ref_id,
+      main_id,second_id,product_id,primary_token_symbol,primary_token_address,primary_atomic_amount,
+      secondary_token_symbol,secondary_token_address,secondary_atomic_amount,entitlement_status,
+      current_period_ends_at,created_at,verified_at
+    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pending_sync',0,?,?)
+      ON CONFLICT(contract_address,transaction_id) DO NOTHING`).bind(
+      crypto.randomUUID(), targetUserId, setting.id, contract.toLowerCase(), transactionId,
+      record.wallet.toLowerCase(), identity.payerId, identity.productOwnerRefId, record.mainId, record.secondId,
+      product.id, setting.tokenSymbol, record.primaryTokenAddress.toLowerCase(), record.primaryTokenAmount,
+      tokenPair.secondarySetting?.tokenSymbol || null, record.secondaryTokenAddress.toLowerCase(), record.secondaryTokenAmount,
+      paymentTime, now,
+    ).run();
+    const owner = await database.prepare("SELECT user_id AS userId FROM smartlingo_platform_smartpay_claims WHERE lower(contract_address)=lower(?) AND lower(transaction_id)=lower(?) LIMIT 1")
+      .bind(contract, transactionId).first<{ userId: string }>();
+    if (!owner || owner.userId !== targetUserId) throw new Error("TRANSACTION_ALREADY_CLAIMED");
+    const result = await fulfillPlatformProduct({ userId: targetUserId, productId: product.id as SmartLingoPlatformProductId,
+      provider: "smartpay5", providerReference: `${contract.toLowerCase()}:${transactionId}`, amountCents: product.usdCents, paidAt: paymentTime });
+    await database.prepare("UPDATE smartlingo_platform_smartpay_claims SET entitlement_status='synced',current_period_ends_at=?,verified_at=? WHERE lower(contract_address)=lower(?) AND lower(transaction_id)=lower(?) AND user_id=?")
+      .bind(result.currentPeriodEnd || 0, now, contract, transactionId, targetUserId).run();
+    return { verified: true, alreadyRecorded: false, receiptTransactionHash: receipt.transactionHash, classId,
+      productId: product.id, credits: result.credits, balance: result.balance, currentPeriodEnd: result.currentPeriodEnd, paymentId: transactionId };
+  }
+
   const course = await database.prepare(`SELECT target_language AS languageCode,package_tier AS packageTier
     FROM smartlingo_language_classes WHERE id=? AND class_kind='official_course'
       AND status='open' LIMIT 1`).bind(classId)
@@ -118,8 +155,6 @@ export async function claimSmartLingoCoursePayment(input: {
   const selectedPackage = courseSubscriptionPackage(course.packageTier, SMARTLINGO_CRYPTO_MONTHS);
   if (!selectedPackage) throw new Error("PAYMENT_PACKAGE_MISMATCH");
 
-  const now = Math.floor(Date.now() / 1_000);
-  const paymentTime = smartPayRecordTimestamp(record.timestamp, now);
   await database.prepare(`INSERT INTO smartpay5_payment_claims(
     id,user_id,setting_id,contract_address,transaction_id,payer_wallet,payer_id,ref_id,
     main_id,second_id,language_code,package_tier,class_id,primary_token_symbol,

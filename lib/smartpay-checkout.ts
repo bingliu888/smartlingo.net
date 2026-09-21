@@ -1,8 +1,8 @@
-import type { CryptoSubscriptionPlan } from "./crypto-subscription";
+import type { SmartPayPlan } from "./crypto-subscription";
 import type { CryptoPaymentSetting } from "./crypto-settings";
 
 export type SmartPayCheckoutOption = {
-  key: string; settingId: string; plan: CryptoSubscriptionPlan; months: 3; languageCode: string; classId: string;
+  key: string; settingId: string; plan: SmartPayPlan; months: number; languageCode: string; classId: string;
   chainId: number; chainName: string; contractAddress: string; tokenAddress: string; tokenSymbol: string;
   tokenDecimals: number; tokenAmountAtomic: string; tokenAmount: string; mainId: string; secondId: string; minConfirmations: number;
   smartPay5Offer: {
@@ -16,10 +16,10 @@ export type SmartPayCheckoutOption = {
   };
 };
 
-const PLAN_ORDER: CryptoSubscriptionPlan[] = ["basic", "intermediate", "advanced"];
+const PLAN_ORDER: SmartPayPlan[] = ["basic", "intermediate", "advanced", "max_6m", "max_12m", "aigc_1000"];
 const EVM_ADDRESS = /^0x[a-f0-9]{40}$/i;
 export const smartPayAvailablePlans = (options: readonly SmartPayCheckoutOption[]) => PLAN_ORDER.filter(plan => options.some(option => option.plan === plan));
-export const smartPayOptionsForPlan = (options: readonly SmartPayCheckoutOption[], plan: CryptoSubscriptionPlan) => options.filter(option => option.plan === plan);
+export const smartPayOptionsForPlan = (options: readonly SmartPayCheckoutOption[], plan: SmartPayPlan) => options.filter(option => option.plan === plan);
 export const smartPayOptionsForLanguage = (options: readonly SmartPayCheckoutOption[], languageCode: string, lockedCourseId?: string) =>
   options.filter(option => option.languageCode === languageCode && (!lockedCourseId || option.classId === lockedCourseId));
 

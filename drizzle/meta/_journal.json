@@ -561,6 +561,13 @@
       "when": 1788775201000,
       "tag": "0184_spanish_sentence_grammar",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "6",
+      "when": 1789957800000,
+      "tag": "0185_platform_max_aigc_credits",
+      "breakpoints": true
     }
   ]
 }

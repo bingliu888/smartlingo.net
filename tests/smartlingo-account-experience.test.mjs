@@ -21,7 +21,7 @@ test("dashboard keeps learning, referrals, and built-in course access", async ()
   ]);
   const joined = `${dashboard}\n${panel}`;
 
-  for (const label of ["免费方案", "进阶方案"]) assert.match(joined, new RegExp(label));
+  for (const label of ["免费方案", "无广告学习"]) assert.match(joined, new RegExp(label));
   assert.match(panel, /打开我的课程/);
   assert.doesNotMatch(joined, /每位会员都能开班|免费学习，也可以带领自己的语言班|不开启开班资格门槛/);
   assert.match(panel, /介绍人积分只在平台成功收取订阅费后产生/);

@@ -11,6 +11,7 @@ import {
 } from "../../../db/schema";
 import { createId } from "../../../lib/auth";
 import { requestUser } from "../../../lib/request-user";
+import { aigcCreditBalance } from "../../../lib/aigc-credits";
 
 function newReferralCode() {
   return `SL${crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
@@ -67,8 +68,17 @@ export async function GET(request: Request) {
     .orderBy(desc(lingoIntroducerRewardLedger.createdAt))
     .limit(50);
   const origin = new URL(request.url).origin;
+  const now = Math.floor(Date.now() / 1_000);
+  const maxActive = subscription?.status === "active" && subscription.cadence === "max"
+    && Number(subscription.currentPeriodEndsAt || 0) > now;
   return Response.json({
     subscription: subscription ?? null,
+    platformPlan: {
+      id: maxActive ? "max" : "standard",
+      maxActive,
+      remainingDays: maxActive ? Math.max(1, Math.ceil((Number(subscription.currentPeriodEndsAt) - now) / 86_400)) : 0,
+    },
+    aigcCredits: await aigcCreditBalance(user.id),
     referral: {
       code: referralCode.code,
       url: `${origin}/r/${referralCode.code}?lang=${user.preferredLanguage}`,

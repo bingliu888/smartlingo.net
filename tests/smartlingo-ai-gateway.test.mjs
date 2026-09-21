@@ -76,6 +76,7 @@ async function sourceFiles(directory) {
 test("one fixed policy registry owns every SmartLingo AI feature and failure mode", async () => {
   const gateway = await importGateway();
   assert.deepEqual(Object.keys(gateway.SMARTAI_FEATURE_POLICIES).sort(), [
+    "audio",
     "chat_guru",
     "content_help",
     "image",
@@ -112,6 +113,7 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.model, "omni-moderation-latest");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.transcription.model, "gpt-4o-mini-transcribe");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-2");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.audio.model, "gpt-4o-mini-tts");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
 });
 

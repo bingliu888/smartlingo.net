@@ -26,9 +26,8 @@ test("SmartLingo branding exposes the four primary learning choices", async () =
   assert.match(footer, /© 2026 SmartLingo\.net/);
   for (const path of ["about", "privacy", "terms", "project"]) assert.match(footer, new RegExp(`/${path}`));
   assert.ok(footer.indexOf("/about") < footer.indexOf("/privacy") && footer.indexOf("/privacy") < footer.indexOf("/terms") && footer.indexOf("/terms") < footer.indexOf("/project"));
-  assert.match(footer, /\/programs/);
+  assert.match(footer, /\/pricing/);
   assert.doesNotMatch(footer, /\/assistant/);
-  assert.doesNotMatch(footer, /\/pricing/);
   assert.doesNotMatch(footer, /\/community/);
   assert.doesNotMatch(footer, /LanguageLink|interface-language|language-menu/);
   assert.match(layout, /"smartlingo\.net"/);
@@ -94,7 +93,7 @@ test("course purchase presents nine fixed-term packages with no automatic renewa
   assert.match(home, /初期 · 30 \/ 50 \/ 80 美元/);
   assert.match(home, /中级 · 60 \/ 100 \/ 160 美元/);
   assert.match(home, /高级 · 120 \/ 200 \/ 320 美元/);
-  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(pricing, /<PlatformPlans/);
   assert.match(programs, /LearningPathPlanner/);
   assert.match(terms, /一次性支付的 3、6 或 12 个月套餐/);
   assert.match(terms, /付款启用条件/);

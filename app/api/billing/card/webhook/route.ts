@@ -2,6 +2,9 @@ import { stripeRequest, runtimeValue, syncStripeCourseSubscription, type StripeS
 import { markCoursePackagePaymentStatus, recordCoursePackagePurchase } from "@/lib/course-package-purchase";
 import { courseSubscriptionPackage, normalizeCourseDurationMonths, type SmartLingoPackageTier } from "@/lib/smartlingo-course-packages";
 import { isSmartLingoCommunityLanguage } from "@/lib/smartlingo-language-communities";
+import { fulfillPlatformProduct } from "@/lib/platform-entitlements";
+import { platformProduct, type SmartLingoPlatformProductId } from "@/lib/platform-commerce";
+import { getDatabase } from "@/lib/auth";
 
 function hex(bytes: ArrayBuffer) {
   return Array.from(new Uint8Array(bytes), value => value.toString(16).padStart(2, "0")).join("");
@@ -39,9 +42,16 @@ export async function POST(request: Request) {
       return Response.json({received:true});
     }
     let subscription: StripeSubscription | null = null;
-    if (event.type === "checkout.session.completed") {
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const object = event.data?.object as ({ subscription?: string;payment_intent?:string|{id?:string};amount_total?:number;currency?:string;
-        mode?:string;status?:string;payment_status?:string;metadata?:{user_id?:string;scope?:string;class_id?:string;package_tier?:string;target_language?:string;duration_months?:string;package_id?:string;supervisor_ref_id?:string} }) | undefined;
+        id?:string;mode?:string;status?:string;payment_status?:string;metadata?:{user_id?:string;scope?:string;intent_id?:string;product_id?:string;class_id?:string;package_tier?:string;target_language?:string;duration_months?:string;package_id?:string;supervisor_ref_id?:string} }) | undefined;
+      if(object?.mode==="payment"&&object.status==="complete"&&object.payment_status==="paid"&&object.metadata?.scope==="platform_product"&&object.metadata.user_id){
+        const product=platformProduct(object.metadata.product_id);
+        const paymentReference=typeof object.payment_intent==="string"?object.payment_intent:object.payment_intent?.id||object.id||"";
+        if(!product||object.amount_total!==product.usdCents||String(object.currency||"").toLowerCase()!=="usd"||!paymentReference)throw new Error("STRIPE_SCOPE_MISMATCH");
+        await fulfillPlatformProduct({userId:object.metadata.user_id,productId:product.id as SmartLingoPlatformProductId,provider:"stripe",providerReference:paymentReference,amountCents:product.usdCents,checkoutIntentId:object.metadata.intent_id||null});
+        return Response.json({received:true});
+      }
       if(object?.mode==="payment"&&object.status==="complete"&&object.payment_status==="paid"&&object.metadata?.scope==="course_package"
         &&object.metadata.user_id&&object.metadata.class_id){
         const tier=object.metadata.package_tier as SmartLingoPackageTier;
@@ -56,6 +66,11 @@ export async function POST(request: Request) {
         return Response.json({received:true});
       }
       if (object?.subscription) subscription = await stripeRequest<StripeSubscription>(`/subscriptions/${encodeURIComponent(object.subscription)}`);
+    } else if (event.type === "checkout.session.async_payment_failed") {
+      const object=event.data?.object as {id?:string}|undefined;
+      if(object?.id)await getDatabase().prepare("UPDATE smartlingo_platform_checkout_intents SET status='expired',updated_at=? WHERE provider_session_id=? AND status='pending'")
+        .bind(Math.floor(Date.now()/1_000),object.id).run();
+      return Response.json({received:true});
     } else if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(String(event.type))) {
       subscription = event.data?.object as unknown as StripeSubscription;
     } else if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {

@@ -1,4 +1,4 @@
-import type { CryptoSubscriptionPlan } from "./crypto-subscription";
+import type { SmartPayPlan } from "./crypto-subscription";
 
 type VerificationData = {
   verified?: boolean;
@@ -14,7 +14,7 @@ const RETRYABLE_VERIFICATION_STATUSES = new Set([425, 429, 502, 503, 504]);
 
 export async function verifyCryptoPaymentWithConfirmations(input: {
   settingId: string;
-  plan: CryptoSubscriptionPlan;
+  plan: SmartPayPlan;
   classId: string;
   txHash: string;
   paymentId?: string;

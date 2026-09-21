@@ -10,6 +10,7 @@ export type SmartAiFeature =
   | "moderation"
   | "transcription"
   | "image"
+  | "audio"
   | "live_voice";
 
 export type SmartAiLearningFeature =
@@ -149,6 +150,16 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     requestsPerWindow: 3,
     maxWindowInputUnits: 15_000,
     timeoutMs: 45_000,
+    failureMode: "unavailable",
+  },
+  audio: {
+    model: "gpt-4o-mini-tts",
+    maxInputUnits: 4_000,
+    maxOutputUnits: 1,
+    windowSeconds: 60,
+    requestsPerWindow: 6,
+    maxWindowInputUnits: 12_000,
+    timeoutMs: 55_000,
     failureMode: "unavailable",
   },
   live_voice: {
@@ -879,6 +890,45 @@ export async function generateSmartAiImage(input: {
       const value = data?.data?.[0]?.b64_json;
       if (!value || !/^[a-zA-Z0-9+/=]+$/.test(value)) throw new SmartAiGatewayError("invalid_response");
       return { value, outputUnits: 1 };
+    },
+  });
+}
+
+export async function generateSmartAiAudio(input: {
+  subject: string;
+  text: string;
+  deps?: SmartAiGatewayDependencies;
+}) {
+  const text = input.text.trim();
+  if (!text) throw new SmartAiGatewayError("invalid_request");
+  return executeGateway({
+    feature: "audio",
+    subject: input.subject,
+    inputUnits: text.length,
+    deps: input.deps,
+    request: (apiKey, subjectHash, signal, model) => dependencies(input.deps).fetch(
+      "https://api.openai.com/v1/audio/speech",
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+          "OpenAI-Safety-Identifier": subjectHash,
+        },
+        body: JSON.stringify({
+          model,
+          voice: "coral",
+          input: text,
+          response_format: "mp3",
+          instructions: "Natural, warm language-learning narration. Speak clearly in the language of the supplied script.",
+        }),
+        signal,
+      },
+    ),
+    read: async response => {
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (!bytes.byteLength) throw new SmartAiGatewayError("invalid_response");
+      return { value: bytes, outputUnits: 1 };
     },
   });
 }

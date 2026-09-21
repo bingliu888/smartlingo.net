@@ -158,7 +158,7 @@ test("deployment bundle is reproducible and site-specific", async () => {
   assert.equal(payload.sourcify.contractIdentifier, "contracts/SmartPay5.sol:SmartPay5");
 });
 
-test("SmartPay5 stores three shared price products and records the selected learning language on payment", async () => {
+test("SmartPay5 stores course and platform price products with their required purchase scope", async () => {
   const [contract, presets, server, optionsRoute, abiRoute] = await Promise.all([
     read("contracts/SmartPay5.sol"),
     read("lib/smartpay5-presets.ts"),
@@ -166,18 +166,21 @@ test("SmartPay5 stores three shared price products and records the selected lear
     read("app/api/billing/crypto/smartpay/options/route.ts"),
     read("app/api/billing/crypto/smartpay/abi/route.ts"),
   ]);
-  for (const mainId of ["smartlingo_course_basic_3m", "smartlingo_course_intermediate_3m", "smartlingo_course_advanced_3m"]) {
+  for (const mainId of ["smartlingo_course_basic_3m", "smartlingo_course_intermediate_3m", "smartlingo_course_advanced_3m", "smartlingo_platform_max_6m", "smartlingo_platform_max_12m", "smartlingo_platform_aigc_1000"]) {
     assert.match(contract, new RegExp(mainId));
   }
   assert.doesNotMatch(contract, /opc_3_month|opc_6_month|opc_12_month/);
   assert.match(contract, /_ruleKey\(primaryTokenAddress, secondaryTokenAddress, mainId, SUBSCRIPTION_SECOND_ID\)/);
   assert.match(contract, /_isSupportedLanguage\(secondId\)/);
-  assert.match(presets, /cryptoSubscriptionRuleIds/);
-  assert.match(server, /cryptoSubscriptionIdsForCourse\(languageCode, preset\.plan\)/);
+  assert.match(presets, /smartPayRuleIdsForPlan/);
+  assert.match(server, /smartPayIdsForPlan\(preset\.plan, languageCode\)/);
   assert.match(optionsRoute, /Choose a supported learning language/);
   assert.match(abiRoute, /smartlingo_course_basic_3m/);
   assert.match(abiRoute, /smartlingo_course_intermediate_3m/);
   assert.match(abiRoute, /smartlingo_course_advanced_3m/);
+  assert.match(abiRoute, /smartlingo_platform_max_6m/);
+  assert.match(abiRoute, /smartlingo_platform_max_12m/);
+  assert.match(abiRoute, /smartlingo_platform_aigc_1000/);
   assert.match(abiRoute, /signed-in learner's own public referral code/);
   assert.match(abiRoute, /permanent administrator's public referral code/);
   assert.match(abiRoute, /selected supported learning-language code/);

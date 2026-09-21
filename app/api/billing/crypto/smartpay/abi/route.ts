@@ -40,9 +40,12 @@ export async function GET() {
     mainIds: [
       "smartlingo_course_basic_3m",
       "smartlingo_course_intermediate_3m",
-      "smartlingo_course_advanced_3m"
+      "smartlingo_course_advanced_3m",
+      "smartlingo_platform_max_6m",
+      "smartlingo_platform_max_12m",
+      "smartlingo_platform_aigc_1000"
     ],
-    secondId: "the selected supported learning-language code; the permanent administrator owns each official language product",
+    secondId: "the selected supported learning-language code for a course, or the fixed platform value for Max and AIGC products; the permanent administrator owns each SmartLingo product",
     abi: SMARTPAY5_ABI
   });
 }

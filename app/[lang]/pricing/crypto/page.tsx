@@ -1,7 +1,14 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import { CryptoCheckout } from "@/components/CryptoCheckout";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { isInterfaceLanguage, safeInterfaceLanguage } from "@/lib/interface-locale";
+import { platformProduct } from "@/lib/platform-commerce";
 
-export default async function CryptoPage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function CryptoPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ product?: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
-  redirect(`/${lang}/programs`);
+  const product = platformProduct((await searchParams).product);
+  if (!isInterfaceLanguage(lang) || !product) notFound();
+  const locale = safeInterfaceLanguage(lang);
+  return <main className="billing-page"><SiteHeader lang={locale}/><CryptoCheckout lang={locale} initialPlan={product.id} initialLanguageCode="platform" commerceScope="platform"/><SiteFooter lang={locale}/></main>;
 }

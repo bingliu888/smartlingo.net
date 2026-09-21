@@ -13,7 +13,9 @@ type ReferredMember = {
 };
 
 type PlatformData = {
-  subscription: { status: string; cadence: string } | null;
+  subscription: { status: string; cadence: string; currentPeriodEndsAt?: number | null } | null;
+  platformPlan: { id: "standard" | "max"; maxActive: boolean; remainingDays: number };
+  aigcCredits: number;
   referral: { code: string; url: string; count: number; joined: ReferredMember[] };
   points: number;
   rewardHistory: Array<{ id: string; points: number; status: string; createdAt: number; paymentId: string }>;
@@ -45,9 +47,8 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
 
   if (!data) return <section className="member-panel" aria-live="polite">{message || (zh ? "正在准备会员中心…" : "Preparing membership…")}</section>;
 
-  const plan = data.subscription?.status === "active"
-    ? (data.subscription.cadence === "coordinator" ? (zh ? "协调员方案" : "Coordinator") : (zh ? "进阶方案" : "Plus"))
-    : (zh ? "免费方案" : "Free");
+  const maxActive = data.platformPlan.maxActive;
+  const plan = maxActive ? "Max" : "Standard";
 
   async function copyReferral() {
     await navigator.clipboard.writeText(data!.referral.url);
@@ -90,8 +91,9 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
       </div>
 
       <div className="member-grid membership-tier-grid">
-        <article className={plan === (zh ? "免费方案" : "Free") ? "active" : ""}><small>{zh ? "课程预览" : "COURSE PREVIEW"}</small><strong>{zh ? "选择课程" : "Choose course"}</strong><p>{zh ? "先选择学习语言，再浏览三级课程的 3、6、12 个月固定期限套餐。" : "Choose a learning language first, then browse 3, 6, and 12-month fixed-term packages across three course levels."}</p></article>
-        <article className={plan === (zh ? "进阶方案" : "Plus") ? "active" : ""}><small>{zh ? "计划推出" : "PLANNED"}</small><strong>{zh ? "进阶方案" : "Plus"}</strong><p>{zh ? "更多复习、实时语音额度和个人进度分析。" : "Expanded review, live-audio allowance, and personal progress insights."}</p></article>
+        <article className={!maxActive ? "active" : ""}><small>STANDARD</small><strong>{zh ? "免费方案（含广告）" : "Free with ads"}</strong><p>{zh ? "保留核心每日学习、课程与社区功能，以相关广告支持免费使用。" : "Core daily learning, courses, and Community remain available, supported by relevant ads."}</p><Link href={`/${lang}/pricing`}>{zh ? "查看方案" : "View plans"} →</Link></article>
+        <article className={maxActive ? "active" : ""}><small>MAX</small><strong>{zh ? "无广告学习" : "Learn without ads"}</strong><p>{maxActive && data.subscription?.currentPeriodEndsAt ? (zh ? `有效期至 ${new Date(data.subscription.currentPeriodEndsAt * 1000).toLocaleDateString("zh-CN")}` : `Active through ${new Date(data.subscription.currentPeriodEndsAt * 1000).toLocaleDateString("en-US")}`) : (zh ? "可选择 6 个月 $59 或年度 $99，一次性付款且不自动续费。" : "Choose 6 months for $59 or annual access for $99. One-time payment, no auto-renewal.")}</p><Link href={`/${lang}/pricing`}>{zh ? "管理 Max" : "Manage Max"} →</Link></article>
+        <article><small>AIGC TOKEN CREDIT</small><strong>{data.aigcCredits}</strong><p>{zh ? "用于生成图片、音频与视频；$10 可购买 1,000 额度。" : "Use credits to generate image, audio, and video media. $10 buys 1,000 credits."}</p><Link href={`/${lang}/pricing`}>{zh ? "购买额度" : "Buy credits"} →</Link></article>
       </div>
 
       <div className="member-grid">

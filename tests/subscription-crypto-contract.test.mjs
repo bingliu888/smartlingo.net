@@ -30,9 +30,8 @@ test("course prices, public catalog, and language or course-scoped wallet checko
     read("../app/api/billing/crypto/verify/route.ts"),
   ]);
   for (const marker of ["3_000", "5_000", "8_000", "6_000", "10_000", "16_000", "12_000", "20_000", "32_000", "Beginner", "初期课程"]) assert.match(packages, new RegExp(marker));
-  assert.match(footer, /\/programs/);
-  assert.doesNotMatch(footer, /\/pricing/);
-  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(footer, /\/pricing/);
+  assert.match(pricing, /<PlatformPlans/);
   for (const marker of [
     "Connect wallet", "connectEvmWallet", "SMARTPAY5_ABI", "prepared.refId",
     "sendEvmWalletTransaction", "waitForSmartPayApprovalTransition", "Refresh balances & gas", "Transaction hash", "lockedCourseId",
@@ -58,7 +57,7 @@ test("course prices, public catalog, and language or course-scoped wallet checko
   assert.doesNotMatch(`${checkout}\n${card}`, /SmartAICert|SmartMeeting|smartmeeting\.club/);
 });
 
-test("site-isolated rails grant only the selected language and three-month crypto package", async () => {
+test("site-isolated rails grant selected-language courses and isolated platform products", async () => {
   const [migration, packageMigration, admin, settings, presets, checkoutServer, optionsRoute, checkout, claim, claimRoute, findPayment, verify, purchase, records, status, accountLookup, verification] = await Promise.all([
     Promise.all([read("../drizzle/0172_smartpay3_course_refid.sql"), read("../drizzle/0178_smartpay4_payer_identity.sql"), read("../drizzle/0179_smartpay5_fee_token_support.sql")]).then(parts => parts.join("\n")),
     read("../drizzle/0173_course_subscription_packages.sql"),
@@ -87,17 +86,20 @@ test("site-isolated rails grant only the selected language and three-month crypt
   assert.match(settings, /crypto_payment_admin_audit/);
   assert.match(settings, /2000,10000,30000/);
   assert.doesNotMatch(settings, /basic_amount_cents=3000/);
-  assert.match(presets, /cryptoSubscriptionRuleIds/);
+  assert.match(presets, /smartPayRuleIdsForPlan/);
+  assert.match(presets, /SMARTLINGO_PLATFORM_PRODUCTS/);
   assert.match(checkoutServer, /smartPay5SettingsForContract/);
   assert.match(checkoutServer, /smartPay5SettingsForContract\(settings, scope\.chainId, contractAddress\)/);
-  assert.match(presets, /months: 3/);
+  assert.match(presets, /product\?\.months \|\| 3/);
   assert.match(presets, /chainId !== 137/);
   assert.doesNotMatch(presets, /for \(const languageCode|LANGUAGES|classId/);
   assert.match(optionsRoute, /isSmartLingoCommunityLanguage/);
   assert.match(optionsRoute, /currentSmartPayCheckoutOptions\(undefined, language\)/);
+  assert.match(optionsRoute, /platformProduct\(product\)/);
   assert.match(checkout, /smartpay\/options\?language=\$\{encodeURIComponent\(initialLanguageCode\)\}/);
   assert.match(claim, /record\.secondId/);
-  assert.match(claim, /fixedCourseId\(languageCode, plan\)/);
+  assert.match(claim, /fixedCourseId\(languageCode as SmartLingoCommunityLanguage/);
+  assert.match(claim, /fulfillPlatformProduct/);
   assert.match(claim, /recordCoursePackagePurchase/);
   assert.match(claim, /smartPay5SettingsForContract/);
   assert.doesNotMatch(claim, /PAYMENT_AMOUNT_MISMATCH|primaryTokenAmount\s*[!=]==?|secondaryTokenAmount\s*[!=]==?/);

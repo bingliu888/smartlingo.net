@@ -56,6 +56,6 @@ test("Guru, live audio, and fixed-course boundaries are explicit", async () => {
   assert.match(live, /Never promise fluency, education, employment, visa, income/);
   assert.match(planner, /麦克风与实时语音只在登录后开放/);
   assert.match(terms, /不是官方语言考试/);
-  assert.match(pricing, /redirect\(`\/\$\{lang\}\/programs`\)/);
+  assert.match(pricing, /<PlatformPlans/);
   assert.match(programs, /建立真正可用的词汇、阅读、写作、听力与对话能力/);
 });

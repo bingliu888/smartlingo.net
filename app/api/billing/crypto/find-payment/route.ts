@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     ]);
     if (!setting?.smartPay5Contract || !isAddress(setting.smartPay5Contract) || !option
       || option.contractAddress.toLowerCase() !== setting.smartPay5Contract.toLowerCase()) {
-      return Response.json({ error: "Choose a course payment option" }, { status: 400 });
+      return Response.json({ error: "Choose an available payment option" }, { status: 400 });
     }
     const rpcUrl = await cryptoRpcUrl(setting.chainId);
     const latest = await smartPay5LatestTransactions({
@@ -57,8 +57,9 @@ export async function POST(request: Request) {
     const claims = new Map<string, ClaimRow>();
     if (candidates.length) {
       const placeholders = candidates.map(() => "?").join(",");
+      const claimTable = classId.startsWith("platform:") ? "smartlingo_platform_smartpay_claims" : "smartpay5_payment_claims";
       const rows = await getDatabase().prepare(`SELECT transaction_id AS transactionId,user_id AS userId,
-        current_period_ends_at AS currentPeriodEnd FROM smartpay5_payment_claims
+        current_period_ends_at AS currentPeriodEnd FROM ${claimTable}
         WHERE lower(contract_address)=lower(?) AND lower(transaction_id) IN (${placeholders})`)
         .bind(setting.smartPay5Contract, ...candidates.map(record => record.transactionId.toLowerCase()))
         .all<ClaimRow>();
