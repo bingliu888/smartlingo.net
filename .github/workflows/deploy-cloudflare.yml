@@ -269,7 +269,7 @@ jobs:
           [[ "$assistant" == *'Leo · AI'* && "$assistant" == *'SmartLingo AI 学习伙伴，不是真人'* ]]
           status="$(curl --retry 8 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://smartlingo.net/api/billing/status)"
           [[ "$status" == *'"cryptoSettings"'* ]]
-          card_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' -X POST -H 'content-type: application/json' --data '{"classId":"course_en_basic","lang":"en"}' https://smartlingo.net/api/billing/card/checkout)"
+          card_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' -X POST -H 'content-type: application/json' --data '{"productId":"smartlingo_platform_max_6m","locale":"en"}' https://smartlingo.net/api/billing/platform/stripe/checkout)"
           [[ "$card_code" == '401' ]]
           students_code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://smartlingo.net/api/classes/course_en_basic/students)"
           [[ "$students_code" == '401' ]]
