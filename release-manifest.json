@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-free-max-courses-20260920-r3",
+  "releaseId": "smartlingo-free-max-courses-20260920-r4",
   "site": "smartlingo.net",
   "title": {
     "zh": "SmartLingo 免费初级课程、Max 试用与统一付款",
@@ -24,8 +24,8 @@
       "Keep every Beginner course free without starting Max; the first Intermediate or Advanced visit starts one non-repeatable 7-day Max trial, after which paid Max is required.",
       "Show Free, both Max terms, and the independent credit pack at the bottom of Home while removing the old nine-package and course-price sections.",
       "Route Stripe card or bank payments and Polygon SmartPay crypto payments through one entitlement service; $59, $99, and $10 map to 60M, 100M, and 10M GLC.",
-      "Reuse Konectible's verified responsive Header so the language icon stays beside the hamburger, as many navigation items as fit remain visible, and overflow moves into the drawer.",
-      "Reuse Konectible's two-column Dashboard status card to expose Max days or trial status, AIGC balance, and Extend or Add actions directly on the member dashboard."
+      "Reuse the verified Konectible responsive Header so the language icon stays beside the hamburger, as many navigation items as fit remain visible, and overflow moves into the drawer.",
+      "Reuse the verified Konectible two-column Dashboard status card to expose Max days or trial status, AIGC balance, and Extend or Add actions directly on the member dashboard."
     ]
   },
   "affected": {
