@@ -907,7 +907,7 @@ export function SmartPayAdminConsole({
 
     <section className="smartpay-console-card smartpay-wide-card">
       <div className="admin-form-heading"><div><span>PAYMENT ITEMS</span><h2>{zh ? "后台付款项目与链上规则" : "Dashboard payment items & on-chain rules"}</h2></div><button type="button" onClick={() => void refreshContractState()} disabled={!contractConfigured || Boolean(busy)}>{busy === "refresh-contract" ? "…" : (zh ? "刷新链上规则" : "Refresh on-chain rules")}</button></div>
-      <p>{zh ? "这里只保留 Max 6 个月、Max 年度及 1,000 个人工智能生成额度包三个链上项目，统一使用 platform 作为 secondID。USDT 价格保持美元标价；GLC 按 Konectible 的 10 / 100 美元档位向上取整，例如 $99 对应 1 亿 GLC。" : "Only three on-chain items remain: Max 6-month, Max annual, and the 1,000-credit AIGC pack, all using platform as secondID. USDT keeps the exact USD price; GLC follows Konectible's reviewed 10/100-dollar rounding, so $99 maps to 100M GLC."}</p>
+      <p>{zh ? "这里只保留 Max 6 个月、Max 年度及 1,000 个人工智能生成额度包三个链上项目，统一使用 platform 作为 secondID。USDT 价格保持美元标价；GLC 按 Konectible 的 10 美元档位向上取整，因此 $119 对应 1.2 亿 GLC，$199 对应 2 亿 GLC。" : "Only three on-chain items remain: Max 6-month, Max annual, and the 1,000-credit AIGC pack, all using platform as secondID. USDT keeps the exact USD price; GLC follows Konectible's reviewed 10-dollar rounding, so $119 maps to 120M GLC and $199 maps to 200M GLC."}</p>
       {smartPay5PresetRows.length ? <div className="smartpay-rule-list smartpay-preset-list">{smartPay5PresetRows.map(({ preset, status }) => {
         const key = `preset:${preset.key}`;
         const stopKey = `stop-preset:${preset.key}`;

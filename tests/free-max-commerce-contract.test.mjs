@@ -8,12 +8,12 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("SmartLingo commerce exposes only two Max terms and one independent AIGC credit pack", async () => {
   assert.deepEqual(SMARTLINGO_PLATFORM_PRODUCTS, [
-    { id: "max_6m", kind: "max", months: 6, credits: 0, usdCents: 5_900, displayPrice: "$59" },
-    { id: "max_12m", kind: "max", months: 12, credits: 0, usdCents: 9_900, displayPrice: "$99" },
+    { id: "max_6m", kind: "max", months: 6, credits: 0, usdCents: 11_900, displayPrice: "$119" },
+    { id: "max_12m", kind: "max", months: 12, credits: 0, usdCents: 19_900, displayPrice: "$199" },
     { id: "aigc_1000", kind: "aigc", months: 0, credits: 1_000, usdCents: 1_000, displayPrice: "$10" },
   ]);
-  assert.equal(smartPay5GlcDisplayAmountForUsdCents(5_900), "60000000");
-  assert.equal(smartPay5GlcDisplayAmountForUsdCents(9_900), "100000000");
+  assert.equal(smartPay5GlcDisplayAmountForUsdCents(11_900), "120000000");
+  assert.equal(smartPay5GlcDisplayAmountForUsdCents(19_900), "200000000");
   assert.equal(smartPay5GlcDisplayAmountForUsdCents(1_000), "10000000");
   const [plans, presets, options, stripeCheckout, claim] = await Promise.all([
     read("../lib/subscription-plans.ts"), read("../lib/smartpay5-presets.ts"),

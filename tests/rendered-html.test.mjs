@@ -58,8 +58,8 @@ test("renders the SmartLingo language-learning foundation", async () => {
   assert.match(html, /免费方案/);
   assert.match(html, /6 个月/);
   assert.match(html, /年度/);
-  assert.match(html, /\$59/);
-  assert.match(html, /\$99/);
+  assert.match(html, /\$119/);
+  assert.match(html, /\$199/);
   assert.match(html, /人工智能生成额度/);
   assert.doesNotMatch(html, /九个套餐|30 \/ 50 \/ 80|60 \/ 100 \/ 160|120 \/ 200 \/ 320|课程套餐/);
   assert.match(html, /社区/);

@@ -1,6 +1,6 @@
 export const SMARTLINGO_PLATFORM_PRODUCTS = [
-  { id: "max_6m", kind: "max", months: 6, credits: 0, usdCents: 5_900, displayPrice: "$59" },
-  { id: "max_12m", kind: "max", months: 12, credits: 0, usdCents: 9_900, displayPrice: "$99" },
+  { id: "max_6m", kind: "max", months: 6, credits: 0, usdCents: 11_900, displayPrice: "$119" },
+  { id: "max_12m", kind: "max", months: 12, credits: 0, usdCents: 19_900, displayPrice: "$199" },
   { id: "aigc_1000", kind: "aigc", months: 0, credits: 1_000, usdCents: 1_000, displayPrice: "$10" },
 ] as const;
 

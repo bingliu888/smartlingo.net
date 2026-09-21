@@ -15,7 +15,7 @@ test("home ends with Free and Max subscription tiles and no legacy course pricin
   assert.match(plans, /7-day Max trial/);
   assert.match(plans, /every Beginner, Intermediate, and Advanced course/);
   assert.match(plans, /\$0/);
-  assert.match(plans, /\$59|displayPrice/);
+  assert.match(plans, /\$119|displayPrice/);
   assert.match(plans, /AIGC TOKEN CREDIT/);
   assert.doesNotMatch(home, /Nine packages|九个套餐|30 \/ 50 \/ 80|60 \/ 100 \/ 160|120 \/ 200 \/ 320/);
   assert.match(css, /platform-pricing-compact/);

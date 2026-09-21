@@ -1,92 +1,81 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-free-max-courses-20260920-r8",
+  "releaseId": "smartlingo-max-pricing-20260921-r1",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 免费初级课程、Max 试用与统一付款",
-    "en": "SmartLingo free Beginner courses, Max trial, and unified payments"
+    "zh": "SmartLingo Max 价格更新",
+    "en": "SmartLingo Max pricing update"
   },
   "purpose": {
-    "zh": "移除课程等级付款项目，将产品统一为免费方案和固定期限 Max；初级课程永久免费，中高级首次进入自动获得一次 7 天 Max 试用，并统一 Stripe、SmartPay 与人工智能生成额度。",
-    "en": "Remove course-level payment items and unify the product around Free and fixed-term Max: Beginner stays free, the first higher-level visit starts one 7-day Max trial, and Stripe, SmartPay, and AI generation credits share one entitlement model."
+    "zh": "将 Max 价格调整为 6 个月 119 美元和 12 个月 199 美元，并让公开页面、会员面板、Stripe、SmartPay 与 AI 咨询使用同一套中心价格。",
+    "en": "Change Max pricing to USD $119 for six months and USD $199 for twelve months while keeping public pages, the member dashboard, Stripe, SmartPay, and AI guidance on one central catalog."
   },
   "features": {
     "zh": [
-      "只保留免费方案、6 个月 $59 Max、年度 $99 Max 与 $10 / 1,000 个人工智能生成额度包。",
-      "全部初级课程永久免费且不会启动 Max；首次进入中级或高级课程自动开通一次性 7 天 Max 试用，到期后必须购买 Max 才能继续。",
-      "首页底部直接显示 Free、两个 Max 期限和独立额度包，并删除旧九套餐与课程价格区块。",
-      "Stripe 卡或银行账户付款与 Polygon SmartPay 加密付款统一调用同一套服务端权益发放逻辑；$59、$99、$10 分别映射为 60M、100M、10M GLC。",
-      "复用 Konectible 已验证的响应式 Header：语言图标始终紧邻汉堡按钮，导航按实际宽度尽量显示，其余项目自动进入菜单。",
-      "复用 Konectible Dashboard 双栏状态卡，在用户面板直接显示 Max 剩余天数或试用状态、AIGC 额度及延长与购买入口。"
+      "Max 6 个月价格由 $59 调整为 $119，Max 12 个月价格由 $99 调整为 $199。",
+      "Stripe 卡或银行账户付款继续按精确美元价格收取；Polygon SmartPay 的 USDT 保持 119 / 199，GLC 按已验证的 Konectible 10 美元档位规则分别映射为 120M / 200M。",
+      "首页、订阅页、课程目录、会员面板、管理员课程说明与 AI 咨询同步显示新价格。"
     ],
     "en": [
-      "Keep only Free, $59 six-month Max, $99 annual Max, and a $10 pack of 1,000 AI generation credits.",
-      "Keep every Beginner course free without starting Max; the first Intermediate or Advanced visit starts one non-repeatable 7-day Max trial, after which paid Max is required.",
-      "Show Free, both Max terms, and the independent credit pack at the bottom of Home while removing the old nine-package and course-price sections.",
-      "Route Stripe card or bank payments and Polygon SmartPay crypto payments through one entitlement service; $59, $99, and $10 map to 60M, 100M, and 10M GLC.",
-      "Reuse the verified Konectible responsive Header so the language icon stays beside the hamburger, as many navigation items as fit remain visible, and overflow moves into the drawer.",
-      "Reuse the verified Konectible two-column Dashboard status card to expose Max days or trial status, AIGC balance, and Extend or Add actions directly on the member dashboard."
+      "Change six-month Max from $59 to $119 and twelve-month Max from $99 to $199.",
+      "Keep Stripe card or bank payments on the exact USD price; Polygon SmartPay keeps exact 119 / 199 USDT while the reviewed Konectible 10-dollar bucket rule maps them to 120M / 200M GLC.",
+      "Synchronize the new price across Home, Pricing, language catalogs, the member dashboard, administrator course guidance, and AI guidance."
     ]
   },
   "affected": {
     "zh": [
-      "首页、公开订阅页、课程目录与课堂权限、登录会员面板、Stripe Webhook、SmartPay 管理与加密结账、平台订阅及额度数据。"
+      "首页、公开订阅页、课程目录、登录会员面板、管理员课程说明、Stripe 结账、SmartPay 管理与加密结账、AI 咨询。"
     ],
     "en": [
-      "Home, public pricing, course catalog and classroom access, the signed-in membership panel, the Stripe webhook, SmartPay administration and crypto checkout, and platform entitlement data."
+      "Home, public pricing, the course catalog, the signed-in membership panel, administrator course guidance, Stripe checkout, SmartPay administration and crypto checkout, and AI guidance."
     ]
   },
   "changes": {
     "zh": [
-      "退役九个历史课程付款产品，并把仍有效的历史课程使用期安全迁移为不自动续费的 Max 使用期。",
-      "新增一次性 7 天 Max 试用逻辑，以 subscriptions.trial_ends_at 持久记录已领取状态，防止重复进入课程刷新试用。",
-      "课程学习、SmartCard、Webinar 和 Group Audio 权限统一遵守初级免费、中高级试用或 Max 的规则。",
-      "SmartPay5 白名单只保留两个 Max 期限与一个额度包，平台商品严格使用 platform secondId。"
+      "只修改现有 Max 中心商品目录，不新增付款产品、结账分支或权益类型。",
+      "SmartPay5 预设从中心商品价格重新派生，因此旧链上金额不会被视为新的有效价格，需由 Owner 重新确认。",
+      "免费初级课程、一次性 7 天 Max 试用、Max 期限和 1,000 AIGC 额度包规则保持不变。"
     ],
     "en": [
-      "Retire nine historical course payment products and safely convert any remaining paid course term into non-renewing Max access.",
-      "Persist the one-time 7-day Max trial in subscriptions.trial_ends_at so revisiting a course cannot refresh it.",
-      "Apply Beginner-free and higher-level trial-or-Max rules consistently to learning, SmartCard, Webinar, and Group Audio access.",
-      "Restrict the SmartPay5 allowlist to two Max terms and one credit pack, all using the platform secondId."
+      "Change only the existing central Max product catalog without adding payment products, checkout branches, or entitlement types.",
+      "Derive SmartPay5 presets from the updated catalog so an old on-chain amount is not accepted as the new price until the Owner reconfirms it.",
+      "Keep free Beginner access, the one-time seven-day Max trial, Max terms, and the 1,000-credit AIGC pack unchanged."
     ]
   },
   "validation": {
     "zh": [
-      "完整自动化测试通过，包括免费初级课程、一次性 Max 试用、付款与额度边界、12 种界面语言及 D1 重复迁移。",
-      "TypeScript、零警告 ESLint、敏感数据扫描、生产构建、82 项 D1 迁移重放与外键检查通过。",
+      "自动化测试验证中心商品价格、Stripe 精确金额、SmartPay USDT / GLC 映射、公开页面与登录会员面板文案。",
+      "TypeScript、零警告 ESLint、敏感数据扫描、生产构建、D1 迁移重放与响应式 WebKit 矩阵通过。",
       "未执行真实 Stripe 收款或真实链上转账；这两项保留给站点所有者控制的钱包与付款凭证。"
     ],
     "en": [
-      "The complete automated suite passes, covering free Beginner access, the one-time Max trial, payment and credit boundaries, twelve interface languages, and repeatable D1 migration replay.",
-      "TypeScript, zero-warning ESLint, sensitive-data scanning, production build, all 82 D1 migrations, and foreign-key checks pass.",
+      "Automated tests verify the central product prices, exact Stripe amounts, SmartPay USDT / GLC mapping, public copy, and signed-in dashboard copy.",
+      "TypeScript, zero-warning ESLint, sensitive-data scanning, production build, repeatable D1 migrations, and the responsive WebKit matrix pass.",
       "No live Stripe charge or on-chain transfer was made; those remain controlled by the wallet and payment credentials of the site owner."
     ]
   },
   "deferred": {
     "zh": [
-      "新版 SmartPay5 必须由合约所有者在管理员付款页重新部署，并确认三个产品规则后，Max 与额度加密付款才会在生产结账中启用。"
+      "合约 Owner 必须在管理员付款页用新金额重新确认两个 Max 产品规则；本次不会代表 Owner 发起链上交易。"
     ],
     "en": [
-      "The contract owner must redeploy the revised SmartPay5 contract and confirm its three product rules in payment administration before Max and credit crypto checkout options become available in production."
+      "The contract Owner must reconfirm both Max product rules with the new amounts in payment administration; this release does not submit an on-chain transaction for the Owner."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "课程只保留初级、中级和高级学习等级，不再保留独立付款项目；人工智能生成额度继续独立于 Max 有效期。"
+      "课程等级、免费方案、Max 权益和 AIGC 额度结构不变；仅更新两个 Max 期限的价格。"
     ],
     "en": [
-      "Courses retain Beginner, Intermediate, and Advanced learning levels without separate payment items; AI generation credits remain independent from the Max term."
+      "Course levels, Free access, Max entitlements, and AIGC credit structure remain unchanged; only the prices of the two Max terms change."
     ]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": [
-      "0185_platform_max_aigc_credits",
-      "0186_free_max_course_access"
-    ],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "zh": "回退至上一成功的 Cloudflare Worker。0185 的新增表与 0186 退役的历史价格记录保留；已迁移为 Max 的剩余有效期不会被删除，避免撤销已获得的使用权。",
-      "en": "Roll back to the previous successful Cloudflare Worker. Keep the additive 0185 tables and the historical prices retired by 0186; do not delete remaining access already converted to Max."
+      "zh": "回退至上一成功的 Cloudflare Worker 即可恢复旧目录价格；不删除已有 Max 权益、付款记录或额度余额。",
+      "en": "Roll back to the previous successful Cloudflare Worker to restore the prior catalog prices; do not delete existing Max entitlements, payment records, or credit balances."
     }
   }
 }

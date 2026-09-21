@@ -49,8 +49,8 @@ export default async function AdminLanguageClasses({ params }: { params: Promise
         <strong>{t("Plans", "方案")}: Free + Max</strong>
         <strong>{t("Course payment items", "课程付款项目")}: 0</strong>
         <p>{t(
-          "Max is $59 for 6 months or $99 annually, paid once with no automatic renewal. Course level and learning language do not change the Max price.",
-          "Max 为 6 个月 $59 或年度 $99，一次性付款且不自动续费；课程等级和学习语言不会改变 Max 价格。",
+          "Max is $119 for 6 months or $199 annually, paid once with no automatic renewal. Course level and learning language do not change the Max price.",
+          "Max 为 6 个月 $119 或年度 $199，一次性付款且不自动续费；课程等级和学习语言不会改变 Max 价格。",
         )}</p>
       </aside>
     </div>
