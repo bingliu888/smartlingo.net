@@ -48,7 +48,7 @@ export function PlatformPlans({ lang, checkout, sessionId, compact = false }: { 
     <button className="platform-payment-cancel" onClick={() => setPaymentChoice("")}>{t("Cancel", "取消")}</button>
   </div> : <button className="platform-payment-chooser" onClick={() => setPaymentChoice(productId)}>{t("Choose payment method", "选择付款方式")} →</button>;
 
-  return <section className={`platform-pricing${compact ? " platform-pricing-compact" : ""}`} data-layout-fill="platform-pricing">
+  return <section className={`platform-pricing${compact ? " platform-pricing-compact" : ""}`}>
     <header className="platform-pricing-heading"><p className="section-kicker">{t("SMARTLINGO MEMBERSHIP", "SMARTLINGO 会员方案")}</p><h1>{t("Learn Beginner free. Go further with Max.", "初级永久免费，用 Max 更进一步。")}</h1><p>{t("Free includes every Beginner course with ads. Opening an Intermediate or Advanced course starts one 7-day Max trial; after it ends, Max is required to continue those levels. Max removes ads and never renews automatically.", "免费方案包含全部带广告的初级课程。首次进入中级或高级课程会自动开始一次 7 天 Max 试用；试用结束后需开通 Max 才能继续这些等级。Max 去除广告且不会自动续费。")}</p></header>
     {message && <p className="billing-message" role="status">{busy === "complete" ? t("Confirming payment…", "正在确认付款…") : message}</p>}
     {!compact && <article className="platform-status-card">

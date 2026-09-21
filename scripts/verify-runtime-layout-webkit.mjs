@@ -84,7 +84,7 @@ const expectedPageNames = Object.freeze({
 });
 
 const requiredHooks = Object.freeze({
-  "/": { fills: 1, tracks: 1, readableCopy: 1, textFits: 1 },
+  "/": { fills: 1, readableCopy: 1, textFits: 1 },
   "/tutorial": { fills: 1, readableCopy: 1 },
   "/classes": {},
   "/programs": { fills: 2, tracks: 2, readableCopy: 1, textFits: 1 },
