@@ -1,16 +1,13 @@
 import { atomicTokenAmountToDisplay, tokenAmountToAtomic } from "./crypto-amount";
 import type { CryptoPaymentSetting } from "./crypto-settings";
-import { smartPayRuleIdsForPlan, type CryptoSubscriptionPlan, type SmartPayPlan } from "./crypto-subscription";
+import { smartPayRuleIdsForPlan, type SmartPayPlan } from "./crypto-subscription";
 import { SMARTLINGO_PLATFORM_PRODUCTS, platformProduct } from "./platform-commerce";
+import { smartPay5GlcDisplayAmountForUsdCents } from "./smartpay5-price-mapping";
 import { smartPay5RulePresetStatus as compareSmartPay5RulePreset } from "./smartpay5-rule-state";
 
-const TIERS: SmartPayPlan[] = ["basic", "intermediate", "advanced", ...SMARTLINGO_PLATFORM_PRODUCTS.map(item => item.id)];
+const TIERS: SmartPayPlan[] = SMARTLINGO_PLATFORM_PRODUCTS.map(item => item.id);
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const SMARTPAY5_MINIMUM_GLC_DISPLAY = "1000000000";
-export const SMARTPAY5_GLC_PER_USDT = 1_000_000n;
-
-const amountKey = (tier: CryptoSubscriptionPlan): "basicTokenAmount" | "intermediateTokenAmount" | "advancedTokenAmount" =>
-  tier === "basic" ? "basicTokenAmount" : tier === "intermediate" ? "intermediateTokenAmount" : "advancedTokenAmount";
 
 export type SmartPay5RulePreset = {
   key: string; mode: "dual" | "single"; chainId: 137; plan: SmartPayPlan; months: number;
@@ -45,19 +42,16 @@ export function smartPay5RulePresets(settings: readonly CryptoPaymentSetting[], 
     if (isUsdt && !glc) continue;
     for (const plan of TIERS) {
       const ids = smartPayRuleIdsForPlan(plan);
-      const product = platformProduct(plan);
-      const displayAmount = product
-        ? (isUsdt ? String(product.usdCents / 100) : String((product.usdCents / 100) * Number(SMARTPAY5_GLC_PER_USDT)))
-        : setting[amountKey(plan as CryptoSubscriptionPlan)];
+      const product = platformProduct(plan)!;
+      const displayAmount = isUsdt
+        ? String(product.usdCents / 100)
+        : smartPay5GlcDisplayAmountForUsdCents(product.usdCents);
       const fullPrimary = tokenAmountToAtomic(displayAmount, setting.tokenDecimals);
       const percent = Number.isInteger(setting.smartPay5UsdtPercent) ? setting.smartPay5UsdtPercent : 50;
       if (percent < 0 || percent > 100) throw new Error("SMARTPAY5_INVALID_USDT_PERCENT");
       let fullSecondary = 0n;
       if (isUsdt && glc) {
-        const numerator = fullPrimary * SMARTPAY5_GLC_PER_USDT * (10n ** BigInt(glc.tokenDecimals));
-        const denominator = 10n ** BigInt(setting.tokenDecimals);
-        if (numerator % denominator !== 0n) throw new Error("SMARTPAY5_SECONDARY_AMOUNT_NOT_EXACT");
-        fullSecondary = numerator / denominator;
+        fullSecondary = tokenAmountToAtomic(smartPay5GlcDisplayAmountForUsdCents(product.usdCents), glc.tokenDecimals);
       }
       rows.push({
         key: `${setting.id}:${glc?.id || "single"}:${plan}`, mode: isUsdt ? "dual" : "single", chainId: 137, plan, months: product?.months || 3,

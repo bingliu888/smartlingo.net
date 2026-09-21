@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { PlayDailySprintPicker } from "../../components/PlayDailySprintPicker";
+import { PlatformPlans } from "../../components/PlatformPlans";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
 import { homeInterfaceTranslations } from "../../lib/home-interface-translations.generated";
@@ -35,25 +36,6 @@ const copy = {
       ["03", "Talk", "Use text or signed-in live audio with the AI Guru in course-defined real-life scenarios."],
       ["04", "Review", "Return to mistakes and due vocabulary; keep a streak without losing access when life interrupts."],
     ],
-    classKicker: "THREE COURSE LEVELS",
-    classTitle: "Choose the depth of training that fits your goal.",
-    classBody: "Every language has Beginner, Intermediate, and Advanced courses maintained by SmartLingo administrators, with an A/V Webinar teaching room and a free group-audio practice room.",
-    classCards: [
-      ["Beginner · $30 / $50 / $80", "Choose 3, 6, or 12 months of core vocabulary, pronunciation, listening, and guided speaking."],
-      ["Intermediate · $60 / $100 / $160", "Choose 3, 6, or 12 months; adds daily-life dialogue and writing training."],
-      ["Advanced · $120 / $200 / $320", "Choose 3, 6, or 12 months; adds accent correction, speech training, and speech-draft revision."],
-    ],
-    moneyKicker: "SIMPLE FIXED-TERM ACCESS",
-    moneyTitle: "Nine packages. No automatic renewal.",
-    moneyBody: "Choose the learning language first, then one of three levels and 3, 6, or 12 months. The same course has the same price in every language.",
-    moneyAction: "Action Now",
-    moneyFacts: [
-      ["9 packages", "Three levels × three access periods"],
-      ["3 levels", "Beginner, Intermediate, and Advanced"],
-      ["2 rooms", "A Webinar teaching room and group-audio practice room for each course"],
-    ],
-    rewardTitle: "Three point types stay separate and auditable.",
-    rewardBody: "Learning XP tracks motivation and has no cash value. Verified SmartCard challenge points can offset only an eligible SmartLingo course package. Direct-introducer rewards remain limited to qualifying platform-subscription payments; course purchases, payouts, tips, and refunds never create them.",
     socialKicker: "LEARN WITH PEOPLE",
     socialTitle: "A language course should feel alive between lessons.",
     social: [
@@ -62,16 +44,8 @@ const copy = {
       ["AI Guru & live audio", "Public text guidance and signed-in microphone or live-audio practice with course context and usage controls."],
       ["Progress that helps", "Daily goals, skill mastery, streaks, course milestones, and privacy-safe aggregate teacher views."],
     ],
-    planKicker: "COMPETITIVE BY DESIGN",
-    planTitle: "Choose the level and access period you need.",
-    planBody: "Every language uses the same nine transparent fixed-term prices and includes a Webinar teaching room plus a group-audio practice room.",
-    plans: [
-      ["Beginner · $30 / $50 / $80", "3, 6, or 12 months of core vocabulary, pronunciation, listening, and guided speaking."],
-      ["Intermediate · $60 / $100 / $160", "3, 6, or 12 months of Beginner training plus daily-life dialogue and writing."],
-      ["Advanced · $120 / $200 / $320", "3, 6, or 12 months of Intermediate training plus accent correction, speeches, and speech-draft revision."],
-    ],
     readyTitle: "Choose a language and say the first sentence today.",
-    readyBody: "Choose a learning language, level, and access period, then keep learning, teaching, and speaking practice together.",
+    readyBody: "Learn every Beginner course free with ads. Enter Intermediate or Advanced to start one 7-day Max trial, then activate Max to continue.",
     readyAction: "Create free account",
   },
   zh: {
@@ -100,25 +74,6 @@ const copy = {
       ["03", "对话", "用文字或登录后的实时语音，与人工智能导师练习课程定义的真实场景。"],
       ["04", "复习", "回到错题和到期词汇；中断学习不会失去课程使用权，可重新继续。"],
     ],
-    classKicker: "三级课程",
-    classTitle: "按学习目标选择合适的训练深度。",
-    classBody: "每种语言都有由 SmartLingo 管理员维护的初期、中级和高级课程；每门课程配有音视频 Webinar 课程教室和免费的 Group Audio 练习室。",
-    classCards: [
-      ["初期 · 30 / 50 / 80 美元", "选择 3、6 或 12 个月，学习核心词汇、发音、听力和引导式口语。"],
-      ["中级 · 60 / 100 / 160 美元", "选择 3、6 或 12 个月，增加日常生活对话和写作训练。"],
-      ["高级 · 120 / 200 / 320 美元", "选择 3、6 或 12 个月，增加口音校正、演讲训练和演讲稿修改。"],
-    ],
-    moneyKicker: "简单固定期限套餐",
-    moneyTitle: "九个套餐，不自动续费。",
-    moneyBody: "先选择学习语言，再从三级课程及 3、6、12 个月中选择。每种语言的同级课程价格完全相同。",
-    moneyAction: "立即行动",
-    moneyFacts: [
-      ["9 个套餐", "三级课程 × 三种学习期限"],
-      ["三级", "初期、中级和高级"],
-      ["两个房间", "每门课程都有 Webinar 课程教室和小组语音练习室"],
-    ],
-    rewardTitle: "三类积分独立记账、可追溯。",
-    rewardBody: "学习 XP 只表示动力和进度，没有现金价值；经验证的 SmartCard 挑战积分只能抵符合条件的 SmartLingo 课程套餐；直接介绍人积分仍只来自符合规则的平台订阅付款，课程购买、收款、打赏和退款都不会产生介绍人积分。",
     socialKicker: "和真实的人一起学习",
     socialTitle: "一门语言班，在下课后也应该保持活力。",
     social: [
@@ -127,16 +82,8 @@ const copy = {
       ["人工智能导师与实时语音", "公开文字帮助；登录后使用麦克风或实时语音，并按课程上下文练习。"],
       ["真正有帮助的进度", "每日目标、技能掌握、连续学习、课程里程碑，以及保护隐私的老师汇总视图。"],
     ],
-    planKicker: "以更有竞争力的价值设计",
-    planTitle: "选择需要的等级与学习期限。",
-    planBody: "每种语言采用相同的九个透明固定期限价格，并配有 Webinar 课程教室和小组语音练习室。",
-    plans: [
-      ["初期 · 30 / 50 / 80 美元", "3、6 或 12 个月的核心词汇、发音、听力和引导式口语。"],
-      ["中级 · 60 / 100 / 160 美元", "3、6 或 12 个月的初期训练加日常生活对话和写作。"],
-      ["高级 · 120 / 200 / 320 美元", "3、6 或 12 个月的中级训练加口音校正、演讲和演讲稿修改。"],
-    ],
     readyTitle: "今天就选一种语言，说出第一句话。",
-    readyBody: "选择学习语言、课程等级和学习期限，把学习、授课与口语练习连接在一起。",
+    readyBody: "全部初级课程可带广告免费学习；首次进入中级或高级会开始一次 7 天 Max 试用，之后开通 Max 才能继续。",
     readyAction: "免费创建账户",
   },
 } as const;
@@ -201,27 +148,14 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <div className="lingo-loop-grid">{t.loop.map(([number, title, body]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
       </section>
 
-      <section className="lingo-money-section">
-        <div className="lingo-money-intro" data-layout-track="home-subscription-intro" data-layout-overlap-check="home-subscription-intro">
-          <div className="lingo-heading"><p className="section-kicker">{t.moneyKicker}</p><h2>{t.moneyTitle}</h2><p>{t.moneyBody}</p></div>
-          <Link className="primary-button lingo-money-cta" href={`/${locale}/programs`}>{t.moneyAction} →</Link>
-        </div>
-        <div className="lingo-money-facts">{t.moneyFacts.map(([value, label]) => <article key={value}><strong>{value}</strong><p>{label}</p></article>)}</div>
-        <aside><h3>{t.rewardTitle}</h3><p>{t.rewardBody}</p></aside>
-      </section>
-
       <section className="lingo-section lingo-social-section">
         <div className="lingo-heading"><p className="section-kicker">{t.socialKicker}</p><h2>{t.socialTitle}</h2></div>
         <div className="lingo-social-grid">{t.social.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
         <Link className="primary-button" href={`/${locale}/classes`}>{ui.browseCourses} →</Link><Link className="secondary-button" href={`/${locale}/classes?mine=1`}>{ui.myCourses} →</Link>
       </section>
 
-      <section className="lingo-section lingo-plan-section">
-        <div className="lingo-heading"><p className="section-kicker">{t.planKicker}</p><h2>{t.planTitle}</h2><p>{t.planBody}</p></div>
-        <div className="lingo-plan-grid">{t.plans.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p><Link href={`/${locale}/programs`}>{ui.chooseLanguageAction} →</Link></article>)}</div>
-      </section>
-
       <section className="lingo-ready"><h2>{t.readyTitle}</h2><p>{t.readyBody}</p><div className="lingo-actions"><Link className="primary-button" href={`/${locale}/auth/sign-up`}>{t.readyAction} →</Link><Link className="secondary-button" href={`/${locale}/programs`}>{ui.viewPaths}</Link></div></section>
+      <PlatformPlans lang={locale} compact/>
       <SiteFooter lang={locale}/>
     </main>
   );

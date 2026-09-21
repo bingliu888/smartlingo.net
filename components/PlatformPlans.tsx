@@ -5,9 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { interfaceText, type InterfaceLanguage } from "../lib/interface-locale";
 import { SMARTLINGO_AIGC_CREDIT_COSTS, SMARTLINGO_PLATFORM_PRODUCTS, type SmartLingoPlatformProductId } from "../lib/platform-commerce";
 
-type PlatformState = { subscription?: { status: string; cadence: string; currentPeriodEndsAt?: number | null } | null; platformPlan?: { id: "standard" | "max"; maxActive: boolean; remainingDays: number }; aigcCredits?: number };
+type PlatformState = { subscription?: { status: string; cadence: string; currentPeriodEndsAt?: number | null } | null; platformPlan?: { id: "free" | "max"; maxActive: boolean; trialActive?: boolean; remainingDays: number }; aigcCredits?: number };
 
-export function PlatformPlans({ lang, checkout, sessionId }: { lang: InterfaceLanguage; checkout?: string; sessionId?: string }) {
+export function PlatformPlans({ lang, checkout, sessionId, compact = false }: { lang: InterfaceLanguage; checkout?: string; sessionId?: string; compact?: boolean }) {
   const t = useCallback((english: string, chinese: string) => interfaceText(lang, english, chinese), [lang]);
   const [state, setState] = useState<PlatformState>({});
   const [busy, setBusy] = useState(checkout === "success" && sessionId ? "complete" : "");
@@ -48,22 +48,29 @@ export function PlatformPlans({ lang, checkout, sessionId }: { lang: InterfaceLa
     <button className="platform-payment-cancel" onClick={() => setPaymentChoice("")}>{t("Cancel", "取消")}</button>
   </div> : <button className="platform-payment-chooser" onClick={() => setPaymentChoice(productId)}>{t("Choose payment method", "选择付款方式")} →</button>;
 
-  return <section className="platform-pricing" data-layout-fill="platform-pricing">
-    <header className="platform-pricing-heading"><p className="section-kicker">{t("SMARTLINGO MEMBERSHIP", "SMARTLINGO 会员方案")}</p><h1>{t("Learn free. Go further with Max.", "免费学习，用 Max 更进一步。")}</h1><p>{t("Standard is free with ads. Max removes ads for one fixed term and never renews automatically. Language courses remain separate.", "Standard 免费并显示广告；Max 在固定期限内移除广告，而且绝不自动续费。语言课程仍单独订阅。")}</p></header>
+  return <section className={`platform-pricing${compact ? " platform-pricing-compact" : ""}`} data-layout-fill="platform-pricing">
+    <header className="platform-pricing-heading"><p className="section-kicker">{t("SMARTLINGO MEMBERSHIP", "SMARTLINGO 会员方案")}</p><h1>{t("Learn Beginner free. Go further with Max.", "初级永久免费，用 Max 更进一步。")}</h1><p>{t("Free includes every Beginner course with ads. Opening an Intermediate or Advanced course starts one 7-day Max trial; after it ends, Max is required to continue those levels. Max removes ads and never renews automatically.", "免费方案包含全部带广告的初级课程。首次进入中级或高级课程会自动开始一次 7 天 Max 试用；试用结束后需开通 Max 才能继续这些等级。Max 去除广告且不会自动续费。")}</p></header>
     {message && <p className="billing-message" role="status">{busy === "complete" ? t("Confirming payment…", "正在确认付款…") : message}</p>}
-    <article className="platform-status-card">
-      <div><small>{t("MEMBER STATUS", "会员状态")}</small><h2>{maxActive ? t("Max is active", "Max 已启用") : t("Standard is active", "Standard 已启用")}</h2><p>{maxActive ? t("Enjoy an ad-free learning experience until the fixed term ends. AIGC credits remain a separate balance.", "在固定期限结束前享受无广告学习体验；人工智能生成额度仍为独立余额。") : t("Core learning stays free with ads. Upgrade once for a fixed Max term whenever you are ready.", "核心学习含广告并永久免费；准备好时可一次性购买固定期限 Max。")}</p></div>
-      <strong>{maxActive ? remainingDays : t("FREE", "免费")}<span>{maxActive ? t("days remaining", "剩余天数") : t("STANDARD", "标准方案")}</span></strong>
-    </article>
+    {!compact && <article className="platform-status-card">
+      <div><small>{t("MEMBER STATUS", "会员状态")}</small><h2>{maxActive ? state.platformPlan?.trialActive ? t("7-day Max trial is active", "7 天 Max 试用已启用") : t("Max is active", "Max 已启用") : t("Free is active", "免费方案已启用")}</h2><p>{maxActive ? t("Enjoy ad-free learning and every course level until the fixed term ends. AIGC credits remain a separate balance.", "在固定期限结束前享受无广告学习和全部课程等级；人工智能生成额度仍为独立余额。") : t("Every Beginner course stays free with ads. Enter Intermediate or Advanced once to start your one-time 7-day Max trial.", "全部初级课程含广告并永久免费；首次进入中级或高级课程时会开始一次性 7 天 Max 试用。")}</p></div>
+      <strong>{maxActive ? remainingDays : t("FREE", "免费")}<span>{maxActive ? t("days remaining", "剩余天数") : t("FREE PLAN", "免费方案")}</span></strong>
+    </article>}
     <div className="platform-plan-grid">
+      <article className="platform-free-card">
+        <small>{t("FREE PLAN", "免费方案")}</small>
+        <h2>{t("Free", "免费")}</h2>
+        <strong>$0</strong>
+        <p>{t("Learn every Beginner course with ads, including daily practice, SmartCard, speaking scenarios, Community, and the public AI study partner. Visiting Beginner never starts Max.", "免费学习全部带广告的初级课程，包括今日练习、SmartCard、生活口语、社区和公开人工智能学伴；进入初级课程不会启动 Max。")}</p>
+        <Link className="platform-payment-chooser" href={`/${lang}/play`}>{t("Start free", "免费开始")} →</Link>
+      </article>
       {maxProducts.map(product => <article className="platform-max-card" key={product.id}>
         <small>{t("ONE COMPLETE MAX PLAN", "完整的 MAX 方案")}</small>
         <h2>{product.months === 12 ? t("Annual", "年度") : t("6 months", "6 个月")}</h2>
         <strong>{product.displayPrice}</strong>
-        <p>{t("Ad-free learning, focused progress tools, community learning, and AI study partners for one fixed term.", "在一个固定期限内享受无广告学习、专注进度工具、社区学习和 AI 学伴。")}</p>
+        <p>{t("Ad-free learning plus every Beginner, Intermediate, and Advanced course level, focused progress tools, Community, and AI study partners for one fixed term.", "在一个固定期限内享受无广告学习，并可学习全部初级、中级和高级课程，同时使用专注进度工具、社区和 AI 学伴。")}</p>
         {paymentActions(product.id)}
       </article>)}
     </div>
-    <article className="aigc-credit-card"><div><small>{t("AIGC TOKEN CREDIT", "人工智能生成额度")}</small><h2>{t("Create image, audio, and video media", "生成图片、音频与视频媒体")}</h2><p>{t("One prepaid pack adds 1,000 non-cash credits. The balance is independent from Max and has no exchange or withdrawal value.", "一次购买增加 1,000 个非现金额度；余额与 Max 相互独立，不可兑换或提现。")}</p><Link className="history-button" href={`/${lang}/share`}>{t("Open AIGC Studio", "打开人工智能媒体工作室")} →</Link></div><div className="aigc-credit-price"><b>{state.aigcCredits ?? 0}</b><span>{t("CREDIT", "额度")}</span><small>{credit.displayPrice} / 1,000</small><small>{t(`Image ${SMARTLINGO_AIGC_CREDIT_COSTS.image} · Audio ${SMARTLINGO_AIGC_CREDIT_COSTS.audio} · Video ${SMARTLINGO_AIGC_CREDIT_COSTS.video}`, `图片 ${SMARTLINGO_AIGC_CREDIT_COSTS.image} · 音频 ${SMARTLINGO_AIGC_CREDIT_COSTS.audio} · 视频 ${SMARTLINGO_AIGC_CREDIT_COSTS.video}`)}</small>{paymentActions(credit.id)}</div></article>
+    <article className="aigc-credit-card" id="aigc-credits"><div><small>{t("AIGC TOKEN CREDIT", "人工智能生成额度")}</small><h2>{t("Create image, audio, and video media", "生成图片、音频与视频媒体")}</h2><p>{t("One prepaid pack adds 1,000 non-cash credits. The balance is independent from Max and has no exchange or withdrawal value.", "一次购买增加 1,000 个非现金额度；余额与 Max 相互独立，不可兑换或提现。")}</p></div><div className="aigc-credit-price"><b>{state.aigcCredits ?? 0}</b><span>{t("CREDIT", "额度")}</span><small>{credit.displayPrice} / 1,000</small><small>{t(`Image ${SMARTLINGO_AIGC_CREDIT_COSTS.image} · Audio ${SMARTLINGO_AIGC_CREDIT_COSTS.audio} · Video ${SMARTLINGO_AIGC_CREDIT_COSTS.video}`, `图片 ${SMARTLINGO_AIGC_CREDIT_COSTS.image} · 音频 ${SMARTLINGO_AIGC_CREDIT_COSTS.audio} · 视频 ${SMARTLINGO_AIGC_CREDIT_COSTS.video}`)}</small>{paymentActions(credit.id)}</div></article>
   </section>;
 }

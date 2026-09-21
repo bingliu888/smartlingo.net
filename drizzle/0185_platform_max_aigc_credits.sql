@@ -1,4 +1,4 @@
--- Standard is free with ads. Max is a fixed-term, non-renewing platform plan.
+-- Free includes ads. Max is a fixed-term, non-renewing platform plan.
 -- AIGC credits are prepaid and independent from course credit.
 CREATE TABLE smartlingo_platform_checkout_intents (
   id TEXT PRIMARY KEY NOT NULL,

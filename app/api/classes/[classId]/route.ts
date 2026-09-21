@@ -3,6 +3,7 @@ import { isAdminUser } from "../../../../lib/admin-access";
 import { canManageClass } from "../../../../lib/class-managers";
 import { cleanMultiline, cleanText } from "../../../../lib/smartlingo-classes";
 import { courseSupervisorIdentity } from "../../../../lib/course-supervisors";
+import { hasCourseTierAccess } from "../../../../lib/platform-entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -66,15 +67,16 @@ export async function GET(
   const detail = await classDetail(classId);
   if (!detail) return Response.json({ error: "Course not found" }, { status: 404 });
 
-  const membership = await getDatabase().prepare(`SELECT member.role,member.status
+  const membershipRow = await getDatabase().prepare(`SELECT member.role,member.status
     FROM smartlingo_language_class_members member
-    LEFT JOIN smartlingo_course_subscriptions subscription
-      ON subscription.class_id=member.class_id AND subscription.user_id=member.user_id
-    WHERE member.class_id=? AND member.user_id=? AND member.status IN ('active','invited','paused')
-      AND (? NOT IN ('official_course','subject') OR ?=0 OR (subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
-        OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch())) LIMIT 1`)
-    .bind(classId, user.id, detail.classKind, detail.priceCents).first<{ role: string; status: string }>();
+    WHERE member.class_id=? AND member.user_id=? AND member.status IN ('active','invited','paused') LIMIT 1`)
+    .bind(classId, user.id).first<{ role: string; status: string }>();
   const isOwner = detail.ownerUserId === user.id;
+  const tierAccess = detail.classKind === "official_course"
+    ? await hasCourseTierAccess(user, detail.packageTier, { startMaxTrial: detail.packageTier !== "basic" })
+    : { allowed: true, maxActive: false, trialStarted: false, trialEndsAt: null };
+  const maxActive = tierAccess.maxActive;
+  const membership = detail.classKind === "official_language" || isOwner || tierAccess.allowed ? membershipRow : null;
   const room = await getDatabase().prepare(`SELECT room_id AS roomId FROM smartlingo_course_classrooms WHERE course_id=? LIMIT 1`)
     .bind(classId).first<{ roomId: string }>();
   const canManage = room
@@ -104,8 +106,10 @@ export async function GET(
     supervisorRefId: supervisor?.refId || null,
     membership,
     placement,
-    paymentPolicy: { durationsMonths: [3,6,12], automaticRenewal: false, cryptoDurationMonths: 3 },
-    paymentMode: "fixed_term_package",
+    maxActive,
+    courseAccess: { allowed: tierAccess.allowed, basicFree: detail.packageTier === "basic", trialStarted: tierAccess.trialStarted, trialEndsAt: tierAccess.trialEndsAt },
+    paymentPolicy: { plans: ["free", "max"], maxTermsMonths: [6,12], beginnerFree: true, maxLevels: ["intermediate","advanced"], automaticRenewal: false },
+    paymentMode: "platform_max",
   });
 }
 

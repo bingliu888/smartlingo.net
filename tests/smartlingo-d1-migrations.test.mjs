@@ -8,11 +8,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 81);
-  assert.equal(result.firstRunApplied, 81);
+  assert.equal(result.migrationCount, 82);
+  assert.equal(result.firstRunApplied, 82);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0185_platform_max_aigc_credits");
+  assert.equal(result.newestMigration, "0186_free_max_course_access");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",

@@ -527,7 +527,7 @@ export function CryptoCheckout({ lang: locale, initialPlan, initialLanguageCode,
   }
 
   return <div className="crypto-flow">
-    <Link className="back-link" href={commerceScope === "platform" ? `/${locale}/pricing` : lockedCourseId ? `/${locale}/classes/${lockedCourseId}` : `/${locale}/programs/${initialLanguageCode}`}>← {commerceScope === "platform" ? t("Back to plans", "返回方案") : t("Back to course", "返回课程套餐")}</Link>
+    <Link className="back-link" href={`/${locale}/pricing`}>← {t("Back to plans", "返回方案")}</Link>
     <div className="page-heading centered"><p className="eyebrow"><span/> {t("CRYPTO PAYMENT", "加密货币付款")}</p><h1>{commerceScope === "platform" ? t("Pay for SmartLingo with crypto", "使用加密货币购买 SmartLingo 服务") : t("Subscribe to this course with crypto", "使用加密货币订阅课程")}</h1><p>{t("Products, tokens, and amounts come only from this site's available on-chain payment rules. We never request a private key or seed phrase.", "产品、代币和金额全部来自本站当前可用的链上付款规则。不会要求私钥或助记词。")}</p></div>
     <ol className="payment-steps"><li className={step >= 1 ? "active" : ""}>1. {t("Product", "选择服务期")}</li><li className={step >= 2 ? "active" : ""}>2. {t("Crypto", "选择代币")}</li><li className={step >= 3 ? "active" : ""}>3. {t("Wallet", "付款钱包")}</li></ol>
 

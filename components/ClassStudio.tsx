@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SMARTLINGO_COURSE_PACKAGES, courseSubscriptionPackage, type SmartLingoCourseDurationMonths, type SmartLingoPackageTier } from "../lib/smartlingo-course-packages";
+import { SMARTLINGO_COURSE_PACKAGES, type SmartLingoPackageTier } from "../lib/smartlingo-course-packages";
 import { interfaceText } from "../lib/interface-locale";
 import type { SiteLanguage } from "../lib/site-locale";
 import { CourseClassroomTile } from "./CourseClassroomTile";
-import { CoursePaymentActions } from "./CoursePaymentActions";
 import { CourseStudentManager } from "./CourseStudentManager";
-import { CourseSupervisorField } from "./CourseSupervisorField";
-import { CourseSupervisorShare } from "./CourseSupervisorShare";
 
 type Lang = SiteLanguage;
 type LanguageClass = {
@@ -29,7 +26,8 @@ type Detail = {
   class: LanguageClass; isOwner: boolean; canManage: boolean;
   membership: { role: string; status: string } | null;
   placement: { id: string; status: string; entryMode: string; overallScore: number | null; recommendedLevel: string | null } | null;
-  canSupervise?: boolean; supervisorRefId?: string | null;
+  maxActive?: boolean;
+  courseAccess?: { allowed: boolean; basicFree: boolean; trialStarted: boolean; trialEndsAt: number | null };
 };
 
 const COPY = {
@@ -38,32 +36,28 @@ const COPY = {
     intro: "Only courses you have subscribed to appear here. Use Choose courses whenever you want to explore another language or level.",
     signIn: "Sign in to view courses", noJoined: "You have not started a course yet.",
     chooseCourses: "Choose courses", joined: "Subscribed",
-    open: "Open course", learners: "learners", packageFrom: "Packages from", months: "months",
-    back: "All courses", courseAdmin: "SmartLingo course", schedule: "Schedule", price: "Selected package",
+    open: "Open course", learners: "learners", packageFrom: "Included with Max", months: "months",
+    back: "All courses", courseAdmin: "SmartLingo course", schedule: "Schedule", price: "Access",
     package: "Course package", classroom: "Two course rooms", classroomCopy: "Use the Webinar teaching room for administrator and co-host lessons, and the free group-audio practice room for student speaking discussion.",
     fiveSkillsTitle: "Learn five skills", fiveSkillsBody: "Open Vocabulary, Speaking, Listening, Writing, or Quiz for this course directly—no language or placement selection required.",
     dailyLearning: "Continue guided learning", calendar: "Learning calendar",
-    edit: "Edit course", save: "Save", cancel: "Cancel", summary: "Description", joinFailed: "The subscription could not be started. Please try again.",
+    edit: "Edit course", save: "Save", cancel: "Cancel", summary: "Description", joinFailed: "The course could not be opened. Please try again.",
   },
   zh: {
     eyebrow: "我的课程", title: "您已订阅的课程。",
     intro: "这里只显示您已订阅的课程。如需学习其他语言或等级，可随时前往“选择课程”。",
     signIn: "登录后查看课程", noJoined: "您尚未开始任何课程。",
     chooseCourses: "选择课程", joined: "已订阅",
-    open: "进入课程", learners: "位学员", packageFrom: "套餐起价", months: "个月",
-    back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "已选套餐",
+    open: "进入课程", learners: "位学员", packageFrom: "Max 已包含", months: "个月",
+    back: "返回全部课程", courseAdmin: "SmartLingo 官方课程", schedule: "课程安排", price: "学习权限",
     package: "课程内容", classroom: "两个课程教室", classroomCopy: "管理员和协办主持在 Webinar 课程教室授课；学员可在免费的 Group Audio 练习室讨论和练习口语。",
     fiveSkillsTitle: "学习五项技能", fiveSkillsBody: "直接进入本课程的词汇、口语、听力、写作或测验，无需再次选择语言或参加分级测试。",
     dailyLearning: "继续综合学习", calendar: "学习日历",
-    edit: "编辑课程", save: "保存", cancel: "取消", summary: "课程说明", joinFailed: "暂时无法开通订阅，请稍后重试。",
+    edit: "编辑课程", save: "保存", cancel: "取消", summary: "课程说明", joinFailed: "暂时无法开放课程，请稍后重试。",
   },
 } as const;
 
-function money(cents: number, currency = "USD") {
-  return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100);
-}
-
-export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initialDurationMonths=3, initialSupervisorRefId }: { lang: Lang; initialClassId?: string; initialInviteCode?: string; initialTargetLanguage?: string; initialDurationMonths?: SmartLingoCourseDurationMonths; initialSupervisorRefId?: string }) {
+export function ClassStudio({ lang, initialClassId, initialTargetLanguage }: { lang: Lang; initialClassId?: string; initialInviteCode?: string; initialTargetLanguage?: string }) {
   const t = COPY[lang === "zh" ? "zh" : "en"];
   const tx=(english:string,chinese:string)=>interfaceText(lang,english,chinese);
   const [context, setContext] = useState<Context | null>(null);
@@ -108,14 +102,22 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
     setBusy(false);
   }
 
+  async function joinCourse(classId: string) {
+    setBusy(true); setNotice("");
+    const response = await fetch(`/api/classes/${encodeURIComponent(classId)}/enroll`, { method: "POST" });
+    if (response.ok) await load();
+    else if (response.status === 402) window.location.assign(`/${lang}/pricing`);
+    else setNotice((await response.json().catch(() => ({}))).error || t.joinFailed);
+    setBusy(false);
+  }
+
   function card(item: LanguageClass) {
     const plan = SMARTLINGO_COURSE_PACKAGES.find(value => value.tier === item.packageTier);
     return <article className="official" key={item.id}>
       <div className="class-card-meta"><span>{item.targetLanguage.toUpperCase()} · {item.level}</span><b>{t.joined}</b></div>
       <h3>{item.title}</h3><p>{item.summary}</p>
       {plan && <ul>{plan.features.en.map((feature,index) => <li key={feature}>✓ {tx(feature,plan.features.zh[index])}</li>)}</ul>}
-      <small>{t.packageFrom} {money(plan?.startingPriceCents || item.priceCents, item.currency)} / 3 {t.months} · {item.enrollmentCount}/{item.capacity} {t.learners}</small>
-      {item.subscriptionId?<CourseSupervisorField lang={lang} subscriptionId={item.subscriptionId} initialRefId={item.supervisorRefId}/>:null}
+      <small>{t.packageFrom} · {item.enrollmentCount}/{item.capacity} {t.learners}</small>
       <Link className="secondary-button" href={`/${lang}/classes/${item.id}`}>{t.open} →</Link>
     </article>;
   }
@@ -138,25 +140,24 @@ export function ClassStudio({ lang, initialClassId, initialTargetLanguage, initi
   if (detail) {
     const item = detail.class;
     const plan = SMARTLINGO_COURSE_PACKAGES.find(value => value.tier === item.packageTier);
-    const selectedPackage=item.packageTier?courseSubscriptionPackage(item.packageTier,initialDurationMonths):null;
     const scheduleLabel=item.classKind==="official_course"
-      ? tx("Fixed-term access · no automatic renewal","固定期限学习权利 · 不自动续费")
+      ? item.packageTier === "basic" ? tx("Free Beginner course", "免费初级课程") : tx("Included with active Max", "有效 Max 已包含")
       : item.schedule;
     const joined = detail.membership?.status === "active";
+    const accessAllowed = detail.courseAccess?.allowed ?? detail.maxActive;
     return <section className="smartlingo-class-studio">
       <Link className="class-back" href={`/${lang}/classes`}>← {t.back}</Link>
       <div className="class-detail-hero"><div><p className="section-kicker">{item.targetLanguage.toUpperCase()} · {item.level}</p><h1>{item.title}</h1><p>{item.summary}</p></div>
-        <dl><div><dt>{t.courseAdmin}</dt><dd>{item.ownerName}</dd></div><div><dt>{t.schedule}</dt><dd>{scheduleLabel}</dd></div><div><dt>{t.price}</dt><dd>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:"—"}</dd></div><div><dt>{tx("Renewal","续费")}</dt><dd>{tx("Manual only","仅手动续购")}</dd></div></dl></div>
+        <dl><div><dt>{t.courseAdmin}</dt><dd>{item.ownerName}</dd></div><div><dt>{t.schedule}</dt><dd>{scheduleLabel}</dd></div><div><dt>{t.price}</dt><dd>{item.packageTier === "basic" ? tx("Free", "免费") : detail.maxActive ? (detail.courseAccess?.trialStarted ? tx("7-day Max trial", "7 天 Max 试用") : "Max") : tx("Max required", "需要 Max")}</dd></div><div><dt>{tx("Course payment","课程付款")}</dt><dd>{tx("None", "无需单独付款")}</dd></div></dl></div>
       {detail.canManage && <button className="secondary-button class-edit-course" onClick={() => setEditing(true)}>✎ {t.edit}</button>}
       {editing && <form className="course-edit-form" onSubmit={saveCourse}><label>{lang === "zh" ? "课程名称" : "Course title"}<input name="title" defaultValue={item.title}/></label><label>{t.summary}<textarea name="summary" defaultValue={item.summary}/></label><label>{t.schedule}<input name="schedule" defaultValue={item.schedule}/></label><div><button disabled={busy}>{t.save}</button><button type="button" onClick={() => setEditing(false)}>{t.cancel}</button></div></form>}
       <div className="class-detail-grid">
         <article><span>{plan?tx(plan.name.en,plan.name.zh):item.packageTier?.toUpperCase()}</span><h2>{t.package}</h2><ul>{plan?.features.en.map((feature,index) => <li key={feature}>✓ {tx(feature,plan.features.zh[index])}</li>)}</ul></article>
         <article><span>WEBINAR + GROUP AUDIO</span><h2>{t.classroom}</h2><p>{t.classroomCopy}</p></article>
-        {!joined && !detail.canManage && item.packageTier && <article className="class-subscribe-card"><span>{tx("FIXED-TERM COURSE ACCESS","固定期限课程学习权利")}</span><h2>{selectedPackage?`${money(selectedPackage.priceCents)} · ${selectedPackage.months} ${t.months}`:tx("Choose a package","选择套餐")}</h2><p>{tx("Choose 3, 6, or 12 months. Card payment is available for all nine packages; Polygon USDT and GLC are available only for three months.","选择 3、6 或 12 个月。九个套餐均可使用信用卡；Polygon USDT 和 GLC 仅用于三个月套餐。")}</p><CoursePaymentActions lang={lang} classId={item.id} targetLanguage={item.targetLanguage} packageTier={item.packageTier} initialMonths={initialDurationMonths} supervisorRefId={initialSupervisorRefId}/></article>}
+        {!joined && !detail.canManage && item.packageTier && <article className="class-subscribe-card"><span>{item.packageTier === "basic" ? "SMARTLINGO FREE" : "SMARTLINGO MAX"}</span><h2>{item.packageTier === "basic" ? tx("Open this free Beginner course", "开放这门免费初级课程") : accessAllowed ? tx("Open this course", "开放本课程") : tx("Continue with Max", "使用 Max 继续")}</h2><p>{item.packageTier === "basic" ? tx("Every Beginner course is free. Max is not started or required.", "所有初级课程永久免费，不会开通或要求 Max。") : detail.courseAccess?.trialStarted ? tx("Your one-time 7-day Max trial has started automatically. After it expires, activate Max to continue Intermediate and Advanced courses.", "一次性 7 天 Max 试用已自动开始。到期后需购买 Max 才能继续中级和高级课程。") : tx("Intermediate and Advanced courses require an active Max term after the one-time trial ends.", "一次性试用结束后，中级和高级课程需要有效 Max 才能继续。")}</p>{accessAllowed ? <button className="primary-button" type="button" disabled={busy} onClick={() => void joinCourse(item.id)}>{busy ? "…" : tx("Add to My Courses", "加入我的课程")}</button> : <Link className="primary-button" href={`/${lang}/pricing`}>{tx("Activate Max", "开通 Max")} →</Link>}</article>}
         {joined && <article className="class-placement-card"><span>5 SKILLS</span><h2>{t.fiveSkillsTitle}</h2><p>{t.fiveSkillsBody}</p><nav className="class-skill-launcher" aria-label={t.fiveSkillsTitle}>{learningLinks(item).map(skill => <Link href={skill.href} key={skill.key}><i aria-hidden="true">{skill.icon}</i><strong>{skill.label}</strong><small>{lang === "zh" ? "直接开始" : "Start now"} →</small></Link>)}</nav><div className="class-learning-actions"><Link className="primary-button" href={`/${lang}/classes/${encodeURIComponent(item.id)}/learn/session`}>{t.dailyLearning} →</Link><Link className="secondary-button" href={`/${lang}/learning-log`}>{t.calendar} →</Link></div></article>}
         {(joined || detail.canManage) && <CourseClassroomTile classId={item.id} lang={lang==="zh"?"zh":"en"}/>}
         {detail.canManage && <CourseStudentManager classId={item.id} lang={lang==="zh"?"zh":"en"}/>}
-        {detail.canSupervise&&detail.supervisorRefId?<CourseSupervisorShare lang={lang} classId={item.id} targetLanguage={item.targetLanguage} refId={detail.supervisorRefId}/>:null}
       </div>{notice && <p className="class-notice">{notice}</p>}<Styles/>
     </section>;
   }

@@ -1,7 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { fulfillPlatformProduct } from "@/lib/platform-entitlements";
 import { platformProduct, type SmartLingoPlatformProductId } from "@/lib/platform-commerce";
-import { stripeRequest } from "@/lib/stripe-course-subscription";
+import { stripeRequest } from "@/lib/stripe";
 
 type Session = { id: string; status: string; payment_status?: string; mode: string; client_reference_id?: string; amount_total?: number; currency?: string; payment_intent?: string | { id?: string }; metadata?: Record<string, string> };
 

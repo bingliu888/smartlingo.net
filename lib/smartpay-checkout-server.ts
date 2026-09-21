@@ -6,20 +6,12 @@ import { smartPayIdsForPlan } from "./crypto-subscription";
 import { smartPay5EnabledPresets } from "./smartpay5-confirmation-control";
 import { smartPay5PaymentItemDatabaseState } from "./smartpay5-confirmation-store";
 import { smartPay5RulePresets } from "./smartpay5-presets";
-import { fixedCourseId } from "./smartlingo-course-packages";
-import {
-  isSmartLingoCommunityLanguage,
-  SMARTLINGO_COMMUNITY_LANGUAGE_CODES,
-  type SmartLingoCommunityLanguage,
-} from "./smartlingo-language-communities";
 import { platformProduct } from "./platform-commerce";
 
 export async function currentSmartPayCheckoutOptions(
   inputSettings?: readonly CryptoPaymentSetting[],
-  selectedLanguage?: SmartLingoCommunityLanguage,
 ) {
   const settings = inputSettings ? [...inputSettings] : await activeCryptoSettings();
-  const languages = selectedLanguage ? [selectedLanguage] : SMARTLINGO_COMMUNITY_LANGUAGE_CODES;
   return (await Promise.all(configuredSmartPay5CheckoutScopes(settings).map(async scope => {
     const contractAddress = scope.contractAddress as Address;
     const contractSettings = smartPay5SettingsForContract(settings, scope.chainId, contractAddress);
@@ -37,14 +29,12 @@ export async function currentSmartPayCheckoutOptions(
       const secondarySetting = preset.mode === "dual" ? settings.find(item => item.id === preset.secondarySettingId) : null;
       if (!primarySetting || (preset.mode === "dual" && !secondarySetting)) return [];
       const minConfirmations = secondarySetting ? Math.max(primarySetting.minConfirmations, secondarySetting.minConfirmations) : primarySetting.minConfirmations;
-      const platform = platformProduct(preset.plan);
-      const targets = platform ? ["platform"] : languages;
-      return targets.map(languageCode => {
-        const ids = smartPayIdsForPlan(preset.plan, languageCode);
-        const classId = platform ? `platform:${platform.id}` : fixedCourseId(languageCode as SmartLingoCommunityLanguage, preset.plan as "basic"|"intermediate"|"advanced");
-        return {
-          key: `smartpay5:${preset.key}:${languageCode}`, settingId: primarySetting.id, plan: preset.plan, months: preset.months,
-          languageCode, classId, chainId: primarySetting.chainId, chainName: primarySetting.chainName,
+      const platform = platformProduct(preset.plan)!;
+      const ids = smartPayIdsForPlan(preset.plan);
+      const classId = `platform:${platform.id}`;
+      return [{
+          key: `smartpay5:${preset.key}:platform`, settingId: primarySetting.id, plan: preset.plan, months: preset.months,
+          languageCode: "platform", classId, chainId: primarySetting.chainId, chainName: primarySetting.chainName,
           contractAddress, tokenAddress: preset.primaryTokenAddress, tokenSymbol: preset.primaryTokenSymbol,
           tokenDecimals: preset.primaryTokenDecimals, tokenAmountAtomic: fullPrimary.toString(),
           tokenAmount: atomicTokenAmountToDisplay(fullPrimary, preset.primaryTokenDecimals), mainId: ids.mainId, secondId: ids.secondId, minConfirmations,
@@ -59,8 +49,7 @@ export async function currentSmartPayCheckoutOptions(
             minimumSecondaryBalance: preset.minimumSecondaryBalance,
             mainId: ids.mainId, secondId: ids.secondId, minConfirmations,
           },
-        } satisfies SmartPayCheckoutOption;
-      });
+        } satisfies SmartPayCheckoutOption];
     });
   }))).flat();
 }
@@ -68,8 +57,5 @@ export async function currentSmartPayCheckoutOptions(
 export async function currentSmartPayCheckoutOption(settingId: string, classId: string) {
   const platformId = /^platform:(max_6m|max_12m|aigc_1000)$/.exec(classId)?.[1];
   if (platformId) return (await currentSmartPayCheckoutOptions()).find(option => option.settingId === settingId && option.classId === classId) || null;
-  const languageCode = /^course_([a-z]{2})_(?:basic|intermediate|advanced)$/.exec(classId)?.[1] || "";
-  if (!isSmartLingoCommunityLanguage(languageCode)) return null;
-  return (await currentSmartPayCheckoutOptions(undefined, languageCode))
-    .find(option => option.settingId === settingId && option.classId === classId) || null;
+  return null;
 }

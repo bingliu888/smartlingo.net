@@ -35,17 +35,14 @@ export async function GET() {
       public: true,
       length: 6,
       comparison: "case-insensitive",
-      websiteCheckout: "the permanent administrator's public referral code as owner of every official SmartLingo language product"
+      websiteCheckout: "the permanent administrator's public referral code as owner of every SmartLingo platform product"
     },
     mainIds: [
-      "smartlingo_course_basic_3m",
-      "smartlingo_course_intermediate_3m",
-      "smartlingo_course_advanced_3m",
       "smartlingo_platform_max_6m",
       "smartlingo_platform_max_12m",
       "smartlingo_platform_aigc_1000"
     ],
-    secondId: "the selected supported learning-language code for a course, or the fixed platform value for Max and AIGC products; the permanent administrator owns each SmartLingo product",
+    secondId: "the fixed platform value for Max and AIGC products; the permanent administrator owns each SmartLingo product",
     abi: SMARTPAY5_ABI
   });
 }

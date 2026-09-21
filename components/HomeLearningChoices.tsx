@@ -12,7 +12,7 @@ type Area = "everyday" | "courses" | "ai";
 type Choice = { id: string; titleZh: string; titleEn: string; bodyZh: string; bodyEn: string; image?: string; icon?: string };
 
 const COURSE_CHOICES: Choice[] = [
-  { id: "packages", icon: "9", titleZh: "九个固定期限套餐", titleEn: "Nine fixed-term packages", bodyZh: "先选择学习语言，再选初期、中级或高级以及 3、6、12 个月。", bodyEn: "Choose the learning language first, then a level and 3, 6, or 12 months." },
+  { id: "levels", icon: "3", titleZh: "三级课程", titleEn: "Three course levels", bodyZh: "初级、中级和高级都是学习等级；有效 Max 可学习全部等级。", bodyEn: "Beginner, Intermediate, and Advanced are learning levels; active Max opens them all." },
 ];
 const AI_CHOICES: Choice[] = [
   { id: "conversation", icon: "●", titleZh: "生活对话", titleEn: "Everyday conversation", bodyZh: "围绕真实场景问答与角色练习。", bodyEn: "Questions and role-play around real situations." },
@@ -22,11 +22,11 @@ const AI_CHOICES: Choice[] = [
 
 export function HomeLearningChoices({ lang }: { lang: "zh" | "en" }) {
   const zh = lang === "zh";
-  const [selected, setSelected] = useState<Partial<Record<Area, string>>>({courses:"packages"});
+  const [selected, setSelected] = useState<Partial<Record<Area, string>>>({courses:"levels"});
   const rails = useRef<Partial<Record<Area, HTMLDivElement | null>>>({});
   const sections: { area: Area; kicker: string; titleZh: string; titleEn: string; introZh: string; introEn: string; choices: Choice[] }[] = [
     { area: "everyday", kicker: "REAL LIFE", titleZh: "生活口语", titleEn: "Everyday speaking", introZh: "先选生活场景，再选想练习的语言。", introEn: "Choose a situation first, then the language to practice.", choices: SMARTLINGO_EVERYDAY_SCENARIOS.map(item => ({ id: item.id, titleZh: item.nameZh, titleEn: item.nameEn, bodyZh: item.goalZh, bodyEn: item.goalEn, image: item.image, icon: item.icon })) },
-    { area: "courses", kicker: "COURSES", titleZh: "选择课程", titleEn: "Choose a course", introZh: "先选择学习语言，再在下一页选择课程等级与期限。", introEn: "Choose the learning language first; choose the level and access period on the next page.", choices: COURSE_CHOICES },
+    { area: "courses", kicker: "COURSES", titleZh: "选择课程", titleEn: "Choose a course", introZh: "先选择学习语言，再选择课程等级；课程等级不单独收费。", introEn: "Choose the learning language first, then a course level. Course levels are not separate payment products.", choices: COURSE_CHOICES },
     { area: "ai", kicker: "AI", titleZh: "咨询AI", titleEn: "Ask AI", introZh: "先选练习目标，再告诉 AI 您想使用的语言。", introEn: "Choose a practice goal, then the language for your AI session.", choices: AI_CHOICES },
   ];
 

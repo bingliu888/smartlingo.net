@@ -54,13 +54,14 @@ test("renders the SmartLingo language-learning foundation", async () => {
   }
   for (const skill of ["词汇", "阅读", "写作", "听力", "对话"]) assert.match(html, new RegExp(skill));
   assert.match(html, /三级课程/);
-  assert.match(html, /初期 · 30 \/ 50 \/ 80 美元/);
-  assert.match(html, /中级 · 60 \/ 100 \/ 160 美元/);
-  assert.match(html, /高级 · 120 \/ 200 \/ 320 美元/);
-  assert.match(html, /三类积分独立记账、可追溯/);
-  assert.match(html, /SmartCard 挑战积分只能抵符合条件的 SmartLingo 课程套餐/);
-  assert.match(html, /九个套餐，不自动续费/);
-  assert.match(html, /href="\/zh\/programs"[^>]*>立即行动(?:<!-- -->)? →<\/a>/);
+  assert.match(html, /初级永久免费，用 Max 更进一步/);
+  assert.match(html, /免费方案/);
+  assert.match(html, /6 个月/);
+  assert.match(html, /年度/);
+  assert.match(html, /\$59/);
+  assert.match(html, /\$99/);
+  assert.match(html, /人工智能生成额度/);
+  assert.doesNotMatch(html, /九个套餐|30 \/ 50 \/ 80|60 \/ 100 \/ 160|120 \/ 200 \/ 320|课程套餐/);
   assert.match(html, /社区/);
   assert.match(html, /href="\/zh\/community"/);
   assert.match(html, />学习<\/a>/);

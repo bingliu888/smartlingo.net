@@ -1,5 +1,6 @@
 import { createId, getDatabase, type SessionUser } from "@/lib/auth";
 import { classByCode, generateClassCode } from "@/lib/live-classrooms";
+import { hasCourseTierAccess } from "@/lib/platform-entitlements";
 
 export type CourseClassroomCourse = {
   id: string;
@@ -74,13 +75,9 @@ export async function ensureCoursePracticeRoom(course: CourseClassroomCourse) {
 }
 
 export async function canUseCourseClassroom(courseId: string, user: SessionUser) {
-  const row = await getDatabase().prepare(`SELECT c.owner_user_id AS ownerUserId,c.price_cents AS priceCents,m.status AS membershipStatus,
-    s.status AS subscriptionStatus,s.trial_ends_at AS trialEndsAt,s.current_period_ends_at AS currentPeriodEndsAt
+  const row = await getDatabase().prepare(`SELECT c.owner_user_id AS ownerUserId,c.package_tier AS packageTier,m.status AS membershipStatus
     FROM smartlingo_language_classes c
     LEFT JOIN smartlingo_language_class_members m ON m.class_id=c.id AND m.user_id=?
-    LEFT JOIN smartlingo_course_subscriptions s ON s.class_id=c.id AND s.user_id=?
-    WHERE c.id=? LIMIT 1`).bind(user.id, user.id, courseId).first<{ ownerUserId: string; priceCents: number; membershipStatus: string | null; subscriptionStatus: string | null; trialEndsAt: number | null;currentPeriodEndsAt:number|null }>();
-  const now = Math.floor(Date.now() / 1000);
-  return Boolean(row && (row.ownerUserId === user.id || (row.membershipStatus === "active"
-    && (row.priceCents === 0 || (row.subscriptionStatus === "active"&&Number(row.currentPeriodEndsAt||0)>now) || (row.subscriptionStatus === "trialing" && Number(row.trialEndsAt || 0) > now)))));
+    WHERE c.id=? LIMIT 1`).bind(user.id, courseId).first<{ ownerUserId: string; packageTier: "basic" | "intermediate" | "advanced" | null; membershipStatus: string | null }>();
+  return Boolean(row && (row.ownerUserId === user.id || (row.membershipStatus === "active" && (await hasCourseTierAccess(user, row.packageTier)).allowed)));
 }

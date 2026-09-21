@@ -1705,7 +1705,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0185_platform_max_aigc_credits");
+  assert.equal(migrations.at(-1)?.tag, "0186_free_max_course_access");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1869,7 +1869,7 @@ export function validateD1Migrations() {
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_smartcard_items WHERE deck_id LIKE 'starter_%'").get().count, 144);
     assert.equal(database.prepare("SELECT COUNT(*) AS count FROM smartlingo_learning_reward_rules WHERE status='active'").get().count, 36);
     assert.deepEqual(database.prepare(`SELECT package_tier AS tier,duration_months AS months,price_cents AS priceCents
-      FROM smartlingo_course_packages WHERE status='active'
+      FROM smartlingo_course_packages WHERE status='retired'
       ORDER BY CASE package_tier WHEN 'basic' THEN 1 WHEN 'intermediate' THEN 2 ELSE 3 END,duration_months`).all().map(row=>({...row})),[
       {tier:"basic",months:3,priceCents:3000},{tier:"basic",months:6,priceCents:5000},{tier:"basic",months:12,priceCents:8000},
       {tier:"intermediate",months:3,priceCents:6000},{tier:"intermediate",months:6,priceCents:10000},{tier:"intermediate",months:12,priceCents:16000},

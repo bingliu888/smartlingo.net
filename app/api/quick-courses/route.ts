@@ -8,6 +8,7 @@ import {
   type SmartLingoCourseLevel,
 } from "../../../lib/smartlingo-quick-courses";
 import { languageCatalogEntry } from "../../../lib/smartlingo-paths";
+import { hasCourseTierAccess } from "../../../lib/platform-entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -72,8 +73,11 @@ export async function POST(request: Request) {
   }
 
   const now = Math.floor(Date.now() / 1000);
-  const accessType = offering.isFree ? "free" : "payment_required";
-  const status = offering.isFree ? "active" : "pending_payment";
+  const tier = level === "beginner" ? "basic" : level;
+  const tierAccess = await hasCourseTierAccess(user, tier, { startMaxTrial: level !== "beginner" });
+  const maxActive = tierAccess.maxActive;
+  const accessType = level === "beginner" ? "free" : maxActive ? (tierAccess.trialStarted ? "max_trial" : "max") : "max_required";
+  const status = tierAccess.allowed ? "active" : "pending_payment";
   const enrollmentId = createId();
   await database.prepare(`INSERT INTO smartlingo_course_enrollments_v3
     (id, offering_id, user_id, class_id, access_type, status, start_day, current_day,
@@ -112,8 +116,12 @@ export async function POST(request: Request) {
       dailyMinutes: 60,
     },
     checkoutEnabled: false,
-    notice: offering.isFree
-      ? "The free course is ready. Each course day has a resumable 60-minute learning session."
-      : "Your course choice is saved. Live checkout is not enabled yet, so no charge was made.",
+    notice: level === "beginner"
+      ? "The Beginner course is free. Each course day has a resumable 60-minute learning session."
+      : tierAccess.trialStarted
+        ? "Your one-time 7-day Max trial is active. Intermediate and Advanced learning stay open until it ends."
+      : maxActive
+        ? "Max is active. This course is ready with no separate course payment."
+        : "Your course choice is saved. Activate Max to continue Intermediate or Advanced learning.",
   }, { status: 201 });
 }

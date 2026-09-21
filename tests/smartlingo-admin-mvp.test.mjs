@@ -26,7 +26,7 @@ test("the old Admin page resolves through Next notFound without a second managem
   await assert.rejects(read("../lib/smartlingo-admin.ts"), error => error?.code === "ENOENT");
 });
 
-test("legacy course commerce stays retired while fixed-course free-month enrollment is isolated", async () => {
+test("legacy course commerce stays retired while Max enrollment is isolated", async () => {
   const retiredRoutes = await Promise.all([
     read("../app/api/classes/licenses/route.ts"),
     read("../app/api/classes/referrals/claim/route.ts"),
@@ -41,11 +41,11 @@ test("legacy course commerce stays retired while fixed-course free-month enrollm
 
   const enrollment = await read("../app/api/classes/[classId]/enroll/route.ts");
   assert.match(enrollment, /Authentication required/);
-  assert.match(enrollment, /charged: false/);
-  assert.match(enrollment, /smartlingo_course_subscriptions/);
-  assert.match(enrollment, /'trialing'/);
-  assert.match(enrollment, /trialEndsAt/);
+  assert.match(enrollment, /hasCourseTierAccess/);
+  assert.match(enrollment, /startMaxTrial: course\.packageTier !== "basic"/);
+  assert.match(enrollment, /MAX_REQUIRED/);
   assert.match(enrollment, /smartlingo_language_class_members/);
+  assert.doesNotMatch(enrollment, /smartlingo_course_subscriptions|'trialing'/);
   assert.doesNotMatch(enrollment, /smartlingo_bacc_ledger|introducer_reward|stripe\.checkout|PaymentIntent/i);
 });
 

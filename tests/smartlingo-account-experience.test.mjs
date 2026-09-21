@@ -21,7 +21,7 @@ test("dashboard keeps learning, referrals, and built-in course access", async ()
   ]);
   const joined = `${dashboard}\n${panel}`;
 
-  for (const label of ["免费方案", "无广告学习"]) assert.match(joined, new RegExp(label));
+  for (const label of ["免费方案", "Max"]) assert.match(joined, new RegExp(label));
   assert.match(panel, /打开我的课程/);
   assert.doesNotMatch(joined, /每位会员都能开班|免费学习，也可以带领自己的语言班|不开启开班资格门槛/);
   assert.match(panel, /介绍人积分只在平台成功收取订阅费后产生/);
@@ -63,6 +63,6 @@ test("legacy talent route and API point safely to language courses", async () =>
   assert.match(api, /status: 410/);
   assert.match(api, /redirect: "\/classes"/);
   assert.match(compatibility, /进入课程中心/);
-  assert.match(compatibility, /浏览三级课程的九个固定期限套餐/);
+  assert.match(compatibility, /浏览三级课程；有效 Max 可学习全部等级/);
   assert.doesNotMatch(`${page}\n${api}\n${compatibility}`, /求职|招聘|雇主|候选人|Gold|Platinum|BACC/i);
 });

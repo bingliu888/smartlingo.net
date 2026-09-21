@@ -4,7 +4,7 @@ import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
 import { boundedJsonBody } from "@/lib/bounded-request-body";
 import { cryptoRpc, cryptoRpcUrl } from "@/lib/crypto-rpc";
 import { cryptoPaymentSettingById } from "@/lib/crypto-payments";
-import { claimSmartLingoCoursePayment } from "@/lib/smartlingo-smartpay-claim";
+import { claimSmartLingoPayment } from "@/lib/smartlingo-smartpay-claim";
 import { smartPay5TransactionIdFromReceipt } from "@/lib/smartpay5-receipt-transaction";
 import type { SmartPay5ReceiptLog } from "@/lib/smartpay5-receipt-locator";
 
@@ -13,7 +13,6 @@ type VerifyInput = {
   paymentId?: string;
   txHash?: string;
   classId?: string;
-  supervisorRefId?: string;
 };
 
 type Receipt = { status?: string; logs?: SmartPay5ReceiptLog[] };
@@ -49,13 +48,12 @@ export async function POST(request: Request) {
       paymentId = smartPay5TransactionIdFromReceipt(receipt.logs || [], setting.smartPay5Contract as Address) || "";
       if (!paymentId) return Response.json({ error: "No matching on-chain transaction was found" }, { status: 422 });
     }
-    return Response.json(await claimSmartLingoCoursePayment({
+    return Response.json(await claimSmartLingoPayment({
       actor,
       settingId,
       transactionId: paymentId,
       transactionHash: /^0x[a-f0-9]{64}$/.test(transactionHash) ? transactionHash : undefined,
       classId: String(body.classId || ""),
-      supervisorRefId: body.supervisorRefId || undefined,
     }));
   } catch (error) {
     if (error instanceof Response) return error;

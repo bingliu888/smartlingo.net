@@ -5,16 +5,10 @@ import { SiteHeader } from "../../../../components/SiteHeader";
 import { isPermanentAdmin } from "../../../../lib/admin-access";
 import { getSessionUser } from "../../../../lib/auth";
 import { interfaceText, isInterfaceLanguage } from "../../../../lib/interface-locale";
-import {
-  courseSubscriptionMainId,
-  SMARTLINGO_COURSE_PACKAGES,
-  SMARTLINGO_COURSE_SUBSCRIPTION_PACKAGES,
-} from "../../../../lib/smartlingo-course-packages";
+import { SMARTLINGO_COURSE_PACKAGES } from "../../../../lib/smartlingo-course-packages";
 import "../admin.css";
 
 export const dynamic = "force-dynamic";
-
-const usd = (priceCents: number) => `$${(priceCents / 100).toLocaleString("en-US")}`;
 
 export default async function AdminLanguageClasses({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
@@ -24,54 +18,39 @@ export default async function AdminLanguageClasses({ params }: { params: Promise
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/language-classes`);
   if (!isPermanentAdmin(user)) redirect(`/${lang}/dashboard`);
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
-  const monthsLabel = t("months", "个月");
-
   return <main>
     <SiteHeader lang={lang}/>
     <div className="admin-shell" data-layout-page="admin-course-prices" data-layout-fill="admin-shell">
       <div className="admin-toolbar">
         <div>
-          <p className="section-kicker">{t("Nine packages. No automatic renewal.", "九个套餐，不自动续费。")}</p>
-          <h1>{t("Choose a level and access period", "选择等级和学习期限")}</h1>
+          <p className="section-kicker">{t("THREE LEVELS · ONE MAX PLAN", "三级课程 · 一个 MAX 方案")}</p>
+          <h1>{t("Maintain learning levels, not payment products", "维护学习等级，而不是付款套餐")}</h1>
           <p>{t(
-            "Choose the learning language first, then one of three levels and 3, 6, or 12 months. The same course has the same price in every language.",
-            "先选择学习语言，再选择三个等级之一和 3、6 或 12 个月。同一等级在所有语言中价格相同。",
+            "Beginner, Intermediate, and Advanced remain separate curriculum levels. An active Max membership opens every level in every supported language.",
+            "初级、中级和高级继续作为不同课程等级；有效 Max 会员可学习所有支持语言的全部等级。",
           )}</p>
         </div>
         <a href={`/${lang}/admin`}>← {t("Dashboard", "管理中心")}</a>
       </div>
 
-      <section className="admin-package-grid" aria-label={t("Choose a level and access period", "选择等级和学习期限")}>
+      <section className="admin-package-grid" aria-label={t("Course levels", "课程等级")}>
         {SMARTLINGO_COURSE_PACKAGES.map(course => {
-          const packages = SMARTLINGO_COURSE_SUBSCRIPTION_PACKAGES.filter(item => item.tier === course.tier);
           return <article className="admin-package-card" key={course.tier}>
             <header>
               <span>{course.level}</span>
               <h2>{t(course.name.en, course.name.zh)}</h2>
             </header>
-            <div className="admin-package-terms">
-              {packages.map(item => <div className="admin-package-term" data-price-product-id={item.id} key={item.id}>
-                <div>
-                  <strong>{item.months} {monthsLabel}</strong>
-                  <b>{usd(item.priceCents)} USD</b>
-                </div>
-                <span>{t("Card payment", "银行卡付款")}</span>
-                {item.months === 3
-                  ? <span className="admin-crypto-badge">Polygon · USDT / GLC</span>
-                  : null}
-                <code>{courseSubscriptionMainId(item.tier, item.months)}</code>
-              </div>)}
-            </div>
+            <div className="admin-package-terms"><div className="admin-package-term"><strong>{course.tier === "basic" ? t("Free", "免费") : t("7-day trial, then Max", "7 天试用，之后需 Max")}</strong><span>{t("No separate course payment item", "没有独立课程付款项目")}</span><code>{course.tier}</code></div></div>
           </article>;
         })}
       </section>
 
       <aside className="admin-package-note">
-        <strong>{t("Card payment", "银行卡付款")}: 9</strong>
-        <strong>Polygon USDT / GLC: 3</strong>
+        <strong>{t("Plans", "方案")}: Free + Max</strong>
+        <strong>{t("Course payment items", "课程付款项目")}: 0</strong>
         <p>{t(
-          "Pay once for 3, 6, or 12 months. There is no automatic renewal. Polygon USDT and GLC are available only for three-month packages.",
-          "一次支付 3、6 或 12 个月，不自动续费。Polygon USDT 与 GLC 只适用于三个 3 个月套餐。",
+          "Max is $59 for 6 months or $99 annually, paid once with no automatic renewal. Course level and learning language do not change the Max price.",
+          "Max 为 6 个月 $59 或年度 $99，一次性付款且不自动续费；课程等级和学习语言不会改变 Max 价格。",
         )}</p>
       </aside>
     </div>

@@ -16,7 +16,7 @@ test("anchors Ask Guru as a root-layout viewport control outside the four-choice
   assert.match(assistant, /route === "\/assistant" \|\| route\.startsWith\("\/auth\/"\)/);
   assert.match(css, /\.floating-assistant\{\s*position:fixed!important;\s*inset:auto[^;]*safe-area-inset-right[^;]*safe-area-inset-bottom[^;]*auto!important;/);
   for (const choice of ["learn", "practice", "speak", "community"]) {
-    assert.match(header, new RegExp(`data-nav="${choice}"`));
+    assert.match(header, new RegExp(`\\[t\\.${choice},[\\s\\S]*?"${choice}"`));
   }
   assert.doesNotMatch(header, /href=\{`\/\$\{lang\}\/assistant`\}/);
 });

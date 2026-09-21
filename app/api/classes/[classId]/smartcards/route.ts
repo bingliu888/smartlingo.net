@@ -1,5 +1,6 @@
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
 import { buildSmartCardChallenge, gradeSmartCardChallenge } from "@/lib/smartlingo-smartcards";
+import { hasCourseTierAccess } from "@/lib/platform-entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -26,13 +27,10 @@ async function courseAccess(request: Request, classId: string) {
     FROM smartlingo_language_classes WHERE id=? AND class_kind='official_course' AND status='open' LIMIT 1`)
     .bind(classId).first<Course>();
   if (!course) return { error: Response.json({ error: "Course not found" }, { status: 404 }) } as const;
-  const member = await database.prepare(`SELECT 1 FROM smartlingo_language_class_members member
-    LEFT JOIN smartlingo_course_subscriptions subscription ON subscription.class_id=member.class_id AND subscription.user_id=member.user_id
-    WHERE member.class_id=? AND member.user_id=? AND member.status='active'
-      AND (member.role IN ('owner','teacher','coordinator') OR (subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
-        OR (subscription.status='trialing' AND subscription.trial_ends_at>unixepoch())) LIMIT 1`)
+  const member = await database.prepare(`SELECT role FROM smartlingo_language_class_members
+    WHERE class_id=? AND user_id=? AND status='active' LIMIT 1`)
     .bind(classId, user.id).first();
-  if (!member) return { error: Response.json({ error: "Active course access is required" }, { status: 403 }) } as const;
+  if (!member || !(await hasCourseTierAccess(user, course.packageTier as "basic" | "intermediate" | "advanced" | null)).allowed) return { error: Response.json({ error: "Active course access is required" }, { status: 403 }) } as const;
   return { user, database, course } as const;
 }
 

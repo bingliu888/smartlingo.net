@@ -80,10 +80,9 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
   </section>;
 
   return (
-    <details ref={menu} className="interface-language-menu">
-      <summary aria-label={`${t.language}: ${currentInterface.nativeName}`}>
-        <span className="interface-language-current">{currentInterface.nativeName}</span>
-        <span className="interface-language-chevron" aria-hidden="true">▾</span>
+    <details ref={menu} className="interface-language-menu header-language-menu">
+      <summary className="language-icon-button" data-no-translate aria-label={`${t.language}: ${currentInterface.nativeName}`} title={`${t.language}: ${currentInterface.nativeName}`}>
+        <GlobeIcon/>
       </summary>
       <div className="interface-language-popover" role="menu" aria-label={t.chooseLanguage}>
         <header>

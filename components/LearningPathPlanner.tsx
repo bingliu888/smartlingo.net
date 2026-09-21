@@ -69,7 +69,7 @@ const copy = {
     course: "选择等级与累进课程",
     courseIntro: "入门为 7、14、30 天；中级为 1、2、3 个月；高级为 3、6、12 个月。已有同级较短课程证书会自动承接下一天；每个课程日为可跨日续学的 60 分钟。",
     free: "免费",
-    paidLater: "付费开放前可保存选择",
+    paidLater: "Max 会员开放",
     daily: "每天约",
     entry: "起点方式",
     useCases: { daily_life: "日常生活", travel: "旅行", work: "工作", study: "学习", community: "社区交流" },
@@ -119,7 +119,7 @@ const copy = {
     course: "Choose a level and cumulative course",
     courseIntro: "Beginner offers 7, 14, and 30 days; intermediate offers 1, 2, and 3 months; advanced offers 3, 6, and 12 months. A shorter certificate continues at the next day. Every course day is a resumable 60-minute session.",
     free: "Free",
-    paidLater: "Save choice before paid access opens",
+    paidLater: "Included with Max",
     daily: "About",
     entry: "Starting method",
     useCases: { daily_life: "Daily life", travel: "Travel", work: "Work", study: "Study", community: "Community" },
@@ -238,6 +238,10 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
         method: "POST",
         headers: { accept: "application/json" },
       });
+      if (enrollment.status === 402) {
+        window.location.assign(`/${lang}/pricing`);
+        return;
+      }
       if (!enrollment.ok) throw new Error(t.saveOnly);
 
       const quickCourse = await fetch("/api/quick-courses", {
@@ -249,8 +253,8 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       const quickCoursePayload = await quickCourse.json() as { enrollment?: { status?: string } };
       if (quickCoursePayload.enrollment?.status === "pending_payment") {
         setNotice(lang === "zh"
-          ? "课程选择已保存；付费结账尚未开放，因此没有收费。您现在可以先使用免费的七天课程。"
-          : "Your course choice is saved. Checkout is not open, so no charge was made. You can start the free 7-day course now.");
+          ? "课程选择已保存。初级课程永久免费；首次进入中级或高级课程时会自动开始一次 7 天 Max 试用。"
+          : "Your course choice is saved. Beginner is always free; entering Intermediate or Advanced starts one 7-day Max trial automatically.");
         setBusy(false);
         return;
       }

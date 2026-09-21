@@ -121,7 +121,7 @@ test("Gold v2 requests and providers are bounded and maintenance runs every five
     read("lib/external-request-timeout.ts"),
     read("lib/crypto-rpc.ts"),
     read("lib/realtimekit.ts"),
-    read("lib/stripe-course-subscription.ts"),
+    read("lib/stripe.ts"),
     read("lib/smartpay-source-verification.ts"),
     read("app/api/contracts/smartpay5/route.ts"),
     read("app/api/admin/smartpay/deployment/route.ts"),

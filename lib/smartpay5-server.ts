@@ -164,18 +164,18 @@ export async function verifySmartPay5Identity(rpcUrl: string, contract: Address)
   if (!code || code === "0x") throw new Error("CONTRACT_CODE_NOT_FOUND");
   const expectedCode = String((smartPay5ArtifactJson as { deployedBytecode?: string }).deployedBytecode || "");
   if (!expectedCode || code.toLowerCase() !== expectedCode.toLowerCase()) throw new Error("CONTRACT_IDENTITY_MISMATCH");
-  const [ownership, basicData, intermediateData, advancedData] = await Promise.all([
+  const [ownership, max6Data, max12Data, aigcData] = await Promise.all([
     smartPay5Ownership(rpcUrl, contract),
-    ethCall(rpcUrl, contract, "MAIN_ID_BASIC_3_MONTH"),
-    ethCall(rpcUrl, contract, "MAIN_ID_INTERMEDIATE_3_MONTH"),
-    ethCall(rpcUrl, contract, "MAIN_ID_ADVANCED_3_MONTH")
+    ethCall(rpcUrl, contract, "MAIN_ID_MAX_6_MONTH"),
+    ethCall(rpcUrl, contract, "MAIN_ID_MAX_12_MONTH"),
+    ethCall(rpcUrl, contract, "MAIN_ID_AIGC_1000")
   ]);
   const ids = [
-    decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "MAIN_ID_BASIC_3_MONTH", data: basicData }) as string,
-    decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "MAIN_ID_INTERMEDIATE_3_MONTH", data: intermediateData }) as string,
-    decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "MAIN_ID_ADVANCED_3_MONTH", data: advancedData }) as string
+    decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "MAIN_ID_MAX_6_MONTH", data: max6Data }) as string,
+    decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "MAIN_ID_MAX_12_MONTH", data: max12Data }) as string,
+    decodeFunctionResult({ abi: SMARTPAY5_ABI, functionName: "MAIN_ID_AIGC_1000", data: aigcData }) as string
   ];
-  if (ids.join("|") !== "smartlingo_course_basic_3m|smartlingo_course_intermediate_3m|smartlingo_course_advanced_3m") {
+  if (ids.join("|") !== "smartlingo_platform_max_6m|smartlingo_platform_max_12m|smartlingo_platform_aigc_1000") {
     throw new Error("CONTRACT_IDENTITY_MISMATCH");
   }
   return { ...ownership, mainIds: ids, upgradeRequired: false };

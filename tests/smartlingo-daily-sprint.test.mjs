@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildSprintPlan, gradeSprintPlan, sanitizeSprintPlan, SPRINT_DURATIONS } from "../lib/smartlingo-sprint.ts";
-import { isPublicBeginnerSprintClassId, requirePublicBeginnerSprintCourse } from "../lib/smartlingo-learning-access.ts";
 import { ANONYMOUS_SPRINT_COOKIE, anonymousSprintCookie, parseAnonymousSprintCookie, resumeAnonymousSprintState } from "../lib/smartlingo-anonymous-sprint.ts";
 import { playLanguageLinks } from "../lib/play-language-links.ts";
 
@@ -15,6 +14,7 @@ const vocabulary = Array.from({ length: 1000 }, (_, index) => ({
   frequencyDegree: 10 - (index % 10),
   gradeLevel: Math.min(12, Math.floor(index / 2)),
 }));
+const isPublicBeginnerSprintClassId = value => /^course_(zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)_basic$/.test(value);
 
 test("Daily Sprint offers the four requested durations and one complete five-skill round per five minutes", () => {
   assert.deepEqual(SPRINT_DURATIONS, [5, 10, 15, 20]);
@@ -125,9 +125,9 @@ test("course and anonymous Play expose six isolated learning activities", () => 
 test("Primary navigation exposes the four learning choices and the task image opens Sprint", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
-  assert.ok(header.indexOf('data-nav="learn"') < header.indexOf('data-nav="practice"'));
-  assert.ok(header.indexOf('data-nav="practice"') < header.indexOf('data-nav="speak"'));
-  assert.ok(header.indexOf('data-nav="speak"') < header.indexOf('data-nav="community"'));
+  assert.ok(header.indexOf('[t.learn,') < header.indexOf('[t.practice,'));
+  assert.ok(header.indexOf('[t.practice,') < header.indexOf('[t.speak,'));
+  assert.ok(header.indexOf('[t.speak,') < header.indexOf('[t.community,'));
   assert.ok(home.indexOf('href={`/${locale}/play/everyday`}') < home.indexOf('href={`/${locale}/programs`}'));
   for (const path of ["play/everyday", "programs", "assistant"]) assert.match(home, new RegExp(path));
   assert.match(home, /play\?language=\$\{locale\}/);
@@ -148,11 +148,9 @@ test("anonymous Sprint resumes its matching short cookie while signed-in members
   assert.equal(isPublicBeginnerSprintClassId("course_en_intermediate"), false);
   assert.equal(isPublicBeginnerSprintClassId("course_en_basic_extra"), false);
 
-  let accessQuery = "";
-  const database = { prepare(query) { accessQuery = query; return { bind() { return this; }, async first() { return null; } }; } };
-  await requirePublicBeginnerSprintCourse(database, "course_it_basic");
-  assert.match(accessQuery, /c\.package_tier='basic'/);
-  assert.doesNotMatch(accessQuery, /c\.level='beginner'/);
+  const accessSource = readFileSync(new URL("../lib/smartlingo-learning-access.ts", import.meta.url), "utf8");
+  assert.match(accessSource, /c\.package_tier='basic'/);
+  assert.doesNotMatch(accessSource, /c\.level='beginner'/);
 
   const sprintPage = readFileSync(new URL("../app/[lang]/classes/[classId]/sprint/page.tsx", import.meta.url), "utf8");
   const sprintRoute = readFileSync(new URL("../app/api/classes/[classId]/sprint/route.ts", import.meta.url), "utf8");

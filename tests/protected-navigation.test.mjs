@@ -9,8 +9,10 @@ test("the primary navigation exposes the four learning choices", async () => {
 
   for (const label of ["Learn", "学习", "Practice", "练习", "Speak", "开口", "Community", "社区", "Me", "我的"]) assert.match(locale, new RegExp(label));
   for (const [path, key] of [["learn", "learn"], ["smartcards", "practice"], ["play/everyday", "speak"], ["community", "community"]]) {
-    assert.ok(header.includes(`href={\`/\${lang}/${path}\`} data-nav="${key}"`));
+    assert.ok(header.includes(`[t.${key}, \`/\${lang}/${path}\`, "${key}"`));
   }
+  assert.match(header, /links\.slice\(0, visibleLinkCount\)/);
+  assert.match(header, /hiddenLinks\.map/);
   assert.doesNotMatch(header, /\/classes/);
   assert.match(community, /const signedIn = Boolean\(user\)/);
   assert.doesNotMatch(community, /redirect\(/);

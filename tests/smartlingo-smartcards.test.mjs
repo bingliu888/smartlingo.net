@@ -117,18 +117,17 @@ test("0127 keeps learner-facing meanings free of category and language metadata"
   database.close();
 });
 
-test("public game and redemption routes keep scores and balances server-authoritative", () => {
+test("public game and digital reward routes keep scores and balances server-authoritative", () => {
   const publicRoute = readFileSync(new URL("../app/api/smartcards/[token]/route.ts", import.meta.url), "utf8");
-  const redemptionRoute = readFileSync(new URL("../app/api/billing/credits/redeem/route.ts", import.meta.url), "utf8");
+  const redemptionRoute = readFileSync(new URL("../app/api/rewards/redeem/route.ts", import.meta.url), "utf8");
   assert.match(publicRoute, /scoreSmartCardPronunciation/);
   assert.match(publicRoute, /startingPoints \+ correctCount \* POLICY\.correctPoints/);
   assert.doesNotMatch(publicRoute, /body\.(?:score|points|rewardPoints|balancePoints)/);
   assert.match(publicRoute, /HttpOnly; Secure; SameSite=Lax/);
   assert.match(redemptionRoute, /COALESCE\(SUM\(points\),0\)/);
-  assert.match(redemptionRoute, /-value\.selectedPackage\.priceCents/);
-  assert.match(redemptionRoute, /courseSubscriptionPackage\(course\.packageTier,3\)/);
-  assert.match(redemptionRoute, /addCourseSubscriptionMonths\(periodStart,3\)/);
-  assert.match(redemptionRoute, /provider_subscription_id[^]*credit:/);
+  assert.match(redemptionRoute, /smartlingo_digital_reward_items/);
+  assert.match(redemptionRoute, /smartlingo_digital_reward_redemptions/);
+  assert.doesNotMatch(redemptionRoute, /courseSubscriptionPackage|smartlingo_course_subscriptions/);
 });
 
 test("pronunciation transcript scoring tolerates case and punctuation but rejects the wrong word", () => {

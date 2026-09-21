@@ -2,7 +2,7 @@ import { getDatabase, getSessionUser } from "@/lib/auth";
 import { boundedJsonBody } from "@/lib/bounded-request-body";
 import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
 import { platformProduct } from "@/lib/platform-commerce";
-import { runtimeValue, stripeRequest } from "@/lib/stripe-course-subscription";
+import { runtimeValue, stripeRequest } from "@/lib/stripe";
 
 const CHECKOUT_SECONDS = 35 * 60;
 

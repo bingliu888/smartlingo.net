@@ -69,8 +69,10 @@ test("current-commit validation rejects stale and reused release manifests", asy
   const directory = await mkdtemp(join(tmpdir(), "smartlingo-release-git-"));
   const manifestPath = join(directory, "release-manifest.json");
   const script = resolve("scripts/release-manifest.mjs");
-  const git = (...args) => execFileSync("git", args, { cwd: directory, stdio: "pipe" });
-  const runValidation = () => execFileSync(process.execPath, [script, "--require-current-commit"], { cwd: directory, stdio: "pipe" });
+  const gitBinary = process.env.SMARTLINGO_TEST_GIT || "git";
+  const isolatedGitEnv = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_BINARY: gitBinary };
+  const git = (...args) => execFileSync(gitBinary, args, { cwd: directory, stdio: "pipe", env: isolatedGitEnv });
+  const runValidation = () => execFileSync(process.execPath, [script, "--require-current-commit"], { cwd: directory, stdio: "pipe", env: isolatedGitEnv });
   const initial = { ...manifest, site: basename(directory), releaseId: "initial-release" };
 
   git("init");

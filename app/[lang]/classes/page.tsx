@@ -14,8 +14,8 @@ export async function generateMetadata({
   return {
     title: lang === "zh" ? "SmartLingo 课程" : "SmartLingo Courses",
     description: lang === "zh"
-      ? "先选择学习语言，再从三级课程的 3、6、12 个月固定期限套餐中选择，并进入课程专属音视频网络研讨会教室。"
-      : "Choose a learning language first, then a 3, 6, or 12-month fixed-term package across three course levels and a dedicated A/V webinar classroom.",
+      ? "选择学习语言和课程等级；初级永久免费，首次进入中级或高级会开始一次 7 天 Max 试用，试用后需有效 Max 才能继续。"
+      : "Choose a learning language and course level. Beginner is always free; entering Intermediate or Advanced starts one 7-day Max trial, after which active Max is required.",
   };
 }
 

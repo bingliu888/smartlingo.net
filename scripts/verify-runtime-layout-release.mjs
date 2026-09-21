@@ -147,6 +147,9 @@ async function main() {
     .map(key => [key, process.env[key]]));
   Object.assign(isolatedEnv, {
     CI: "1",
+    XDG_CONFIG_HOME: join(work, "xdg-config"),
+    XDG_CACHE_HOME: join(work, "xdg-cache"),
+    XDG_DATA_HOME: join(work, "xdg-data"),
     WRANGLER_SEND_METRICS: "false",
     CLOUDFLARE_INCLUDE_PROCESS_ENV: "false",
     WRANGLER_WRITE_LOGS: "false",

@@ -1,4 +1,4 @@
-import { cryptoSubscriptionPlanForIds } from "./crypto-subscription";
+import { smartPayPlanForIds } from "./crypto-subscription";
 
 export type SmartPayReconciliationRecord = {
   wallet: string;
@@ -27,6 +27,6 @@ export function smartPayTransactionNeedsReconciliation(
   productOwnerRefId: string,
 ) {
   return smartPayRecipientMatches(record, payerId, productOwnerRefId)
-    && cryptoSubscriptionPlanForIds(record.mainId, record.secondId) !== null
+    && smartPayPlanForIds(record.mainId, record.secondId) !== null
     && !record.subscriptionRecorded;
 }

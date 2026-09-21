@@ -71,11 +71,14 @@ export async function GET(request: Request) {
   const now = Math.floor(Date.now() / 1_000);
   const maxActive = subscription?.status === "active" && subscription.cadence === "max"
     && Number(subscription.currentPeriodEndsAt || 0) > now;
+  const trialActive = maxActive && Number(subscription?.trialEndsAt || 0) > now
+    && Number(subscription?.trialEndsAt || 0) === Number(subscription?.currentPeriodEndsAt || 0);
   return Response.json({
     subscription: subscription ?? null,
     platformPlan: {
-      id: maxActive ? "max" : "standard",
+      id: maxActive ? "max" : "free",
       maxActive,
+      trialActive,
       remainingDays: maxActive ? Math.max(1, Math.ceil((Number(subscription.currentPeriodEndsAt) - now) / 86_400)) : 0,
     },
     aigcCredits: await aigcCreditBalance(user.id),

@@ -8,17 +8,16 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title SmartPay5
-/// @notice Site-specific flexible ERC-20 checkout for SmartLingo course and platform products.
-/// @dev SmartLingo stores one rule per product and token mode. Course buyers
-///      supply one supported learning-language code as secondId. Max and AIGC
-///      buyers supply the fixed `platform` secondId. The purchase secondId is
+/// @notice Site-specific flexible ERC-20 checkout for SmartLingo Max and AIGC products.
+/// @dev SmartLingo stores one rule per product and token mode. Buyers supply
+///      the fixed `platform` secondId. The purchase secondId is
 ///      recorded in the transaction but does not duplicate the price rule.
 ///      A rule can be dual-token (USDT plus GLC) or primary-token-only. Dual
 ///      rules store both 100% prices so pay() can derive the only valid
 ///      complement. Single-token rules use address(0) and zero values for the
 ///      secondary token and require the full primary amount. Every payment also
 ///      carries two public six-character identities: payerId identifies the
-///      signed-in member receiving the course entitlement, while refId identifies
+///      signed-in member receiving the platform entitlement, while refId identifies
 ///      the permanent administrator who owns these SmartLingo products. The
 ///      connected wallet only signs and funds the transaction.
 ///      Payout events and records store nominal rule amounts. Fee-on-transfer
@@ -27,9 +26,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 contract SmartPay5 is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    string public constant MAIN_ID_BASIC_3_MONTH = "smartlingo_course_basic_3m";
-    string public constant MAIN_ID_INTERMEDIATE_3_MONTH = "smartlingo_course_intermediate_3m";
-    string public constant MAIN_ID_ADVANCED_3_MONTH = "smartlingo_course_advanced_3m";
     string public constant MAIN_ID_MAX_6_MONTH = "smartlingo_platform_max_6m";
     string public constant MAIN_ID_MAX_12_MONTH = "smartlingo_platform_max_12m";
     string public constant MAIN_ID_AIGC_1000 = "smartlingo_platform_aigc_1000";
@@ -381,44 +377,16 @@ contract SmartPay5 is Ownable, Pausable, ReentrancyGuard {
     function _validatePurchaseIds(string memory mainId, string memory secondId) private pure {
         _validateIds(mainId, secondId);
         if (!_isSupportedMainId(mainId)) revert UnsupportedPaymentProduct();
-        if (_isPlatformMainId(mainId)) {
-            if (keccak256(bytes(secondId)) != keccak256(bytes(PLATFORM_SECOND_ID))) {
-                revert UnsupportedLearningLanguage();
-            }
-        } else if (!_isSupportedLanguage(secondId)) revert UnsupportedLearningLanguage();
+        if (keccak256(bytes(secondId)) != keccak256(bytes(PLATFORM_SECOND_ID))) {
+            revert UnsupportedLearningLanguage();
+        }
     }
 
     function _isSupportedMainId(string memory mainId) private pure returns (bool) {
         bytes32 value = keccak256(bytes(mainId));
-        return value == keccak256(bytes(MAIN_ID_BASIC_3_MONTH))
-            || value == keccak256(bytes(MAIN_ID_INTERMEDIATE_3_MONTH))
-            || value == keccak256(bytes(MAIN_ID_ADVANCED_3_MONTH))
-            || value == keccak256(bytes(MAIN_ID_MAX_6_MONTH))
-            || value == keccak256(bytes(MAIN_ID_MAX_12_MONTH))
-            || value == keccak256(bytes(MAIN_ID_AIGC_1000));
-    }
-
-    function _isPlatformMainId(string memory mainId) private pure returns (bool) {
-        bytes32 value = keccak256(bytes(mainId));
         return value == keccak256(bytes(MAIN_ID_MAX_6_MONTH))
             || value == keccak256(bytes(MAIN_ID_MAX_12_MONTH))
             || value == keccak256(bytes(MAIN_ID_AIGC_1000));
-    }
-
-    function _isSupportedLanguage(string memory language) private pure returns (bool) {
-        bytes32 value = keccak256(bytes(language));
-        return value == keccak256(bytes("zh"))
-            || value == keccak256(bytes("en"))
-            || value == keccak256(bytes("es"))
-            || value == keccak256(bytes("ja"))
-            || value == keccak256(bytes("ko"))
-            || value == keccak256(bytes("fr"))
-            || value == keccak256(bytes("de"))
-            || value == keccak256(bytes("ru"))
-            || value == keccak256(bytes("it"))
-            || value == keccak256(bytes("pt"))
-            || value == keccak256(bytes("ar"))
-            || value == keccak256(bytes("hi"));
     }
 
     function _validateRefId(string memory refId) private pure {

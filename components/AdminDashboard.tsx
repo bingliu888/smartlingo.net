@@ -2,7 +2,6 @@ import type { SessionUser } from "../lib/auth";
 import { getDatabase } from "../lib/auth";
 import { AdminLearningRewards } from "./AdminLearningRewards";
 import AdminCryptoSettings from "./AdminCryptoSettings";
-import { SMARTLINGO_COURSE_SUBSCRIPTION_PACKAGES } from "../lib/smartlingo-course-packages";
 
 type CountRow = { count: number };
 
@@ -30,8 +29,8 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
           <nav><a href={`/${lang}/admin/members?tab=members`}>{zh ? "全部会员" : "All members"} →</a><a href={`/${lang}/admin/members?tab=admins`}>{zh ? "管理员" : "Administrators"} →</a><a href={`/${lang}/admin/members?tab=subscribers`}>{zh ? "订阅者" : "Subscribers"} →</a></nav>
         </article>
         <article className="admin-overview-card">
-          <div><p>{zh ? "课程价格" : "Course prices"}</p><strong>{SMARTLINGO_COURSE_SUBSCRIPTION_PACKAGES.length}</strong><span>{zh ? "3 个等级 × 3 种固定期限" : "3 levels × 3 fixed terms"}</span></div>
-          <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "查看价格套餐" : "View price packages"} →</a></nav>
+          <div><p>{zh ? "课程等级" : "Course levels"}</p><strong>3</strong><span>{zh ? "初级免费；中高级由试用或 Max 开放 · 0 个课程付款项目" : "Beginner free; trial or Max opens higher levels · 0 course payment items"}</span></div>
+          <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "查看课程等级" : "View course levels"} →</a></nav>
         </article>
         <article className="admin-overview-card">
           <div><p>{zh ? "结业证书" : "Certificates"}</p><strong>{certificates.toLocaleString()}</strong><span>{zh ? "由真实课程成绩生成" : "Issued from recorded course scores"}</span></div>

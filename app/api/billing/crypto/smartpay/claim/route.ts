@@ -2,7 +2,7 @@ import { getSessionUser } from "@/lib/auth";
 import { isPermanentAdmin } from "@/lib/admin-access";
 import { consumeAccountRequestLimit } from "@/lib/account-request-limit";
 import { boundedJsonBody } from "@/lib/bounded-request-body";
-import { claimSmartLingoCoursePayment } from "@/lib/smartlingo-smartpay-claim";
+import { claimSmartLingoPayment } from "@/lib/smartlingo-smartpay-claim";
 
 type ClaimInput = {
   settingId?: string;
@@ -10,7 +10,6 @@ type ClaimInput = {
   transactionHash?: string;
   classId?: string;
   memberId?: string;
-  supervisorRefId?: string;
 };
 
 export async function POST(request: Request) {
@@ -30,14 +29,13 @@ export async function POST(request: Request) {
     const target = String(body.memberId || "");
     if (target && target !== actor.id && !isPermanentAdmin(actor))
       return Response.json({ error: "Administrator access required" }, { status: 403 });
-    return Response.json(await claimSmartLingoCoursePayment({
+    return Response.json(await claimSmartLingoPayment({
       actor,
       targetUserId: target || undefined,
       settingId: String(body.settingId || ""),
       transactionId: String(body.paymentId || ""),
       transactionHash: body.transactionHash ? String(body.transactionHash) : undefined,
       classId: body.classId ? String(body.classId) : undefined,
-      supervisorRefId: body.supervisorRefId || undefined,
     }));
   } catch (error) {
     if (error instanceof Response) return error;

@@ -2,6 +2,7 @@ import { getDatabase, getSessionUser, type SessionUser } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-access";
 import { bindVerifiedClassInvites, canManageClass, paidClassAccess } from "@/lib/class-managers";
 import { verifyStoredClassPassword } from "@/lib/class-password";
+import { hasCourseTierAccess } from "@/lib/platform-entitlements";
 
 export type ClassType = "public" | "trial" | "private";
 export type StreamingMode = "audio" | "video";
@@ -63,17 +64,15 @@ export async function classAccess(room: ClassRoom, user: SessionUser | null, sta
   if(!user.emailVerified
     || user.identityCheckedAt<=Math.floor(Date.now()/1_000)-5*60)
     return {allowed:false,admin:false,host:false,manager:false};
-  const courseMember=await getDatabase().prepare(`SELECT linked.course_id FROM (
+  const courseMember=await getDatabase().prepare(`SELECT linked.course_id,c.package_tier AS packageTier FROM (
       SELECT course_id,room_id FROM smartlingo_course_classrooms
       UNION ALL
       SELECT course_id,room_id FROM smartlingo_course_practice_rooms
     ) linked
     JOIN smartlingo_language_classes c ON c.id=linked.course_id
     LEFT JOIN smartlingo_language_class_members m ON m.class_id=c.id AND m.user_id=?
-    LEFT JOIN smartlingo_course_subscriptions s ON s.class_id=c.id AND s.user_id=?
-    WHERE linked.room_id=? AND (c.owner_user_id=? OR (m.status='active' AND
-      ((s.status='active' AND s.current_period_ends_at>unixepoch()) OR (s.status='trialing' AND s.trial_ends_at>unixepoch())))) LIMIT 1`).bind(user.id,user.id,room.id,user.id).first();
-  if(courseMember)return {allowed:true,admin:false,host,manager};
+    WHERE linked.room_id=? AND (c.owner_user_id=? OR m.status='active') LIMIT 1`).bind(user.id,room.id,user.id).first<{ course_id: string; packageTier: "basic" | "intermediate" | "advanced" | null }>();
+  if(courseMember && (await hasCourseTierAccess(user,courseMember.packageTier)).allowed)return {allowed:true,admin:false,host,manager};
   await bindVerifiedClassInvites(user);
   const invited=await getDatabase().prepare("SELECT id FROM live_class_invites WHERE room_id=? AND user_id=? LIMIT 1").bind(room.id,user.id).first();
   return {allowed:Boolean(invited),admin:false,host:false,manager:false};

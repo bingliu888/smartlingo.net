@@ -1,87 +1,92 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-commerce-20260920-r1",
+  "releaseId": "smartlingo-free-max-courses-20260920-r3",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo Standard、Max 与人工智能媒体额度",
-    "en": "SmartLingo Standard, Max, and AI media credits"
+    "zh": "SmartLingo 免费初级课程、Max 试用与统一付款",
+    "en": "SmartLingo free Beginner courses, Max trial, and unified payments"
   },
   "purpose": {
-    "zh": "将平台会员简化为含广告的免费 Standard 与固定期限 Max，并为图片、音频和视频生成建立独立的预付额度与 Stripe、SmartPay 双付款路径。",
-    "en": "Simplify platform membership to ad-supported Standard and fixed-term Max, while adding a separate prepaid balance for image, audio, and video generation through Stripe and SmartPay."
+    "zh": "移除课程等级付款项目，将产品统一为免费方案和固定期限 Max；初级课程永久免费，中高级首次进入自动获得一次 7 天 Max 试用，并统一 Stripe、SmartPay 与人工智能生成额度。",
+    "en": "Remove course-level payment items and unify the product around Free and fixed-term Max: Beginner stays free, the first higher-level visit starts one 7-day Max trial, and Stripe, SmartPay, and AI generation credits share one entitlement model."
   },
   "features": {
     "zh": [
-      "新增 6 个月 $59 与年度 $99 Max 固定期限方案，以及 $10 / 1,000 个人工智能媒体额度包。",
-      "参照 Konectible 的信息层级提供会员状态、并列 Max 方案卡、额度带和展开式付款方式选择。",
-      "Stripe 卡或银行账户付款与 Polygon SmartPay 加密付款统一调用同一套服务端权益发放逻辑。",
-      "图片、音频和视频分别按 20、10、200 额度计费；失败生成自动退回已扣额度。"
+      "只保留免费方案、6 个月 $59 Max、年度 $99 Max 与 $10 / 1,000 个人工智能生成额度包。",
+      "全部初级课程永久免费且不会启动 Max；首次进入中级或高级课程自动开通一次性 7 天 Max 试用，到期后必须购买 Max 才能继续。",
+      "首页底部直接显示 Free、两个 Max 期限和独立额度包，并删除旧九套餐与课程价格区块。",
+      "Stripe 卡或银行账户付款与 Polygon SmartPay 加密付款统一调用同一套服务端权益发放逻辑；$59、$99、$10 分别映射为 60M、100M、10M GLC。",
+      "复用 Konectible 已验证的响应式 Header：语言图标始终紧邻汉堡按钮，导航按实际宽度尽量显示，其余项目自动进入菜单。",
+      "复用 Konectible Dashboard 双栏状态卡，在用户面板直接显示 Max 剩余天数或试用状态、AIGC 额度及延长与购买入口。"
     ],
     "en": [
-      "Add fixed-term Max offers at $59 for six months and $99 annually, plus a $10 pack of 1,000 AI media credits.",
-      "Use a Konectible-inspired hierarchy with member status, parallel Max cards, a credit band, and expandable payment choices.",
-      "Route Stripe card or bank payments and Polygon SmartPay crypto payments through the same server-side entitlement service.",
-      "Charge image, audio, and video generation at 20, 10, and 200 credits respectively, refunding a completed debit when generation fails."
+      "Keep only Free, $59 six-month Max, $99 annual Max, and a $10 pack of 1,000 AI generation credits.",
+      "Keep every Beginner course free without starting Max; the first Intermediate or Advanced visit starts one non-repeatable 7-day Max trial, after which paid Max is required.",
+      "Show Free, both Max terms, and the independent credit pack at the bottom of Home while removing the old nine-package and course-price sections.",
+      "Route Stripe card or bank payments and Polygon SmartPay crypto payments through one entitlement service; $59, $99, and $10 map to 60M, 100M, and 10M GLC.",
+      "Reuse Konectible's verified responsive Header so the language icon stays beside the hamburger, as many navigation items as fit remain visible, and overflow moves into the drawer.",
+      "Reuse Konectible's two-column Dashboard status card to expose Max days or trial status, AIGC balance, and Extend or Add actions directly on the member dashboard."
     ]
   },
   "affected": {
     "zh": [
-      "公开订阅页、登录会员面板、分享媒体工作室、Stripe Webhook、SmartPay 管理与加密结账、平台订阅及额度数据。"
+      "首页、公开订阅页、课程目录与课堂权限、登录会员面板、Stripe Webhook、SmartPay 管理与加密结账、平台订阅及额度数据。"
     ],
     "en": [
-      "Public pricing, the signed-in membership panel, Share Studio, the Stripe webhook, SmartPay administration and crypto checkout, and platform entitlement data."
+      "Home, public pricing, course catalog and classroom access, the signed-in membership panel, the Stripe webhook, SmartPay administration and crypto checkout, and platform entitlement data."
     ]
   },
   "changes": {
     "zh": [
-      "新增幂等的结账意图、链上付款认领、额度账户和不可为负的额度流水表；Clerk 用户重键时同步迁移这些归属记录。",
-      "扩展 SmartPay5 商品白名单，使课程继续以学习语言为 secondId，而 Max 与额度商品严格使用 platform 范围。",
-      "将人工智能语音生成纳入统一的受审计网关，并避免额度不足或扣款前失败时产生错误退款。",
-      "补齐中文及其余十种界面语言的会员和加密结账文案。"
+      "退役九个历史课程付款产品，并把仍有效的历史课程使用期安全迁移为不自动续费的 Max 使用期。",
+      "新增一次性 7 天 Max 试用逻辑，以 subscriptions.trial_ends_at 持久记录已领取状态，防止重复进入课程刷新试用。",
+      "课程学习、SmartCard、Webinar 和 Group Audio 权限统一遵守初级免费、中高级试用或 Max 的规则。",
+      "SmartPay5 白名单只保留两个 Max 期限与一个额度包，平台商品严格使用 platform secondId。"
     ],
     "en": [
-      "Add idempotent checkout-intent, on-chain claim, credit-account, and non-negative credit-ledger tables, including Clerk-user rekey propagation.",
-      "Extend the SmartPay5 product allowlist so courses retain learning-language secondId values while Max and credit products require the platform scope.",
-      "Move AI speech generation behind the audited unified gateway and prevent false refunds when no debit completed.",
-      "Complete membership and crypto-checkout copy for Chinese and the other ten translated interface languages."
+      "Retire nine historical course payment products and safely convert any remaining paid course term into non-renewing Max access.",
+      "Persist the one-time 7-day Max trial in subscriptions.trial_ends_at so revisiting a course cannot refresh it.",
+      "Apply Beginner-free and higher-level trial-or-Max rules consistently to learning, SmartCard, Webinar, and Group Audio access.",
+      "Restrict the SmartPay5 allowlist to two Max terms and one credit pack, all using the platform secondId."
     ]
   },
   "validation": {
     "zh": [
-      "476 项自动化测试全部通过，包括合约虚拟机正反交易、支付与额度边界、12 种界面语言及 D1 重复迁移。",
-      "TypeScript、零警告 ESLint、敏感数据扫描、生产构建、D1 外键检查和四项共享站点门禁通过。",
+      "完整自动化测试通过，包括免费初级课程、一次性 Max 试用、付款与额度边界、12 种界面语言及 D1 重复迁移。",
+      "TypeScript、零警告 ESLint、敏感数据扫描、生产构建、82 项 D1 迁移重放与外键检查通过。",
       "未执行真实 Stripe 收款或真实链上转账；这两项保留给站点所有者控制的钱包与付款凭证。"
     ],
     "en": [
-      "All 476 automated tests pass, including positive and negative contract-VM transactions, payment and credit boundaries, twelve interface languages, and repeatable D1 migration replay.",
-      "TypeScript, zero-warning ESLint, sensitive-data scanning, production build, D1 foreign-key checks, and all four shared site gates pass.",
+      "The complete automated suite passes, covering free Beginner access, the one-time Max trial, payment and credit boundaries, twelve interface languages, and repeatable D1 migration replay.",
+      "TypeScript, zero-warning ESLint, sensitive-data scanning, production build, all 82 D1 migrations, and foreign-key checks pass.",
       "No live Stripe charge or on-chain transfer was made; those remain controlled by the wallet and payment credentials of the site owner."
     ]
   },
   "deferred": {
     "zh": [
-      "新版 SmartPay5 必须由合约所有者在管理员付款页重新部署，并确认六个价格规则后，新的 Max 与额度加密付款才会在生产结账中启用。"
+      "新版 SmartPay5 必须由合约所有者在管理员付款页重新部署，并确认三个产品规则后，Max 与额度加密付款才会在生产结账中启用。"
     ],
     "en": [
-      "The contract owner must redeploy the revised SmartPay5 contract and confirm its six price rules in the payment admin before new Max and credit crypto checkout options become available in production."
+      "The contract owner must redeploy the revised SmartPay5 contract and confirm its three product rules in payment administration before Max and credit crypto checkout options become available in production."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "课程的九个固定期限套餐保持独立；Standard 与 Max 只控制平台广告体验，人工智能媒体额度也独立于 Max 有效期。"
+      "课程只保留初级、中级和高级学习等级，不再保留独立付款项目；人工智能生成额度继续独立于 Max 有效期。"
     ],
     "en": [
-      "The nine fixed-term course packages remain separate; Standard and Max govern only the platform ad experience, and AI media credits remain independent from the Max term."
+      "Courses retain Beginner, Intermediate, and Advanced learning levels without separate payment items; AI generation credits remain independent from the Max term."
     ]
   },
   "dataMigration": {
     "included": true,
     "migrations": [
-      "0185_platform_max_aigc_credits"
+      "0185_platform_max_aigc_credits",
+      "0186_free_max_course_access"
     ],
     "rollback": {
-      "zh": "回退至上一成功的 Cloudflare Worker；0185 仅新增表与用户重键触发器，保留为空闲数据结构，不删除付款或额度记录。",
-      "en": "Roll back to the previous successful Cloudflare Worker; migration 0185 is additive, so its tables and rekey trigger remain inert without deleting payment or credit records."
+      "zh": "回退至上一成功的 Cloudflare Worker。0185 的新增表与 0186 退役的历史价格记录保留；已迁移为 Max 的剩余有效期不会被删除，避免撤销已获得的使用权。",
+      "en": "Roll back to the previous successful Cloudflare Worker. Keep the additive 0185 tables and the historical prices retired by 0186; do not delete remaining access already converted to Max."
     }
   }
 }

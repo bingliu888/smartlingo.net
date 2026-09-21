@@ -123,13 +123,13 @@ test("legacy classroom grants remain unbound until the verified-user binding pat
 
 test("tracked classroom migrations pass fresh D1 replay and a second no-op", () => {
   const result = validateD1Migrations();
-  assert.equal(result.newestMigration, "0185_platform_max_aigc_credits");
+  assert.equal(result.newestMigration, "0186_free_max_course_access");
   assert.equal(result.firstRunApplied, result.migrationCount);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
 });
 
-test("course administration and paid-room entry require a verified bound classroom identity", () => {
+test("course administration remains manager-scoped while member mutation is retired", () => {
   const classRoute = read("app/api/classes/[classId]/route.ts");
   const studentsRoute = read("app/api/classes/[classId]/students/route.ts");
   const detailPage = read("app/[lang]/classrooms/[code]/page.tsx");
@@ -138,9 +138,8 @@ test("course administration and paid-room entry require a verified bound classro
 
   assert.match(classRoute, /canManageClass\(/);
   assert.match(studentsRoute, /canManageClass\(/);
-  assert.match(studentsRoute, /verifiedRegisteredUser\(email\)/);
-  assert.match(studentsRoute, /boundedJsonBody/);
-  assert.match(studentsRoute, /consumeAccountRequestLimit/);
+  assert.match(studentsRoute, /LEFT JOIN subscriptions/);
+  assert.match(studentsRoute, /Course-level subscriptions have been retired/);
   assert.doesNotMatch(`${classRoute}\n${studentsRoute}`, /FROM live_class_cohosts/);
   for (const source of [detailPage, roomPage, sharePage]) {
     assert.match(source, /VERIFIED_EMAIL_REQUIRED/);
@@ -176,12 +175,9 @@ test("Gold 3 classroom migration is additive and deployment applies D1 before bu
   const deployStep = workflow.indexOf("- name: Deploy Worker");
 
   assert.doesNotMatch(migration, /DROP\s+(?:TABLE|COLUMN)/i);
-  assert.deepEqual(journal.entries.slice(-5).map(({ idx, tag }) => ({ idx, tag })), [
-    { idx: 76, tag: "0182_smartpay5_payment_item_states" },
-    { idx: 77, tag: "0183_spanish_su_possessive_gloss" },
-    { idx: 78, tag: "0156_graded_scenario_sentence_catalog" },
-    { idx: 79, tag: "0184_spanish_sentence_grammar" },
+  assert.deepEqual(journal.entries.slice(-2).map(({ idx, tag }) => ({ idx, tag })), [
     { idx: 80, tag: "0185_platform_max_aigc_credits" },
+    { idx: 81, tag: "0186_free_max_course_access" },
   ]);
   assert.ok(migrationStep >= 0 && migrationStep < buildStep && buildStep < deployStep);
 });

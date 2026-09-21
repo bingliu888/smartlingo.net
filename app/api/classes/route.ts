@@ -1,4 +1,5 @@
 import { getDatabase, getSessionUser } from "../../../lib/auth";
+import { hasMaxCourseAccess } from "../../../lib/platform-entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -13,23 +14,19 @@ type LanguageClassRow = {
   billingInterval: "month"; trialDays: number; enrollmentCount: number;
   membershipRole: "owner" | "teacher" | "coordinator" | "student" | null;
   membershipStatus: "invited" | "active" | "paused" | "left" | "removed" | null;
-  subscriptionStatus: "trialing" | "active" | "past_due" | "cancelled" | "expired" | null;
-  subscriptionId: string | null; supervisorRefId: string | null;
-  trialEndsAt: number | null; currentPeriodEndsAt: number | null; createdAt: number;
+  createdAt: number;
 };
 
-function classView(row: LanguageClassRow, userId: string) {
+function classView(row: LanguageClassRow, userId: string, maxActive: boolean) {
   const isOwner = row.ownerUserId === userId || row.membershipRole === "owner";
-  const now=Math.floor(Date.now()/1000);
-  const isJoined = !isOwner && row.membershipStatus === "active"
-    && ((row.subscriptionStatus === "active" && Number(row.currentPeriodEndsAt||0)>now)
-      || (row.subscriptionStatus === "trialing" && Number(row.trialEndsAt || 0) > now));
+  const hasCourseAccess = row.packageTier === "basic" || maxActive;
+  const isJoined = !isOwner && row.membershipStatus === "active" && hasCourseAccess;
   return {
     ...row,
     enrollmentCount: Number(row.enrollmentCount || 0),
     isOwner,
     isJoined,
-    canJoin: !isOwner && !isJoined && row.classKind === "official_course"
+    canJoin: hasCourseAccess && !isOwner && !isJoined && row.classKind === "official_course"
       && row.visibility === "public" && row.status === "open"
       && Number(row.enrollmentCount || 0) < row.capacity,
   };
@@ -39,6 +36,7 @@ export async function GET(request: Request) {
   const user = await getSessionUser(request);
   if (!user) return Response.json({ error: "Authentication required" }, { status: 401 });
   const database = getDatabase();
+  const maxActive = await hasMaxCourseAccess(user);
   const [pathResult, classResult] = await Promise.all([
     database.prepare(`SELECT id,slug,target_language AS targetLanguage,level,title_en AS titleEn,title_zh AS titleZh,version
       FROM smartlingo_language_paths WHERE status='published' ORDER BY target_language,level`).run(),
@@ -48,29 +46,25 @@ export async function GET(request: Request) {
       c.price_cents AS priceCents,c.currency,c.capacity,c.package_tier AS packageTier,
       c.billing_interval AS billingInterval,c.trial_days AS trialDays,c.created_at AS createdAt,
       mine.role AS membershipRole,mine.status AS membershipStatus,
-      subscription.id AS subscriptionId,subscription.status AS subscriptionStatus,
-      subscription.supervisor_ref_id AS supervisorRefId,subscription.trial_ends_at AS trialEndsAt,
-      subscription.current_period_ends_at AS currentPeriodEndsAt,
       COALESCE(SUM(CASE WHEN members.role='student' AND members.status='active' THEN 1 ELSE 0 END),0) AS enrollmentCount
       FROM smartlingo_language_classes c
       JOIN users u ON u.id=c.owner_user_id JOIN smartlingo_language_paths p ON p.id=c.path_id
       LEFT JOIN smartlingo_language_class_members mine ON mine.class_id=c.id AND mine.user_id=?
-      LEFT JOIN smartlingo_course_subscriptions subscription ON subscription.class_id=c.id AND subscription.user_id=?
       LEFT JOIN smartlingo_language_class_members members ON members.class_id=c.id
       WHERE c.class_kind='official_course' AND c.status='open' AND c.visibility='public' AND p.status='published'
       GROUP BY c.id
       ORDER BY CASE c.target_language WHEN 'zh' THEN 0 WHEN 'en' THEN 1 WHEN 'es' THEN 2 WHEN 'ja' THEN 3 WHEN 'ko' THEN 4 WHEN 'fr' THEN 5 WHEN 'de' THEN 6 WHEN 'ru' THEN 7 WHEN 'it' THEN 8 WHEN 'pt' THEN 9 WHEN 'ar' THEN 10 WHEN 'hi' THEN 11 ELSE 12 END,
-      CASE c.package_tier WHEN 'basic' THEN 0 WHEN 'intermediate' THEN 1 ELSE 2 END`).bind(user.id, user.id).run<LanguageClassRow>(),
+      CASE c.package_tier WHEN 'basic' THEN 0 WHEN 'intermediate' THEN 1 ELSE 2 END`).bind(user.id).run<LanguageClassRow>(),
   ]);
-  const classes = (classResult.results || []).map(row => classView(row, user.id));
+  const classes = (classResult.results || []).map(row => classView(row, user.id, maxActive));
   return Response.json({
     currentUser: { id: user.id, displayName: user.displayName },
     member: { canCreatePrivateClass: false, allowedOwnerRoles: [] },
-    paths: pathResult.results || [], classes,
+    paths: pathResult.results || [], classes, maxActive,
     availableClasses: classes.filter(item => !item.isOwner && !item.isJoined),
     joinedClasses: classes.filter(item => item.isJoined), createdClasses: [],
-    paymentPolicy: { durationsMonths: [3,6,12], fixedPlatformPricing: true, automaticRenewal: false },
-    paymentMode: "fixed_term_package",
+    paymentPolicy: { plans: ["free", "max"], maxTermsMonths: [6,12], beginnerFree: true, maxLevels: ["intermediate","advanced"], automaticRenewal: false },
+    paymentMode: "platform_max",
   });
 }
 

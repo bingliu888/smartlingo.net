@@ -55,7 +55,7 @@ test("the dashboard places learning, practice, speaking, and community coherentl
     read("../components/DashboardLearningHub.tsx"),
     read("../components/DashboardCommunityHub.tsx"),
   ]);
-  for (const key of ["learn", "practice", "speak", "community"]) assert.match(header, new RegExp(`data-nav=\"${key}\"`));
+  for (const key of ["learn", "practice", "speak", "community"]) assert.match(header, new RegExp(`\\[t\\.${key},[\\s\\S]*?"${key}"`));
   assert.match(dashboard, /DashboardCommunityHub/);
   for (const domain of ["Learn", "Practice", "Speak"]) assert.match(hub, new RegExp(domain));
   assert.match(communityHub, /Nearby learning/);

@@ -2,21 +2,21 @@
 
 `SmartPay5.sol` is the only supported SmartLingo on-chain checkout. Each site and EVM chain uses an independent deployment. The contract owns the payable rules, W1–W5 payout configuration, public transaction records, pause state, withdrawal controls, and immediate Owner transfer.
 
-## Course-payment identifiers
+## Platform-product identifiers
 
-- Three-month Beginner: `mainId = smartlingo_course_basic_3m`
-- Three-month Intermediate: `mainId = smartlingo_course_intermediate_3m`
-- Three-month Advanced: `mainId = smartlingo_course_advanced_3m`
-- Price-rule `secondId`: the empty string, so all languages share one price
-- Payment `secondId`: one supported learning-language code, such as `es`
+- Max 6 months: `mainId = smartlingo_platform_max_6m`
+- Max annual: `mainId = smartlingo_platform_max_12m`
+- AIGC 1,000 credits: `mainId = smartlingo_platform_aigc_1000`
+- Price-rule `secondId`: the empty string
+- Payment `secondId`: `platform`
 
-The public catalog has exactly nine fixed-term packages: three levels at 3, 6, and 12 months. Card payment supports all nine. SmartPay5 supports only the three 3-month packages on Polygon. A successful claim grants the selected 3-month level for the language recorded in the transaction `secondId`.
+Beginner, Intermediate, and Advanced remain curriculum levels, not payment products. Free supports the ad-funded core experience; an active Max membership opens every course level in every supported language. AIGC credits remain a separate non-cash balance.
 
 These identifiers are implementation details shown only in the administrator console. Customer pages display the subscription duration and token amounts.
 
 ## Authoritative price rule
 
-The admin database supplies the three eligible product labels, token decimals, and desired SmartPay5 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call supplies the selected learning language as `secondId` and the contract validates it against SmartLingo's 12 supported language codes.
+The admin database supplies token metadata and the desired SmartPay5 mix percentage. Before displaying an enabled checkout or creating a payment request, the server reads the product-level rule with `paymentRule(primaryToken, secondaryToken, mainId, "")`. A candidate is hidden unless the returned rule is enabled and matches the configured on-chain product. The returned atomic token amounts and eligibility threshold are authoritative for payment. The later `pay(...)` call uses `platform` as `secondId`.
 
 `paymentRule` and all other view functions use `eth_call`: no connected wallet, signature, or gas is required.
 
@@ -26,11 +26,11 @@ A rule stores:
 
 1. primary token address and full primary price;
 2. optional secondary token address and full equivalent secondary price;
-3. the 3-month package `mainId` and an empty rule `secondId`;
+3. the platform-product `mainId` and an empty rule `secondId`;
 4. minimum secondary-token balance; and
 5. enabled state.
 
-For a single-token rule, the secondary address and amounts are zero. For a dual-token rule, the site chooses a primary-token percentage from 0–100 after the payer connects. `pay(...)` resolves the shared product rule, validates the package and language, derives the exact secondary amount from the two full on-chain prices, and rejects every invalid ratio. Historical records keep the selected language and amounts actually paid, so later database percentage changes do not change old transactions.
+For a single-token rule, the secondary address and amounts are zero. For a dual-token rule, the site chooses a primary-token percentage from 0–100 after the payer connects. `pay(...)` resolves the shared product rule, validates the platform product, derives the exact secondary amount from the two full on-chain prices, and rejects every invalid ratio. Historical records keep the amounts actually paid, so later database percentage changes do not change old transactions.
 
 ## Public reads and transaction records
 
@@ -38,7 +38,7 @@ Anyone can call `paymentRule`, `paymentRules`, `payoutConfiguration`, `transacti
 
 Each transaction records the ID, timestamp, funding wallet, the signed-in account's public six-character PayerID, the permanent administrator's six-character product-owner RefID, product identifiers, primary token and amount, and secondary token and amount. Both IDs preserve letter case. SmartLingo compares them case-insensitively and requires PayerID, product-owner RefID, product, token pair, and unused TransactionID to match before granting or extending a subscription. The funding wallet remains audit data and is not an account identity.
 
-SmartLingo's signed-in checkout obtains both identities from the server: `payerId` is the current member and `refId` is the verified permanent administrator who owns every SmartLingo course product. The connected wallet may be different from the profile wallet, and the profile may have no wallet. Third-party clients must obtain the same two server-authoritative IDs instead of deriving either identity from the connected wallet. The contract accepts upper- or lower-case unambiguous ID characters but rejects every value that is not exactly six characters.
+SmartLingo's signed-in checkout obtains both identities from the server: `payerId` is the current member and `refId` is the verified permanent administrator who owns every SmartLingo platform product. The connected wallet may be different from the profile wallet, and the profile may have no wallet. Third-party clients must obtain the same two server-authoritative IDs instead of deriving either identity from the connected wallet. The contract accepts upper- or lower-case unambiguous ID characters but rejects every value that is not exactly six characters.
 
 "Used" status is intentionally site-side: the immutable contract record stays publicly readable, while the SmartLingo database has a unique `(contract, TransactionID)` claim and marks the matching subscription record once. A member refresh therefore needs only free view calls; it never asks the payer to spend gas merely to mark a transaction used.
 

@@ -84,8 +84,10 @@ test("the scene page falls back to prebuilt dialogue when D1 or Luna is unavaila
   assert.match(page, /catch \{[\s\S]*buildEverydaySpeakingDeck\(language, scene\.id, level\)/);
 });
 
-test("mobile header never displays the separate account icon beside the hamburger", async () => {
-  const css = await read("../app/globals.css");
-  assert.match(css, /@media \(max-width: 1100px\)[\s\S]*?\.site-header \.header-actions \{ display: none; \}[\s\S]*?\.site-header \.hamburger-button \{ display: inline-grid;/);
-  assert.doesNotMatch(css, /@media\(max-width:1100px\)[\s\S]{0,300}\.site-header \.header-actions\{display:flex\}/);
+test("responsive header keeps the language icon beside hamburger and moves only overflow navigation", async () => {
+  const [header, css] = await Promise.all([read("../components/SiteHeader.tsx"), read("../app/globals.css")]);
+  assert.match(header, /const hiddenLinks = links\.slice\(visibleLinkCount\)/);
+  assert.match(header, /className="header-controls"[\s\S]*?<InterfaceLanguageMenu lang=\{lang\}\/?>[\s\S]*?hamburger-button/);
+  assert.match(css, /\.header-controls\{display:flex;align-items:center;justify-content:flex-end;gap:8px\}/);
+  assert.match(css, /\.site-header \.hamburger-button\{[^}]*display:inline-grid/);
 });

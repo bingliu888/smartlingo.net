@@ -23,15 +23,29 @@ test("public plans follow the status, two Max cards, and credit-band hierarchy",
   assert.match(page, /<PlatformPlans/);
   assert.match(footer, /\/pricing/);
   for (const marker of ["platform-status-card", "platform-max-card", "aigc-credit-card", "Choose payment method", "Crypto Pay", "Card \/ bank"]) assert.match(plans, new RegExp(marker));
-  assert.match(plans, /Standard is free with ads/);
-  assert.match(css, /\.platform-plan-grid\{[^}]*repeat\(2/);
+  assert.match(plans, /every Beginner course stays free with ads/i);
+  assert.match(plans, /7-day Max trial/);
+  assert.match(plans, /platform-free-card/);
+  assert.match(css, /\.platform-plan-grid\{[^}]*repeat\(3/);
+});
+
+test("member dashboard reuses the Konectible plan and credit summary pattern", async () => {
+  const [panel, css] = await Promise.all([
+    read("../components/MembershipPanel.tsx"),
+    read("../app/globals.css"),
+  ]);
+  assert.match(panel, /dashboard-creator-summary dashboard-platform-summary/);
+  assert.match(panel, /MAX MEMBERSHIP/);
+  assert.match(panel, /AIGC TOKEN CREDIT/);
+  assert.match(panel, /\$\{lang\}\/pricing#aigc-credits/);
+  assert.match(css, /\.dashboard-creator-summary\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css, /@media\(max-width:720px\)\{\.dashboard-creator-summary\{grid-template-columns:1fr\}/);
 });
 
 test("Stripe and SmartPay complete the same server-authoritative products", async () => {
-  const [checkout, complete, webhook, fulfillment, presets, options, claim] = await Promise.all([
+  const [checkout, complete, fulfillment, presets, options, claim] = await Promise.all([
     read("../app/api/billing/platform/stripe/checkout/route.ts"),
     read("../app/api/billing/platform/stripe/complete/route.ts"),
-    read("../app/api/billing/card/webhook/route.ts"),
     read("../lib/platform-entitlements.ts"),
     read("../lib/smartpay5-presets.ts"),
     read("../app/api/billing/crypto/smartpay/options/route.ts"),
@@ -43,7 +57,6 @@ test("Stripe and SmartPay complete the same server-authoritative products", asyn
   assert.match(checkout, /idempotency-key/);
   assert.doesNotMatch(checkout, /mode: "subscription"|recurring/);
   assert.match(complete, /fulfillPlatformProduct/);
-  assert.match(webhook, /scope==="platform_product"/);
   assert.match(fulfillment, /addAigcCredits/);
   assert.match(fulfillment, /cadence='max'/);
   assert.match(presets, /SMARTLINGO_PLATFORM_PRODUCTS/);

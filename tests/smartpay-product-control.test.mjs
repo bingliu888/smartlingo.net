@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("SmartPay5 course payment items fail closed while preserving language-specific checkout", async () => {
+test("SmartPay5 platform payment items fail closed", async () => {
   const { smartPay5ConfirmationControl, smartPay5EnabledPresets, smartPay5PaymentItemStateSets, smartPay5PresetFingerprint } = await import(new URL("../lib/smartpay5-confirmation-control.ts", import.meta.url));
   const preset = { key: "polygon-usdt:polygon-glc:basic", mode: "dual", primaryTokenAddress: "0x0000000000000000000000000000000000000001", secondaryTokenAddress: "0x0000000000000000000000000000000000000002", mainId: "course_basic", secondId: "", primaryTokenAmountAtomic: "100000000", secondaryTokenAmountAtomic: "100000000000000", minimumSecondaryBalanceAtomic: "1000000000000000000" };
   assert.deepEqual(smartPay5ConfirmationControl("configured", "enabled"), { showStop: true, showConfirm: false, confirmKind: null });
@@ -17,8 +17,9 @@ test("SmartPay5 course payment items fail closed while preserving language-speci
   assert.match(admin, /stopSmartPay5Preset/); assert.doesNotMatch(admin, /sendOwnerTransaction\(contractState\?\.paused \? "unpause" : "pause"/);
   assert.match(route, /smartPay5RulePresetStatus\(preset, rules\)\.state !== "configured"/); assert.match(route, /enabled=0/); assert.match(route, /enabled=1/);
   assert.match(checkout, /smartPay5PaymentItemDatabaseState/); assert.match(checkout, /smartPay5EnabledPresets\(presets, state\.enabledPresetKeys\)/);
-  assert.match(checkout, /smartPayIdsForPlan\(preset\.plan, languageCode\)/);
-  assert.match(checkout, /const targets = platform \? \["platform"\] : languages/);
+  assert.match(checkout, /smartPayIdsForPlan\(preset\.plan\)/);
+  assert.match(checkout, /languageCode: "platform"/);
+  assert.doesNotMatch(checkout, /const targets|SMARTLINGO_LANGUAGE/);
   assert.doesNotMatch(checkout, /smartPay5PaymentRules|verifySmartPay5Identity|smartPay5PayoutConfigurationRaw/);
   assert.doesNotMatch(optionsRoute, /smartpay5_payment_item_states|enabledPresetKeys/); assert.doesNotMatch(prepareRoute, /smartpay5_payment_item_states|enabledPresetKeys/);
   const db = new DatabaseSync(":memory:"); db.exec(migration);

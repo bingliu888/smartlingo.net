@@ -25,7 +25,7 @@ export default async function CourseLanguagePage({ params }: { params: Promise<{
       <section className="ai-public-hero" data-layout-fill="program-detail-hero">
         <p className="section-kicker">{language.toUpperCase()} · {interfaceText(locale, "COURSE DETAILS", "课程详情")}</p>
         <h1>{item.nativeName}</h1>
-        <p>{interfaceText(locale, "You chose the learning language. Now choose one of nine fixed-term packages; every package opens that language course and its dedicated A/V webinar classroom.", "您已选择学习语言。现在从九个固定期限套餐中选择一个；每个套餐都会开通该语言课程及其专属音视频网络研讨会教室。")}</p>
+        <p>{interfaceText(locale, "Choose Beginner, Intermediate, or Advanced. These are learning levels, not separate payment products: one active Max membership opens every level and its dedicated A/V webinar classroom.", "选择初级、中级或高级。这些是学习等级，不是独立付款项目；一个有效的 Max 会员即可开放全部等级及其专属音视频 Webinar 课程教室。")}</p>
         <div className="ai-cert-actions" data-layout-track="program-detail-actions"><Link className="primary-button" href={`/${locale}/play?language=${language}`}>▶ {interfaceText(locale, "Free to Play", "免费游戏")}</Link><Link className="secondary-button" href={`/${locale}/programs/${language}/trial`}>{interfaceText(locale, "Free Trial", "免费试学")}</Link><Link className="secondary-button" href={`/${locale}/play/everyday?language=${language}`}>☀ {interfaceText(locale, "Everyday Speaking", "生活口语")}</Link></div>
       </section>
     </div>

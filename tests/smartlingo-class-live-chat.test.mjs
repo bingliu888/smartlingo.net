@@ -19,8 +19,7 @@ test("each course exposes a Webinar teaching room and pre-created group-audio pr
   assert.match(practiceMigration, /FROM languages CROSS JOIN tiers/);
   assert.match(practiceMigration, /INSERT OR IGNORE INTO smartlingo_course_practice_rooms/);
   assert.match(helper, /ensureCoursePracticeRoom/);
-  assert.match(route, /subscriptionStatus === "active"/);
-  assert.match(route, /trialEndsAt/);
+  assert.match(route, /hasCourseTierAccess/);
   assert.match(panel, /CourseClassroomTile/);
   assert.match(panel, /Teaching room/);
   assert.match(panel, /Practice room/);
@@ -55,4 +54,5 @@ test("course membership controls the embedded classroom", () => {
   assert.match(roomAccess, /smartlingo_course_classrooms/);
   assert.match(roomAccess, /smartlingo_course_practice_rooms/);
   assert.match(roomAccess, /m\.status='active'/);
+  assert.match(roomAccess, /hasCourseTierAccess/);
 });

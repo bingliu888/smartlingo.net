@@ -16,7 +16,7 @@ export type SmartPayCheckoutOption = {
   };
 };
 
-const PLAN_ORDER: SmartPayPlan[] = ["basic", "intermediate", "advanced", "max_6m", "max_12m", "aigc_1000"];
+const PLAN_ORDER: SmartPayPlan[] = ["max_6m", "max_12m", "aigc_1000"];
 const EVM_ADDRESS = /^0x[a-f0-9]{40}$/i;
 export const smartPayAvailablePlans = (options: readonly SmartPayCheckoutOption[]) => PLAN_ORDER.filter(plan => options.some(option => option.plan === plan));
 export const smartPayOptionsForPlan = (options: readonly SmartPayCheckoutOption[], plan: SmartPayPlan) => options.filter(option => option.plan === plan);

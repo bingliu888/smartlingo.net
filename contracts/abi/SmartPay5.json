@@ -429,46 +429,7 @@
   },
   {
     "inputs": [],
-    "name": "MAIN_ID_ADVANCED_3_MONTH",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "MAIN_ID_AIGC_1000",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "MAIN_ID_BASIC_3_MONTH",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "MAIN_ID_INTERMEDIATE_3_MONTH",
     "outputs": [
       {
         "internalType": "string",
