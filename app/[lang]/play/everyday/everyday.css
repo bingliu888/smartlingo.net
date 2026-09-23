@@ -116,7 +116,7 @@
 
 /* A landscape lesson keeps its picture, dialogue, and actions in one viewport.
    Portrait retains the more spacious media treatment above. */
-@media (orientation:landscape) and (max-height:900px) and (min-width:700px){
+@media (max-height:900px) and (min-width:700px){
 .everyday-player{padding:12px 0 20px}
 .everyday-player-heading{align-items:center;gap:14px;margin-bottom:9px}
 .everyday-player-heading h1{margin:3px 0;font-size:clamp(30px,4vw,44px)}

@@ -457,6 +457,8 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
   const lessonFit = lessonStart && lessonActions ? {
     height: lessonActions.getBoundingClientRect().bottom - lessonStart.getBoundingClientRect().top,
     viewportHeight: window.innerHeight,
+    stageHeight: document.querySelector(".everyday-player .everyday-stage")?.getBoundingClientRect().height ?? null,
+    compactViewportMatches: window.matchMedia("(max-height:900px) and (min-width:700px)").matches,
   } : null;
 
   return {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-contextual-everyday-dialogue-20260923-r7b",
+  "releaseId": "smartlingo-v2-contextual-everyday-dialogue-20260923-r7c",
   "site": "smartlingo.net",
   "title": {
     "zh": "SmartLingo V2 第七轮：场景词汇穿插问答与横屏一屏学习",
@@ -15,13 +15,13 @@
       "在已有十组店员与学员问答之间均匀穿插场景词；首组问答在最多两张词卡后出现，保留看图、听音、选答和原有十组题目。",
       "词卡和对话继续共用已验证的生活口语播放器与慢速语音控制；词卡提示改为准确说明正在学习场景词。",
       "学习位置使用新版本 Cookie，避免旧课程顺序保存的数字使学员恢复到错误的词句。",
-      "横屏短视口自动缩小场景、词图、文字与控件间距，使示范画面、提示和操作按钮在同一屏可见；使用兼容 WebKit 的视口高度规则，竖屏布局不变。"
+      "横屏短视口自动缩小场景、词图、文字与控件间距，使示范画面、提示和操作按钮在同一屏可见；按实际视口宽高匹配规则，避免远端 WebKit 方向媒体查询与窗口尺寸不一致，竖屏布局不变。"
     ],
     "en": [
       "Interleave scene words among the existing ten staff–learner exchanges. The first exchange appears after at most two word cards while preserving picture, audio, reply choices, and all ten authored pairs.",
       "Keep the verified Everyday Speaking player and slow-speech control; label word steps accurately as scene-word learning.",
       "Version the resume cookie so an index saved for the old sequence cannot reopen the wrong word or dialogue turn.",
-      "Compact the scene, word picture, text, and controls in short landscape viewports with a WebKit-compatible height rule so actions remain in view without changing portrait layouts."
+      "Compact the scene, word picture, text, and controls in short landscape viewports using actual viewport width and height, avoiding remote WebKit orientation-query mismatch while leaving portrait layouts unchanged."
     ]
   },
   "affected": {
