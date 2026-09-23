@@ -1,69 +1,69 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-ai-runtime-sync-20260922-r4",
+  "releaseId": "smartlingo-v2-guided-start-japanese-offline-20260922-r5",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo V2 第四轮：复用 Konectible 的 AI 密钥同步",
-    "en": "SmartLingo V2 round four: reuse Konectible AI credential sync"
+    "zh": "SmartLingo V2 第五轮：测评优先与日语离线实景练习",
+    "en": "SmartLingo V2 round five: placement-first onboarding and offline Japanese scenarios"
   },
   "purpose": {
-    "zh": "修复 SmartLingo 发布流程缺失的 AI 提供商密钥同步步骤，为恢复真实场景对话与导师服务建立可验证的运行前提。",
-    "en": "Add the missing provider-credential sync to SmartLingo deployment so real-life dialogue and tutor services have a verifiable runtime prerequisite."
+    "zh": "让新学员先测评再得到课程起点建议，并在日语咖啡店与杂货店提供可靠的离线点单、购物对话；同时补齐站点专用 AI 密钥存在时的发布同步路径。",
+    "en": "Recommend a starting course after placement and provide reliable offline Japanese cafe and grocery exchanges, while adding conditional deployment sync for site-owned AI credentials when available."
   },
   "features": {
     "zh": [
-      "沿用 Konectible 已验证的发布代码：当仓库具备 OpenAI 或 DeepSeek 密钥时，将其作为 Worker 运行密钥同步。",
-      "无密钥时保留既有运行状态，不把密钥写进仓库、构建产物或日志。",
-      "新增发布契约测试，确保同步在生产构建前执行。"
+      "新用户默认选择十五题定位测评，不需先自报等级；仍可明确选择从基础开始或自行选级别，保存计划不会自动启动 Max 试用。",
+      "日语咖啡店和杂货店初级各增加十组任务连贯的店员与学员问答，可在无在线 AI 时加载。",
+      "沿用 Konectible 已验证的发布代码：仅当 SmartLingo 仓库具有站点专用 OpenAI 或 DeepSeek 密钥时才同步至 Worker；密钥值不写入源码、构建或日志。"
     ],
     "en": [
-      "Reuse verified Konectible deployment commands to synchronize available OpenAI or DeepSeek credentials into Worker secrets.",
-      "Preserve existing runtime state when a repository secret is absent; never write secret values to source, build artifacts, or logs.",
-      "Add a release-contract test requiring sync before the production build."
+      "New learners default to a 15-item placement assessment rather than self-reporting a level; fundamentals and manual level selection remain available, and saving a goal never starts a Max trial.",
+      "Add ten coherent beginner staff–learner exchanges each for Japanese cafe and grocery scenarios that load without online AI.",
+      "Reuse verified Konectible deployment commands to sync only available SmartLingo-owned OpenAI or DeepSeek credentials into Worker secrets, never source or build output."
     ]
   },
   "affected": {
     "zh": [
-      "仅修改生产发布流程及其测试；课程、价格、支付、学习记录和用户资料不变。"
+      "影响语言规划页、生活口语日语咖啡店与杂货店初级内容、生产发布流程；价格、支付、既有学习记录和用户资料不变。"
     ],
     "en": [
-      "Production deployment workflow and test only; courses, prices, checkout, learning records, and profiles are unchanged."
+      "Affects the language-planning page, beginner Japanese cafe and grocery speaking content, and deployment workflow; prices, checkout, existing learning records, and profiles are unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "在 Stripe 密钥配置后、Worker 生产构建前，按 Konectible 的同一条件判断与 wrangler secret put 命令同步现有 AI 密钥。"
+      "规划页面将起点方式提前，测评路径默认使用免费的初级七日课程承载题目，测评完成后再推荐等级；修复已加入课程列表请求位于过早 return 后的不可达问题。日语新增两组预构建场景；发布流程按 Konectible 的已验证条件同步可用的 AI 密钥。"
     ],
     "en": [
-      "After Stripe secret configuration and before the production Worker build, use the same Konectible conditional checks and wrangler secret put commands for available AI credentials."
+      "Move starting-point choice ahead of manual courses; use the free seven-day beginner course to host placement, then recommend a level after assessment. Restore the joined-course fetch previously placed after an early return. Add two prebuilt Japanese scenario sets and conditionally sync available AI secrets with the verified Konectible workflow."
     ]
   },
   "validation": {
     "zh": [
-      "新增 AI 密钥同步契约及 460 项完整测试、TypeScript、零警告 lint 通过；敏感扫描、版式矩阵与精确提交部署门禁在本轮提交后执行。",
-      "第三轮生产 AI 曾进入离线兜底；密钥同步后必须重新验证，不能仅凭配置变更宣称恢复。"
+      "463 项完整测试、TypeScript、零警告 lint、生产构建与敏感扫描通过；规划页中英文五种屏宽 WebKit 检查 10/10，通过共享站点契约。",
+      "Safari 核对 SmartLingo GitHub Actions 当前没有 OpenAI 或 DeepSeek 密钥；密钥同步步骤会跳过，不能据此宣称生产 AI 已恢复。精确提交部署与真实浏览器验收须在推送后执行。"
     ],
     "en": [
-      "The new credential-sync contract, all 460 tests, TypeScript, and zero-warning lint pass; run sensitive scan, layout matrix, and exact-commit deployment gates after this commit.",
-      "Production AI previously fell back offline; verify it again after sync rather than claiming recovery from configuration alone."
+      "All 463 tests, TypeScript, zero-warning lint, production build, and sensitive scan pass; the planning page passes 10/10 WebKit combinations across Chinese/English and five viewports, and shared-site contracts pass.",
+      "Safari confirms that SmartLingo GitHub Actions currently has neither OpenAI nor DeepSeek secrets. Conditional sync therefore skips; it is not evidence of restored production AI. Exact-commit deployment and real-browser acceptance follow publication."
     ]
   },
   "deferred": {
     "zh": [
-      "若仓库没有对应密钥或 AI 上游仍拒绝请求，服务会继续离线兜底；须根据生产复测确定原因。",
-      "日语等十种目标语预审场景对话、实时语音、母语审校和普通付费账号端到端验收仍未完成。"
+      "没有站点专用 AI 密钥时，需 AI 的场景会继续离线兜底；创建可计费新密钥须另行授权并经生产复测。",
+      "日语离线覆盖目前仅 2/36 个场景×等级单元，尚未经母语者审校；实时语音和普通付费账号端到端验收未完成。"
     ],
     "en": [
-      "If the repository lacks provider credentials or the upstream still rejects requests, AI continues to fall back; production retesting must identify the cause.",
-      "Pre-reviewed dialogues for ten target languages, live voice, native-language review, and ordinary paid-member end-to-end acceptance remain unfinished."
+      "Without a site-owned AI credential, AI-dependent scenarios continue to fall back offline. A new billable credential requires separate authorization and production retesting.",
+      "Japanese offline coverage is 2/36 scene–level units and awaits native-speaker review; live voice and ordinary paid-member end-to-end acceptance remain unfinished."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "仅复制 Konectible 已验证的可选 OpenAI/DeepSeek 密钥同步方式到 SmartLingo 既有 Cloudflare 发布流程。"
+      "仅将 Konectible 已验证的可选 AI 密钥同步方式适配 SmartLingo 独立 Cloudflare 流程；日语场景只复用 SmartLingo 既有教学题组结构。"
     ],
     "en": [
-      "Copy the verified Konectible optional OpenAI/DeepSeek secret sync into the existing SmartLingo Cloudflare deployment flow."
+      "Adapt only Konectible's verified optional AI-secret sync to SmartLingo's isolated Cloudflare workflow; Japanese scenes reuse SmartLingo's existing lesson-set structure."
     ]
   },
   "dataMigration": {
