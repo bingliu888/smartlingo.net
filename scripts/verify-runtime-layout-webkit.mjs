@@ -455,6 +455,11 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
   const lessonStart = document.querySelector(".everyday-player .everyday-repeat-check");
   const lessonActions = document.querySelector(".everyday-player .everyday-controls");
   const lessonStage = document.querySelector(".everyday-player .everyday-stage");
+  const sceneCopy = document.querySelector(".everyday-player .everyday-copy");
+  const sceneCopyFit = lessonStage && sceneCopy ? {
+    topInset: sceneCopy.getBoundingClientRect().top - lessonStage.getBoundingClientRect().top,
+    bottomInset: lessonStage.getBoundingClientRect().bottom - sceneCopy.getBoundingClientRect().bottom,
+  } : null;
   const lessonFit = lessonStart && lessonActions ? {
     height: lessonActions.getBoundingClientRect().bottom - lessonStart.getBoundingClientRect().top,
     viewportHeight: window.innerHeight,
@@ -487,6 +492,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     overlaps,
     viewportExceeds,
     lessonFit,
+    sceneCopyFit,
   };
 }
 
@@ -590,6 +596,9 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
   if (report.pageName === "everyday-player" && report.viewport.width > report.viewport.height && report.viewport.height <= 900) {
     if (!report.lessonFit || report.lessonFit.height > report.lessonFit.viewportHeight - 16) {
       add("landscape-lesson-scroll", ".everyday-player", "scene instructions and actions must fit one landscape viewport", report.lessonFit);
+    }
+    if (!report.sceneCopyFit || report.sceneCopyFit.topInset < 8 || report.sceneCopyFit.bottomInset < 8) {
+      add("landscape-scene-content-clipped", ".everyday-copy", "scene card content must stay clear of rounded stage edges", report.sceneCopyFit);
     }
   }
 

@@ -134,10 +134,15 @@ test("landscape Everyday Speaking keeps instructions through actions within one 
       body: { clientWidth: 1180, scrollWidth: 1180 },
     },
     lessonFit: { height: 830, viewportHeight: 820 },
+    sceneCopyFit: { topInset: 18, bottomInset: 18 },
   };
   assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-lesson-scroll"));
   report.lessonFit.height = 780;
   assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-lesson-scroll"));
+  report.sceneCopyFit.topInset = 0;
+  assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-scene-content-clipped"));
+  report.sceneCopyFit = { topInset: 18, bottomInset: 18 };
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-scene-content-clipped"));
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {

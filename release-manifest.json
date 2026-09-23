@@ -1,51 +1,47 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-contextual-everyday-dialogue-20260923-r7e",
+  "releaseId": "smartlingo-v2-contextual-everyday-dialogue-20260923-r7f",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo V2 第七轮：场景词汇穿插问答与横屏一屏学习",
-    "en": "SmartLingo V2 round seven: contextual dialogue and landscape lesson fit"
+    "zh": "SmartLingo V2 第七轮补丁：横屏场景词卡不再裁切",
+    "en": "SmartLingo V2 round seven follow-up: prevent landscape word-card clipping"
   },
   "purpose": {
-    "zh": "缩短从进入生活口语到首次一问一答的距离，并让横屏学员不必滚动才能看到场景操作。",
-    "en": "Reach the first exchange sooner and keep the scene and its actions together in a landscape learner viewport."
+    "zh": "修复正式站验收时发现的横屏词卡内容贴近圆角边缘而被裁切的问题，同时保持提示和操作同屏。",
+    "en": "Fix word-card content clipped by rounded stage edges in production landscape acceptance while keeping instructions and actions in one viewport."
   },
   "features": {
     "zh": [
-      "在已有十组店员与学员问答之间均匀穿插场景词；首组问答在最多两张词卡后出现，保留看图、听音、选答和原有十组题目。",
-      "词卡和对话继续共用已验证的生活口语播放器与慢速语音控制；词卡提示改为准确说明正在学习场景词。",
-      "学习位置使用新版本 Cookie，避免旧课程顺序保存的数字使学员恢复到错误的词句。",
-      "横屏短视口自动缩小场景、词图、文字与控件间距，使示范画面、提示和操作按钮在同一屏可见；WebKit 布局测试在每种屏幕尺寸重新加载页面，避免手机样式缓存污染横屏结果。"
+      "在现有横屏播放器中收紧词图、词义和间距，词卡全文保留在舞台圆角安全区域。",
+      "新增 WebKit 场景文字上下内边距断言，防止以后只满足操作按钮同屏却裁切教学内容。"
     ],
     "en": [
-      "Interleave scene words among the existing ten staff–learner exchanges. The first exchange appears after at most two word cards while preserving picture, audio, reply choices, and all ten authored pairs.",
-      "Keep the verified Everyday Speaking player and slow-speech control; label word steps accurately as scene-word learning.",
-      "Version the resume cookie so an index saved for the old sequence cannot reopen the wrong word or dialogue turn.",
-      "Compact the scene, word picture, text, and controls in short landscape viewports. Reload the WebKit layout page at each tested viewport so cached mobile media styles cannot contaminate landscape results."
+      "Tighten the picture, meaning, and spacing within the existing landscape player so the complete word card remains inside the rounded stage safe area.",
+      "Add WebKit assertions for scene-copy top and bottom insets, preventing future one-screen action layouts from clipping lesson content."
     ]
   },
   "affected": {
     "zh": [
-      "影响生活口语的初级、中级和高级场景顺序及横屏播放器布局，包括预构建日语咖啡店、食品店以及已审核或动态生成的对话；不改变词图、价格、会员权限、成绩或支付。"
+      "仅影响生活口语的横屏播放器及其布局检查；不改变课程顺序、价格、会员权限、成绩或支付。"
     ],
     "en": [
-      "Affects Beginner, Intermediate, and Advanced Everyday Speaking deck order and landscape layout, including prebuilt Japanese cafe and grocery scenes and reviewed or generated dialogue; picture assets, prices, entitlements, scores, and checkout are unchanged."
+      "Affects only the landscape Everyday Speaking player and layout gate; lesson order, prices, entitlements, scores, and checkout remain unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "在现有组卡函数中调整词汇和成对问答的编排；新增跨场景行为测试。使用现有播放器 CSS 的横屏高度规则缩小媒体舞台、词图和控件，不复制另一套播放器。"
+      "修改现有播放器 CSS 的横屏排版，并让现有 WebKit 布局采集器检查词卡相对舞台边界的实测位置。"
     ],
     "en": [
-      "Adjust the existing deck assembly with cross-scene behavioral coverage. Add landscape-height rules to the existing player CSS for the media stage, word picture, and controls; no parallel player is introduced."
+      "Adjust existing player landscape CSS and make the existing WebKit collector measure word-card placement against stage edges."
     ]
   },
   "validation": {
     "zh": [
-      "完整测试、TypeScript、零警告 lint、生产构建、敏感信息扫描及 WebKit 中英多尺寸布局检查作为本轮发布门槛；生产 Chrome 访客流程在确切部署版本上线后复测。"
+      "完整测试、TypeScript、零警告 lint、生产构建、敏感信息扫描及 WebKit 中英多尺寸布局检查作为发布门槛；部署后在生产 Chrome 点击开始，核对词卡全文和按钮。"
     ],
     "en": [
-      "Full tests, TypeScript, zero-warning lint, production build, sensitive-data scan, and bilingual WebKit viewport checks are release gates; the anonymous production Chrome flow is retested on the exact deployed version."
+      "Full tests, TypeScript, zero-warning lint, production build, sensitive-data scan, and bilingual WebKit viewport checks gate release; click Start in production Chrome afterward to verify full word card and controls."
     ]
   },
   "deferred": {
