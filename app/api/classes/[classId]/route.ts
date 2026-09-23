@@ -73,8 +73,14 @@ export async function GET(
     .bind(classId, user.id).first<{ role: string; status: string }>();
   const isOwner = detail.ownerUserId === user.id;
   const tierAccess = detail.classKind === "official_course"
-    ? await hasCourseTierAccess(user, detail.packageTier, { startMaxTrial: detail.packageTier !== "basic" })
+    ? await hasCourseTierAccess(user, detail.packageTier)
     : { allowed: true, maxActive: false, trialStarted: false, trialEndsAt: null };
+  const trialRecord = detail.classKind === "official_course" && detail.packageTier !== "basic" && !tierAccess.allowed
+    ? await getDatabase().prepare("SELECT trial_ends_at AS trialEndsAt FROM subscriptions WHERE user_id=? LIMIT 1")
+      .bind(user.id).first<{ trialEndsAt: number | null }>()
+    : null;
+  const trialAvailable = detail.classKind === "official_course" && detail.packageTier !== "basic"
+    && !tierAccess.allowed && trialRecord?.trialEndsAt == null;
   const maxActive = tierAccess.maxActive;
   const membership = detail.classKind === "official_language" || isOwner || tierAccess.allowed ? membershipRow : null;
   const room = await getDatabase().prepare(`SELECT room_id AS roomId FROM smartlingo_course_classrooms WHERE course_id=? LIMIT 1`)
@@ -107,7 +113,7 @@ export async function GET(
     membership,
     placement,
     maxActive,
-    courseAccess: { allowed: tierAccess.allowed, basicFree: detail.packageTier === "basic", trialStarted: tierAccess.trialStarted, trialEndsAt: tierAccess.trialEndsAt },
+    courseAccess: { allowed: tierAccess.allowed, basicFree: detail.packageTier === "basic", trialStarted: tierAccess.trialStarted, trialEndsAt: tierAccess.trialEndsAt, trialAvailable },
     paymentPolicy: { plans: ["free", "max"], maxTermsMonths: [6,12], beginnerFree: true, maxLevels: ["intermediate","advanced"], automaticRenewal: false },
     paymentMode: "platform_max",
   });

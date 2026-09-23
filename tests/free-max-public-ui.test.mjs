@@ -33,7 +33,8 @@ test("language pages show three learning levels without payment buttons", async 
   assert.match(catalog, /SMARTLINGO_COURSE_PACKAGES\.map/);
   assert.match(catalog, /See Free and Max/);
   assert.match(classes, /Open this free Beginner course/);
-  assert.match(classes, /7-day Max trial has started automatically/);
+  assert.match(classes, /Start my 7-day Max trial/);
+  assert.match(classes, /does not renew or charge automatically/);
   assert.match(admin, /Course payment items/);
   assert.match(admin, /Course payment items", "课程付款项目"\)\}: 0/);
   assert.doesNotMatch(`${catalog}\n${classes}`, /billing\/card\/checkout|Pay once by card|Pay 3 months/);

@@ -16,9 +16,11 @@ test("Play keeps one selected target language across every language-dependent ac
   });
 });
 
-test("Play renders the shared twelve-language picker after all six activity tiles", () => {
+test("Play puts the shared twelve-language picker before free real-life missions and six activity tiles", () => {
   const source = readFileSync(new URL("../app/[lang]/play/page.tsx", import.meta.url), "utf8");
-  assert.match(source, /<section className="game-tiles">[\s\S]*<GameLanguagePicker/);
+  assert.match(source, /<GameLanguagePicker[\s\S]*<section className="play-missions"[\s\S]*<section className="game-tiles">/);
+  assert.match(source, /scene=\$\{scene\.id\}&level=beginner/);
+  assert.match(source, /selectedLanguage \?[^\n]*#game-language-title/);
   assert.match(source, /PlayDailySprintPicker lang=\{lang\} initialLanguage=\{selectedLanguage\}/);
   assert.match(source, /PlayFreeTrialPicker[^>]*initialLanguage=\{selectedLanguage\}/);
 });

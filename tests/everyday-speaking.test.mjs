@@ -3,6 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import { buildEverydaySpeakingDeck, SMARTLINGO_EVERYDAY_SCENARIOS } from "../lib/smartlingo-everyday-speaking.ts";
 import { SMARTLINGO_COMMUNITY_LANGUAGE_CODES } from "../lib/smartlingo-language-communities.ts";
+import { dialogueAnswerChoices } from "../lib/smartlingo-dialogue-choices.ts";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -31,6 +32,28 @@ test("everyday speaking provides twelve illustrated three-level scenarios with v
       }
     }
   }
+});
+
+test("every authored staff question offers one answer and two distinct distractors across all scenes", () => {
+  let tested = 0;
+  for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
+    for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
+      for (const level of ["beginner", "intermediate", "advanced"]) {
+        const deck = buildEverydaySpeakingDeck(language, scene.id, level);
+        for (const [index, slide] of deck.entries()) {
+          if (slide.kind !== "sentence" || slide.role !== "staff") continue;
+          const challenge = dialogueAnswerChoices(deck, index);
+          assert.ok(challenge, `${scene.id}/${language}/${level}/${slide.pairIndex}`);
+          assert.equal(challenge.choices.length, 3);
+          assert.equal(new Set(challenge.choices.map(choice => choice.form)).size, 3);
+          assert.equal(challenge.choices.filter(choice => choice.id === challenge.answerId).length, 1);
+          assert.equal(challenge.answer.id, deck[index + 1].id);
+          tested += 1;
+        }
+      }
+    }
+  }
+  assert.equal(tested, 4320);
 });
 
 test("course details replace the back button with language-preserving everyday speaking", async () => {

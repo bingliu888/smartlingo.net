@@ -15,3 +15,13 @@ test("course detail loading failures are visible instead of spinning forever", (
   assert.match(studio, /aria-live="polite"/);
   assert.match(studio, /notice && <p className="class-notice">/);
 });
+
+test("reading a course detail cannot consume the one-time Max trial", () => {
+  const enroll = readFileSync(new URL("../app/api/classes/[classId]/enroll/route.ts", import.meta.url), "utf8");
+  assert.match(route, /hasCourseTierAccess\(user, detail\.packageTier\)/);
+  assert.doesNotMatch(route, /startMaxTrial/);
+  assert.match(route, /trialAvailable/);
+  assert.match(enroll, /startMaxTrial: course\.packageTier !== "basic"/);
+  assert.match(studio, /Start my 7-day Max trial/);
+  assert.match(studio, /does not renew or charge automatically/);
+});

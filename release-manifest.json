@@ -1,83 +1,71 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-verified-payment-choice-20260921-r2",
+  "releaseId": "smartlingo-v2-free-missions-20260922-r1",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 已验证付款方式页面迁移",
-    "en": "SmartLingo verified payment-method page migration"
+    "zh": "SmartLingo V2 第一轮：免费真实场景闯关",
+    "en": "SmartLingo V2 round one: free real-life missions"
   },
   "purpose": {
-    "zh": "直接迁移 SmartMeeting 已验证的独立付款方式选择页，让 Max 与 AIGC 额度包明确显示 Stripe 信用卡、美国银行账户及 SmartPay5 加密货币付款。",
-    "en": "Directly migrate the verified SmartMeeting standalone payment-method chooser so Max and AIGC credit packs clearly expose Stripe card, US bank-account, and SmartPay5 crypto payment."
+    "zh": "将 Play 改为先选学习语言、再完成可用的真实生活任务；复用已有生活口语数据，为问答增加有明确目标的三选一回复挑战。",
+    "en": "Make Play language-first and lead into practical real-life missions; reuse authored Everyday Speaking content to add goal-based three-choice reply challenges."
   },
   "features": {
     "zh": [
-      "沿用已在 SmartMeeting 与 Mahj 验证的双机密部署模式，在发布前要求 Stripe API 密钥与 Webhook 签名密钥同时存在。",
-      "新增签名校验的 Stripe Checkout Webhook，处理成功、异步成功、异步失败和过期事件，并复用现有统一权益入账逻辑。",
-      "GitHub Actions 将两个加密机密同步到 SmartLingo 的 Cloudflare Worker；Stripe 托管 Checkout 不添加域名白名单。"
-      ,"价格卡片现在进入从 SmartMeeting 迁移的独立付款方式页面；页面明确分开 Stripe 信用卡/美国银行账户与 SmartPay5 加密货币，并支持全部界面语言。"
+      "Play 顶部先展示 12 种学习语言选择，并突出咖啡店、食品店和车站三个免费初级任务；保留原有六个活动入口和全部 12 个生活场景。",
+      "生活口语在工作人员提问后，让学习者听、看提示、从三句目标语言回答中选择；即时反馈并允许重试，跟读仍默认关闭。",
+      "问答进度显示已完成及首次答对组数；V2 规划文档明确区分免费闯关、未来 AI 同伴和待验证的 Max 一对一导师。",
+      "仅查看中高级课程详情不再消耗 7 天 Max 试用；用户明确点击开始试用后才通过原有课程加入接口开通，界面说明无自动续费。"
     ],
     "en": [
-      "Reuse the dual-secret deployment pattern verified on SmartMeeting and Mahj, requiring both the Stripe API key and webhook signing secret before release.",
-      "Add a signature-verified Stripe Checkout webhook for completed, asynchronous success, asynchronous failure, and expired events while reusing the existing unified entitlement fulfillment.",
-      "Synchronize both encrypted GitHub secrets to the SmartLingo Cloudflare Worker; Stripe-hosted Checkout does not add a payment-method domain allowlist."
-      ,"Pricing cards now enter the standalone payment-method page migrated from SmartMeeting; it clearly separates Stripe card/US bank account from SmartPay5 crypto and supports every interface language."
+      "Play now places the twelve-language picker first and highlights three free beginner missions at a café, grocery store, and station while preserving six other activities and all twelve scenes.",
+      "After a staff prompt, Everyday Speaking asks the learner to listen, read a meaning cue, and choose among three target-language replies, with immediate retry feedback; microphone repetition remains off by default.",
+      "Exchange progress distinguishes completed and first-try answers. The V2 plan clearly separates shipped free practice from future AI companions and an unverified Max one-to-one tutor.",
+      "Viewing an Intermediate or Advanced course detail no longer consumes the seven-day Max trial. Only an explicit Start Trial action uses the existing enrollment endpoint, with non-renewal stated clearly."
     ]
   },
   "affected": {
-    "zh": [
-      "Max 6 个月与 12 个月、1,000 AIGC 额度包、Stripe Checkout、GitHub Actions、Cloudflare Worker 运行时机密和付款入账。"
-    ],
-    "en": [
-      "Six- and twelve-month Max, the 1,000-credit AIGC pack, Stripe Checkout, GitHub Actions, Cloudflare Worker runtime secrets, and payment fulfillment."
-    ]
+    "zh": ["Play、生活口语初级/中级/高级场景、中高级课程详情的试用入口及 V2 产品规划；不改变 Free/Max 价格、支付或数据库。"],
+    "en": ["Play, all Everyday Speaking scene levels, the trial entry on Intermediate and Advanced course details, and the V2 product plan; no change to Free/Max prices, payments, or database."]
   },
   "changes": {
     "zh": [
-      "结账入口在两个 Stripe 机密均可用时才开放，防止只能创建订单却无法接收可靠付款结果的半配置状态。",
-      "Webhook 对原始请求体做 HMAC-SHA256 签名校验、五分钟时间窗校验、事件幂等处理，以及商品、用户、金额和币种的服务端核对。",
-      "失败或过期的 Checkout 会关闭相应待付款意图；成功付款仍复用既有 Max 延期与 AIGC 额度账本，不新增权益分支。"
+      "语言选择从活动入口下方移至前面，场景任务链接仅在选定学习语言后直达该语言的初级场景。",
+      "选项由同一场景已编写的一问一答组成，不临时生成难度失控的句子；每组提供一个正确答案和两个不同干扰项。",
+      "完成统计按问答组去重，返回上一题不会重复增加成绩。",
+      "课程详情 GET 改为仅读取有效 Max 权益与试用资格；POST 加入中高级课程仍按现有规则原子启动一次性试用。"
     ],
     "en": [
-      "Expose checkout only when both Stripe secrets are available, preventing a partially configured state that can create orders without reliable payment-result delivery.",
-      "Verify webhook raw-body HMAC-SHA256 signatures within a five-minute tolerance, process events idempotently, and validate the product, user, amount, and currency server-side.",
-      "Close failed or expired checkout intents and keep successful payments on the existing Max-extension and AIGC-credit ledgers without adding a new entitlement branch."
+      "The language picker moves ahead of activities; mission links enter a beginner scene in the selected language only after language selection.",
+      "Choices reuse authored question-answer pairs from the same scene instead of generating unexpectedly difficult sentences; each has one answer and two distinct distractors.",
+      "Completion is deduplicated by dialogue pair so revisiting an exchange cannot inflate results.",
+      "Course detail GET now only reads active Max access and trial eligibility; the existing Intermediate or Advanced course enrollment POST remains the explicit one-time trial action."
     ]
   },
   "validation": {
     "zh": [
-      "自动化测试覆盖 Stripe 签名正确、签名篡改和过期拒绝，以及工作流双机密同步与四类 Checkout 事件。",
-      "TypeScript、零警告 ESLint、完整测试、敏感数据扫描与生产构建必须在发布前通过。",
-      "生产部署后将以登录测试用户创建 Stripe 托管 Checkout Session 并核对商品与金额，但不会提交真实付款。"
+      "TypeScript、改动文件零警告 lint、完整 435 项测试与生产构建通过；新增测试核对 12 种语言 × 12 个场景 × 3 个等级的 4,320 组问答。",
+      "发布后需在真实浏览器验证匿名用户选语言、进入场景、选择回复、手机/iPad/桌面宽度及退出流程。"
     ],
     "en": [
-      "Automated tests cover valid Stripe signatures, tampered and stale signature rejection, dual-secret workflow synchronization, and all four Checkout event types.",
-      "TypeScript, zero-warning ESLint, the full test suite, sensitive-data scanning, and the production build must pass before release.",
-      "After production deployment, a signed-in test user will create a hosted Stripe Checkout Session to verify the product and amount without submitting a live payment."
+      "TypeScript, zero-warning lint on changed files, all 435 tests, and the production build pass; a new test checks 4,320 exchanges across twelve languages, twelve scenes, and three levels.",
+      "After deployment, verify anonymous language selection, scene entry, reply choice, responsive widths, and exit in a real browser."
     ]
   },
   "deferred": {
-    "zh": [
-      "本次不代表用户确认任何真实 Stripe 收款；真实付款验证由站点所有者在其付款凭证控制下另行完成。"
-    ],
-    "en": [
-      "This release does not confirm a live Stripe charge for the user; the site owner retains control of any real-payment validation."
-    ]
+    "zh": ["AI 同伴、Max 一对一实时导师、独立学习迁移测评与新进度记忆不属于本轮已上线功能；将在后续轮次实施和验证。"],
+    "en": ["AI companions, the Max live one-to-one tutor, independent transfer assessment, and new progress memory are not shipped in this round; they require later implementation and validation."]
   },
   "siteAdaptations": {
-    "zh": [
-      "保持 SmartLingo 现有一次性固定期限 Max 与预付 AIGC 额度模型；不引入自动续费，也不复制其他站点的机密。"
-    ],
-    "en": [
-      "Keep the existing SmartLingo one-time fixed-term Max and prepaid AIGC credit model, with no automatic renewal and no credential copied from another site."
-    ]
+    "zh": ["直接复用 SmartLingo 现有 12 场景、各 10 组编写好的对话和图像媒体；保持免费初级及现有七天 Max 试用规则。"],
+    "en": ["Reuse twelve existing SmartLingo scenes, ten authored exchanges per scene, and media assets; retain free beginner access and the existing seven-day Max trial rules."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "回退到上一成功的 Cloudflare Worker 即可恢复旧接口；已有付款意图、Max 权益与 AIGC 额度账本不删除。",
-      "en": "Roll back to the previous successful Cloudflare Worker to restore the prior API behavior; do not delete checkout intents, Max entitlements, or AIGC credit ledger entries."
+      "zh": "回退到上一成功 Cloudflare Worker 可恢复旧 Play 顺序与生活口语播放器；不删除学习数据。",
+      "en": "Roll back to the previous successful Cloudflare Worker to restore the prior Play order and Everyday Speaking player; no learning data is deleted."
     }
   }
 }
