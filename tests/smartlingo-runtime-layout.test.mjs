@@ -15,6 +15,7 @@ const runnerSource = await readFile(new URL("../scripts/verify-runtime-layout-we
 const releaseSource = await readFile(new URL("../scripts/verify-runtime-layout-release.mjs", import.meta.url), "utf8");
 const fixtureAuthSource = await readFile(new URL("../lib/layout-fixture-auth.ts", import.meta.url), "utf8");
 const packageSource = await readFile(new URL("../package.json", import.meta.url), "utf8");
+const everydayCss = await readFile(new URL("../app/[lang]/play/everyday/everyday.css", import.meta.url), "utf8");
 
 test("runtime layout matrix pins both path locales and a short landscape lesson viewport", () => {
   assert.deepEqual(SMARTLINGO_LAYOUT_LANGUAGES, ["zh", "en"]);
@@ -121,6 +122,7 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("landscape Everyday Speaking keeps instructions through actions within one viewport", () => {
+  assert.match(everydayCss, /\.everyday-player \.everyday-stage\{height:clamp\(200px,calc\(100vh - 560px\),290px\);min-height:0;max-height:290px/);
   const report = {
     schemaVersion: 1,
     pageName: "everyday-player",
