@@ -1,4 +1,4 @@
-type DialogueChoiceLine = {
+export type DialogueChoiceLine = {
   id: string;
   kind: "word" | "sentence";
   role?: "staff" | "learner";
@@ -43,5 +43,20 @@ export function dialogueAnswerChoices<T extends DialogueChoiceLine>(slides: read
     answerId: answer.id,
     answer,
     choices: [...choices.slice(rotation), ...choices.slice(0, rotation)],
+  };
+}
+
+/** Keep two reviewed exchanges unseen until the learner's uncoached check. */
+export function splitEverydayMission<T extends DialogueChoiceLine>(slides: readonly T[]) {
+  const independent = slides.flatMap((question, index) => {
+    if (question.kind !== "sentence" || question.role !== "staff") return [];
+    const challenge = dialogueAnswerChoices(slides, index);
+    return challenge ? [{ question, challenge }] : [];
+  }).slice(-2);
+  if (independent.length < 2) return { guided: [...slides], independent: [] };
+  const heldBack = new Set(independent.map(item => item.question.pairIndex));
+  return {
+    guided: slides.filter(item => item.kind !== "sentence" || !heldBack.has(item.pairIndex)),
+    independent,
   };
 }

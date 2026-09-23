@@ -1,73 +1,51 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-admin-max-subscriptions-20260923-r8",
+  "releaseId": "smartlingo-v2-free-mission-check-20260923-r9",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 管理员赠送 Max：期限与用户面板统一",
-    "en": "SmartLingo admin Max grants: one expiry across administration and member dashboard"
+    "zh": "SmartLingo V2 免费场景任务与独立复习",
+    "en": "SmartLingo V2 Free scenario mission and independent review"
   },
   "purpose": {
-    "zh": "修复管理员添加订阅者后用户仍显示 Free 的问题，让管理员赠送与真实付款共用有明确期限的 Max 订阅。",
-    "en": "Fix admin-added subscribers still appearing Free by making admin grants and real payments share one expiry-dated Max subscription."
+    "zh": "让免费学习者完成真实生活场景中的引导练习及无提示复习，防止跳到最后一张卡片误报完成。",
+    "en": "Let Free learners complete guided real-life scenario practice and an uncoached review, without falsely claiming completion by skipping to the last card."
   },
   "features": {
     "zh": [
-      "管理员可为已验证现有会员选择赠送或延长 6 个月、12 个月 Max，写入现有 subscriptions 记录；付款流水仅记录真实付款。",
-      "用户面板、管理员列表与会员详情显示同一 Max 到期日；订阅者列表按有效订阅而非历史付款或旧角色标记筛选。",
-      "将历史上有管理员赠送审计但缺少订阅记录的有效账号按原赠送时间补齐 6 个月 Max；没有赠送审计的旧角色标记不会自动获得 Max。"
+      "复用现有十二个场景的双语对话、听力与三选一题库；每个任务保留最后两组未提前展示的问答作为独立复习。",
+      "完成引导问答后才开放独立复习，提交后显示引导及独立复习结果；无需开启麦克风。"
     ],
     "en": [
-      "Admins can grant or extend 6- or 12-month Max access for verified existing members in the existing subscriptions row; the payment ledger records only actual payments.",
-      "The member dashboard, admin subscriber list, and member detail show the same Max expiry. The subscriber list uses active entitlement instead of historical payments or a legacy role flag.",
-      "Backfill valid historical audited admin gifts with six months from their original grant time. Legacy role flags without grant audit do not gain Max."
+      "Reuse the existing bilingual dialogue, listening, and three-choice decks for twelve scenarios, holding back the final two exchanges for an unseen independent review.",
+      "Open the independent review only after guided answers, then show guided and review results without requiring a microphone."
     ]
   },
   "affected": {
-    "zh": [
-      "影响管理员会员管理、用户面板、Max 权限与订阅者统计；不改变 Max 标价、支付轨道、课程内容或真实付款与推荐奖励记录。"
-    ],
-    "en": [
-      "Affects admin member management, member dashboards, Max access, and subscriber counts. Max prices, checkout rails, lessons, real payment records, and referral rewards are unchanged."
-    ]
+    "zh": ["影响生活口语免费场景任务、任务卡片与 Free/Max 说明；不改变支付、订阅或 AI 服务配置。"],
+    "en": ["Affects Free everyday-speaking missions, mission cards, and Free/Max copy; payment, subscriptions, and AI service configuration are unchanged."]
   },
   "changes": {
-    "zh": [
-      "复用现有付费 Max 的期限计算与订阅写入，并采用已验证管理员赠送流程的权限、请求去重及审计约束；因用户要求共用一条订阅数据，SmartLingo 不新增独立赠送表。"
-    ],
-    "en": [
-      "Reuse paid Max term calculation and the canonical subscription upsert, plus the verified admin-grant authorization, request-id, and audit pattern. Per user request, SmartLingo adds no separate grant-entitlement table."
-    ]
+    "zh": ["沿用已有对话选项生成逻辑，修正跳卡、续学与完成判定；独立复习不声称正式能力测评或发音分数。"],
+    "en": ["Reuse existing dialogue-choice generation while correcting skip, resume, and completion logic; the independent review is not presented as formal proficiency or pronunciation scoring."]
   },
   "validation": {
-    "zh": [
-      "完整测试、D1 迁移重放、TypeScript、零警告 lint、生产构建、敏感信息扫描及 WebKit 中英多尺寸布局检查为发布门槛；部署后验证管理员期限与普通会员面板。"
-    ],
-    "en": [
-      "Full tests, D1 migration replay, TypeScript, zero-warning lint, production build, sensitive-data scan, and bilingual WebKit viewport checks gate release; then verify admin-selected expiry and the ordinary member dashboard in production."
-    ]
+    "zh": ["完整单元测试、TypeScript、零警告 lint、构建、D1 迁移重放、敏感信息扫描与 WebKit 多尺寸布局为发布门槛；部署后复核生产场景。"],
+    "en": ["Full unit tests, TypeScript, zero-warning lint, build, D1 migration replay, sensitive-data scan, and WebKit viewport checks gate release, followed by production scenario verification."]
   },
   "deferred": {
-    "zh": [
-      "历史上没有付款期限拆分数据的混合付费与赠送账号不提供管理员一键撤销，以免抹去已付款权益；管理员仍可延长 Max。Max 角色导师仍独立关闭，待真实普通会员验收。"
-    ],
-    "en": [
-      "One-click revocation is withheld for accounts with both payment history and admin gifts because the old schema does not separate their terms; this protects paid access. The Max role tutor remains independently gated pending ordinary-member acceptance."
-    ]
+    "zh": ["Max 一对一角色导师及语音仍受既有开关控制；复习成绩持久保存、重试历史及普通会员完整验收留待后续独立发布。"],
+    "en": ["The Max one-to-one role tutor and voice remain behind their existing gate; persisted review scores, retry history, and full ordinary-member acceptance require a separate release."]
   },
   "siteAdaptations": {
-    "zh": [
-      "借鉴 mahj.guru 已验证的管理员赠送安全流程，但按 SmartLingo 的单条平台 Max 订阅与现有 D1 表做薄适配；不复制其他站点账号或付款数据。"
-    ],
-    "en": [
-      "Adapt mahj.guru's verified admin-grant safeguards to SmartLingo's existing single platform Max subscription and site-owned D1; no cross-site accounts or payment data are copied."
-    ]
+    "zh": ["只复用 SmartLingo 已验证的场景数据和对话选择逻辑，不引入新供应商或跨站数据。"],
+    "en": ["Reuse only SmartLingo's verified scenario data and dialogue-choice logic, with no new provider or cross-site data."]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": ["0189_admin_max_subscription_backfill"],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "zh": "代码可回退至上一成功提交；D1 迁移保持不可变。如需更正误授予期限，应依据审计记录做向前补偿，保留所有真实付款记录。",
-      "en": "Application code can revert to the prior successful commit; the D1 migration remains immutable. Correct any mistaken grant with an audited forward compensation while preserving real payments."
+      "zh": "可回退到上一成功提交；此轮没有 D1 结构或订阅数据迁移。",
+      "en": "Revert to the previous successful commit; this release has no D1 schema or subscription-data migration."
     }
   }
 }

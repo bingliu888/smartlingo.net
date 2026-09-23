@@ -3,7 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 import { buildEverydaySpeakingDeck, SMARTLINGO_EVERYDAY_SCENARIOS } from "../lib/smartlingo-everyday-speaking.ts";
 import { SMARTLINGO_COMMUNITY_LANGUAGE_CODES } from "../lib/smartlingo-language-communities.ts";
-import { dialogueAnswerChoices } from "../lib/smartlingo-dialogue-choices.ts";
+import { dialogueAnswerChoices, splitEverydayMission } from "../lib/smartlingo-dialogue-choices.ts";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -56,6 +56,33 @@ test("every authored staff question offers one answer and two distinct distracto
     }
   }
   assert.equal(tested, 740, "English/Chinese source pairs plus twenty offline Japanese beginner pairs");
+});
+
+test("Free missions hold two reviewed exchanges back for an uncoached check", () => {
+  for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
+    for (const language of ["en", "zh"]) {
+      const deck = buildEverydaySpeakingDeck(language, scene.id, "beginner");
+      const mission = splitEverydayMission(deck);
+      const guidedQuestions = mission.guided.filter(item => item.kind === "sentence" && item.role === "staff");
+      assert.equal(guidedQuestions.length, 8, `${scene.id}/${language} guided`);
+      assert.equal(mission.independent.length, 2, `${scene.id}/${language} uncoached`);
+      assert.deepEqual(mission.independent.map(item => item.question.pairIndex), [8, 9]);
+      for (const { question, challenge } of mission.independent) {
+        assert.ok(!mission.guided.some(item => item.id === question.id || item.id === challenge.answer.id));
+        assert.equal(challenge.choices.length, 3);
+        assert.equal(challenge.choices.filter(item => item.id === challenge.answerId).length, 1);
+      }
+    }
+  }
+});
+
+test("Free mission player cannot claim completion by jumping over unanswered exchanges", async () => {
+  const player = await read("../components/EverydaySpeakingPlayer.tsx");
+  assert.match(player, /if \(next > index \+ 1 && challengeAnswered < challengeTotal\) return/);
+  assert.match(player, /if \(challengeAnswered < challengeTotal\) return/);
+  assert.match(player, /disabled=\{index === slides\.length - 1 \|\| challengeAnswered < challengeTotal/);
+  assert.match(player, /independentChoice !== null/);
+  assert.match(player, /smartlingo_everyday_v3_/);
 });
 
 test("scene words are introduced beside dialogue instead of delaying the first exchange", () => {

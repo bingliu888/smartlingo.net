@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { scoreSmartCardPronunciation } from "../lib/smartlingo-smartcards";
-import { dialogueAnswerChoices } from "../lib/smartlingo-dialogue-choices";
+import { dialogueAnswerChoices, splitEverydayMission } from "../lib/smartlingo-dialogue-choices";
 import { VocabularyPicture } from "./VocabularyPicture";
 import type { BeginnerVocabularyImageKey } from "../lib/smartlingo-vocabulary-images";
 import { speakLearningText } from "../lib/smartlingo-speech";
@@ -53,7 +53,7 @@ function writeProgressCookie(key: string, value: number) {
   document.cookie = `${key}=${encodeURIComponent(String(value))}; Max-Age=2592000; Path=/; SameSite=Lax`;
 }
 
-export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, languageName, speechLocale, direction, scene, level, slides, roleTutorEnabled = false }: {
+export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, languageName, speechLocale, direction, scene, level, slides: sourceSlides, roleTutorEnabled = false }: {
   lang: "zh" | "en";
   siteLang?: string;
   language: string;
@@ -67,6 +67,10 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
 }) {
   const zh = lang === "zh";
   const levelName = level === "beginner" ? (zh ? "初级" : "Beginner") : level === "intermediate" ? (zh ? "中级" : "Intermediate") : (zh ? "高级" : "Advanced");
+  // Reserve the last two authored exchanges for an uncoached check. The same
+  // reviewed deck supplies the distractors; no model-generated answer is scored.
+  const mission = useMemo(() => splitEverydayMission(sourceSlides), [sourceSlides]);
+  const { guided: slides, independent: independentChecks } = mission;
   const [index, setIndex] = useState(0);
   const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -86,7 +90,9 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
   const [choiceRejected, setChoiceRejected] = useState<string[]>([]);
   const [choiceFeedback, setChoiceFeedback] = useState("");
   const [completedPairs, setCompletedPairs] = useState<number[]>([]);
-  const [perfectPairs, setPerfectPairs] = useState<number[]>([]);
+  const [independentStep, setIndependentStep] = useState(-1);
+  const [independentAnswers, setIndependentAnswers] = useState<boolean[]>([]);
+  const [independentChoice, setIndependentChoice] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
   const speechCleanupRef = useRef<() => void>(() => undefined);
   const attemptsRef = useRef(0);
@@ -96,10 +102,9 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
   const answerChallenge = useMemo(() => dialogueAnswerChoices(slides, index), [slides, index]);
   const challengeTotal = slides.filter(item => item.kind === "sentence" && item.role === "staff").length;
   const challengeAnswered = completedPairs.length;
-  const challengePerfect = perfectPairs.length;
   // The deck now alternates scene words and dialogue; old slide indexes no longer
   // point at the same content, so resume progress must start a new version.
-  const progressCookie = `smartlingo_everyday_v2_${language}_${scene.id}_${level}`;
+  const progressCookie = `smartlingo_everyday_v3_${language}_${scene.id}_${level}`;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
@@ -107,7 +112,9 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
   }, []);
 
   const move = useCallback((next: number) => {
+    if (independentStep >= 0) return;
     if (next > index && answerChallenge && !choiceSolved) return;
+    if (next > index + 1 && challengeAnswered < challengeTotal) return;
     clearTimer();
     window.speechSynthesis?.cancel();
     speechCleanupRef.current();
@@ -121,12 +128,18 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
     setChoiceRejected([]);
     setChoiceFeedback("");
     setMessage("");
-    if (next >= slides.length) { writeProgressCookie(progressCookie, slides.length); setComplete(true); return; }
+    if (next >= slides.length) {
+      if (challengeAnswered < challengeTotal) return;
+      writeProgressCookie(progressCookie, slides.length);
+      if (independentChecks.length) setIndependentStep(0);
+      else setComplete(true);
+      return;
+    }
     setComplete(false);
     const safeNext = Math.max(0, next);
     writeProgressCookie(progressCookie, safeNext);
     setIndex(safeNext);
-  }, [answerChallenge, choiceSolved, clearTimer, index, progressCookie, slides.length]);
+  }, [answerChallenge, challengeAnswered, challengeTotal, choiceSolved, clearTimer, independentChecks.length, independentStep, index, progressCookie, slides.length]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -135,16 +148,19 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
       setStarted(true);
       if (saved >= slides.length) {
         setIndex(slides.length - 1);
-        setComplete(true);
+        setCompletedPairs(slides.filter(item => item.kind === "sentence" && item.role === "staff").map(item => Number(item.pairIndex)));
+        if (independentChecks.length) setIndependentStep(0);
+        else setComplete(true);
         return;
       }
+      setCompletedPairs(slides.slice(0, saved).filter(item => item.kind === "sentence" && item.role === "staff").map(item => Number(item.pairIndex)));
       setIndex(saved);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [progressCookie, slides.length]);
+  }, [independentChecks.length, progressCookie, slides]);
 
   useEffect(() => {
-    if (!started || paused || complete || !slide) return;
+    if (!started || paused || complete || independentStep >= 0 || !slide) return;
     clearTimer();
     let disposed = false;
     let activeCleanup: () => void = () => undefined;
@@ -171,7 +187,7 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
     const cleanup = () => { disposed = true; clearTimer(); activeCleanup(); };
     speechCleanupRef.current = cleanup;
     return cleanup;
-  }, [answerChallenge, clearTimer, complete, demoNonce, index, modelRate, paused, repeatAfterMe, slide, speechLocale, started, userLanguageHelp, zh]);
+  }, [answerChallenge, clearTimer, complete, demoNonce, independentStep, index, modelRate, paused, repeatAfterMe, slide, speechLocale, started, userLanguageHelp, zh]);
 
   useEffect(() => () => {
     clearTimer();
@@ -388,7 +404,9 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
     setChoiceRejected([]);
     setChoiceFeedback("");
     setCompletedPairs([]);
-    setPerfectPairs([]);
+    setIndependentStep(-1);
+    setIndependentAnswers([]);
+    setIndependentChoice(null);
     setMicState("idle");
     attemptsRef.current = 0;
     writeProgressCookie(progressCookie, 0);
@@ -415,7 +433,6 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
       setChoiceSolved(true);
       setReadyToContinue(true);
       setCompletedPairs(value => value.includes(pair) ? value : [...value, pair]);
-      if (choiceRejected.length === 0 && !completedPairs.includes(pair)) setPerfectPairs(value => value.includes(pair) ? value : [...value, pair]);
       setChoiceFeedback(choiceRejected.length
         ? (zh ? "找到了！现在听听这句回答，再进入下一轮。" : "You found it. Listen to this reply, then continue.")
         : (zh ? "答对了！这句回答完成了当前任务。" : "Correct! This reply completes the current task."));
@@ -433,6 +450,25 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
     } else setChoiceFeedback(zh ? "再试一次：找出与提示意思完全相符的回答。" : "Try once more: find the reply with the exact meaning shown above.");
   }
 
+  function chooseIndependentReply(id: string) {
+    if (independentStep < 0 || independentChoice !== null) return;
+    const check = independentChecks[independentStep];
+    if (!check || !check.challenge.choices.some(item => item.id === id)) return;
+    setIndependentChoice(id);
+    setIndependentAnswers(previous => [...previous, id === check.challenge.answerId]);
+  }
+
+  function continueIndependentCheck() {
+    if (independentChoice === null) return;
+    if (independentStep + 1 >= independentChecks.length) {
+      setIndependentStep(-1);
+      setComplete(true);
+    } else {
+      setIndependentStep(value => value + 1);
+      setIndependentChoice(null);
+    }
+  }
+
   const sentenceIndex = slides.slice(0, index + 1).filter(item => item.kind === "sentence").length - 1;
   const customerTurn = slide.kind === "sentence" && (slide.role ? slide.role === "learner" : sentenceIndex % 2 === 1);
   const sceneMedia = slide.kind === "sentence" && scene.motionMedia?.length
@@ -442,7 +478,7 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
   return <section className="everyday-player">
     <header className="everyday-player-heading" data-layout-overlap-check="everyday-lesson-heading">
       <div><p>{languageName} · {levelName} · {zh ? "生活口语" : "Everyday speaking"}</p><h1>{zh ? scene.nameZh : scene.nameEn}</h1><span>{zh ? scene.goalZh : scene.goalEn}</span></div>
-      <aside><strong>{repeatAfterMe ? bestScore : `${challengeAnswered}/${challengeTotal}`}</strong><span>{repeatAfterMe ? (zh ? "本轮最高跟读分" : "Best speaking score") : (zh ? "已完成场景问答" : "Scene replies completed")}</span></aside>
+      <aside><strong>{repeatAfterMe ? bestScore : `${challengeAnswered}/${challengeTotal}`}</strong><span>{repeatAfterMe ? (zh ? "本轮最高跟读分" : "Best speaking score") : (zh ? "已完成跟练问答" : "Guided replies completed")}</span></aside>
     </header>
     <label className="everyday-repeat-check"><input type="checkbox" checked={repeatAfterMe} onChange={event => setRepeat(event.target.checked)}/><span><b>{zh ? "开启三次跟读与评分" : "Repeat after me three times with scoring"}</b><small>{zh ? "默认关闭；需要口语训练时再开启麦克风。" : "Off by default. Enable it only when you want microphone practice."}</small></span></label>
     <fieldset className="everyday-language-help"><legend>{zh ? "用户语言语音辅助" : "User-language spoken help"}</legend><label><input type="radio" name="user-language-help" checked={!userLanguageHelp} onChange={() => setUserLanguageHelp(false)}/>{zh ? "关闭" : "Off"}</label><label><input type="radio" name="user-language-help" checked={userLanguageHelp} onChange={() => setUserLanguageHelp(true)}/>{zh ? "开启" : "On"}</label><small>{zh ? "开启后先用用户语言提示，再播放学习语言；评分仍只检查学习语言。" : "When on, hear a bridge-language cue before the learning language. Scoring still checks only the learning language."}</small></fieldset>
@@ -461,8 +497,13 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
         <em aria-live="polite">{message}</em>
       </div>
       {!started ? <button className="everyday-start" data-layout-allow-overlap="intentional" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始真实场景对话" : "Start the real-life conversation"}</strong><small>{repeatAfterMe ? (zh ? "人物对话 · 每句跟读 3 次 · 即时评分" : "Role-play · repeat each line 3 times · instant scores") : (zh ? "人物对话 · 场景词汇 · 听完继续" : "Role-play · scene vocabulary · listen and continue")}</small></button> : null}
-      {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? `完成 ${challengeAnswered}/${challengeTotal} 组问答，其中 ${challengePerfect} 组首次答对。再玩一次巩固短句，或选择其他场景。` : `Completed ${challengeAnswered}/${challengeTotal} exchanges, with ${challengePerfect} correct on the first try. Replay or choose another scene.`}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${siteLang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
+      {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? `跟练 ${challengeAnswered}/${challengeTotal} 组；无提示应答 ${independentAnswers.filter(Boolean).length}/${independentChecks.length} 组。此结果只反映本次任务，不是正式语言等级或发音评分。` : `${challengeAnswered}/${challengeTotal} guided exchanges; ${independentAnswers.filter(Boolean).length}/${independentChecks.length} uncoached replies. This is a task result, not a formal proficiency or pronunciation score.`}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${siteLang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
     </div>
+    {independentStep >= 0 && independentChecks[independentStep] ? <section className="everyday-reply-game everyday-independent-check" aria-label={zh ? "无提示独立应答" : "Uncoached reply check"}>
+      <div><small>{zh ? `独立应答 ${independentStep + 1}/${independentChecks.length}` : `UNCOACHED REPLY ${independentStep + 1}/${independentChecks.length}`}</small><h2>{zh ? "换个问题，自己选一句回答。" : "A new question. Choose your own reply."}</h2><p dir={direction}>{independentChecks[independentStep].question.form}</p><button type="button" onClick={() => speakLearningText(independentChecks[independentStep].question.form, speechLocale, modelRate)}>{zh ? "🔊 听问题" : "🔊 Hear the question"}</button></div>
+      <div className="everyday-reply-options">{independentChecks[independentStep].challenge.choices.map(option => <button type="button" key={option.id} disabled={independentChoice !== null} className={independentChoice === option.id ? (option.id === independentChecks[independentStep].challenge.answerId ? "correct" : "rejected") : ""} onClick={() => chooseIndependentReply(option.id)} dir={direction}>{option.form}</button>)}</div>
+      {independentChoice !== null ? <p className="everyday-reply-feedback" role="status">{independentChoice === independentChecks[independentStep].challenge.answerId ? (zh ? "这次独立回答准确。" : "You answered independently.") : (zh ? `这次未答对。示范回答：${independentChecks[independentStep].challenge.answer.form}` : `Not yet. A useful reply is: ${independentChecks[independentStep].challenge.answer.form}`)} <button type="button" onClick={continueIndependentCheck}>{independentStep + 1 === independentChecks.length ? (zh ? "查看本轮结果" : "See result") : (zh ? "下一道" : "Next question")}</button></p> : null}
+    </section> : null}
     {complete ? <section className="everyday-finish-next" aria-labelledby="everyday-finish-next-title">
       <div><small>{zh ? "可选的下一步" : "YOUR NEXT STEP"}</small><h2 id="everyday-finish-next-title">{zh ? "把这段对话用得更熟练。" : "Make this conversation feel natural."}</h2><p>{zh ? "继续免费练习，或与明确标注的 AI 学伴交流。Max 目前提供无广告学习及全部课程等级。" : "Keep practicing for free, or chat with a clearly labeled AI study partner. Max currently offers ad-free learning and access to every course level."}</p></div>
       <nav aria-label={zh ? "完成后的学习选择" : "Learning choices after completion"}><Link href={`/${siteLang}/assistant?language=${language}&mode=conversation&partner=aya`}>{zh ? "与 AI 学伴免费练习" : "Practice free with an AI partner"} →</Link>{roleTutorEnabled ? <Link href={`/${siteLang}/assistant/role-tutor?language=${language}&scene=${scene.id}&level=${level}`}>{zh ? "Max · 与场景角色一对一练习（文字）" : "Max · 1:1 scene role-play (text)"} →</Link> : null}<Link href={`/${siteLang}/pricing`}>{zh ? "了解 Max 方案" : "Explore Max plans"} →</Link></nav>
@@ -472,13 +513,13 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
       <div className="everyday-reply-options">{answerChallenge.choices.map(option => <button type="button" key={option.id} disabled={choiceSolved || choiceRejected.includes(option.id)} className={choiceSolved && option.id === answerChallenge.answerId ? "correct" : choiceRejected.includes(option.id) ? "rejected" : ""} onClick={() => chooseReply(option.id)} dir={direction}>{option.form}</button>)}</div>
       {choiceFeedback ? <p className={choiceSolved ? "everyday-reply-feedback solved" : "everyday-reply-feedback"} role="status">{choiceFeedback}{choiceSolved ? <button type="button" onClick={() => { speakLearningText(answerChallenge.answer.form, speechLocale, modelRate); }}>{zh ? "🔊 听示范回答" : "🔊 Hear the model reply"}</button> : null}</p> : null}
     </section> : null}
-    <div className="everyday-controls" aria-label={zh ? "幻灯片控制" : "Slide controls"} data-layout-overlap-check="everyday-lesson-actions">
+    {independentStep < 0 && !complete ? <><div className="everyday-controls" aria-label={zh ? "幻灯片控制" : "Slide controls"} data-layout-overlap-check="everyday-lesson-actions">
       <button onClick={() => move(0)} disabled={index === 0} aria-label={zh ? "第一张" : "First slide"}>≪</button>
       <button onClick={() => move(index - 1)} disabled={index === 0} aria-label={zh ? "上一张" : "Previous slide"}>‹</button>
       <button className={modelRate > .7 ? "everyday-repeat-toggle on" : "everyday-repeat-toggle"} type="button" aria-pressed={modelRate > .7} onClick={() => { setModelRate(.84); setDemoNonce(value => value + 1); }}>🔊 {zh ? "正常语速" : "Normal"}</button>
       <button className={modelRate <= .7 ? "everyday-repeat-toggle on" : "everyday-repeat-toggle"} type="button" aria-pressed={modelRate <= .7} onClick={() => { setModelRate(.58); setDemoNonce(value => value + 1); }}>🐢 {zh ? "慢速" : "Slow"}</button>
       <button onClick={() => move(index + 1)} disabled={complete || Boolean(answerChallenge && !choiceSolved)} aria-label={zh ? "下一张" : "Next slide"}>›</button>
-      <button onClick={() => move(slides.length - 1)} disabled={index === slides.length - 1 || Boolean(answerChallenge && !choiceSolved)} aria-label={zh ? "最后一张" : "Last slide"}>≫</button>
+      <button onClick={() => move(slides.length - 1)} disabled={index === slides.length - 1 || challengeAnswered < challengeTotal || Boolean(answerChallenge && !choiceSolved)} aria-label={zh ? "最后一张" : "Last slide"}>≫</button>
       <button className="everyday-pause" onClick={togglePause} disabled={!started || complete}>{paused ? (zh ? "▶ 继续" : "▶ Play") : (zh ? "Ⅱ 暂停" : "Ⅱ Pause")}</button>
       <Link className="everyday-quit" href={`/${siteLang}/play/everyday?language=${language}`}>{zh ? "退出" : "Quit"}</Link>
     </div>
@@ -486,6 +527,7 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
     {started && !complete && repeatAfterMe ? <div className="everyday-attempts" aria-label={zh ? "三次跟读成绩" : "Three speaking attempt scores"}>{[1, 2, 3].map(turn => <b className={turn <= attemptScores.length ? "scored" : ""} key={turn}>{attemptScores[turn - 1] ?? turn}</b>)}</div> : null}
     {started && !complete && repeatAfterMe && (micState === "denied" || micState === "error" || micState === "unsupported") ? <div className="everyday-fallback"><button className="everyday-speech-retry" type="button" onClick={() => { setMicState("idle"); setMessage(zh ? "AI 正在重新示范，请听完后跟读。" : "The AI is modeling it again; listen and repeat."); setDemoNonce(value => value + 1); }}>{zh ? "🎙 重新听并跟读" : "🎙 Listen and retry"}</button><button className="everyday-speech-retry" type="button" onClick={manualAttempt}>{zh ? "我已跟读" : "I said it"}</button></div> : null}
     {started && !complete && (readyToContinue || (answerChallenge && choiceSolved)) ? <button className="everyday-continue" type="button" onClick={() => move(index + 1)}>{zh ? "继续" : "Continue"} →</button> : null}
+    </> : null}
     <style>{`.everyday-word-metrics{display:flex;justify-content:center;gap:7px;flex-wrap:wrap}.everyday-word-metrics span{padding:6px 9px;border-radius:999px;background:#eff9f5;color:#075f4d;font-size:11px;font-weight:900}`}</style>
     <style>{`.everyday-repeat-check,.everyday-language-help{width:min(1180px,100%);margin:0 auto 16px;padding:14px 17px;border:1px solid #bad5ca;border-radius:15px;background:#fff}.everyday-repeat-check{display:flex;align-items:center;gap:12px}.everyday-repeat-check input{width:22px;height:22px;accent-color:#087d62}.everyday-repeat-check span,.everyday-repeat-check small{display:block}.everyday-repeat-check small{margin-top:3px;color:#61756d}.everyday-language-help{display:flex;align-items:center;gap:16px}.everyday-language-help legend{padding:0 7px;font-weight:900}.everyday-language-help label{display:flex;align-items:center;gap:6px;font-weight:850}.everyday-language-help input{accent-color:#087d62}.everyday-language-help small{margin-left:auto;color:#61756d}.everyday-stage>img{animation:everyday-camera 14s ease-in-out infinite alternate}.everyday-conversation-person{position:absolute;z-index:3;bottom:28px;right:25px;display:grid;justify-items:center;color:#fff;filter:drop-shadow(0 7px 16px #0018)}.everyday-conversation-person.customer{right:auto;left:25px}.everyday-conversation-person span{width:66px;height:66px;display:grid;place-items:center;border:3px solid #fff;border-radius:50%;background:#087d62;font-size:34px}.everyday-conversation-person.staff span{background:#234c76}.everyday-conversation-person i{margin-top:6px;padding:5px 9px;border-radius:999px;background:#082f28db;font-style:normal;font-size:11px}.everyday-copy{animation:everyday-bubble .35s ease-out}.everyday-word-picture{width:min(180px,38vw);aspect-ratio:1;border:5px solid #fff;border-radius:20px;box-shadow:0 12px 34px #0017}.everyday-controls .everyday-repeat-toggle{border-color:#9caaa5;background:#eef2f0}.everyday-controls .everyday-repeat-toggle.on{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speed-status{width:max-content;max-width:100%;margin:10px auto 0;padding:7px 12px;display:block;border-radius:999px;background:#e8f6f0;color:#076650;font-weight:850}.everyday-fallback,.everyday-attempts{margin:12px auto 0;display:flex;justify-content:center;gap:10px}.everyday-attempts b{width:42px;height:42px;display:grid;place-items:center;border:2px solid #bfd3ca;border-radius:50%;color:#60746c}.everyday-attempts b.scored{border-color:#087d62;background:#ddf7ed;color:#076650}.everyday-speech-retry,.everyday-continue{min-height:48px;margin:12px auto 0;padding:0 20px;display:flex;align-items:center;border:1px solid #087d62;border-radius:999px;background:#ddf7ed;color:#076650;font-weight:900;cursor:pointer}.everyday-fallback .everyday-speech-retry{margin:0}.everyday-continue{min-width:180px;justify-content:center;background:#087d62;color:#fff}@keyframes everyday-camera{from{transform:scale(1.01) translateX(-.5%)}to{transform:scale(1.08) translateX(.8%)}}@keyframes everyday-bubble{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.everyday-stage>img,.everyday-copy{animation:none}}@media(max-width:620px){.everyday-language-help{align-items:flex-start;flex-wrap:wrap}.everyday-language-help small{width:100%;margin:0}.everyday-controls .everyday-repeat-toggle{grid-column:span 2}.everyday-fallback{flex-direction:column;align-items:center}.everyday-conversation-person{display:none}}`}</style>
   </section>;
