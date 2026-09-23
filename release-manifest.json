@@ -1,89 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-explicit-trial-placement-20260922-r3",
+  "releaseId": "smartlingo-v2-ai-runtime-sync-20260922-r4",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo V2 第三轮：显式 Max 试用与证据驱动定级",
-    "en": "SmartLingo V2 round three: explicit Max trial and evidence-based placement"
+    "zh": "SmartLingo V2 第四轮：复用 Konectible 的 AI 密钥同步",
+    "en": "SmartLingo V2 round four: reuse Konectible AI credential sync"
   },
   "purpose": {
-    "zh": "免费学习规划不再暗中消耗一次性 Max 试用；定级改用更广的真实场景，并显示证据与置信度。",
-    "en": "Free learning planning no longer silently consumes the one-time Max trial; placement uses broader real-life scenes with visible evidence and confidence."
+    "zh": "修复 SmartLingo 发布流程缺失的 AI 提供商密钥同步步骤，为恢复真实场景对话与导师服务建立可验证的运行前提。",
+    "en": "Add the missing provider-credential sync to SmartLingo deployment so real-life dialogue and tutor services have a verifiable runtime prerequisite."
   },
   "features": {
     "zh": [
-      "保存非初级课程偏好不再启动 Max；只有明确标注 7 天且不会自动收费的课程详情按钮才可申请试用。",
-      "十二种学习语言的五技能定级各有 15 题，跨 12 个场景；跳题不计错，低证据降低置信度，结果可改选。",
-      "旧版未完成测评与新版题目隔离，推荐等级指向实际课程。",
-      "新增受控的 Max 场景文字导师基础设施，但入口和接口默认关闭，尚未作为付费权益上线。",
-      "登录与 AI 兜底文案修正为真实 Free/Max 模式。"
+      "沿用 Konectible 已验证的发布代码：当仓库具备 OpenAI 或 DeepSeek 密钥时，将其作为 Worker 运行密钥同步。",
+      "无密钥时保留既有运行状态，不把密钥写进仓库、构建产物或日志。",
+      "新增发布契约测试，确保同步在生产构建前执行。"
     ],
     "en": [
-      "Saving a higher-level course preference no longer starts Max; only the clearly labeled seven-day course-detail action can request the trial.",
-      "Five-skill placement across twelve target languages now uses fifteen tasks spanning twelve places; skips are not errors, low evidence lowers confidence, and learners can override the result.",
-      "Separate unfinished legacy assessments from the new bank and route recommendations to actual courses.",
-      "Add gated Max scene-based text-tutor infrastructure, with entry and API off by default; this is not a launched paid benefit.",
-      "Correct login and AI-fallback copy to the real Free/Max model."
+      "Reuse verified Konectible deployment commands to synchronize available OpenAI or DeepSeek credentials into Worker secrets.",
+      "Preserve existing runtime state when a repository secret is absent; never write secret values to source, build artifacts, or logs.",
+      "Add a release-contract test requiring sync before the production build."
     ]
   },
   "affected": {
     "zh": [
-      "学习规划、官方课程报名、五技能定级、登录文案，以及关闭状态的导师表和接口；价格与支付不变。"
+      "仅修改生产发布流程及其测试；课程、价格、支付、学习记录和用户资料不变。"
     ],
     "en": [
-      "Learning-plan save, official-course enrollment, placement, login copy, and dormant tutor table and API; prices and checkout are unchanged."
+      "Production deployment workflow and test only; courses, prices, checkout, learning records, and profiles are unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "快速课程 POST 只读取 Max 权益；报名仅在同源请求显式携带 startMaxTrial=true 时才可启动一次性试用。",
-      "规划页先保存选择；非初级转到只读详情，由用户自愿开始试用；初级仍免费。",
-      "定级题版本升级，扩充场景来源，纠正跳题和低样本评分，显示作答数、跳题数与置信度。",
-      "文字导师限固定场景和角色，校验 Max、同源、轮数、时间、并发与每日配额；最近四组问答只供短期上下文，到期后由站点定时任务清理，功能开关未启用。"
+      "在 Stripe 密钥配置后、Worker 生产构建前，按 Konectible 的同一条件判断与 wrangler secret put 命令同步现有 AI 密钥。"
     ],
     "en": [
-      "Quick-course POST only reads Max entitlement; enrollment starts the one-time trial solely when a same-origin explicit action sends startMaxTrial=true.",
-      "The planner saves first, then sends higher levels to read-only course detail for voluntary trial activation; Beginner remains free.",
-      "Version the assessment bank, broaden scene sources, correct skip and low-sample scoring, and display counts and confidence.",
-      "Constrain the text tutor to fixed scenes and roles with Max, origin, turn, time, concurrency, and daily-quota checks; purge four-exchange short-term context after expiry via site cron. The switch remains off."
+      "After Stripe secret configuration and before the production Worker build, use the same Konectible conditional checks and wrangler secret put commands for available AI credentials."
     ]
   },
   "validation": {
     "zh": [
-      "TypeScript、零警告 ESLint、459 项完整测试、生产构建、敏感扫描和 WebKit 240 项版式检查通过；精确提交部署门禁仍需执行。",
-      "第二轮匿名生产浏览器测试：英语咖啡店入口及慢速状态可用；日语内容安全暂停，公开 AI 助手进入离线兜底。第三轮发布后须复测。"
+      "新增 AI 密钥同步契约及 460 项完整测试、TypeScript、零警告 lint 通过；敏感扫描、版式矩阵与精确提交部署门禁在本轮提交后执行。",
+      "第三轮生产 AI 曾进入离线兜底；密钥同步后必须重新验证，不能仅凭配置变更宣称恢复。"
     ],
     "en": [
-      "TypeScript, zero-warning ESLint, all 459 tests, production build, sensitive scan, and the 240-case WebKit layout matrix pass; exact-commit deployment gates remain required.",
-      "Round-two anonymous production browser testing found the English café entry and slow-mode state working; Japanese content safely paused, and the public AI tutor returned its offline fallback. Recheck after release."
+      "The new credential-sync contract, all 460 tests, TypeScript, and zero-warning lint pass; run sensitive scan, layout matrix, and exact-commit deployment gates after this commit.",
+      "Production AI previously fell back offline; verify it again after sync rather than claiming recovery from configuration alone."
     ]
   },
   "deferred": {
     "zh": [
-      "生产 AI 提供商目前走兜底，日语等十种目标语缺少可用的预审场景对话；需诊断凭证或上游并离线预构建 360 套目标语对话。",
-      "Max 文字导师默认关闭；实时语音、母语审校、普通付费账号端到端验收及教育效果校准未完成，不可宣传为已上线。"
+      "若仓库没有对应密钥或 AI 上游仍拒绝请求，服务会继续离线兜底；须根据生产复测确定原因。",
+      "日语等十种目标语预审场景对话、实时语音、母语审校和普通付费账号端到端验收仍未完成。"
     ],
     "en": [
-      "The production AI provider currently falls back, and ten target languages lack available pre-reviewed scene dialogue; diagnose provider configuration or upstream and prebuild 360 target-language sets.",
-      "The Max text tutor remains off; live voice, native-language review, ordinary paid-member end-to-end acceptance, and learning-outcome calibration are unfinished and must not be advertised as live."
+      "If the repository lacks provider credentials or the upstream still rejects requests, AI continues to fall back; production retesting must identify the cause.",
+      "Pre-reviewed dialogues for ten target languages, live voice, native-language review, and ordinary paid-member end-to-end acceptance remain unfinished."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "沿用 SmartLingo 现有 Free 初级、Max 权益、十二语言、生活场景、AI 网关及五分钟站点定时任务；支付方式不变。"
+      "仅复制 Konectible 已验证的可选 OpenAI/DeepSeek 密钥同步方式到 SmartLingo 既有 Cloudflare 发布流程。"
     ],
     "en": [
-      "Reuse SmartLingo Free Beginner and Max entitlements, twelve languages, real-life scenes, existing AI gateway, and five-minute site cron; payment methods are unchanged."
+      "Copy the verified Konectible optional OpenAI/DeepSeek secret sync into the existing SmartLingo Cloudflare deployment flow."
     ]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": [
-      "0187_role_tutor_sessions"
-    ],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "zh": "导师默认关闭；如需回退可恢复上一成功 Worker，保留独立新表供安全清理，不删除学习记录或订阅。",
-      "en": "The tutor is off by default; roll back to the prior successful Worker if needed and retain the isolated new table for safe cleanup without deleting learner records or subscriptions."
+      "zh": "本轮没有数据迁移；如需回退，可恢复上一成功发布流程，已同步的现有 Worker 密钥由 Cloudflare 独立保管。",
+      "en": "This round has no data migration; revert to the prior successful workflow if needed. Existing Worker secrets remain independently managed by Cloudflare."
     }
   }
 }

@@ -242,6 +242,20 @@ jobs:
           printf '%s' "$STRIPE_SECRET_KEY" | npx wrangler secret put STRIPE_SECRET_KEY --config wrangler.cloudflare.jsonc
           printf '%s' "$STRIPE_WEBHOOK_SECRET" | npx wrangler secret put STRIPE_WEBHOOK_SECRET --config wrangler.cloudflare.jsonc
 
+      - name: Sync existing AI provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+            printf '%s' "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY --config wrangler.cloudflare.jsonc
+          fi
+          if [[ -n "${DEEPSEEK_API_KEY:-}" ]]; then
+            printf '%s' "$DEEPSEEK_API_KEY" | npx wrangler secret put DEEPSEEK_API_KEY --config wrangler.cloudflare.jsonc
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
       - name: Build exact production Worker
         run: npm run build
 
