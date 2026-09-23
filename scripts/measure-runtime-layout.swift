@@ -80,7 +80,7 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
     // release matrix needs a bounded allowance that grows with every real
     // route/language/viewport navigation. Cap it so a stalled WebKit process
     // still fails deterministically.
-    let timeoutSeconds = min(900.0, max(240.0, Double(combinationCount) * 5.0))
+    let timeoutSeconds = min(1_800.0, max(360.0, Double(combinationCount) * 12.0))
     timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutSeconds, repeats: false) { [weak self] _ in
       self?.fail("runtime-layout WebKit matrix timed out")
     }
@@ -246,7 +246,13 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
   private func advance() {
     viewportIndex += 1
     if viewportIndex < config.viewports.count {
-      measureCurrentViewport()
+      // WKWebView may retain media-query styles from the previous viewport
+      // when its detached frame is resized. Reload at the new frame so each
+      // report reflects the CSS a real browser loads at that exact size.
+      let viewport = config.viewports[viewportIndex]
+      webView.frame = NSRect(x: 0, y: 0, width: viewport.width, height: viewport.height)
+      processingNavigation = false
+      webView.reload()
       return
     }
     viewportIndex = 0

@@ -54,6 +54,7 @@ test("runtime layout matrix pins both path locales and a short landscape lesson 
     "/auth/login",
   ]);
   assert.match(swiftSource, /return "\/\\\(language\)\\\(suffix\)"/);
+  assert.match(swiftSource, /viewportIndex < config\.viewports\.count \{[\s\S]*webView\.reload\(\)/);
   assert.doesNotMatch(swiftSource, /localStorage|mahj-language/);
 });
 
@@ -186,8 +187,8 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.doesNotMatch(releaseSource, /--remote/);
   assert.match(releaseSource, /database_id: "00000000-0000-4000-8000-000000000001"/);
   assert.match(releaseSource, /vars: \{ SMARTLINGO_RUNTIME_LAYOUT_FIXTURE_TOKEN: token \}/);
-  assert.match(releaseSource, /'layout-user',unixepoch\(\),'admin'/);
-  assert.match(releaseSource, /'layout-peer',unixepoch\(\),'member'/);
+  assert.match(releaseSource, /'layout-user',unixepoch\(\)\+3600,'admin'/);
+  assert.match(releaseSource, /'layout-peer',unixepoch\(\)\+3600,'member'/);
   assert.doesNotMatch(releaseSource, /\broutes:/);
   assert.match(releaseSource, /WRANGLER_SEND_METRICS: "false"/);
   assert.match(releaseSource, /WRANGLER_REGISTRY_PATH: join\(work, "registry"\)/);
@@ -221,7 +222,7 @@ test("full release matrix uses bounded fresh-WebKit batches and one merged count
   assert.match(runnerSource, /expectedCount = selectedRoutes\.length \* SMARTLINGO_LAYOUT_LANGUAGES\.length \* SMARTLINGO_VIEWPORTS\.length/);
   assert.match(runnerSource, /code: "path-mismatch"/);
   assert.match(runnerSource, /required: \{ overlapChecks: 1/);
-  assert.match(swiftSource, /Double\(combinationCount\) \* 5\.0/);
+  assert.match(swiftSource, /Double\(combinationCount\) \* 12\.0/);
   assert.match(releaseSource, /SMARTLINGO_LAYOUT_ROUTES\.length/);
   assert.match(releaseSource, /SMARTLINGO_LAYOUT_LANGUAGES\.length/);
   assert.match(releaseSource, /SMARTLINGO_VIEWPORTS\.length/);
