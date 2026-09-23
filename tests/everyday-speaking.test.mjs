@@ -63,7 +63,7 @@ test("unreviewed locales never receive the unrelated find-the-venue sentence ban
   assert.doesNotMatch(source, /buildCourseSentenceBank/);
   assert.doesNotMatch(source, /FALLBACK_QUESTIONS/);
   assert.match(source, /if \(!lines\) throw new Error\("Everyday dialogue localization is unavailable"\)/);
-  assert.match(source, /cached\?\.sourceType === "gpt-5\.6-luna"/);
+  assert.match(source, /cached\?\.sourceType === "gpt-6-luna"/);
   assert.match(source, /validatedDialogueLines\(lines, base, input\.language\)/);
 });
 

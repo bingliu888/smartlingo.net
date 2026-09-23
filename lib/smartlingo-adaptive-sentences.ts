@@ -26,7 +26,7 @@ type GeneratedRound = { sentences: GeneratedSentence[] };
 
 export type AdaptiveSentenceSet = {
   releaseId: string;
-  sourceType: "gpt-5.6-luna" | "safe-fallback";
+  sourceType: "gpt-5.6-luna" | "gpt-6-luna" | "safe-fallback";
   rounds: SmartLingoSentenceExercise[][];
 };
 
@@ -159,7 +159,7 @@ export async function adaptiveSentenceRounds(input: AdaptiveSentenceInput): Prom
   }).catch(() => ({ value: "" }));
   const generated = response.value ? parseGenerated(response.value, cumulative, input.language, input.level) : null;
   const rounds = generated || fallbackRounds;
-  const sourceType: AdaptiveSentenceSet["sourceType"] = generated ? "gpt-5.6-luna" : "safe-fallback";
+  const sourceType: AdaptiveSentenceSet["sourceType"] = generated ? "gpt-6-luna" : "safe-fallback";
   await input.database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets(cache_key,release_id,target_language,level,ui_language,vocabulary_ids_json,payload_json,source_type,created_at)
     VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload_json=excluded.payload_json,source_type=excluded.source_type,created_at=excluded.created_at`)
     .bind(cacheKey,releaseId,input.language,input.level,input.uiLang,JSON.stringify(vocabularyIds),JSON.stringify(rounds),sourceType,Math.floor(Date.now()/1000)).run()

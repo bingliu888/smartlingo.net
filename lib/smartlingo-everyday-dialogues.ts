@@ -391,7 +391,7 @@ export async function everydayDialogueLines(input: {
   level: SmartLingoLevel;
   /** Deterministic test seam for uncached languages without prebuilt lessons. */
   localize?: (pairs: readonly BasePair[], language: SmartLingoLearningLanguage, level: SmartLingoLevel) => Promise<string>;
-}): Promise<{ lines: EverydayDialogueLine[]; releaseId: string; sourceType: "prebuilt" | "gpt-5.6-luna" }> {
+}): Promise<{ lines: EverydayDialogueLine[]; releaseId: string; sourceType: "prebuilt" | "gpt-6-luna" }> {
   const base = sceneLevelPairs(input.sceneId, input.level);
   const release = await input.database.prepare("SELECT release_id AS releaseId FROM smartlingo_learning_content_releases WHERE content_key='everyday-dialogues' LIMIT 1").first<{ releaseId: string }>();
   const releaseId = release?.releaseId || "bootstrap-2026-08-23";
@@ -399,10 +399,10 @@ export async function everydayDialogueLines(input: {
   if (prebuilt.length) return { lines: prebuilt, releaseId, sourceType: "prebuilt" };
   const cacheKey = `everyday:${releaseId}:${input.sceneId}:${input.language}:${input.level}:${stableHash(JSON.stringify(base))}`;
   const cached = await input.database.prepare("SELECT payload_json AS payloadJson,source_type AS sourceType FROM smartlingo_everyday_dialogue_sets WHERE cache_key=? AND release_id=? LIMIT 1").bind(cacheKey, releaseId).first<{ payloadJson: string; sourceType: string }>();
-  if (cached?.sourceType === "gpt-5.6-luna") {
+  if (cached?.sourceType === "gpt-6-luna") {
     try {
       const lines: unknown = JSON.parse(cached.payloadJson);
-      if (validatedDialogueLines(lines, base, input.language)) return { lines, releaseId, sourceType: "gpt-5.6-luna" };
+      if (validatedDialogueLines(lines, base, input.language)) return { lines, releaseId, sourceType: "gpt-6-luna" };
     } catch { /* regenerate malformed cache */ }
   }
   const localized = input.localize
@@ -423,6 +423,6 @@ export async function everydayDialogueLines(input: {
   if (!lines) throw new Error("Everyday dialogue localization is unavailable");
   await input.database.prepare(`INSERT INTO smartlingo_everyday_dialogue_sets(cache_key,release_id,target_language,level,scenario,payload_json,source_type,created_at)
     VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload_json=excluded.payload_json,source_type=excluded.source_type,created_at=excluded.created_at`)
-    .bind(cacheKey, releaseId, input.language, input.level, input.sceneId, JSON.stringify(lines), "gpt-5.6-luna", Math.floor(Date.now() / 1000)).run().catch(() => ({ success: false }));
-  return { lines, releaseId, sourceType: "gpt-5.6-luna" };
+    .bind(cacheKey, releaseId, input.language, input.level, input.sceneId, JSON.stringify(lines), "gpt-6-luna", Math.floor(Date.now() / 1000)).run().catch(() => ({ success: false }));
+  return { lines, releaseId, sourceType: "gpt-6-luna" };
 }

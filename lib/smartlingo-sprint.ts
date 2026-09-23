@@ -26,7 +26,7 @@ export type SprintRound = {
 export type SprintPlan = {
   contentVersion: "smartlingo-sprint-2026-08-24.3";
   learningReleaseId: string;
-  sentenceSource: "gpt-5.6-luna" | "safe-fallback" | "graded-catalog";
+  sentenceSource: "gpt-5.6-luna" | "gpt-6-luna" | "safe-fallback" | "graded-catalog";
   language: SmartLingoLearningLanguage;
   level: SmartLingoLevel;
   uiLang: SmartLingoInterfaceLanguage;

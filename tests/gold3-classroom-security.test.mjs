@@ -123,7 +123,7 @@ test("legacy classroom grants remain unbound until the verified-user binding pat
 
 test("tracked classroom migrations pass fresh D1 replay and a second no-op", () => {
   const result = validateD1Migrations();
-  assert.equal(result.newestMigration, "0187_role_tutor_sessions");
+  assert.equal(result.newestMigration, "0188_gpt6_luna_text_generation");
   assert.equal(result.firstRunApplied, result.migrationCount);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
@@ -176,8 +176,8 @@ test("Gold 3 classroom migration is additive and deployment applies D1 before bu
 
   assert.doesNotMatch(migration, /DROP\s+(?:TABLE|COLUMN)/i);
   assert.deepEqual(journal.entries.slice(-2).map(({ idx, tag }) => ({ idx, tag })), [
-    { idx: 81, tag: "0186_free_max_course_access" },
     { idx: 82, tag: "0187_role_tutor_sessions" },
+    { idx: 83, tag: "0188_gpt6_luna_text_generation" },
   ]);
   assert.ok(migrationStep >= 0 && migrationStep < buildStep && buildStep < deployStep);
 });

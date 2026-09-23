@@ -24,7 +24,7 @@ test("deployment SQL records the exact full commit, Actions run, and declared mi
   assert.match(output, /https:\/\/github\.com\/bingliu888\/smartlingo\.net\/actions\/runs\/31999999999/);
   const manifest = loadReleaseManifest();
   for (const language of ["en", "zh"])
-    for (const note of releaseNotes(manifest, language)) assert.ok(output.includes(note));
+    for (const note of releaseNotes(manifest, language)) assert.ok(output.includes(note.replaceAll("'", "''")));
   assert.ok(output.includes(releaseRollback(manifest).en));
   assert.ok(output.includes(releaseRollback(manifest).zh));
   assert.throws(() => execFileSync(process.execPath, [script], {

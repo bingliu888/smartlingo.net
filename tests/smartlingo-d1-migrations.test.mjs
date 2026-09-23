@@ -1,18 +1,19 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
-import { validateD1Migrations } from "../scripts/validate-d1-migrations.mjs";
+import { applyTrackedMigrations, readMigrationManifest, validateD1Migrations } from "../scripts/validate-d1-migrations.mjs";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 83);
-  assert.equal(result.firstRunApplied, 83);
+  assert.equal(result.migrationCount, 84);
+  assert.equal(result.firstRunApplied, 84);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0187_role_tutor_sessions");
+  assert.equal(result.newestMigration, "0188_gpt6_luna_text_generation");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -50,6 +51,36 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
     learningXpId: "d1-smoke-xp",
     learningStreakUserId: "d1-smoke-learner",
   });
+});
+
+test("GPT-6 Luna migration preserves old cache rows and accepts newly generated content", () => {
+  const database = new DatabaseSync(":memory:");
+  try {
+    const migrations = readMigrationManifest();
+    applyTrackedMigrations(database, migrations.slice(0, -1));
+    database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets
+      (cache_key,release_id,target_language,level,ui_language,vocabulary_ids_json,payload_json,source_type,created_at)
+      VALUES(?,?,?,?,?,?,?,?,?)`).run("old-sentence", "old-release", "ja", "beginner", "en", "[]", "[]", "gpt-5.6-luna", 1);
+    database.prepare(`INSERT INTO smartlingo_everyday_dialogue_sets
+      (cache_key,release_id,target_language,level,scenario,payload_json,source_type,created_at)
+      VALUES(?,?,?,?,?,?,?,?)`).run("old-dialogue", "old-release", "ja", "beginner", "cafe", "[]", "gpt-5.6-luna", 1);
+
+    applyTrackedMigrations(database, migrations);
+    for (const table of ["smartlingo_adaptive_sentence_sets", "smartlingo_everyday_dialogue_sets"])
+      assert.equal(database.prepare(`SELECT source_type FROM ${table} LIMIT 1`).get().source_type, "gpt-5.6-luna");
+    database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets
+      (cache_key,release_id,target_language,level,ui_language,vocabulary_ids_json,payload_json,source_type,created_at)
+      VALUES(?,?,?,?,?,?,?,?,?)`).run("new-sentence", "new-release", "ja", "beginner", "en", "[]", "[]", "gpt-6-luna", 2);
+    database.prepare(`INSERT INTO smartlingo_everyday_dialogue_sets
+      (cache_key,release_id,target_language,level,scenario,payload_json,source_type,created_at)
+      VALUES(?,?,?,?,?,?,?,?)`).run("new-dialogue", "new-release", "ja", "beginner", "cafe", "[]", "gpt-6-luna", 2);
+    for (const table of ["smartlingo_adaptive_sentence_sets", "smartlingo_everyday_dialogue_sets"])
+      assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count, 2);
+    for (const contentKey of ["adaptive-sentences", "everyday-dialogues"])
+      assert.equal(database.prepare("SELECT release_id FROM smartlingo_learning_content_releases WHERE content_key=?").get(contentKey).release_id, "gpt-6-luna-2026-09-22");
+  } finally {
+    database.close();
+  }
 });
 
 test("0019 seeds nine official language communities and keeps same-language enrollment valid", async () => {

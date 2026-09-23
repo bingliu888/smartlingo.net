@@ -108,7 +108,7 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
     "writing_feedback",
     "scoring",
   ]) {
-    assert.equal(gateway.SMARTAI_FEATURE_POLICIES[feature].model, "gpt-5.6-luna");
+    assert.equal(gateway.SMARTAI_FEATURE_POLICIES[feature].model, "gpt-6-luna");
   }
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.model, "omni-moderation-latest");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.transcription.model, "gpt-4o-mini-transcribe");
@@ -456,7 +456,7 @@ test("learning feedback calls share one explicit AI-not-teacher safety boundary"
   assert.match(providerRequest.body.instructions, /not a human teacher or official examiner/);
   assert.match(providerRequest.body.instructions, /State uncertainty/);
   assert.match(providerRequest.body.instructions, /Simplified Chinese/);
-  assert.equal(providerRequest.body.model, "gpt-5.6-luna");
+  assert.equal(providerRequest.body.model, "gpt-6-luna");
   assert.deepEqual(providerRequest.body.reasoning, { effort: "low" });
   assert.match(providerRequest.safetyIdentifier, /^[a-f0-9]{64}$/);
   assert.doesNotMatch(providerRequest.safetyIdentifier, /speaker/);
@@ -536,7 +536,7 @@ test("vision questions stay on Luna and send one transient image input", async (
   });
   assert.deepEqual(result, { value: "A visible object.", fallback: false });
   assert.equal(providerRequest.url, "https://api.openai.com/v1/responses");
-  assert.equal(providerRequest.body.model, "gpt-5.6-luna");
+  assert.equal(providerRequest.body.model, "gpt-6-luna");
   assert.deepEqual(providerRequest.body.input[0].content.map(item => item.type), ["input_text", "input_image"]);
   assert.equal(providerRequest.body.input[0].content[1].detail, "auto");
 });
