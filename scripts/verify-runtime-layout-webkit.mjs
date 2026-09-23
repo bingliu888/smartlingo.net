@@ -9,9 +9,9 @@ import { spawn } from "node:child_process";
 export const SMARTLINGO_VIEWPORTS = Object.freeze([
   Object.freeze({ id: "phone-390x844", width: 390, height: 844 }),
   Object.freeze({ id: "phone-430x932", width: 430, height: 932 }),
-  Object.freeze({ id: "tablet-834x1112", width: 834, height: 1112 }),
-  Object.freeze({ id: "landscape-1194x834", width: 1194, height: 834 }),
-  Object.freeze({ id: "desktop-1440x1000", width: 1440, height: 1000 }),
+  Object.freeze({ id: "tablet-820x1180", width: 820, height: 1180 }),
+  Object.freeze({ id: "landscape-short-1180x820", width: 1180, height: 820 }),
+  Object.freeze({ id: "desktop-1440x900", width: 1440, height: 900 }),
 ]);
 
 export const SMARTLINGO_LAYOUT_LANGUAGES = Object.freeze(["zh", "en"]);
@@ -26,6 +26,7 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/classes/course_en_basic/learn/session",
   "/classes/course_en_basic/vocabulary",
   "/play",
+  "/play/everyday?language=en&scene=grocery&level=beginner",
   "/play/challenge",
   "/smartcards",
   "/smartcards/starter-en",
@@ -66,6 +67,7 @@ const expectedPageNames = Object.freeze({
   "/classes/course_en_basic/learn/session": "learning-session",
   "/classes/course_en_basic/vocabulary": "vocabulary-memory",
   "/play": "play",
+  "/play/everyday?language=en&scene=grocery&level=beginner": "everyday-player",
   "/play/challenge": "play",
   "/smartcards": "smartcards",
   "/smartcards/starter-en": "smartcards",
@@ -93,6 +95,7 @@ const requiredHooks = Object.freeze({
   "/classes/course_en_basic/learn/session": { fills: 3, readableCopy: 1, textFits: 1 },
   "/classes/course_en_basic/vocabulary": {},
   "/play": {},
+  "/play/everyday?language=en&scene=grocery&level=beginner": {},
   "/play/challenge": {},
   "/smartcards": {},
   "/smartcards/starter-en": {},
@@ -449,12 +452,19 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     for (const element of keyElements) checkOverlapPair(floating, element);
   }
 
+  const lessonStart = document.querySelector(".everyday-player .everyday-repeat-check");
+  const lessonActions = document.querySelector(".everyday-player .everyday-controls");
+  const lessonFit = lessonStart && lessonActions ? {
+    height: lessonActions.getBoundingClientRect().bottom - lessonStart.getBoundingClientRect().top,
+    viewportHeight: window.innerHeight,
+  } : null;
+
   return {
     schemaVersion: 1,
     url: window.location.href,
     route: options.route || window.location.pathname,
     language: root.lang || "",
-    pageName: document.querySelector("[data-layout-page]")?.getAttribute("data-layout-page") || "",
+    pageName: (document.querySelector("main[data-layout-page]") || document.querySelector("[data-layout-page]"))?.getAttribute("data-layout-page") || "",
     viewport: { width: window.innerWidth, height: window.innerHeight },
     page: {
       document: { clientWidth: root.clientWidth, scrollWidth: root.scrollWidth },
@@ -469,6 +479,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     overlapChecks,
     overlaps,
     viewportExceeds,
+    lessonFit,
   };
 }
 
@@ -568,6 +579,11 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
   }
   for (const item of report.viewportExceeds || []) {
     add("viewport-exceed", item.selector, "visible key content extends beyond the viewport", item.rect);
+  }
+  if (report.pageName === "everyday-player" && report.viewport.width > report.viewport.height && report.viewport.height <= 900) {
+    if (!report.lessonFit || report.lessonFit.height > report.lessonFit.viewportHeight - 16) {
+      add("landscape-lesson-scroll", ".everyday-player", "scene instructions and actions must fit one landscape viewport", report.lessonFit);
+    }
   }
 
   const required = options.required || {};
@@ -713,7 +729,7 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
     const failures = [];
     for (const entry of reports) {
       const expectedPage = expectedPageNames[entry.route];
-      const expectedPath = `/${entry.language}${entry.route === "/" ? "" : entry.route}`;
+      const expectedPath = new URL(`/${entry.language}${entry.route === "/" ? "" : entry.route}`, "https://layout.invalid").pathname;
       const actualPath = new URL(entry.report.url).pathname;
       if (actualPath !== expectedPath) {
         failures.push({

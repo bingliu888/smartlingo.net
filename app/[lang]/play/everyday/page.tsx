@@ -51,7 +51,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
         <SiteFooter lang={lang}/>
       </main>;
     }
-    return <main className="everyday-page everyday-player-page">
+    return <main className="everyday-page everyday-player-page" data-layout-page="everyday-player">
     <SiteHeader lang={lang}/>
     <EverydaySpeakingPlayer
       lang={zh ? "zh" : "en"}

@@ -16,14 +16,14 @@ const releaseSource = await readFile(new URL("../scripts/verify-runtime-layout-r
 const fixtureAuthSource = await readFile(new URL("../lib/layout-fixture-auth.ts", import.meta.url), "utf8");
 const packageSource = await readFile(new URL("../package.json", import.meta.url), "utf8");
 
-test("runtime layout matrix pins both path locales and all five required viewports", () => {
+test("runtime layout matrix pins both path locales and a short landscape lesson viewport", () => {
   assert.deepEqual(SMARTLINGO_LAYOUT_LANGUAGES, ["zh", "en"]);
   assert.deepEqual(SMARTLINGO_VIEWPORTS.map(({ width, height }) => [width, height]), [
     [390, 844],
     [430, 932],
-    [834, 1112],
-    [1194, 834],
-    [1440, 1000],
+    [820, 1180],
+    [1180, 820],
+    [1440, 900],
   ]);
   assert.deepEqual(SMARTLINGO_LAYOUT_ROUTES, [
     "/",
@@ -35,6 +35,7 @@ test("runtime layout matrix pins both path locales and all five required viewpor
     "/classes/course_en_basic/learn/session",
     "/classes/course_en_basic/vocabulary",
     "/play",
+    "/play/everyday?language=en&scene=grocery&level=beginner",
     "/play/challenge",
     "/smartcards",
     "/smartcards/starter-en",
@@ -117,6 +118,23 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
   assert.ok(codes.includes("content-overlap"));
   assert.ok(codes.includes("missing-layout-hooks"));
   assert.ok(codes.includes("viewport-exceed"));
+});
+
+test("landscape Everyday Speaking keeps instructions through actions within one viewport", () => {
+  const report = {
+    schemaVersion: 1,
+    pageName: "everyday-player",
+    language: "zh-CN",
+    viewport: { width: 1180, height: 820 },
+    page: {
+      document: { clientWidth: 1180, scrollWidth: 1180 },
+      body: { clientWidth: 1180, scrollWidth: 1180 },
+    },
+    lessonFit: { height: 830, viewportHeight: 820 },
+  };
+  assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-lesson-scroll"));
+  report.lessonFit.height = 780;
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-lesson-scroll"));
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {

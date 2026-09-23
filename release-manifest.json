@@ -1,77 +1,75 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-guided-start-gpt6-luna-20260922-r6",
+  "releaseId": "smartlingo-v2-contextual-everyday-dialogue-20260922-r7",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo V2 第六轮：测评优先、日语实景与 GPT-6 Luna",
-    "en": "SmartLingo V2 round six: placement-first onboarding, Japanese scenes, and GPT-6 Luna"
+    "zh": "SmartLingo V2 第七轮：场景词汇穿插问答与横屏一屏学习",
+    "en": "SmartLingo V2 round seven: contextual dialogue and landscape lesson fit"
   },
   "purpose": {
-    "zh": "让新学员先测评再得到课程起点建议，提供日语离线实景对话，并将文字 AI 默认模型升级为 GPT-6 Luna；保留站点专用密钥的条件同步路径。",
-    "en": "Recommend a starting course after placement, provide offline Japanese dialogues, and upgrade the default text AI model to GPT-6 Luna while retaining conditional sync for site-owned credentials."
+    "zh": "缩短从进入生活口语到首次一问一答的距离，并让横屏学员不必滚动才能看到场景操作。",
+    "en": "Reach the first exchange sooner and keep the scene and its actions together in a landscape learner viewport."
   },
   "features": {
     "zh": [
-      "新用户默认选择十五题定位测评，不需先自报等级；仍可明确选择从基础开始或自行选级别，保存计划不会自动启动 Max 试用。",
-      "日语咖啡店和杂货店初级各增加十组任务连贯的店员与学员问答，可在无在线 AI 时加载。",
-      "沿用 Konectible 已验证的条件密钥同步；文字 AI 改用 GPT-6 Luna，旧缓存保留审计但不作为新版本内容；语音、图像及审核仍使用专用模型。"
+      "在已有十组店员与学员问答之间均匀穿插场景词；首组问答在最多两张词卡后出现，保留看图、听音、选答和原有十组题目。",
+      "词卡和对话继续共用已验证的生活口语播放器与慢速语音控制；词卡提示改为准确说明正在学习场景词。",
+      "学习位置使用新版本 Cookie，避免旧课程顺序保存的数字使学员恢复到错误的词句。",
+      "横屏短视口自动缩小场景、词图、文字与控件间距，使示范画面、提示和操作按钮在同一屏可见；竖屏布局不变。"
     ],
     "en": [
-      "New learners default to a 15-item placement assessment rather than self-reporting a level; fundamentals and manual level selection remain available, and saving a goal never starts a Max trial.",
-      "Add ten coherent beginner staff–learner exchanges each for Japanese cafe and grocery scenarios that load without online AI.",
-      "Reuse verified Konectible conditional credential sync. Text AI now uses GPT-6 Luna; legacy caches remain auditable but are not served as new-release content, while speech, image, and moderation retain purpose-built models."
+      "Interleave scene words among the existing ten staff–learner exchanges. The first exchange appears after at most two word cards while preserving picture, audio, reply choices, and all ten authored pairs.",
+      "Keep the verified Everyday Speaking player and slow-speech control; label word steps accurately as scene-word learning.",
+      "Version the resume cookie so an index saved for the old sequence cannot reopen the wrong word or dialogue turn.",
+      "Compact the scene, word picture, text, and controls in short landscape viewports so the lesson actions remain in view without changing portrait layouts."
     ]
   },
   "affected": {
     "zh": [
-      "影响语言规划页、日语初级咖啡店与杂货店、文字 AI 路由、内容缓存及生产发布；价格、支付、既有学习记录和用户资料不变。"
+      "影响生活口语的初级、中级和高级场景顺序及横屏播放器布局，包括预构建日语咖啡店、食品店以及已审核或动态生成的对话；不改变词图、价格、会员权限、成绩或支付。"
     ],
     "en": [
-      "Affects planning, beginner Japanese cafe and grocery content, text AI routing, content caches, and deployment; prices, checkout, existing learning records, and profiles are unchanged."
+      "Affects Beginner, Intermediate, and Advanced Everyday Speaking deck order and landscape layout, including prebuilt Japanese cafe and grocery scenes and reviewed or generated dialogue; picture assets, prices, entitlements, scores, and checkout are unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "规划页面将起点方式提前，测评路径默认使用免费的初级七日课程承载题目，测评完成后再推荐等级；修复课程列表请求不可达问题。日语新增两组预构建场景；文字 AI 使用 GPT-6 Luna，迁移缓存约束并刷新内容发布时间戳；修复发布报告 SQL 引号测试误报。"
+      "在现有组卡函数中调整词汇和成对问答的编排；新增跨场景行为测试。使用现有播放器 CSS 的横屏高度规则缩小媒体舞台、词图和控件，不复制另一套播放器。"
     ],
     "en": [
-      "Move placement ahead of manual courses, restore the joined-course fetch, add two offline Japanese scene sets, and conditionally sync site-owned AI secrets. Set GPT-6 Luna as the text model, migrate cache constraints and release timestamps, and fix the deployment-report SQL-escaping test."
+      "Adjust the existing deck assembly with cross-scene behavioral coverage. Add landscape-height rules to the existing player CSS for the media stage, word picture, and controls; no parallel player is introduced."
     ]
   },
   "validation": {
     "zh": [
-      "464 项完整测试、TypeScript、零警告 lint、生产构建与敏感扫描通过；84 项 D1 迁移两次重放，且带旧缓存数据的 GPT-6 Luna 升级测试通过；生产浏览器验收待 CI 发布后执行。",
-      "Safari 核对 SmartLingo GitHub Actions 当前没有 OpenAI 或 DeepSeek 密钥；密钥同步步骤会跳过，不能据此宣称生产 AI 已恢复。上一推送因发布报告对英文单引号的测试误报停在源码测试阶段，本轮已修复，尚待重新发布。"
+      "完整测试、TypeScript、零警告 lint、生产构建、敏感信息扫描及 WebKit 中英多尺寸布局检查作为本轮发布门槛；生产 Chrome 访客流程在确切部署版本上线后复测。"
     ],
     "en": [
-      "All 464 tests, TypeScript, zero-warning lint, production build, and sensitive scan pass; all 84 D1 migrations replay twice, including a seeded legacy-cache GPT-6 Luna upgrade test. Production-browser acceptance follows CI deployment.",
-      "Safari confirms no OpenAI or DeepSeek secrets in SmartLingo GitHub Actions, so conditional sync skips and production AI is not restored. The previous push stopped in source tests on a SQL-apostrophe assertion; this round fixes it and awaits redeployment."
+      "Full tests, TypeScript, zero-warning lint, production build, sensitive-data scan, and bilingual WebKit viewport checks are release gates; the anonymous production Chrome flow is retested on the exact deployed version."
     ]
   },
   "deferred": {
     "zh": [
-      "没有站点专用 AI 密钥时，需 AI 的场景会继续离线兜底；创建可计费新密钥须另行授权并经生产复测。",
-      "日语离线覆盖目前仅 2/36 个场景×等级单元，尚未经母语者审校；实时语音和普通付费账号端到端验收未完成。"
+      "Max 角色导师仍独立关闭，待普通付费测试用户的真实端到端验收；尚未审核的语言对话继续显示内容不可用，而不会教错误翻译。"
     ],
     "en": [
-      "Without a site-owned AI credential, AI-dependent scenarios continue to fall back offline. A new billable credential requires separate authorization and production retesting.",
-      "Japanese offline coverage is 2/36 scene–level units and awaits native-speaker review; live voice and ordinary paid-member end-to-end acceptance remain unfinished."
+      "The Max role tutor remains independently gated until real ordinary paid-member acceptance. Unreviewed language dialogues continue to show unavailable content rather than teaching mismatched translations."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "仅将 Konectible 已验证的可选 AI 密钥同步方式适配 SmartLingo 独立 Cloudflare 流程；日语场景只复用 SmartLingo 既有教学题组结构。"
+      "这是 SmartLingo 专属教学编排改进，复用本地生活口语组卡、播放器与测试，不迁移其他站点代码或数据。"
     ],
     "en": [
-      "Adapt only Konectible's verified optional AI-secret sync to SmartLingo's isolated Cloudflare workflow; Japanese scenes reuse SmartLingo's existing lesson-set structure."
+      "This is SmartLingo-specific lesson sequencing, reusing its local deck builder, player, and tests without migrating another site's code or data."
     ]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": ["0188_gpt6_luna_text_generation"],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "zh": "本轮重建两个内容缓存表并保留原行；如需回退运行代码，可恢复上一成功提交，但迁移后的数据库约束需保持向前兼容，不要直接删除历史缓存。",
-      "en": "This round rebuilds two content-cache tables while preserving rows. Revert application code to the prior successful commit if needed; keep the forward-compatible database constraints and do not delete historical cache rows."
+      "zh": "如需回退，可恢复上一成功提交；旧进度 Cookie 与新版键分离，不必修改数据库。",
+      "en": "Revert to the prior successful commit if needed. The prior progress cookie remains separate from the versioned key; no database rollback is required."
     }
   }
 }

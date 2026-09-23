@@ -106,6 +106,10 @@ test("Japanese beginner grocery completes ten actual shopping exchanges offline"
   assert.equal(database.writes, 0);
   const deck = await buildEverydaySpeakingDeckFromDatabase({ database, sceneId: "grocery", language: "ja", level: "beginner" });
   assert.equal(deck.filter(item => item.kind === "sentence").length, 20);
+  assert.equal(deck[0]?.kind, "word");
+  assert.equal(deck[1]?.role, "staff");
+  assert.equal(deck[2]?.role, "learner");
+  assert.ok(deck.slice(3).some(item => item.kind === "word"), "later shopping words are interleaved with the next exchanges");
   assert.deepEqual(deck.filter(item => item.kind === "sentence").map(item => item.form), lines.map(line => line.target));
   for (const word of ["卵", "肉", "野菜"]) assert.ok(deck.some(item => item.kind === "word" && item.form === word));
 });

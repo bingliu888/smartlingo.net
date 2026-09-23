@@ -65,7 +65,19 @@ export function buildEverydaySpeakingDeck(language: SmartLingoCommunityLanguage,
     ? essentialVocabulary.map((item, index) => ({ id:`${scene.id}-${level}-word-${index + 1}`,kind:"word" as const,form:item.forms[language],pronunciation:item.pronunciation?.[language] || "",meaningZh:item.meaningZh,meaningEn:item.meaningEn,stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(item.forms[language],item.meaningZh,item.meaningEn),...attributes(index) }))
     : vocabularyDays.flatMap((day,stageIndex)=>beginnerVocabularySeedsForDay(language,day).map((seed,itemIndex)=>({id:`${scene.id}-${level}-word-${stageIndex + 1}-${itemIndex + 1}`,kind:"word" as const,form:seed[0],pronunciation:seed[1],meaningZh:seed[2],meaningEn:seed[3],stageZh:vocabularyStage.zh,stageEn:vocabularyStage.en,imageKey:beginnerVocabularyImageKey(seed[0],seed[2],seed[3]),...attributes(stageIndex * 10 + itemIndex)})));
   const sentences = dialogueSlides(scene.id, level, prebuiltEverydayDialogueLines(scene.id, language, level));
-  return [...vocabulary, ...sentences];
+  return interleaveSceneVocabularyAndDialogue(vocabulary, sentences);
+}
+
+function interleaveSceneVocabularyAndDialogue<W extends { kind: "word" }, S extends { kind: "sentence" }>(vocabulary: readonly W[], sentences: readonly S[]) {
+  if (!sentences.length) return [...vocabulary];
+  const pairCount = Math.ceil(sentences.length / 2);
+  const deck: (W | S)[] = [];
+  for (let pair = 0; pair < pairCount; pair += 1) {
+    const wordStart = Math.ceil(pair * vocabulary.length / pairCount);
+    const wordEnd = Math.ceil((pair + 1) * vocabulary.length / pairCount);
+    deck.push(...vocabulary.slice(wordStart, wordEnd), ...sentences.slice(pair * 2, pair * 2 + 2));
+  }
+  return deck;
 }
 
 function dialogueSlides(sceneId: SmartLingoEverydayScenarioId, level: SmartLingoLevel, lines: readonly EverydayDialogueLine[]) {
@@ -96,5 +108,5 @@ export async function buildEverydaySpeakingDeckFromDatabase(input: {
   const baseDeck = buildEverydaySpeakingDeck(input.language, input.sceneId, level);
   const vocabulary = baseDeck.filter(item => item.kind === "word");
   const dialogue = await everydayDialogueLines({ database: input.database, sceneId: input.sceneId, language: input.language, level });
-  return [...vocabulary, ...dialogueSlides(input.sceneId, level, dialogue.lines)];
+  return interleaveSceneVocabularyAndDialogue(vocabulary, dialogueSlides(input.sceneId, level, dialogue.lines));
 }

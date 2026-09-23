@@ -58,6 +58,21 @@ test("every authored staff question offers one answer and two distinct distracto
   assert.equal(tested, 740, "English/Chinese source pairs plus twenty offline Japanese beginner pairs");
 });
 
+test("scene words are introduced beside dialogue instead of delaying the first exchange", () => {
+  for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
+    for (const language of ["en", "zh", ...(scene.id === "cafe" || scene.id === "grocery" ? ["ja"] : [])]) {
+      for (const level of ["beginner", "intermediate", "advanced"]) {
+        if (language === "ja" && level !== "beginner") continue;
+        const deck = buildEverydaySpeakingDeck(language, scene.id, level);
+        const firstQuestion = deck.findIndex(slide => slide.kind === "sentence" && slide.role === "staff");
+        assert.ok(firstQuestion > 0 && firstQuestion <= 2, `${language}/${scene.id}/${level} reaches a real exchange after at most two words`);
+        assert.equal(deck[firstQuestion + 1]?.role, "learner", "the staff and learner turns stay adjacent");
+        assert.ok(deck.slice(firstQuestion + 2).some(slide => slide.kind === "word"), "later words are learned in context");
+      }
+    }
+  }
+});
+
 test("unreviewed locales never receive the unrelated find-the-venue sentence bank as dialogue", async () => {
   const source = await read("../lib/smartlingo-everyday-dialogues.ts");
   assert.doesNotMatch(source, /buildCourseSentenceBank/);

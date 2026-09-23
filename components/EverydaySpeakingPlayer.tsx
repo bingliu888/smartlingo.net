@@ -97,7 +97,9 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
   const challengeTotal = slides.filter(item => item.kind === "sentence" && item.role === "staff").length;
   const challengeAnswered = completedPairs.length;
   const challengePerfect = perfectPairs.length;
-  const progressCookie = `smartlingo_everyday_${language}_${scene.id}_${level}`;
+  // The deck now alternates scene words and dialogue; old slide indexes no longer
+  // point at the same content, so resume progress must start a new version.
+  const progressCookie = `smartlingo_everyday_v2_${language}_${scene.id}_${level}`;
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
@@ -437,8 +439,8 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
     ? scene.motionMedia[(slide.pairIndex ?? Math.floor(Math.max(0, sentenceIndex) / 2)) % scene.motionMedia.length]
     : scene.image;
   const speakerLabel = slide.kind === "word" ? (zh ? "场景词汇教练" : "Vocabulary guide") : customerTurn ? (zh ? "顾客 / 学习者" : "Customer / learner") : (zh ? "工作人员" : "Staff member");
-  return <section className="everyday-player" data-layout-fill="everyday-speaking-player">
-    <header className="everyday-player-heading">
+  return <section className="everyday-player">
+    <header className="everyday-player-heading" data-layout-overlap-check="everyday-lesson-heading">
       <div><p>{languageName} · {levelName} · {zh ? "生活口语" : "Everyday speaking"}</p><h1>{zh ? scene.nameZh : scene.nameEn}</h1><span>{zh ? scene.goalZh : scene.goalEn}</span></div>
       <aside><strong>{repeatAfterMe ? bestScore : `${challengeAnswered}/${challengeTotal}`}</strong><span>{repeatAfterMe ? (zh ? "本轮最高跟读分" : "Best speaking score") : (zh ? "已完成场景问答" : "Scene replies completed")}</span></aside>
     </header>
@@ -451,14 +453,14 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
       <div className={`everyday-conversation-person ${customerTurn ? "customer" : "staff"}`} aria-hidden="true"><span>{customerTurn ? "👤" : "●"}</span><i>{speakerLabel}</i></div>
       <div className={`everyday-copy ${customerTurn ? "customer-turn" : "staff-turn"}`}>
         <p>{levelName} · {index + 1} / {slides.length} · {zh ? slide.stageZh : slide.stageEn}</p>
-        <small>{speakerLabel} · {repeatAfterMe ? (zh ? "请跟我说" : "REPEAT AFTER ME") : (zh ? "先听真实对话" : "LISTEN IN CONTEXT")}</small>
+        <small>{speakerLabel} · {repeatAfterMe ? (zh ? "请跟我说" : "REPEAT AFTER ME") : slide.kind === "word" ? (zh ? "认识一个场景词" : "LEARN ONE SCENE WORD") : (zh ? "先听真实对话" : "LISTEN IN CONTEXT")}</small>
         {slide.kind === "word" ? <><VocabularyPicture imageKey={slide.imageKey} label={zh ? slide.meaningZh : slide.meaningEn} className="everyday-word-picture"/><div className="everyday-word-metrics"><span>{zh ? "难度" : "Difficulty"} {slide.difficulty || 1}/5</span><span>{zh ? "常用度" : "Frequency"} {slide.frequencyDegree || 10}/10</span><span>{vocabularyGradeLabel(slide.gradeLevel, zh ? "zh" : "en")}</span></div></> : null}
         <h2>{slide.form}</h2>
         <b>{slide.pronunciation}</b>
         <span>{zh ? slide.meaningZh : slide.meaningEn}</span>
         <em aria-live="polite">{message}</em>
       </div>
-      {!started ? <button className="everyday-start" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始真实场景对话" : "Start the real-life conversation"}</strong><small>{repeatAfterMe ? (zh ? "人物对话 · 每句跟读 3 次 · 即时评分" : "Role-play · repeat each line 3 times · instant scores") : (zh ? "人物对话 · 场景词汇 · 听完继续" : "Role-play · scene vocabulary · listen and continue")}</small></button> : null}
+      {!started ? <button className="everyday-start" data-layout-allow-overlap="intentional" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始真实场景对话" : "Start the real-life conversation"}</strong><small>{repeatAfterMe ? (zh ? "人物对话 · 每句跟读 3 次 · 即时评分" : "Role-play · repeat each line 3 times · instant scores") : (zh ? "人物对话 · 场景词汇 · 听完继续" : "Role-play · scene vocabulary · listen and continue")}</small></button> : null}
       {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? `完成 ${challengeAnswered}/${challengeTotal} 组问答，其中 ${challengePerfect} 组首次答对。再玩一次巩固短句，或选择其他场景。` : `Completed ${challengeAnswered}/${challengeTotal} exchanges, with ${challengePerfect} correct on the first try. Replay or choose another scene.`}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${siteLang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
     </div>
     {complete ? <section className="everyday-finish-next" aria-labelledby="everyday-finish-next-title">
@@ -470,7 +472,7 @@ export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, langua
       <div className="everyday-reply-options">{answerChallenge.choices.map(option => <button type="button" key={option.id} disabled={choiceSolved || choiceRejected.includes(option.id)} className={choiceSolved && option.id === answerChallenge.answerId ? "correct" : choiceRejected.includes(option.id) ? "rejected" : ""} onClick={() => chooseReply(option.id)} dir={direction}>{option.form}</button>)}</div>
       {choiceFeedback ? <p className={choiceSolved ? "everyday-reply-feedback solved" : "everyday-reply-feedback"} role="status">{choiceFeedback}{choiceSolved ? <button type="button" onClick={() => { speakLearningText(answerChallenge.answer.form, speechLocale, modelRate); }}>{zh ? "🔊 听示范回答" : "🔊 Hear the model reply"}</button> : null}</p> : null}
     </section> : null}
-    <div className="everyday-controls" aria-label={zh ? "幻灯片控制" : "Slide controls"}>
+    <div className="everyday-controls" aria-label={zh ? "幻灯片控制" : "Slide controls"} data-layout-overlap-check="everyday-lesson-actions">
       <button onClick={() => move(0)} disabled={index === 0} aria-label={zh ? "第一张" : "First slide"}>≪</button>
       <button onClick={() => move(index - 1)} disabled={index === 0} aria-label={zh ? "上一张" : "Previous slide"}>‹</button>
       <button className={modelRate > .7 ? "everyday-repeat-toggle on" : "everyday-repeat-toggle"} type="button" aria-pressed={modelRate > .7} onClick={() => { setModelRate(.84); setDemoNonce(value => value + 1); }}>🔊 {zh ? "正常语速" : "Normal"}</button>
