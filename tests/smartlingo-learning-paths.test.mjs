@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   SMARTLINGO_LEARNING_CONTENT_VERSION,
+  SMARTLINGO_PLACEMENT_CONTENT_VERSION,
   SMARTLINGO_SKILLS,
   generateAdaptivePlacementQuestions,
 } from "../lib/smartlingo-learning.ts";
@@ -154,7 +155,11 @@ test("placement remains fifteen unique original versioned items, starts at inter
     assert.equal(questions.length, 15);
     assert.equal(new Set(questions.map(question => question.id)).size, 15);
     assert.ok(questions.every(question => question.sourceType === "smartlingo_original"));
-    assert.ok(questions.every(question => question.contentVersion === SMARTLINGO_LEARNING_CONTENT_VERSION));
+    assert.ok(questions.every(question => question.contentVersion === SMARTLINGO_PLACEMENT_CONTENT_VERSION));
+    assert.equal(new Set(questions.map(question => question.scenarioId)).size, 12);
+    for (const skill of SMARTLINGO_SKILLS) {
+      assert.equal(new Set(questions.filter(question => question.skill === skill).map(question => question.scenarioId)).size, 3);
+    }
     assert.ok(SMARTLINGO_SKILLS.every(skill => questions.find(question => question.skill === skill && question.round === 1)?.level === "intermediate"));
     for (const question of questions.filter(question => question.skill === "writing" || question.skill === "dialogue")) {
       assert.equal(typeof question.context, "object");

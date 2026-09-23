@@ -611,7 +611,7 @@ function responseText(data: ResponsesData) {
 
 const PUBLIC_GURU_FALLBACK = {
   zh: "智能导师暂时无法连接。您仍可选择语言、查看固定三级课程或继续每日练习。每门课程均由 SmartLingo 管理员维护，会员不能自行创建课程或收费。请勿提交敏感个人资料，稍后再试。",
-  en: "Guru is temporarily unable to connect. You can still review Language Paths, continue daily practice, open Classes to create or join a private language class, or use Community and Messages. Please do not submit sensitive personal information, and try again later.",
+  en: "Guru is temporarily unable to connect. You can still choose a language, continue free Beginner practice, or visit the learning Community. SmartLingo courses are maintained by administrators. Please do not submit sensitive personal information, and try again later.",
 } as const;
 
 const CHAT_GURU_FALLBACK = {

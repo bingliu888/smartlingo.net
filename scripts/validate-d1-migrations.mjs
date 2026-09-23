@@ -1705,7 +1705,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0186_free_max_course_access");
+  assert.equal(migrations.at(-1)?.tag, "0187_role_tutor_sessions");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(

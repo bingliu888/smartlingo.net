@@ -55,6 +55,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
     <SiteHeader lang={lang}/>
     <EverydaySpeakingPlayer
       lang={zh ? "zh" : "en"}
+      siteLang={lang}
       language={language}
       languageName={`${selected.nativeName} · ${zh ? selected.nameZh : selected.nameEn}`}
       speechLocale={selected.speechLocale}
@@ -62,6 +63,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
       scene={scene}
       level={level}
       slides={slides}
+      roleTutorEnabled={process.env.SMARTLINGO_ROLE_TUTOR_ENABLED === "1"}
     />
     <SiteFooter lang={lang}/>
     </main>;

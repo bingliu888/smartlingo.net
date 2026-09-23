@@ -74,7 +74,8 @@ export async function POST(request: Request) {
 
   const now = Math.floor(Date.now() / 1000);
   const tier = level === "beginner" ? "basic" : level;
-  const tierAccess = await hasCourseTierAccess(user, tier, { startMaxTrial: level !== "beginner" });
+  // Saving a course preference must never consume the one-time Max trial.
+  const tierAccess = await hasCourseTierAccess(user, tier);
   const maxActive = tierAccess.maxActive;
   const accessType = level === "beginner" ? "free" : maxActive ? (tierAccess.trialStarted ? "max_trial" : "max") : "max_required";
   const status = tierAccess.allowed ? "active" : "pending_payment";

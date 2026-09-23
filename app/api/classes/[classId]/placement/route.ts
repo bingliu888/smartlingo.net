@@ -3,7 +3,7 @@ import {
   evaluatePlacement,
   generateAdaptivePlacementQuestions,
   scorePlacementAnswer,
-  SMARTLINGO_LEARNING_CONTENT_VERSION,
+  SMARTLINGO_PLACEMENT_CONTENT_VERSION,
   SMARTLINGO_LEARNING_LANGUAGE_CODES,
   type AdaptivePlacementObservation,
   type PlacementAnswerScore,
@@ -211,10 +211,24 @@ async function placementState(
   };
   if (!attempt) return base;
   const rows = attempt.entryMode === "adaptive" ? await responseRows(database, attempt.id) : [];
+  const restartRequired = rows.some(row => row.itemVersion !== SMARTLINGO_PLACEMENT_CONTENT_VERSION);
   const language = isLearningLanguage(access.targetLanguage) ? access.targetLanguage : null;
-  const questions = language && attempt.entryMode === "adaptive"
+  const questions = language && attempt.entryMode === "adaptive" && !restartRequired
     ? generateAdaptivePlacementQuestions(language, observationsFromRows(rows), attempt.id)
     : [];
+  const evaluation = attempt.status === "completed" && rows.length === TOTAL_PLACEMENT_ITEMS && !restartRequired
+    ? evaluatePlacement(rows.flatMap(row => {
+      const matched = questions.find(question => question.id === row.itemKey);
+      return matched ? [{
+        questionId: matched.id,
+        skill: matched.skill,
+        round: matched.round,
+        level: matched.level,
+        score: row.score ?? 0,
+        skipped: Boolean(row.skipped),
+      } satisfies PlacementAnswerScore] : [];
+    }))
+    : null;
   const question = attempt.status === "in_progress" ? questions[rows.length] ?? null : null;
   const currentIndex = attempt.entryMode === "adaptive"
     ? Math.min(TOTAL_PLACEMENT_ITEMS, rows.length)
@@ -233,6 +247,9 @@ async function placementState(
       overallScore: attempt.overallScore,
       recommendedLevel: attempt.recommendedLevel,
       selfSelected: attempt.entryMode !== "adaptive",
+      restartRequired,
+      confidence: evaluation?.isComplete ? evaluation.confidence : null,
+      skillEvidence: Object.fromEntries((evaluation?.skills ?? []).map(skill => [skill.skill, skill.roundsCompleted])),
       skillScores: {
         vocabulary: attempt.vocabularyScore,
         reading: attempt.readingScore,
@@ -377,7 +394,13 @@ export async function POST(
     }
     if (action === "restart") {
       if (existing && (existing.status === "in_progress" || existing.status === "paused")) {
-        return Response.json(await placementState(auth.database, auth.user.id, auth.access, uiLanguage));
+        const oldRows = existing.entryMode === "adaptive" ? await responseRows(auth.database, existing.id) : [];
+        if (!oldRows.some(row => row.itemVersion !== SMARTLINGO_PLACEMENT_CONTENT_VERSION)) {
+          return Response.json(await placementState(auth.database, auth.user.id, auth.access, uiLanguage));
+        }
+        await auth.database.prepare(`UPDATE smartlingo_placement_attempts SET status = 'abandoned',
+          last_resumed_at = NULL, updated_at = ? WHERE id = ? AND user_id = ?`)
+          .bind(Math.floor(Date.now() / 1000), existing.id, auth.user.id).run();
       }
     }
     if (auth.access.classKind === "official_language") await ensureFreePlacementMembership(auth.database, auth.classId, auth.user.id);
@@ -431,7 +454,7 @@ export async function POST(
 
   const duplicate = await auth.database.prepare(`SELECT id FROM smartlingo_placement_responses
     WHERE attempt_id = ? AND item_key = ? AND item_version = ? LIMIT 1`)
-    .bind(attempt.id, itemId, SMARTLINGO_LEARNING_CONTENT_VERSION).first<{ id: string }>();
+    .bind(attempt.id, itemId, SMARTLINGO_PLACEMENT_CONTENT_VERSION).first<{ id: string }>();
   if (duplicate) {
     return Response.json(await placementState(auth.database, auth.user.id, auth.access, uiLanguage));
   }
@@ -439,6 +462,9 @@ export async function POST(
     return Response.json({ error: "Resume the placement before answering" }, { status: 409 });
   }
   const rowsBefore = await responseRows(auth.database, attempt.id);
+  if (rowsBefore.some(row => row.itemVersion !== SMARTLINGO_PLACEMENT_CONTENT_VERSION)) {
+    return Response.json({ error: "Placement content has changed. Restart this assessment to get the current questions.", code: "PLACEMENT_VERSION_CHANGED" }, { status: 409 });
+  }
   const questions = generateAdaptivePlacementQuestions(
     targetLanguage,
     observationsFromRows(rowsBefore),
@@ -518,10 +544,11 @@ export async function POST(
         auth.user.id,
       ).run();
     for (const skill of evaluation.skills) {
+      if (!skill.roundsCompleted) continue;
       await auth.database.prepare(`INSERT OR IGNORE INTO smartlingo_learning_activity_events
         (id, user_id, class_id, attempt_id, domain, activity_type, duration_seconds,
          units, score, source_type, source_id, created_at)
-        VALUES (?, ?, ?, ?, ?, 'placement', ?, 3, ?, 'placement_skill', ?, ?)`)
+        VALUES (?, ?, ?, ?, ?, 'placement', ?, ?, ?, 'placement_skill', ?, ?)`)
         .bind(
           createId(),
           auth.user.id,
@@ -529,6 +556,7 @@ export async function POST(
           attempt.id,
           skill.skill,
           Math.round(activeSeconds / 5),
+          skill.roundsCompleted,
           skill.score,
           `${attempt.id}:${skill.skill}`,
           now,

@@ -72,7 +72,7 @@ test("Beginner is free while higher levels receive one bounded Max trial before 
   assert.match(entitlements, /tier === "basic"/);
   assert.match(accessSource, /hasCourseTierAccess/);
   assert.match(enroll, /MAX_REQUIRED/);
-  assert.match(enroll, /startMaxTrial: course\.packageTier !== "basic"/);
+  assert.match(enroll, /startMaxTrial: course\.packageTier !== "basic" && startMaxTrial/);
   assert.match(classroom, /hasCourseTierAccess/);
   assert.match(roster, /LEFT JOIN subscriptions/);
   assert.match(roster, /Course-level subscriptions have been retired/);

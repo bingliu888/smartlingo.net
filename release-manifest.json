@@ -1,73 +1,89 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-dialogue-placement-20260922-r2",
+  "releaseId": "smartlingo-v2-explicit-trial-placement-20260922-r3",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo V2 第二轮：真实对话语料、免费定级与安全回退",
-    "en": "SmartLingo V2 round two: real-life dialogue, free placement, and safe fallback"
+    "zh": "SmartLingo V2 第三轮：显式 Max 试用与证据驱动定级",
+    "en": "SmartLingo V2 round three: explicit Max trial and evidence-based placement"
   },
   "purpose": {
-    "zh": "修复非中英场景在生成失败时把寻找场所的句子误当成店内回答的问题；以真实生活任务组织三级对话，并让学习者先测评、再查看适合自己的课程。",
-    "en": "Prevent failed non-English/Chinese localization from substituting venue-finding phrases for in-scene answers; organize all three dialogue bands around real tasks and restore assessment-first course discovery."
+    "zh": "免费学习规划不再暗中消耗一次性 Max 试用；定级改用更广的真实场景，并显示证据与置信度。",
+    "en": "Free learning planning no longer silently consumes the one-time Max trial; placement uses broader real-life scenes with visible evidence and confidence."
   },
   "features": {
     "zh": [
-      "12 个生活场景各新增 10 组中级和 10 组高级英中对话，共 240 组；初级原有 120 组保留。中级处理真实变化，高级练习错单、缺货、延误等补救。",
-      "其他 10 种学习语言的对话按同一场景语义源生成；检查成对顺序、目标文字、双语释义与去重后才缓存。生成失败时提示重试，不再展示不匹配的导航句。",
-      "语言课程详情以免费五技能定级为主入口，并可自行改选等级；查看课程和定级 GET 均不启动 Max 试用。",
-      "场景完成后免费重玩和换场景仍为优先操作；额外展示明确标注的免费 AI 学伴及准确描述当前权益的 Max 入口。",
-      "尚未上线的实时 Max 语音导师端点保持关闭，消除旧订阅状态判断；未来启用前须完成任务绑定、成本/时长上限和浏览器验收。"
+      "保存非初级课程偏好不再启动 Max；只有明确标注 7 天且不会自动收费的课程详情按钮才可申请试用。",
+      "十二种学习语言的五技能定级各有 15 题，跨 12 个场景；跳题不计错，低证据降低置信度，结果可改选。",
+      "旧版未完成测评与新版题目隔离，推荐等级指向实际课程。",
+      "新增受控的 Max 场景文字导师基础设施，但入口和接口默认关闭，尚未作为付费权益上线。",
+      "登录与 AI 兜底文案修正为真实 Free/Max 模式。"
     ],
     "en": [
-      "Add ten Intermediate and ten Advanced bilingual source exchanges to each of twelve places, 240 new pairs, retaining 120 original Beginner pairs. Higher bands handle realistic changes and recovery.",
-      "Localize the same scene intent for ten other target languages. Cache only sets that pass pair order, target-script, meaning metadata, and uniqueness checks; failed generation shows an honest retry state instead of mismatched navigation drills.",
-      "Lead language-course discovery with free five-skill placement while preserving manual level choice; course previews and placement GET do not start a Max trial.",
-      "Keep free replay and scene change primary at completion; offer a clearly labeled free AI study partner and a Max link describing only currently available benefits.",
-      "Keep the unshipped live Max voice endpoint closed and remove legacy subscription-state checks until task binding, cost/duration caps, and browser acceptance are ready."
+      "Saving a higher-level course preference no longer starts Max; only the clearly labeled seven-day course-detail action can request the trial.",
+      "Five-skill placement across twelve target languages now uses fifteen tasks spanning twelve places; skips are not errors, low evidence lowers confidence, and learners can override the result.",
+      "Separate unfinished legacy assessments from the new bank and route recommendations to actual courses.",
+      "Add gated Max scene-based text-tutor infrastructure, with entry and API off by default; this is not a launched paid benefit.",
+      "Correct login and AI-fallback copy to the real Free/Max model."
     ]
   },
   "affected": {
-    "zh": ["生活口语十二场景、定级与语言课程入口、完成页引导、未上线实时语音端点；Free/Max 价格与支付保持不变。"],
-    "en": ["Twelve Everyday Speaking scenes, placement and language-course discovery, completion guidance, and the dormant live-voice endpoint; no change to Free/Max prices or checkout."]
+    "zh": [
+      "学习规划、官方课程报名、五技能定级、登录文案，以及关闭状态的导师表和接口；价格与支付不变。"
+    ],
+    "en": [
+      "Learning-plan save, official-course enrollment, placement, login copy, and dormant tutor table and API; prices and checkout are unchanged."
+    ]
   },
   "changes": {
     "zh": [
-      "以每场景、每等级的任务问答替代跨场景通用高级后缀，英中课程展示对应的真实对话。",
-      "取消非中英语言从导航句库拼接回退；旧的 safe-fallback 缓存不再可用，新本地化内容只在验证后写入。",
-      "定级打开页只读，点击开始时才创建免费语言社区成员与测评记录；结果指向推荐课程，用户可改选。",
-      "实时语音端点要求显式功能开关、有效 Max 权益及同源请求，当前未配置开关，因此不对用户开放。"
+      "快速课程 POST 只读取 Max 权益；报名仅在同源请求显式携带 startMaxTrial=true 时才可启动一次性试用。",
+      "规划页先保存选择；非初级转到只读详情，由用户自愿开始试用；初级仍免费。",
+      "定级题版本升级，扩充场景来源，纠正跳题和低样本评分，显示作答数、跳题数与置信度。",
+      "文字导师限固定场景和角色，校验 Max、同源、轮数、时间、并发与每日配额；最近四组问答只供短期上下文，到期后由站点定时任务清理，功能开关未启用。"
     ],
     "en": [
-      "Replace generic cross-scene higher-level suffixes with task-specific dialogue sources; English and Chinese decks now show the matching real-life exchanges.",
-      "Remove non-English/Chinese navigation-sentence fallback, reject old safe-fallback cache entries, and persist only validated localized content.",
-      "Keep placement GET read-only; starting the assessment creates free language-community membership and an attempt. Results link to a recommended course with a manual override.",
-      "Require an explicit feature switch, current Max entitlement, and same-origin request for the dormant live-voice endpoint; the switch is not enabled."
+      "Quick-course POST only reads Max entitlement; enrollment starts the one-time trial solely when a same-origin explicit action sends startMaxTrial=true.",
+      "The planner saves first, then sends higher levels to read-only course detail for voluntary trial activation; Beginner remains free.",
+      "Version the assessment bank, broaden scene sources, correct skip and low-sample scoring, and display counts and confidence.",
+      "Constrain the text tutor to fixed scenes and roles with Max, origin, turn, time, concurrency, and daily-quota checks; purge four-exchange short-term context after expiry via site cron. The switch remains off."
     ]
   },
   "validation": {
     "zh": [
-      "TypeScript、全量零警告 lint、完整测试、生产构建和敏感信息扫描通过；行为测试覆盖错误回退不得缓存、合法本地化缓存复用及全部 12 场景三级语料。",
-      "发布后须以真实浏览器分别验收中文、英文与至少两种非中英学习语言，检查弱网失败提示与完成页引导。"
+      "TypeScript、零警告 ESLint、459 项完整测试、生产构建、敏感扫描和 WebKit 240 项版式检查通过；精确提交部署门禁仍需执行。",
+      "第二轮匿名生产浏览器测试：英语咖啡店入口及慢速状态可用；日语内容安全暂停，公开 AI 助手进入离线兜底。第三轮发布后须复测。"
     ],
     "en": [
-      "TypeScript, full zero-warning lint, complete tests, production build, and sensitive-data scan pass. Behavioral tests cover rejecting/caching localized sets and all twelve scene-level source briefs.",
-      "After deployment, verify Chinese, English, and at least two non-English/Chinese target-language scenes in a real browser, including unavailable-generation and completion guidance."
+      "TypeScript, zero-warning ESLint, all 459 tests, production build, sensitive scan, and the 240-case WebKit layout matrix pass; exact-commit deployment gates remain required.",
+      "Round-two anonymous production browser testing found the English café entry and slow-mode state working; Japanese content safely paused, and the public AI tutor returned its offline fallback. Recheck after release."
     ]
   },
   "deferred": {
-    "zh": ["Max 一对一实时角色导师、定级题库校准、其他 10 种语言的离线母语审校与全部界面语言的定级文案仍需后续轮次；不可宣传为已完成。"],
-    "en": ["The Max one-to-one live role tutor, assessment-bank calibration, offline native-language review for ten localized target languages, and placement copy in every interface language remain later-round work and must not be advertised as shipped."]
+    "zh": [
+      "生产 AI 提供商目前走兜底，日语等十种目标语缺少可用的预审场景对话；需诊断凭证或上游并离线预构建 360 套目标语对话。",
+      "Max 文字导师默认关闭；实时语音、母语审校、普通付费账号端到端验收及教育效果校准未完成，不可宣传为已上线。"
+    ],
+    "en": [
+      "The production AI provider currently falls back, and ten target languages lack available pre-reviewed scene dialogue; diagnose provider configuration or upstream and prebuild 360 target-language sets.",
+      "The Max text tutor remains off; live voice, native-language review, ordinary paid-member end-to-end acceptance, and learning-outcome calibration are unfinished and must not be advertised as live."
+    ]
   },
   "siteAdaptations": {
-    "zh": ["继续复用 SmartLingo 原有十二场景、图像媒体、五技能定级、AI 学伴与当前 Max 权益；不改定价或支付系统。"],
-    "en": ["Reuse existing SmartLingo scenes, visual media, five-skill placement, AI study partner, and Max entitlement without changing pricing or payment systems."]
+    "zh": [
+      "沿用 SmartLingo 现有 Free 初级、Max 权益、十二语言、生活场景、AI 网关及五分钟站点定时任务；支付方式不变。"
+    ],
+    "en": [
+      "Reuse SmartLingo Free Beginner and Max entitlements, twelve languages, real-life scenes, existing AI gateway, and five-minute site cron; payment methods are unchanged."
+    ]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": [
+      "0187_role_tutor_sessions"
+    ],
     "rollback": {
-      "zh": "如需回退，可恢复上一成功 Worker；数据库已有对话缓存按发布版本隔离，不删除用户学习记录。",
-      "en": "Rollback to the previous successful Worker if needed; dialogue cache keys are release-scoped and learner records are preserved."
+      "zh": "导师默认关闭；如需回退可恢复上一成功 Worker，保留独立新表供安全清理，不删除学习记录或订阅。",
+      "en": "The tutor is off by default; roll back to the prior successful Worker if needed and retain the isolated new table for safe cleanup without deleting learner records or subscriptions."
     }
   }
 }

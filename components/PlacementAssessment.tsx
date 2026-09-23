@@ -32,6 +32,9 @@ type Attempt = {
   overallScore: number | null;
   recommendedLevel: Level | null;
   selfSelected: boolean;
+  restartRequired: boolean;
+  confidence: "low" | "medium" | "high" | null;
+  skillEvidence: Partial<Record<Skill, number>>;
   skillScores: Partial<Record<Skill, number | null>>;
 };
 type PlacementState = {
@@ -67,6 +70,13 @@ const COPY = {
     score: "综合分",
     self: "这是您自选的起点，未生成五项测试分数。您可以稍后重新参加自适应分级。",
     provisional: "写作与对话使用透明的学习量表；智能导师反馈只作练习参考。此结果不是官方考试、学历或语言证书。",
+    evidence: "已作答 {answered} / 15 题 · 跳过 {skipped} 题 · 推荐信心：{confidence}",
+    confidence: { low: "低", medium: "中", high: "高" },
+    lowEvidence: "作答证据不足，暂从初级开始更稳妥。您可以直接选择其他等级，或重测以获得更可靠的建议。",
+    unmeasured: "未测",
+    oldVersion: "测评题库已更新。旧测评进度不会继续计分；您可以重新开始，原记录仍会保留。",
+    restartCurrent: "使用新题库重新测试",
+    manualHint: "如推荐起点不符合您的实际水平，可直接选择课程等级；这不会把自选等级伪装成测评分数。",
     learn: "查看推荐课程",
     calendar: "查看学习日历",
     class: "返回课程",
@@ -103,6 +113,13 @@ const COPY = {
     score: "Overall score",
     self: "This is your self-selected starting point, so no five-skill test scores were generated. You can take adaptive placement later.",
     provisional: "Writing and dialogue use a transparent learning rubric; AI Guru feedback is practice guidance only. This result is not an official exam, academic credential, or language certificate.",
+    evidence: "Answered {answered} / 15 · Skipped {skipped} · Recommendation confidence: {confidence}",
+    confidence: { low: "Low", medium: "Medium", high: "High" },
+    lowEvidence: "There is too little answer evidence for a confident placement. Beginner is the safer starting point. You can choose another level or retake the assessment.",
+    unmeasured: "Not tested",
+    oldVersion: "The placement bank has changed. Old progress will not be scored against the new questions. You can restart, and your earlier record will be retained.",
+    restartCurrent: "Restart with updated questions",
+    manualHint: "If the recommendation does not fit, choose a course level directly. A self-selected level is not presented as a test score.",
     learn: "View recommended course",
     calendar: "View learning calendar",
     class: "Back to course",
@@ -250,14 +267,21 @@ export function PlacementAssessment({ lang, routeLang = lang, classId }: { lang:
         </section>
       )}
 
-      {state?.attempt?.status === "paused" && (
+      {state?.attempt?.restartRequired && (
+        <section className="placement-paused" data-layout-fill="placement-paused">
+          <h2>{t.restartCurrent}</h2><p>{t.oldVersion}</p>
+          <button className="primary-button" type="button" disabled={busy} onClick={() => action({ action: "restart", mode: "adaptive" })}>{t.restartCurrent} →</button>
+        </section>
+      )}
+
+      {state?.attempt?.status === "paused" && !state.attempt.restartRequired && (
         <section className="placement-paused" data-layout-fill="placement-paused">
           <h2>{t.pause}</h2><p>{t.paused}</p>
           <button className="primary-button" type="button" disabled={busy} onClick={() => action({ action: "resume", attemptId: state.attempt?.id })}>{t.resume} →</button>
         </section>
       )}
 
-      {state?.attempt?.status === "in_progress" && state.question && (
+      {state?.attempt?.status === "in_progress" && !state.attempt.restartRequired && state.question && (
         <section className="placement-active" data-layout-fill="placement-active">
           <div className="placement-progress">
             <div><span>{t.progress}</span><b>{state.attempt.currentIndex + 1} / {state.attempt.totalItems} {t.item}</b></div>
@@ -291,22 +315,24 @@ export function PlacementAssessment({ lang, routeLang = lang, classId }: { lang:
         </section>
       )}
 
-      {state?.attempt?.status === "completed" && (
+      {state?.attempt?.status === "completed" && !state.attempt.restartRequired && (
         <section className="placement-result" data-layout-fill="placement-result">
           <div className="result-summary">
             <p className="section-kicker">{t.result}</p>
             <h2>{state.attempt.recommendedLevel ? t[state.attempt.recommendedLevel] : t.beginner}</h2>
             {state.attempt.overallScore !== null && <strong>{state.attempt.overallScore}<small>/ 100 · {t.score}</small></strong>}
+            {!state.attempt.selfSelected && state.attempt.confidence && <p>{t.evidence.replace("{answered}", String(state.attempt.answeredCount)).replace("{skipped}", String(state.attempt.skippedCount)).replace("{confidence}", t.confidence[state.attempt.confidence])}</p>}
+            {!state.attempt.selfSelected && state.attempt.confidence === "low" && <p>{t.lowEvidence}</p>}
             <p>{state.attempt.selfSelected ? t.self : t.provisional}</p>
           </div>
-          {!state.attempt.selfSelected && <div className="result-skills">{SKILLS.map(skill => <div key={skill}><span>{t.skills[skill]}</span><b>{state.attempt?.skillScores?.[skill] ?? 0}</b><progress max="100" value={state.attempt?.skillScores?.[skill] ?? 0} /></div>)}</div>}
+          {!state.attempt.selfSelected && <div className="result-skills">{SKILLS.map(skill => <div key={skill}><span>{t.skills[skill]}</span><b>{state.attempt?.skillEvidence?.[skill] ? state.attempt?.skillScores?.[skill] ?? 0 : t.unmeasured}</b><progress max="100" value={state.attempt?.skillEvidence?.[skill] ? state.attempt?.skillScores?.[skill] ?? 0 : 0} /></div>)}</div>}
           <div className="result-actions">
             {recommendedCourse && <Link className="primary-button" href={`/${routeLang}/classes/${encodeURIComponent(recommendedCourse)}`}>{t.learn} →</Link>}
             <Link className="secondary-button" href={`/${routeLang}/learning-log?classId=${encodeURIComponent(classId)}`}>{t.calendar}</Link>
             <Link className="text-link" href={`/${routeLang}/programs/${encodeURIComponent(state.class.targetLanguage)}`}>{t.class}</Link>
             <button className="text-link" type="button" disabled={busy} onClick={() => action({ action: "restart", mode: "adaptive" })}>{t.retry}</button>
           </div>
-          <details className="placement-manual placement-manual-result"><summary>{t.chooseMyself}</summary><div className="placement-levels">
+          <details className="placement-manual placement-manual-result"><summary>{t.chooseMyself}</summary><p>{t.manualHint}</p><div className="placement-levels">
             {(["beginner", "intermediate", "advanced"] as Level[]).map(level => <button key={level} type="button" disabled={busy} onClick={() => action({ action: "restart", mode: level })}>
               <span>{level === "beginner" ? "A1" : level === "intermediate" ? "A2" : "B1+"}</span><b>{t[level]}</b>
             </button>)}

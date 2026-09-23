@@ -575,6 +575,13 @@
       "when": 1789961400000,
       "tag": "0186_free_max_course_access",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "6",
+      "when": 1790100000000,
+      "tag": "0187_role_tutor_sessions",
+      "breakpoints": true
     }
   ]
 }

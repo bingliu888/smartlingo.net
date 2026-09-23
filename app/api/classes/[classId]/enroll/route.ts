@@ -22,8 +22,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ cla
   if (!course) return Response.json({ error: "Course not found" }, { status: 404 });
   if (Number(course.enrollmentCount) >= course.capacity) return Response.json({ error: "This course is full" }, { status: 409 });
 
+  let startMaxTrial = false;
+  if (request.headers.get("content-type")?.includes("application/json")) {
+    let body: { startMaxTrial?: unknown };
+    try { body = await request.json() as typeof body; }
+    catch { return Response.json({ error: "A valid JSON body is required" }, { status: 400 }); }
+    startMaxTrial = body.startMaxTrial === true;
+  }
+  if (startMaxTrial && request.headers.get("origin") !== new URL(request.url).origin) {
+    return Response.json({ error: "Invalid request origin" }, { status: 403 });
+  }
   const now = Math.floor(Date.now() / 1000);
-  const tierAccess = await hasCourseTierAccess(user, course.packageTier, { startMaxTrial: course.packageTier !== "basic" });
+  const tierAccess = await hasCourseTierAccess(user, course.packageTier, { startMaxTrial: course.packageTier !== "basic" && startMaxTrial });
   if (!tierAccess.allowed) {
     return Response.json({ error: "Your Max trial has ended. Activate Max to continue this level.", code: "MAX_REQUIRED" }, { status: 402 });
   }

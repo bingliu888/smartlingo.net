@@ -75,6 +75,12 @@ const worker = {
     if (env.BUCKET) (globalThis as unknown as { __SMARTLINGO_BUCKET__?: R2Bucket }).__SMARTLINGO_BUCKET__ = env.BUCKET;
     (globalThis as typeof globalThis & { __CLASS_RUNTIME_ENV__?: Env }).__CLASS_RUNTIME_ENV__ = env;
     ctx.waitUntil(runClassMaintenance(env as unknown as ClassMaintenanceEnvironment));
+    if (env.DB) {
+      // Role-play text is session context, not a permanent learner transcript.
+      // Purge it shortly after the ten-minute session expires (five-minute cron).
+      ctx.waitUntil(env.DB.prepare("DELETE FROM smartlingo_role_tutor_sessions WHERE expires_at<=?")
+        .bind(Math.floor(Date.now() / 1_000)).run());
+    }
   },
 };
 

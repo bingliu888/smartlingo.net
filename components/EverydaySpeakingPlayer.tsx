@@ -53,8 +53,9 @@ function writeProgressCookie(key: string, value: number) {
   document.cookie = `${key}=${encodeURIComponent(String(value))}; Max-Age=2592000; Path=/; SameSite=Lax`;
 }
 
-export function EverydaySpeakingPlayer({ lang, language, languageName, speechLocale, direction, scene, level, slides }: {
+export function EverydaySpeakingPlayer({ lang, siteLang = lang, language, languageName, speechLocale, direction, scene, level, slides, roleTutorEnabled = false }: {
   lang: "zh" | "en";
+  siteLang?: string;
   language: string;
   languageName: string;
   speechLocale: string;
@@ -62,6 +63,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
   scene: { id: string; nameZh: string; nameEn: string; goalZh: string; goalEn: string; image: string; motionMedia?: readonly string[] };
   level: "beginner" | "intermediate" | "advanced";
   slides: readonly Slide[];
+  roleTutorEnabled?: boolean;
 }) {
   const zh = lang === "zh";
   const levelName = level === "beginner" ? (zh ? "初级" : "Beginner") : level === "intermediate" ? (zh ? "中级" : "Intermediate") : (zh ? "高级" : "Advanced");
@@ -457,11 +459,11 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
         <em aria-live="polite">{message}</em>
       </div>
       {!started ? <button className="everyday-start" type="button" onClick={begin}><span>▶</span><strong>{zh ? "开始真实场景对话" : "Start the real-life conversation"}</strong><small>{repeatAfterMe ? (zh ? "人物对话 · 每句跟读 3 次 · 即时评分" : "Role-play · repeat each line 3 times · instant scores") : (zh ? "人物对话 · 场景词汇 · 听完继续" : "Role-play · scene vocabulary · listen and continue")}</small></button> : null}
-      {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? `完成 ${challengeAnswered}/${challengeTotal} 组问答，其中 ${challengePerfect} 组首次答对。再玩一次巩固短句，或选择其他场景。` : `Completed ${challengeAnswered}/${challengeTotal} exchanges, with ${challengePerfect} correct on the first try. Replay or choose another scene.`}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${lang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
+      {complete ? <div className="everyday-complete"><span>✦</span><h2>{zh ? "完成一个生活口语场景！" : "Everyday speaking scene complete!"}</h2><p>{zh ? `完成 ${challengeAnswered}/${challengeTotal} 组问答，其中 ${challengePerfect} 组首次答对。再玩一次巩固短句，或选择其他场景。` : `Completed ${challengeAnswered}/${challengeTotal} exchanges, with ${challengePerfect} correct on the first try. Replay or choose another scene.`}</p><nav><button onClick={replay}>{zh ? "再玩一次" : "Play again"}</button><Link href={`/${siteLang}/play/everyday?language=${language}`}>{zh ? "选择其他场景" : "Choose another scene"}</Link></nav></div> : null}
     </div>
     {complete ? <section className="everyday-finish-next" aria-labelledby="everyday-finish-next-title">
       <div><small>{zh ? "可选的下一步" : "YOUR NEXT STEP"}</small><h2 id="everyday-finish-next-title">{zh ? "把这段对话用得更熟练。" : "Make this conversation feel natural."}</h2><p>{zh ? "继续免费练习，或与明确标注的 AI 学伴交流。Max 目前提供无广告学习及全部课程等级。" : "Keep practicing for free, or chat with a clearly labeled AI study partner. Max currently offers ad-free learning and access to every course level."}</p></div>
-      <nav aria-label={zh ? "完成后的学习选择" : "Learning choices after completion"}><Link href={`/${lang}/assistant?language=${language}&mode=conversation&partner=aya`}>{zh ? "与 AI 学伴免费练习" : "Practice free with an AI partner"} →</Link><Link href={`/${lang}/pricing`}>{zh ? "了解 Max 方案" : "Explore Max plans"} →</Link></nav>
+      <nav aria-label={zh ? "完成后的学习选择" : "Learning choices after completion"}><Link href={`/${siteLang}/assistant?language=${language}&mode=conversation&partner=aya`}>{zh ? "与 AI 学伴免费练习" : "Practice free with an AI partner"} →</Link>{roleTutorEnabled ? <Link href={`/${siteLang}/assistant/role-tutor?language=${language}&scene=${scene.id}&level=${level}`}>{zh ? "Max · 与场景角色一对一练习（文字）" : "Max · 1:1 scene role-play (text)"} →</Link> : null}<Link href={`/${siteLang}/pricing`}>{zh ? "了解 Max 方案" : "Explore Max plans"} →</Link></nav>
     </section> : null}
     {started && !complete && answerChallenge && choiceReady ? <section className="everyday-reply-game" aria-label={zh ? "情景回答挑战" : "Scene reply challenge"}>
       <div><small>{zh ? `问答 ${Number(slide.pairIndex || 0) + 1}/${challengeTotal}` : `EXCHANGE ${Number(slide.pairIndex || 0) + 1}/${challengeTotal}`}</small><h2>{zh ? "选出合适的回答" : "Choose the reply"}</h2><p>{zh ? "请选择表达这个意思的一句：" : "Choose the sentence that means:"} <strong>{zh ? answerChallenge.answer.meaningZh : answerChallenge.answer.meaningEn}</strong></p></div>
@@ -476,7 +478,7 @@ export function EverydaySpeakingPlayer({ lang, language, languageName, speechLoc
       <button onClick={() => move(index + 1)} disabled={complete || Boolean(answerChallenge && !choiceSolved)} aria-label={zh ? "下一张" : "Next slide"}>›</button>
       <button onClick={() => move(slides.length - 1)} disabled={index === slides.length - 1 || Boolean(answerChallenge && !choiceSolved)} aria-label={zh ? "最后一张" : "Last slide"}>≫</button>
       <button className="everyday-pause" onClick={togglePause} disabled={!started || complete}>{paused ? (zh ? "▶ 继续" : "▶ Play") : (zh ? "Ⅱ 暂停" : "Ⅱ Pause")}</button>
-      <Link className="everyday-quit" href={`/${lang}/play/everyday?language=${language}`}>{zh ? "退出" : "Quit"}</Link>
+      <Link className="everyday-quit" href={`/${siteLang}/play/everyday?language=${language}`}>{zh ? "退出" : "Quit"}</Link>
     </div>
     <output className="everyday-speed-status" aria-live="polite">{modelRate <= .7 ? (zh ? "当前语速：慢速 0.42×" : "Current speed: Slow 0.42×") : (zh ? "当前语速：正常 0.84×" : "Current speed: Normal 0.84×")}</output>
     {started && !complete && repeatAfterMe ? <div className="everyday-attempts" aria-label={zh ? "三次跟读成绩" : "Three speaking attempt scores"}>{[1, 2, 3].map(turn => <b className={turn <= attemptScores.length ? "scored" : ""} key={turn}>{attemptScores[turn - 1] ?? turn}</b>)}</div> : null}

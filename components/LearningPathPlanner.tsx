@@ -234,16 +234,6 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       setCurrentUnitId(payload.plan.currentUnitId);
       setNotice(t.saved);
 
-      const enrollment = await fetch(`/api/classes/${encodeURIComponent(payload.path.classId)}/enroll`, {
-        method: "POST",
-        headers: { accept: "application/json" },
-      });
-      if (enrollment.status === 402) {
-        window.location.assign(`/${lang}/pricing`);
-        return;
-      }
-      if (!enrollment.ok) throw new Error(t.saveOnly);
-
       const quickCourse = await fetch("/api/quick-courses", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
@@ -251,13 +241,18 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       });
       if (!quickCourse.ok) throw new Error(t.saveOnly);
       const quickCoursePayload = await quickCourse.json() as { enrollment?: { status?: string } };
-      if (quickCoursePayload.enrollment?.status === "pending_payment") {
-        setNotice(lang === "zh"
-          ? "课程选择已保存。初级课程永久免费；首次进入中级或高级课程时会自动开始一次 7 天 Max 试用。"
-          : "Your course choice is saved. Beginner is always free; entering Intermediate or Advanced starts one 7-day Max trial automatically.");
-        setBusy(false);
+      if (courseLevel !== "beginner") {
+        // Planning and placement are free. The course-detail CTA is the explicit
+        // action that may start a one-time Max trial; saving a goal never does.
+        window.location.assign(`/${lang}/classes/${encodeURIComponent(payload.path.classId)}`);
         return;
       }
+      if (!quickCoursePayload.enrollment || quickCoursePayload.enrollment.status === "pending_payment") throw new Error(t.saveOnly);
+      const enrollment = await fetch(`/api/classes/${encodeURIComponent(payload.path.classId)}/enroll`, {
+        method: "POST",
+        headers: { accept: "application/json" },
+      });
+      if (!enrollment.ok) throw new Error(t.saveOnly);
 
       const placementMode = entryMode === "fundamentals" ? "beginner" : selfReportedLevel;
       const placement = await fetch(`/api/classes/${encodeURIComponent(payload.path.classId)}/placement`, {

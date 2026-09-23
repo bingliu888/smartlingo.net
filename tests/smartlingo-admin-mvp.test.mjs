@@ -42,7 +42,7 @@ test("legacy course commerce stays retired while Max enrollment is isolated", as
   const enrollment = await read("../app/api/classes/[classId]/enroll/route.ts");
   assert.match(enrollment, /Authentication required/);
   assert.match(enrollment, /hasCourseTierAccess/);
-  assert.match(enrollment, /startMaxTrial: course\.packageTier !== "basic"/);
+  assert.match(enrollment, /startMaxTrial: course\.packageTier !== "basic" && startMaxTrial/);
   assert.match(enrollment, /MAX_REQUIRED/);
   assert.match(enrollment, /smartlingo_language_class_members/);
   assert.doesNotMatch(enrollment, /smartlingo_course_subscriptions|'trialing'/);

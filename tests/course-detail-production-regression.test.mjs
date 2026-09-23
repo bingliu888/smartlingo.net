@@ -21,7 +21,8 @@ test("reading a course detail cannot consume the one-time Max trial", () => {
   assert.match(route, /hasCourseTierAccess\(user, detail\.packageTier\)/);
   assert.doesNotMatch(route, /startMaxTrial/);
   assert.match(route, /trialAvailable/);
-  assert.match(enroll, /startMaxTrial: course\.packageTier !== "basic"/);
+  assert.match(enroll, /startMaxTrial: course\.packageTier !== "basic" && startMaxTrial/);
   assert.match(studio, /Start my 7-day Max trial/);
   assert.match(studio, /does not renew or charge automatically/);
+  assert.match(studio, /JSON\.stringify\(\{ startMaxTrial \}\)/);
 });

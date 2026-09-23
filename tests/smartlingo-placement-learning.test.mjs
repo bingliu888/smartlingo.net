@@ -5,6 +5,7 @@ import {
   SMARTLINGO_LEARNING_CONTENT_VERSION,
   SMARTLINGO_LEARNING_LANGUAGE_CODES,
   SMARTLINGO_PLACEMENT_ESTIMATED_MINUTES,
+  SMARTLINGO_PLACEMENT_CONTENT_VERSION,
   SMARTLINGO_SKILLS,
   SMARTLINGO_VOCABULARY_SAMPLES,
   buildDailyPracticeItem,
@@ -206,6 +207,7 @@ test("the learning catalog covers twelve languages, five skills, and three origi
 test("placement creates fifteen client-safe questions and adapts each skill from intermediate", () => {
   const initial = generateAdaptivePlacementQuestions("en", [], "placement-test");
   assert.equal(initial.length, 15);
+  assert.equal(new Set(initial.map(question => question.scenarioId)).size, 12);
   assert.equal(initial.reduce((minutes, question) => minutes + question.estimatedMinutes, 0), SMARTLINGO_PLACEMENT_ESTIMATED_MINUTES);
   for (const skill of SMARTLINGO_SKILLS) {
     const questions = initial.filter(question => question.skill === skill);
@@ -222,24 +224,33 @@ test("placement creates fifteen client-safe questions and adapts each skill from
   assert.equal(adapted.find(question => question.skill === "reading" && question.round === 2)?.level, "beginner");
   assert.equal(adapted.find(question => question.skill === "vocabulary" && question.round === 2)?.level, "advanced");
   assert.equal(adapted.find(question => question.skill === "vocabulary" && question.round === 3)?.level, "advanced");
+  const skippedObservation = generateAdaptivePlacementQuestions("en", [
+    { skill: "reading", round: 1, score: 0, skipped: true },
+  ], "placement-test");
+  assert.equal(skippedObservation.find(question => question.skill === "reading" && question.round === 2)?.level, "intermediate", "a skipped item is not a wrong answer");
 
   const safe = toClientPlacementQuestions(initial);
   assert.equal(safe.length, 15);
   assert.ok(safe.every(question => !("answerSpec" in question)));
-  assert.ok(safe.every(question => question.contentVersion === SMARTLINGO_LEARNING_CONTENT_VERSION));
+  assert.ok(safe.every(question => question.contentVersion === SMARTLINGO_PLACEMENT_CONTENT_VERSION));
 });
 
 test("placement scoring is deterministic, balanced across five skills, and produces a recommendation", () => {
-  const questions = generateAdaptivePlacementQuestions("en", [], "scoring-test");
+  const perfectPrior = SMARTLINGO_SKILLS.flatMap(skill => [
+    { skill, round: 1, score: 100 },
+    { skill, round: 2, score: 100 },
+  ]);
+  const questions = generateAdaptivePlacementQuestions("en", perfectPrior, "scoring-test");
   const scores = questions.map(question => {
     const answer = question.answerSpec.kind === "choice"
       ? question.answerSpec.correctOptionId
-      : `${question.answerSpec.requiredTerms[0]} is useful in today's language practice.`;
+      : question.answerSpec.referenceAnswer;
     return scorePlacementAnswer(question, answer);
   });
   const evaluation = evaluatePlacement(scores);
 
   assert.equal(evaluation.answeredQuestions, 15);
+  assert.equal(evaluation.skippedQuestions, 0);
   assert.equal(evaluation.isComplete, true);
   assert.equal(evaluation.overallScore, 100);
   assert.equal(evaluation.recommendedLevel, "advanced");
@@ -249,6 +260,20 @@ test("placement scoring is deterministic, balanced across five skills, and produ
 
   const skipped = scorePlacementAnswer(questions[0], null, true);
   assert.deepEqual({ score: skipped.score, skipped: skipped.skipped }, { score: 0, skipped: true });
+  const filler = questions.find(question => question.answerSpec.kind === "constructed");
+  assert.ok(filler);
+  assert.ok(scorePlacementAnswer(filler, `${filler.answerSpec.requiredTerms[0]} is useful in today's language practice.`).score < 60,
+    "keyword stuffing must not earn passing placement credit");
+  const allSkipped = evaluatePlacement(questions.map(question => scorePlacementAnswer(question, null, true)));
+  assert.equal(allSkipped.isComplete, true);
+  assert.equal(allSkipped.answeredQuestions, 0);
+  assert.equal(allSkipped.skippedQuestions, 15);
+  assert.equal(allSkipped.recommendedLevel, "beginner");
+  assert.equal(allSkipped.confidence, "low");
+  const sparsePerfect = evaluatePlacement(scores.map((score, index) => index < 2 ? score : { ...score, score: 0, skipped: true }));
+  assert.equal(sparsePerfect.answeredQuestions, 2);
+  assert.equal(sparsePerfect.recommendedLevel, "beginner");
+  assert.equal(sparsePerfect.confidence, "low");
 });
 
 test("vocabulary mastery requires five cross-day milestones and three different modes", () => {

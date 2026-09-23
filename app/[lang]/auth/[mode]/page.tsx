@@ -33,7 +33,7 @@ export default async function AuthPage({ params, searchParams }: {
       </Link>
       <div className="gc-auth-mark" aria-hidden="true"><span>语</span><i/><i/><i/></div>
       <blockquote>{t("Speak from day one. Learn with people.", "从第一天开口，和真实的人一起学。")}</blockquote>
-      <p>{t("FIVE SKILLS · MEMBER COURSES · COMMUNITY", "词汇阅读写作听力对话 · 会员开班 · 学习社区")}</p>
+      <p>{t("FIVE SKILLS · FREE BEGINNER LESSONS · COMMUNITY", "词汇阅读写作听力对话 · 免费初级课程 · 学习社区")}</p>
     </aside>
     <section className="auth-panel" data-layout-track="auth-panel">
       <div className="auth-top" data-layout-fill="auth-top">

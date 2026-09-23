@@ -1,9 +1,11 @@
 import type { SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
 import {
+  buildCourseSentenceBank,
   buildDailySentenceRound,
   buildSentenceChoiceTokens,
   gradeSentenceRound,
   tokenizeSentence,
+  type SmartLingoSentenceExercise,
 } from "./smartlingo-sentence-exercises.ts";
 import {
   SMARTLINGO_BEGINNER_VOCABULARY_VERSION,
@@ -14,6 +16,7 @@ import {
 import { compareVocabularyLearningOrder } from "./smartlingo-vocabulary-order.ts";
 
 export const SMARTLINGO_LEARNING_CONTENT_VERSION = "2026-08-21.1" as const;
+export const SMARTLINGO_PLACEMENT_CONTENT_VERSION = "2026-09-22.1" as const;
 export const SMARTLINGO_GUIDED_FLOW_VERSION = "2026-08-23.2" as const;
 
 export const SMARTLINGO_LEARNING_LANGUAGE_CODES = [
@@ -222,12 +225,13 @@ export interface PlacementOption {
 
 type PlacementAnswerSpec =
   | { readonly kind: "choice"; readonly correctOptionId: string }
-  | { readonly kind: "constructed"; readonly requiredTerms: readonly string[]; readonly minimumCharacters: number };
+  | { readonly kind: "constructed"; readonly referenceAnswer?: string; readonly requiredTerms: readonly string[]; readonly minimumCharacters: number };
 
 export interface PlacementQuestion {
   readonly id: string;
-  readonly contentVersion: typeof SMARTLINGO_LEARNING_CONTENT_VERSION;
+  readonly contentVersion: typeof SMARTLINGO_PLACEMENT_CONTENT_VERSION;
   readonly language: SmartLingoLearningLanguage;
+  readonly scenarioId: string;
   readonly skill: SmartLingoSkill;
   readonly round: 1 | 2 | 3;
   readonly level: SmartLingoLevel;
@@ -265,8 +269,9 @@ export interface PlacementSkillEvaluation {
 }
 
 export interface PlacementEvaluation {
-  readonly contentVersion: typeof SMARTLINGO_LEARNING_CONTENT_VERSION;
+  readonly contentVersion: typeof SMARTLINGO_PLACEMENT_CONTENT_VERSION;
   readonly answeredQuestions: number;
+  readonly skippedQuestions: number;
   readonly isComplete: boolean;
   readonly overallScore: number;
   readonly skills: readonly PlacementSkillEvaluation[];
@@ -380,27 +385,55 @@ export const SMARTLINGO_BEGINNER_VOCABULARY_METADATA = {
   sourceType: "smartlingo_original",
 } as const;
 
+const PLACEMENT_SCENARIOS = [
+  "airport", "hotel", "restaurant", "hospital", "cafe", "school",
+  "library", "grocery", "transit", "pharmacy", "bank", "police",
+] as const;
+
+function placementSourceText(sentence: SmartLingoSentenceExercise, language: SmartLingoLearningLanguage): BilingualText {
+  // The assessment must never display the target sentence as its own answer.
+  if (language === "en") return { zh: sentence.translation.zh, en: sentence.translation.zh };
+  if (language === "zh") return { zh: sentence.translation.en, en: sentence.translation.en };
+  return sentence.translation;
+}
+
+function placementPlaceLabel(sentence: SmartLingoSentenceExercise, language: SmartLingoLearningLanguage): BilingualText {
+  const en = sentence.translation.en.replace(/^Where is /, "").replace(/\?$/, "");
+  const zh = sentence.translation.zh.replace(/在哪里？$/, "");
+  if (language === "en") return { zh, en: zh };
+  if (language === "zh") return { zh: en, en };
+  return { zh, en };
+}
+
+function placementSentence(
+  bank: readonly SmartLingoSentenceExercise[],
+  scenarioId: string,
+  functionIndex: number,
+): SmartLingoSentenceExercise {
+  const sentence = bank.find(item => item.scenario === scenarioId && (item.sequence - 1) % 10 === functionIndex);
+  if (!sentence) throw new Error(`Missing placement scene ${scenarioId}/${functionIndex}`);
+  return sentence;
+}
+
 function buildPlacementQuestion(
   language: SmartLingoLearningLanguage,
   skill: SmartLingoSkill,
   round: 1 | 2 | 3,
   level: SmartLingoLevel,
   seed: string,
-  idPrefix = "placement",
+  scenarioId: string,
+  scenarioOrder: readonly string[],
+  levelBank: readonly SmartLingoSentenceExercise[],
+  beginnerBank: readonly SmartLingoSentenceExercise[],
 ): PlacementQuestion {
-  const sample = getVocabularySample(language, level);
-  const id = `${idPrefix}:${language}:${skill}:r${round}:${level}:${SMARTLINGO_LEARNING_CONTENT_VERSION}`;
-  const choices = deterministicOrder(
-    SMARTLINGO_VOCABULARY_SAMPLES[language].map(item => ({
-      id: item.stableId,
-      label: item.meaning,
-    })),
-    `${seed}:${id}`,
-  );
+  const id = `placement:${language}:${skill}:r${round}:${level}:${scenarioId}:${SMARTLINGO_PLACEMENT_CONTENT_VERSION}`;
+  const sceneIndex = scenarioOrder.indexOf(scenarioId);
+  const optionScenes = [scenarioId, ...[1, 3, 5].map(offset => scenarioOrder[(sceneIndex + offset) % scenarioOrder.length])];
   const shared = {
     id,
-    contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
+    contentVersion: SMARTLINGO_PLACEMENT_CONTENT_VERSION,
     language,
+    scenarioId,
     skill,
     round,
     level,
@@ -409,75 +442,55 @@ function buildPlacementQuestion(
   } as const;
 
   if (skill === "vocabulary") {
+    const target = placementSentence(beginnerBank, scenarioId, 0);
+    const options = deterministicOrder(optionScenes.map(scene => ({
+      id: scene,
+      label: placementPlaceLabel(placementSentence(beginnerBank, scene, 0), language),
+    })), `${seed}:${id}`);
     return {
       ...shared,
-      prompt: {
-        zh: `选择“${sample.form}”最准确的意思。`,
-        en: `Choose the most accurate meaning of “${sample.form}”.`,
-      },
-      context: sample.pronunciation,
-      options: choices,
-      answerSpec: { kind: "choice", correctOptionId: sample.stableId },
+      prompt: { zh: `“${target.anchorVocabulary}”指的是哪个地点？`, en: `Which place does “${target.anchorVocabulary}” name?` },
+      options,
+      answerSpec: { kind: "choice", correctOptionId: scenarioId },
     };
   }
 
-  if (skill === "reading") {
+  if (skill === "reading" || skill === "listening") {
+    const functionIndex = skill === "reading" ? [2, 4, 8][round - 1] : [1, 5, 9][round - 1];
+    const target = placementSentence(levelBank, scenarioId, functionIndex);
+    const options = deterministicOrder(optionScenes.map((scene, optionIndex) => ({
+      id: scene,
+      label: placementSourceText(placementSentence(levelBank, scene, (functionIndex + optionIndex * 2) % 10), language),
+    })), `${seed}:${id}`);
     return {
       ...shared,
-      prompt: {
-        zh: `阅读句子，然后选择其中“${sample.form}”表达的意思。`,
-        en: `Read the sentence, then choose what “${sample.form}” expresses.`,
-      },
-      context: sample.example,
-      options: choices,
-      answerSpec: { kind: "choice", correctOptionId: sample.stableId },
+      prompt: skill === "reading"
+        ? { zh: "阅读句子，选择最准确的意思。", en: "Read the sentence and choose its closest meaning." }
+        : { zh: "听完整句子，再选择最准确的意思。", en: "Listen to the whole sentence and choose its closest meaning." },
+      ...(skill === "reading" ? { context: target.targetSentence } : { audioText: target.targetSentence }),
+      options,
+      answerSpec: { kind: "choice", correctOptionId: scenarioId },
     };
   }
 
-  if (skill === "listening") {
-    return {
-      ...shared,
-      prompt: {
-        zh: "播放句子，听完后选择核心词语表达的意思。",
-        en: "Play the sentence, then choose the meaning expressed by its key phrase.",
-      },
-      audioText: sample.example,
-      options: choices,
-      answerSpec: { kind: "choice", correctOptionId: sample.stableId },
-    };
-  }
-
-  if (skill === "writing") {
-    return {
-      ...shared,
-      prompt: {
-        zh: `使用“${sample.form}”写一个完整、自然的句子。`,
-        en: `Write one complete, natural sentence using “${sample.form}”.`,
-      },
-      context: sample.meaning,
-      answerSpec: {
-        kind: "constructed",
-        requiredTerms: [sample.form],
-        minimumCharacters: Math.max(4, sample.form.length + 2),
-      },
-    };
-  }
-
+  const functionIndex = skill === "writing" ? [2, 3, 6][round - 1] : 5;
+  const target = placementSentence(levelBank, scenarioId, functionIndex);
+  // Romance-language articles contract in ordinary sentences (el → al,
+  // il → al); require the stable noun, not an impossible surface phrase.
+  const requiredTerm = target.targetSentence.includes(target.anchorVocabulary)
+    ? target.anchorVocabulary
+    : target.anchorVocabulary.split(/\s+/).at(-1) || target.anchorVocabulary;
   return {
     ...shared,
-    prompt: {
-      zh: `在简短对话中使用“${sample.form}”自然回应对方。`,
-      en: `Use “${sample.form}” in a natural, short reply to another person.`,
-    },
-    context: round === 1
-      ? { zh: "一位新同学向你问好。", en: "A new classmate greets you." }
-      : round === 2
-        ? { zh: "一位同学询问你的计划。", en: "A classmate asks about your plan." }
-        : { zh: "小组决定前，一位同学询问你的看法。", en: "A classmate asks for your view before a group decision." },
+    prompt: skill === "writing"
+      ? { zh: "请用所学语言写出下面这句话。", en: "Write the message below in the language you are learning." }
+      : { zh: "有人问您要去哪里。请用所学语言自然回答，表达下面的意思。", en: "Someone asks where you need to go. Reply naturally in the language you are learning." },
+    context: placementSourceText(target, language),
     answerSpec: {
       kind: "constructed",
-      requiredTerms: [sample.form],
-      minimumCharacters: Math.max(4, sample.form.length + 2),
+      referenceAnswer: target.targetSentence,
+      requiredTerms: [requiredTerm],
+      minimumCharacters: Math.max(5, Math.floor(Array.from(target.targetSentence).length * .45)),
     },
   };
 }
@@ -493,25 +506,40 @@ export function generateAdaptivePlacementQuestions(
   seed = "smartlingo-placement",
 ): PlacementQuestion[] {
   const questions: PlacementQuestion[] = [];
+  const scenarioOrder = deterministicOrder(PLACEMENT_SCENARIOS.map(id => ({ id })), seed).map(item => item.id);
+  const beginnerBank = buildCourseSentenceBank(language, "beginner");
+  const levelBanks = new Map<SmartLingoLevel, readonly SmartLingoSentenceExercise[]>([["beginner", beginnerBank]]);
+  const bankForLevel = (level: SmartLingoLevel) => {
+    const existing = levelBanks.get(level);
+    if (existing) return existing;
+    const built = buildCourseSentenceBank(language, level);
+    levelBanks.set(level, built);
+    return built;
+  };
   const currentLevels = new Map<SmartLingoSkill, SmartLingoLevel>(
     SMARTLINGO_SKILLS.map(skill => [skill, "intermediate"]),
   );
 
   for (const round of [1, 2, 3] as const) {
-    for (const skill of SMARTLINGO_SKILLS) {
+    for (const [skillIndex, skill] of SMARTLINGO_SKILLS.entries()) {
       if (round > 1) {
         const prior = observations.find(item => item.skill === skill && item.round === round - 1);
-        if (prior) {
+        if (prior && !prior.skipped) {
           const level = currentLevels.get(skill) ?? "intermediate";
-          currentLevels.set(skill, adaptLevel(level, prior.skipped ? 0 : clampScore(prior.score)));
+          currentLevels.set(skill, adaptLevel(level, clampScore(prior.score)));
         }
       }
+      const level = currentLevels.get(skill) ?? "intermediate";
       questions.push(buildPlacementQuestion(
         language,
         skill,
         round,
-        currentLevels.get(skill) ?? "intermediate",
+        level,
         seed,
+        scenarioOrder[((round - 1) * SMARTLINGO_SKILLS.length + skillIndex) % scenarioOrder.length],
+        scenarioOrder,
+        bankForLevel(level),
+        beginnerBank,
       ));
     }
   }
@@ -541,8 +569,27 @@ function normalizeAnswer(value: string): string {
     .trim();
 }
 
+function answerSimilarity(answer: string, reference: string): number {
+  const left = Array.from(answer);
+  const right = Array.from(reference);
+  if (!left.length || !right.length) return 0;
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    const current = [row];
+    for (let column = 1; column <= right.length; column += 1) {
+      current[column] = Math.min(
+        previous[column] + 1,
+        current[column - 1] + 1,
+        previous[column - 1] + Number(left[row - 1] !== right[column - 1]),
+      );
+    }
+    previous = current;
+  }
+  return Math.max(0, 1 - previous[right.length] / Math.max(left.length, right.length));
+}
+
 export function scorePlacementAnswer(
-  question: PlacementQuestion,
+  question: Pick<PlacementQuestion, "id" | "skill" | "round" | "level" | "answerSpec">,
   answer: string | null | undefined,
   skipped = false,
 ): PlacementAnswerScore {
@@ -556,7 +603,15 @@ export function scorePlacementAnswer(
         normalized.includes(normalizeAnswer(term)),
       );
       const hasEnoughContent = Array.from(normalized).length >= question.answerSpec.minimumCharacters;
-      score = hasRequiredTerm && hasEnoughContent ? 100 : hasEnoughContent ? 60 : hasRequiredTerm ? 45 : 0;
+      if (question.answerSpec.referenceAnswer) {
+        score = Math.round(answerSimilarity(normalized, normalizeAnswer(question.answerSpec.referenceAnswer)) * 100);
+        if (!hasRequiredTerm) score = Math.min(score, 45);
+        if (!hasEnoughContent) score = Math.min(score, 40);
+      } else {
+        // Older daily practice has a deliberately simple completion rubric;
+        // the calibrated placement rubric is limited to versioned placement items.
+        score = hasRequiredTerm && hasEnoughContent ? 100 : hasEnoughContent ? 60 : hasRequiredTerm ? 45 : 0;
+      }
     }
   }
 
@@ -573,10 +628,20 @@ export function scorePlacementAnswer(
 export function recommendPlacementLevel(
   overallScore: number,
   skillScores: Readonly<Record<SmartLingoSkill, number>>,
+  scores: readonly PlacementAnswerScore[],
 ): SmartLingoLevel {
   const balancedScores = SMARTLINGO_SKILLS.map(skill => clampScore(skillScores[skill]));
-  if (overallScore >= 80 && balancedScores.every(score => score >= 65)) return "advanced";
-  if (overallScore >= 55 && balancedScores.every(score => score >= 40)) return "intermediate";
+  const evidence = scores.filter(item => !item.skipped);
+  // The current multi-scene vocabulary bank tests useful place nouns, but
+  // those nouns alone are not evidence of advanced proficiency. Require
+  // higher-band performance in receptive/productive sentence tasks instead.
+  const advancedPasses = evidence.filter(item => item.skill !== "vocabulary" && item.level === "advanced" && item.score >= 75);
+  const higherLevelPasses = evidence.filter(item => item.level !== "beginner" && item.score >= 65);
+  const skillsWithEvidence = SMARTLINGO_SKILLS.filter(skill => evidence.some(item => item.skill === skill));
+  if (evidence.length >= 12 && overallScore >= 80 && balancedScores.every(score => score >= 60)
+    && advancedPasses.length >= 4 && new Set(advancedPasses.map(item => item.skill)).size >= 3) return "advanced";
+  if (evidence.length >= 8 && overallScore >= 65 && skillsWithEvidence.length === SMARTLINGO_SKILLS.length
+    && higherLevelPasses.length >= 5) return "intermediate";
   return "beginner";
 }
 
@@ -586,8 +651,9 @@ export function evaluatePlacement(
   const uniqueScores = new Map<string, PlacementAnswerScore>();
   for (const score of scores) uniqueScores.set(score.questionId, score);
   const values = [...uniqueScores.values()];
+  const answered = values.filter(item => !item.skipped);
   const skills = SMARTLINGO_SKILLS.map(skill => {
-    const skillValues = values.filter(item => item.skill === skill).slice(0, 3);
+    const skillValues = answered.filter(item => item.skill === skill).slice(0, 3);
     const score = skillValues.length
       ? Math.round(skillValues.reduce((total, item) => total + clampScore(item.score), 0) / skillValues.length)
       : 0;
@@ -597,18 +663,23 @@ export function evaluatePlacement(
   const overallScore = Math.round(
     skills.reduce((total, item) => total + item.score, 0) / SMARTLINGO_SKILLS.length,
   );
-  const answeredQuestions = values.length;
+  const answeredQuestions = answered.length;
+  const skippedQuestions = values.filter(item => item.skipped).length;
+  const testedBands = new Set(answered.map(item => item.level)).size;
+  const broadEvidence = skills.filter(item => item.roundsCompleted >= 1).length;
 
   return {
-    contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION,
+    contentVersion: SMARTLINGO_PLACEMENT_CONTENT_VERSION,
     answeredQuestions,
+    skippedQuestions,
     isComplete: SMARTLINGO_SKILLS.every(skill =>
       values.filter(item => item.skill === skill).length >= 3,
     ),
     overallScore,
     skills,
-    recommendedLevel: recommendPlacementLevel(overallScore, scoreRecord),
-    confidence: answeredQuestions >= 15 ? "high" : answeredQuestions >= 8 ? "medium" : "low",
+    recommendedLevel: recommendPlacementLevel(overallScore, scoreRecord, values),
+    confidence: answeredQuestions >= 13 && skills.every(item => item.roundsCompleted >= 2) && testedBands >= 2
+      ? "high" : answeredQuestions >= 9 && broadEvidence === SMARTLINGO_SKILLS.length ? "medium" : "low",
   };
 }
 
@@ -791,18 +862,80 @@ function localize(text: BilingualText, uiLang: SmartLingoInterfaceLanguage): str
   return text[uiLang];
 }
 
+type DailySeedQuestion = Omit<PlacementQuestion, "contentVersion" | "scenarioId"> & {
+  readonly contentVersion: typeof SMARTLINGO_LEARNING_CONTENT_VERSION;
+};
+
+/** Preserve the existing daily-practice seed contract independently of placement v2. */
+function buildDailySeedQuestion(
+  language: SmartLingoLearningLanguage,
+  skill: SmartLingoSkill,
+  round: 1 | 2 | 3,
+  level: SmartLingoLevel,
+  seed: string,
+): DailySeedQuestion {
+  const sample = getVocabularySample(language, level);
+  const id = `daily:${language}:${skill}:r${round}:${level}:${SMARTLINGO_LEARNING_CONTENT_VERSION}`;
+  const choices = deterministicOrder(SMARTLINGO_VOCABULARY_SAMPLES[language].map(item => ({
+    id: item.stableId,
+    label: item.meaning,
+  })), `${seed}:${id}`);
+  const shared = {
+    id, contentVersion: SMARTLINGO_LEARNING_CONTENT_VERSION, language, skill, round, level,
+    estimatedMinutes: SMARTLINGO_SKILL_ESTIMATED_MINUTES[skill],
+    sourceType: "smartlingo_original" as const,
+  } as const;
+  if (skill === "vocabulary") return {
+    ...shared,
+    prompt: { zh: `选择“${sample.form}”最准确的意思。`, en: `Choose the most accurate meaning of “${sample.form}”.` },
+    context: sample.pronunciation,
+    options: choices,
+    answerSpec: { kind: "choice", correctOptionId: sample.stableId },
+  };
+  if (skill === "reading") return {
+    ...shared,
+    prompt: { zh: `阅读句子，然后选择其中“${sample.form}”表达的意思。`, en: `Read the sentence, then choose what “${sample.form}” expresses.` },
+    context: sample.example,
+    options: choices,
+    answerSpec: { kind: "choice", correctOptionId: sample.stableId },
+  };
+  if (skill === "listening") return {
+    ...shared,
+    prompt: { zh: "播放句子，听完后选择核心词语表达的意思。", en: "Play the sentence, then choose the meaning expressed by its key phrase." },
+    audioText: sample.example,
+    options: choices,
+    answerSpec: { kind: "choice", correctOptionId: sample.stableId },
+  };
+  if (skill === "writing") return {
+    ...shared,
+    prompt: { zh: `使用“${sample.form}”写一个完整、自然的句子。`, en: `Write one complete, natural sentence using “${sample.form}”.` },
+    context: sample.meaning,
+    answerSpec: { kind: "constructed", requiredTerms: [sample.form], minimumCharacters: Math.max(4, sample.form.length + 2) },
+  };
+  return {
+    ...shared,
+    prompt: { zh: `在简短对话中使用“${sample.form}”自然回应对方。`, en: `Use “${sample.form}” in a natural, short reply to another person.` },
+    context: round === 1
+      ? { zh: "一位新同学向你问好。", en: "A new classmate greets you." }
+      : round === 2
+        ? { zh: "一位同学询问你的计划。", en: "A classmate asks about your plan." }
+        : { zh: "小组决定前，一位同学询问你的看法。", en: "A classmate asks for your view before a group decision." },
+    answerSpec: { kind: "constructed", requiredTerms: [sample.form], minimumCharacters: Math.max(4, sample.form.length + 2) },
+  };
+}
+
 function buildDailyInternalQuestion(
   language: SmartLingoLearningLanguage,
   skill: SmartLingoSkill,
   date: string,
   levelOverride?: SmartLingoLevel,
-): PlacementQuestion {
+): DailySeedQuestion {
   assertIsoDate(date);
   const hash = stableHash(`${date}:${language}:${skill}:${SMARTLINGO_LEARNING_CONTENT_VERSION}`);
   const levels: readonly SmartLingoLevel[] = ["beginner", "intermediate", "advanced"];
   const level = levelOverride ?? levels[hash % levels.length];
   const round = ((hash % 3) + 1) as 1 | 2 | 3;
-  const question = buildPlacementQuestion(language, skill, round, level, date, "daily");
+  const question = buildDailySeedQuestion(language, skill, round, level, date);
   return {
     ...question,
     id: `daily:${date}:${language}:${skill}:${SMARTLINGO_LEARNING_CONTENT_VERSION}-${SMARTLINGO_GUIDED_FLOW_VERSION}`,
