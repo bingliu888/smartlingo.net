@@ -37,7 +37,19 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
     try {
       slides = await buildEverydaySpeakingDeckFromDatabase({ database: getDatabase(), language, sceneId: scene.id, level });
     } catch {
-      slides = buildEverydaySpeakingDeck(language, scene.id, level);
+      // English and Chinese have reviewed, scene-specific authored dialogue.
+      // Other languages must never fall back to unrelated navigation drills.
+      if (language === "en" || language === "zh") slides = buildEverydaySpeakingDeck(language, scene.id, level);
+      else return <main className="everyday-page everyday-player-page">
+        <SiteHeader lang={lang}/>
+        <section className="everyday-hero" role="status">
+          <p>{zh ? "场景暂时不可用" : "SCENE TEMPORARILY UNAVAILABLE"}</p>
+          <h1>{zh ? "这组对话还没有准备好。" : "This dialogue is not ready yet."}</h1>
+          <span>{zh ? "为了不教您错误的句子，这次不会显示不匹配的练习。请稍后重试，或先选择其他语言和场景。" : "To avoid teaching mismatched phrases, this activity is paused. Please retry later or choose another language and scene."}</span>
+          <nav className="everyday-back"><Link href={`/${lang}/play/everyday?language=${language}`}>{zh ? "返回场景" : "Back to scenes"}</Link></nav>
+        </section>
+        <SiteFooter lang={lang}/>
+      </main>;
     }
     return <main className="everyday-page everyday-player-page">
     <SiteHeader lang={lang}/>

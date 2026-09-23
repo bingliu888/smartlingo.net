@@ -26,6 +26,21 @@ export function isPublicBeginnerSprintClassId(classId: string) {
   return PUBLIC_BEGINNER_SPRINT_ID.test(classId);
 }
 
+const PUBLIC_LANGUAGE_PLACEMENT_ID = /^class_official_(zh|en|es|ja|ko|fr|de|ru|it|pt|ar|hi)$/;
+
+export async function requirePublicLanguagePlacementClass(database: LearningDatabase, classId: string) {
+  if (!PUBLIC_LANGUAGE_PLACEMENT_ID.test(classId)) return null;
+  return database.prepare(`SELECT c.id AS classId,c.class_kind AS classKind,c.path_id AS pathId,
+    c.target_language AS targetLanguage,c.level,c.package_tier AS packageTier,c.title,
+    'learner' AS membershipRole
+    FROM smartlingo_language_classes c
+    JOIN smartlingo_language_paths path
+      ON path.id=c.path_id AND path.target_language=c.target_language
+    WHERE c.id=? AND c.class_kind='official_language'
+      AND c.status='open' AND c.visibility='public' AND path.status='published'
+    LIMIT 1`).bind(classId).first<OfficialClassAccess>();
+}
+
 export async function requirePublicBeginnerSprintCourse(database: LearningDatabase, classId: string) {
   if (!isPublicBeginnerSprintClassId(classId)) return null;
   return database.prepare(`SELECT c.id AS classId,c.class_kind AS classKind,c.path_id AS pathId,

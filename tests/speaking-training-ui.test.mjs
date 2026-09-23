@@ -35,7 +35,9 @@ test("the subscribed course dashboard opens each training skill without another 
   assert.match(trainingMenu, /演讲稿修改/);
   assert.match(sessionPage, /query\.training === "writing" \? "writing"/);
   assert.match(sessionPage, /query\.training === "quiz" \? "exam"/);
-  assert.match(placementPage, /redirect\(`\/\$\{lang\}\/classes\/\$\{encodeURIComponent\(classId\)\}\/learn`\)/);
+  assert.match(placementPage, /<PlacementAssessment/);
+  assert.match(placementPage, /\/placement`/);
+  assert.doesNotMatch(placementPage, /\/learn`\)/);
   assert.match(learningRoute, /fixedCoursePlacement/);
   assert.match(learningRoute, /entryMode: "fixed_course"/);
   assert.match(workspace, /const selectedStep = initialSkill \?\?/);

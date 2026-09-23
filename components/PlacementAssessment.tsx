@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { fixedCourseId } from "../lib/smartlingo-course-packages";
+import { isSmartLingoCommunityLanguage } from "../lib/smartlingo-language-communities";
 
 type Lang = "zh" | "en";
 type Skill = "vocabulary" | "reading" | "writing" | "listening" | "dialogue";
@@ -43,8 +45,9 @@ const COPY = {
   zh: {
     kicker: "官方语言社区 · 入班起点",
     title: "先确定适合您的学习起点。",
-    intro: "您可以直接选择初级、中级或高级，也可以完成约 30 分钟的自适应分级。测试从中等难度开始，按表现升降，并覆盖五项技能。",
-    choose: "选择学习起点",
+    intro: "先完成约 30 分钟的免费自适应测评，我们会按五项技能推荐起点。测评从中等难度开始，并根据表现调整；您仍可自行改选。测评和查看课程不会启动 Max 试用。",
+    choose: "让测评推荐学习起点",
+    chooseMyself: "暂不测评，自行选择等级",
     beginner: "初级",
     intermediate: "中级",
     advanced: "高级",
@@ -64,7 +67,7 @@ const COPY = {
     score: "综合分",
     self: "这是您自选的起点，未生成五项测试分数。您可以稍后重新参加自适应分级。",
     provisional: "写作与对话使用透明的学习量表；智能导师反馈只作练习参考。此结果不是官方考试、学历或语言证书。",
-    learn: "进入每日学习",
+    learn: "查看推荐课程",
     calendar: "查看学习日历",
     class: "返回课程",
     retry: "重新自适应测试",
@@ -78,8 +81,9 @@ const COPY = {
   en: {
     kicker: "OFFICIAL LANGUAGE COMMUNITY · STARTING POINT",
     title: "Find the learning level that fits you.",
-    intro: "Choose Beginner, Intermediate, or Advanced directly, or take an adaptive placement of about 30 minutes. It starts in the middle, moves up or down with your responses, and covers all five skills.",
-    choose: "Choose your starting point",
+    intro: "Take a free adaptive placement of about 30 minutes first, and we'll recommend a starting point across five skills. It starts in the middle and adapts to your answers; you can still choose a different level. Placement and course previews never start Max trial.",
+    choose: "Find your recommended starting point",
+    chooseMyself: "Skip placement and choose a level myself",
     beginner: "Beginner",
     intermediate: "Intermediate",
     advanced: "Advanced",
@@ -99,7 +103,7 @@ const COPY = {
     score: "Overall score",
     self: "This is your self-selected starting point, so no five-skill test scores were generated. You can take adaptive placement later.",
     provisional: "Writing and dialogue use a transparent learning rubric; AI Guru feedback is practice guidance only. This result is not an official exam, academic credential, or language certificate.",
-    learn: "Enter daily learning",
+    learn: "View recommended course",
     calendar: "View learning calendar",
     class: "Back to course",
     retry: "Retake adaptive placement",
@@ -123,7 +127,7 @@ type SpeechRecognitionLike = {
   onerror: (() => void) | null;
 };
 
-export function PlacementAssessment({ lang, classId }: { lang: Lang; classId: string }) {
+export function PlacementAssessment({ lang, routeLang = lang, classId }: { lang: Lang; routeLang?: string; classId: string }) {
   const t = COPY[lang];
   const [state, setState] = useState<PlacementState | null>(null);
   const [answer, setAnswer] = useState("");
@@ -220,6 +224,9 @@ export function PlacementAssessment({ lang, classId }: { lang: Lang; classId: st
   const percent = useMemo(() => state?.attempt
     ? Math.round((state.attempt.currentIndex / Math.max(1, state.attempt.totalItems)) * 100)
     : 0, [state]);
+  const recommendedCourse = state?.attempt?.recommendedLevel && isSmartLingoCommunityLanguage(state.class.targetLanguage)
+    ? fixedCourseId(state.class.targetLanguage, state.attempt.recommendedLevel === "beginner" ? "basic" : state.attempt.recommendedLevel)
+    : null;
 
   if (!state && !error) return <section className="placement-shell placement-loading" aria-live="polite">SmartLingo…<PlacementStyles /></section>;
 
@@ -234,17 +241,12 @@ export function PlacementAssessment({ lang, classId }: { lang: Lang; classId: st
       {state && !state.attempt && (
         <section className="placement-choice" aria-labelledby="placement-choice-title" data-layout-fill="placement-choice">
           <div><h2 id="placement-choice-title">{t.choose}</h2><p>{t.testNote}</p></div>
-          <div className="placement-levels">
-            {(["beginner", "intermediate", "advanced"] as Level[]).map(level => (
-              <button key={level} type="button" disabled={busy} onClick={() => action({ action: "start", mode: level })}>
-                <span>{level === "beginner" ? "A1" : level === "intermediate" ? "B1" : "B2+"}</span>
-                <b>{t[level]}</b>
-              </button>
-            ))}
-            <button className="adaptive" type="button" disabled={busy} onClick={() => action({ action: "start", mode: "adaptive" })}>
-              <span>≈ 30</span><b>{t.test}</b><small>{t.testNote}</small>
-            </button>
-          </div>
+          <button className="primary-button placement-start" type="button" disabled={busy} onClick={() => action({ action: "start", mode: "adaptive" })}>{t.test} →</button>
+          <details className="placement-manual"><summary>{t.chooseMyself}</summary><div className="placement-levels">
+            {(["beginner", "intermediate", "advanced"] as Level[]).map(level => <button key={level} type="button" disabled={busy} onClick={() => action({ action: "start", mode: level })}>
+              <span>{level === "beginner" ? "A1" : level === "intermediate" ? "A2" : "B1+"}</span><b>{t[level]}</b>
+            </button>)}
+          </div></details>
         </section>
       )}
 
@@ -299,11 +301,16 @@ export function PlacementAssessment({ lang, classId }: { lang: Lang; classId: st
           </div>
           {!state.attempt.selfSelected && <div className="result-skills">{SKILLS.map(skill => <div key={skill}><span>{t.skills[skill]}</span><b>{state.attempt?.skillScores?.[skill] ?? 0}</b><progress max="100" value={state.attempt?.skillScores?.[skill] ?? 0} /></div>)}</div>}
           <div className="result-actions">
-            <Link className="primary-button" href={`/${lang}/classes/${encodeURIComponent(classId)}/learn`}>{t.learn} →</Link>
-            <Link className="secondary-button" href={`/${lang}/learning-log?classId=${encodeURIComponent(classId)}`}>{t.calendar}</Link>
-            <Link className="text-link" href={`/${lang}/classes/${encodeURIComponent(classId)}`}>{t.class}</Link>
+            {recommendedCourse && <Link className="primary-button" href={`/${routeLang}/classes/${encodeURIComponent(recommendedCourse)}`}>{t.learn} →</Link>}
+            <Link className="secondary-button" href={`/${routeLang}/learning-log?classId=${encodeURIComponent(classId)}`}>{t.calendar}</Link>
+            <Link className="text-link" href={`/${routeLang}/programs/${encodeURIComponent(state.class.targetLanguage)}`}>{t.class}</Link>
             <button className="text-link" type="button" disabled={busy} onClick={() => action({ action: "restart", mode: "adaptive" })}>{t.retry}</button>
           </div>
+          <details className="placement-manual placement-manual-result"><summary>{t.chooseMyself}</summary><div className="placement-levels">
+            {(["beginner", "intermediate", "advanced"] as Level[]).map(level => <button key={level} type="button" disabled={busy} onClick={() => action({ action: "restart", mode: level })}>
+              <span>{level === "beginner" ? "A1" : level === "intermediate" ? "A2" : "B1+"}</span><b>{t[level]}</b>
+            </button>)}
+          </div></details>
           <p className="placement-disclaimer">{t.provisional}</p>
         </section>
       )}
@@ -315,7 +322,7 @@ export function PlacementAssessment({ lang, classId }: { lang: Lang; classId: st
 
 function PlacementStyles() {
   return <style>{`
-    .placement-shell{width:100%;max-width:none;min-width:0;margin:0;padding:72px clamp(20px,4vw,56px) 112px;color:var(--ink)}.placement-shell *{min-width:0;max-width:100%;overflow-wrap:anywhere}.placement-heading{width:100%}.placement-heading h1{margin:8px 0 20px;font:850 clamp(42px,6vw,76px)/1.03 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.055em}.placement-heading>p:last-child{max-width:76ch;color:var(--muted);font-size:17px;line-height:1.72}.placement-choice,.placement-paused,.placement-result{width:100%;margin-top:54px;padding:clamp(26px,4.4vw,56px);border-radius:26px;background:#e9f4ee}.placement-choice>div:first-child{width:100%}.placement-choice h2,.placement-paused h2,.placement-result h2{margin:0 0 12px;font:800 clamp(30px,4vw,50px)/1.08 Inter,"Noto Sans SC",sans-serif}.placement-choice>div:first-child p,.placement-paused p{max-width:72ch;color:#58706a;line-height:1.65}.placement-levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:32px}.placement-levels button{min-height:150px;padding:22px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;border:1px solid #bed8cc;border-radius:19px;background:#fff;color:var(--ink);text-align:left;cursor:pointer}.placement-levels button:hover{border-color:#169776;transform:translateY(-2px)}.placement-levels button span{margin-bottom:auto;color:var(--lingo-green);font-size:13px;font-weight:900}.placement-levels button b{font-size:23px}.placement-levels button small{margin-top:8px;color:#60746f;line-height:1.45}.placement-levels .adaptive{background:#123f35;color:#fff}.placement-levels .adaptive small{color:#c8ded5}.placement-active{width:100%;margin-top:44px}.placement-progress{width:100%;padding:20px;border:1px solid #d8e3dc;border-radius:18px;background:#fff}.placement-progress>div:first-child{display:flex;justify-content:space-between;gap:20px}.placement-progress progress,.result-skills progress{width:100%;height:9px;margin-top:12px;accent-color:#149779}.placement-skill-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:18px}.placement-skill-strip span{padding:10px;display:grid;gap:3px;border-radius:10px;background:#f1f4f1;color:#60706b;font-size:12px}.placement-skill-strip span.active{background:#dff7ec;color:#08745e}.placement-skill-strip i{font-style:normal;font-weight:900}.placement-question{width:100%;margin-top:18px;padding:clamp(24px,4vw,48px);border:1px solid #d6dfda;border-radius:24px;background:#fffdf8}.question-meta{display:flex;justify-content:space-between;gap:16px;color:#087f67;font-size:12px;font-weight:900;letter-spacing:.08em}.placement-question h2{width:100%;margin:22px 0;font:800 clamp(28px,3.8vw,48px)/1.1 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em}.question-target{width:100%;padding:24px;border-radius:16px;background:#eef7f2;font-size:clamp(23px,3.3vw,39px);line-height:1.45}.audio-button,.dictation-button{min-height:46px;margin:8px 0;padding:0 17px;border:1px solid #9acabb;border-radius:999px;background:#eef9f4;color:#0a765f;font-weight:850}.question-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}.question-options button{min-height:62px;padding:13px 16px;border:1px solid #cfdad4;border-radius:13px;background:#fff;color:var(--ink);font-size:16px;text-align:left}.question-options button.selected{border-color:#0c8e70;background:#e3f7ee;box-shadow:0 0 0 2px rgba(12,142,112,.15)}.question-response{display:grid;gap:8px;margin-top:22px;font-weight:850}.question-response textarea{width:100%;min-height:150px;padding:16px;border:1px solid #bdccc5;border-radius:13px;background:#fff;color:var(--ink);font:16px/1.55 inherit;resize:vertical}.question-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:24px}.question-actions button{min-height:46px;padding:0 18px;border:1px solid #bfccc5;border-radius:999px;background:#fff;color:var(--ink);font-weight:850}.question-actions .primary-button{background:var(--lingo-green);color:#fff}.placement-ai-feedback{width:100%;margin-top:16px;padding:20px;border-left:4px solid #d4a23f;background:#fff7dd}.placement-ai-feedback p{margin:7px 0 0;white-space:pre-wrap;line-height:1.6}.placement-paused{background:#fff3d6}.placement-result{background:#123f35;color:#fff}.result-summary{width:100%}.result-summary>p:not(.section-kicker){max-width:74ch;color:#cadbd5;line-height:1.7}.result-summary strong{display:flex;align-items:baseline;gap:10px;font-size:64px}.result-summary strong small{font-size:14px}.result-skills{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:30px}.result-skills>div{padding:17px;border-radius:13px;background:rgba(255,255,255,.09)}.result-skills span,.result-skills b{display:block}.result-skills b{margin-top:8px;font-size:27px}.result-skills progress{accent-color:#5ee0b8}.result-actions{display:flex;flex-wrap:wrap;align-items:center;gap:11px;margin-top:34px}.result-actions .secondary-button{background:#fff;color:#123f35}.result-actions .text-link{min-height:44px;padding:0 8px;display:inline-flex;align-items:center;border:0;background:transparent;color:#fff;font-weight:850}.placement-disclaimer{margin:24px 0 0;padding-top:18px;border-top:1px solid rgba(255,255,255,.15);color:#c3d5cf;font-size:13px;line-height:1.6}.placement-error{position:sticky;z-index:5;bottom:20px;margin:22px 0 0;padding:14px 17px;border-radius:10px;background:#a43830;color:#fff}.placement-loading{min-height:60vh;display:grid;place-items:center;color:#087f67;font-weight:900}
+    .placement-shell{width:100%;max-width:none;min-width:0;margin:0;padding:72px clamp(20px,4vw,56px) 112px;color:var(--ink)}.placement-shell *{min-width:0;max-width:100%;overflow-wrap:anywhere}.placement-heading{width:100%}.placement-heading h1{margin:8px 0 20px;font:850 clamp(42px,6vw,76px)/1.03 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.055em}.placement-heading>p:last-child{max-width:76ch;color:var(--muted);font-size:17px;line-height:1.72}.placement-choice,.placement-paused,.placement-result{width:100%;margin-top:54px;padding:clamp(26px,4.4vw,56px);border-radius:26px;background:#e9f4ee}.placement-choice>div:first-child{width:100%}.placement-choice h2,.placement-paused h2,.placement-result h2{margin:0 0 12px;font:800 clamp(30px,4vw,50px)/1.08 Inter,"Noto Sans SC",sans-serif}.placement-choice>div:first-child p,.placement-paused p{max-width:72ch;color:#58706a;line-height:1.65}.placement-start{margin-top:24px}.placement-manual{margin-top:25px}.placement-manual summary{width:max-content;max-width:100%;cursor:pointer;font-weight:800;text-decoration:underline;text-underline-offset:4px}.placement-manual-result{margin-top:28px}.placement-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:24px}.placement-levels button{min-height:130px;padding:22px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;border:1px solid #bed8cc;border-radius:19px;background:#fff;color:var(--ink);text-align:left;cursor:pointer}.placement-levels button:hover{border-color:#169776;transform:translateY(-2px)}.placement-levels button span{margin-bottom:auto;color:var(--lingo-green);font-size:13px;font-weight:900}.placement-levels button b{font-size:23px}.placement-active{width:100%;margin-top:44px}.placement-progress{width:100%;padding:20px;border:1px solid #d8e3dc;border-radius:18px;background:#fff}.placement-progress>div:first-child{display:flex;justify-content:space-between;gap:20px}.placement-progress progress,.result-skills progress{width:100%;height:9px;margin-top:12px;accent-color:#149779}.placement-skill-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:18px}.placement-skill-strip span{padding:10px;display:grid;gap:3px;border-radius:10px;background:#f1f4f1;color:#60706b;font-size:12px}.placement-skill-strip span.active{background:#dff7ec;color:#08745e}.placement-skill-strip i{font-style:normal;font-weight:900}.placement-question{width:100%;margin-top:18px;padding:clamp(24px,4vw,48px);border:1px solid #d6dfda;border-radius:24px;background:#fffdf8}.question-meta{display:flex;justify-content:space-between;gap:16px;color:#087f67;font-size:12px;font-weight:900;letter-spacing:.08em}.placement-question h2{width:100%;margin:22px 0;font:800 clamp(28px,3.8vw,48px)/1.1 Inter,"Noto Sans SC",sans-serif;letter-spacing:-.035em}.question-target{width:100%;padding:24px;border-radius:16px;background:#eef7f2;font-size:clamp(23px,3.3vw,39px);line-height:1.45}.audio-button,.dictation-button{min-height:46px;margin:8px 0;padding:0 17px;border:1px solid #9acabb;border-radius:999px;background:#eef9f4;color:#0a765f;font-weight:850}.question-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}.question-options button{min-height:62px;padding:13px 16px;border:1px solid #cfdad4;border-radius:13px;background:#fff;color:var(--ink);font-size:16px;text-align:left}.question-options button.selected{border-color:#0c8e70;background:#e3f7ee;box-shadow:0 0 0 2px rgba(12,142,112,.15)}.question-response{display:grid;gap:8px;margin-top:22px;font-weight:850}.question-response textarea{width:100%;min-height:150px;padding:16px;border:1px solid #bdccc5;border-radius:13px;background:#fff;color:var(--ink);font:16px/1.55 inherit;resize:vertical}.question-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:24px}.question-actions button{min-height:46px;padding:0 18px;border:1px solid #bfccc5;border-radius:999px;background:#fff;color:var(--ink);font-weight:850}.question-actions .primary-button{background:var(--lingo-green);color:#fff}.placement-ai-feedback{width:100%;margin-top:16px;padding:20px;border-left:4px solid #d4a23f;background:#fff7dd}.placement-ai-feedback p{margin:7px 0 0;white-space:pre-wrap;line-height:1.6}.placement-paused{background:#fff3d6}.placement-result{background:#123f35;color:#fff}.result-summary{width:100%}.result-summary>p:not(.section-kicker){max-width:74ch;color:#cadbd5;line-height:1.7}.result-summary strong{display:flex;align-items:baseline;gap:10px;font-size:64px}.result-summary strong small{font-size:14px}.result-skills{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:30px}.result-skills>div{padding:17px;border-radius:13px;background:rgba(255,255,255,.09)}.result-skills span,.result-skills b{display:block}.result-skills b{margin-top:8px;font-size:27px}.result-skills progress{accent-color:#5ee0b8}.result-actions{display:flex;flex-wrap:wrap;align-items:center;gap:11px;margin-top:34px}.result-actions .secondary-button{background:#fff;color:#123f35}.result-actions .text-link{min-height:44px;padding:0 8px;display:inline-flex;align-items:center;border:0;background:transparent;color:#fff;font-weight:850}.placement-disclaimer{margin:24px 0 0;padding-top:18px;border-top:1px solid rgba(255,255,255,.15);color:#c3d5cf;font-size:13px;line-height:1.6}.placement-error{position:sticky;z-index:5;bottom:20px;margin:22px 0 0;padding:14px 17px;border-radius:10px;background:#a43830;color:#fff}.placement-loading{min-height:60vh;display:grid;place-items:center;color:#087f67;font-weight:900}
     @media(max-width:900px){.placement-levels{grid-template-columns:1fr 1fr}.result-skills{grid-template-columns:1fr 1fr}.result-skills>div:last-child{grid-column:1/-1}.placement-skill-strip{grid-template-columns:repeat(auto-fit,minmax(118px,1fr))}}
     @media(max-width:560px){.placement-shell{padding-top:48px}.placement-levels,.question-options,.result-skills{grid-template-columns:1fr}.placement-levels button{min-height:118px}.result-skills>div:last-child{grid-column:auto}.question-actions{display:grid}.question-actions button,.result-actions>a,.result-actions>button{width:100%;justify-content:center}.placement-skill-strip{grid-template-columns:1fr 1fr;overflow:visible}.placement-skill-strip span:last-child{grid-column:1/-1}.result-summary strong{font-size:52px}}
   `}</style>;

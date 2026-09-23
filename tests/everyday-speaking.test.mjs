@@ -15,12 +15,13 @@ test("everyday speaking provides twelve illustrated three-level scenarios with v
     for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
       for (const level of ["beginner", "intermediate", "advanced"]) {
         const deck = buildEverydaySpeakingDeck(language, scene.id, level);
-        assert.ok(deck.length >= 24, `${language}/${scene.id}/${level}`);
+        const hasAuthoredDialogue = language === "en" || language === "zh";
+        assert.ok(deck.length >= (hasAuthoredDialogue ? 24 : 4), `${language}/${scene.id}/${level}`);
         assert.ok(deck.some(slide => slide.kind === "word"));
         const dialogue = deck.filter(slide => slide.kind === "sentence");
-        assert.equal(dialogue.length, 20, `${language}/${scene.id}/${level} dialogue turns`);
-        assert.equal(new Set(dialogue.map(slide => slide.pairIndex)).size, 10);
-        for (let pair = 0; pair < 10; pair += 1) {
+        assert.equal(dialogue.length, hasAuthoredDialogue ? 20 : 0, `${language}/${scene.id}/${level} authored dialogue turns`);
+        assert.equal(new Set(dialogue.map(slide => slide.pairIndex)).size, hasAuthoredDialogue ? 10 : 0);
+        for (let pair = 0; pair < (hasAuthoredDialogue ? 10 : 0); pair += 1) {
           const turns = dialogue.filter(slide => slide.pairIndex === pair);
           assert.deepEqual(turns.map(slide => slide.role), ["staff", "learner"]);
         }
@@ -39,6 +40,7 @@ test("every authored staff question offers one answer and two distinct distracto
   for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
     for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
       for (const level of ["beginner", "intermediate", "advanced"]) {
+        if (language !== "en" && language !== "zh") continue;
         const deck = buildEverydaySpeakingDeck(language, scene.id, level);
         for (const [index, slide] of deck.entries()) {
           if (slide.kind !== "sentence" || slide.role !== "staff") continue;
@@ -53,7 +55,16 @@ test("every authored staff question offers one answer and two distinct distracto
       }
     }
   }
-  assert.equal(tested, 4320);
+  assert.equal(tested, 720);
+});
+
+test("unreviewed locales never receive the unrelated find-the-venue sentence bank as dialogue", async () => {
+  const source = await read("../lib/smartlingo-everyday-dialogues.ts");
+  assert.doesNotMatch(source, /buildCourseSentenceBank/);
+  assert.doesNotMatch(source, /FALLBACK_QUESTIONS/);
+  assert.match(source, /if \(!lines\) throw new Error\("Everyday dialogue localization is unavailable"\)/);
+  assert.match(source, /cached\?\.sourceType === "gpt-5\.6-luna"/);
+  assert.match(source, /validatedDialogueLines\(lines, base, input\.language\)/);
 });
 
 test("course details replace the back button with language-preserving everyday speaking", async () => {
@@ -101,10 +112,12 @@ test("everyday speaking has a validated multilingual server transcription fallba
   for (const marker of ["isSmartLingoCommunityLanguage", "isSmartLingoEverydayScenario", "buildEverydaySpeakingDeck", "transcribeSmartAiSpeech", "scoreSmartCardPronunciation", "MAX_AUDIO_BYTES"]) assert.match(route, new RegExp(marker));
 });
 
-test("the scene page falls back to prebuilt dialogue when D1 or Luna is unavailable", async () => {
+test("the scene page never teaches mismatched fallback dialogue when localization is unavailable", async () => {
   const page = await read("../app/[lang]/play/everyday/page.tsx");
   assert.match(page, /buildEverydaySpeakingDeckFromDatabase/);
-  assert.match(page, /catch \{[\s\S]*buildEverydaySpeakingDeck\(language, scene\.id, level\)/);
+  assert.match(page, /language === "en" \|\| language === "zh"/);
+  assert.match(page, /这组对话还没有准备好/);
+  assert.match(page, /buildEverydaySpeakingDeck\(language, scene\.id, level\)/);
 });
 
 test("responsive header keeps the language icon beside hamburger and moves only overflow navigation", async () => {

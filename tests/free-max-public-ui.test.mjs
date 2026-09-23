@@ -28,8 +28,11 @@ test("language pages show three learning levels without payment buttons", async 
     read("../app/[lang]/programs/[language]/page.tsx"), read("../components/LanguageSubscriptionCatalog.tsx"),
     read("../components/ClassStudio.tsx"), read("../app/[lang]/admin/language-classes/page.tsx"),
   ]);
-  assert.match(detail, /learning levels, not separate payment products/);
-  assert.match(catalog, /THREE COURSE LEVELS · ONE MAX PLAN/);
+  assert.match(detail, /Find my level/);
+  assert.match(detail, /classes\/\$\{item\.classId\}\/placement/);
+  assert.match(detail, /only explicitly beginning a higher-level course can start a Max trial/);
+  assert.match(catalog, /YOUR STARTING POINT/);
+  assert.match(catalog, /Browse or choose a level myself/);
   assert.match(catalog, /SMARTLINGO_COURSE_PACKAGES\.map/);
   assert.match(catalog, /See Free and Max/);
   assert.match(classes, /Open this free Beginner course/);

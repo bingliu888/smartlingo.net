@@ -1,18 +1,22 @@
-import { eq } from "drizzle-orm";
-import { getDb } from "../../../../db";
-import { subscriptions } from "../../../../db/schema";
 import {
   openSmartAiLiveVoice,
   readSmartAiRequestText,
   safeSmartAiError,
 } from "../../../../lib/smartlingo-ai-gateway";
+import { hasMaxCourseAccess } from "../../../../lib/platform-entitlements";
 import { requestUser } from "../../../../lib/request-user";
 
-const LIVE_INSTRUCTIONS = "You are the bilingual live voice language coach for SmartLingo.net. Match the learner's language and target level. Lead short, useful real-life conversations; correct one or two high-value pronunciation, vocabulary, or grammar issues at a time; offer a natural retry; and keep the learner in dialogue. Support the five product skills of vocabulary, reading, writing, listening, and dialogue, plus course navigation, Community, and messages. Every signed-in member may prepare a private course as teacher or coordinator. AI feedback and scores are practice guidance, not official examination results. Do not invent progress, payment, payout, connected-account, or course status. Platform referral points can come only from verified successful platform subscription payments; course purchases never qualify. Never promise fluency, education, employment, visa, income, legal, medical, or financial outcomes. Do not request unnecessary sensitive information and refer high-stakes questions to an official or qualified source.";
+const LIVE_INSTRUCTIONS = "You are a SmartLingo language-learning coach. Keep a short practical conversation in the learner's target language, ask one question at a time, offer one useful correction and a retry, and never claim that AI practice is an official assessment. Do not invent learning progress or payment status. Avoid requesting sensitive information; refer high-stakes medical, legal, and financial matters to qualified sources.";
 
 export async function POST(request: Request) {
   const user = await requestUser();
   if (!user) return Response.json({ error: "Sign in is required." }, { status: 401 });
+  // The legacy SDP endpoint has no role/task binding or enforceable session cap.
+  // It remains closed until the V2 tutor client and server controls are reviewed.
+  if (process.env.SMARTLINGO_MAX_ROLE_TUTOR_ENABLED !== "1") return Response.json({ error: "Live role tutor is not available yet." }, { status: 503 });
+  if (!await hasMaxCourseAccess(user)) return Response.json({ error: "An active Max plan is required." }, { status: 403 });
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== new URL(request.url).origin) return Response.json({ error: "Invalid request origin." }, { status: 403 });
   let sdp: string;
   try {
     sdp = await readSmartAiRequestText(request, 100_000);
@@ -22,17 +26,11 @@ export async function POST(request: Request) {
   }
   if (!sdp) return Response.json({ error: "Invalid voice connection request." }, { status: 400 });
 
-  const db = getDb();
-  const [subscription] = await db.select({ status: subscriptions.status })
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, user.id))
-    .limit(1);
-  const paid = subscription?.status === "active" || subscription?.status === "trialing";
   try {
     const answer = await openSmartAiLiveVoice({
       userId: user.id,
       subject: `user:${user.id}`,
-      paid,
+      paid: true,
       sdp,
       instructions: LIVE_INSTRUCTIONS,
     });

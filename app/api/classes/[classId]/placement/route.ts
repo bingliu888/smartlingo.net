@@ -14,6 +14,7 @@ import {
   type SmartLingoSkill,
 } from "../../../../../lib/smartlingo-learning";
 import {
+  requirePublicLanguagePlacementClass,
   requireOfficialClassMembership,
   type LearningDatabase,
   type OfficialClassAccess,
@@ -250,7 +251,10 @@ async function authorize(request: Request, classIdValue: unknown) {
   const classId = safeIdentifier(classIdValue, 100);
   if (!classId) return { response: Response.json({ error: "A valid course ID is required" }, { status: 400 }) } as const;
   const database = getDatabase();
-  const access = await requireOfficialClassMembership(database, user, classId);
+  // Placement is free to signed-in learners. Reading this public language
+  // community does not enroll a learner or start a Max trial.
+  const access = await requireOfficialClassMembership(database, user, classId)
+    ?? await requirePublicLanguagePlacementClass(database, classId);
   if (!access) {
     return { response: Response.json({ error: "Active membership in this official language course is required" }, { status: 403 }) } as const;
   }
@@ -258,6 +262,15 @@ async function authorize(request: Request, classIdValue: unknown) {
     return { response: Response.json({ error: "This course language is not supported for placement" }, { status: 409 }) } as const;
   }
   return { user, classId, database, access } as const;
+}
+
+async function ensureFreePlacementMembership(database: LearningDatabase, classId: string, userId: string) {
+  const now = Math.floor(Date.now() / 1000);
+  await database.prepare(`INSERT INTO smartlingo_language_class_members
+    (id,class_id,user_id,role,status,joined_at,updated_at)
+    VALUES (?, ?, ?, 'student', 'active', ?, ?)
+    ON CONFLICT(class_id,user_id) DO UPDATE SET status='active',updated_at=excluded.updated_at`)
+    .bind(createId(), classId, userId, now, now).run();
 }
 
 async function insertAttempt(
@@ -326,6 +339,7 @@ export async function POST(
     if (!isEntryMode(body.mode) || body.mode === "adaptive") {
       return Response.json({ error: "Choose beginner, intermediate, or advanced when skipping placement" }, { status: 400 });
     }
+    if (auth.access.classKind === "official_language") await ensureFreePlacementMembership(auth.database, auth.classId, auth.user.id);
     const now = Math.floor(Date.now() / 1000);
     const attemptId = createId();
     await auth.database.batch([
@@ -366,6 +380,7 @@ export async function POST(
         return Response.json(await placementState(auth.database, auth.user.id, auth.access, uiLanguage));
       }
     }
+    if (auth.access.classKind === "official_language") await ensureFreePlacementMembership(auth.database, auth.classId, auth.user.id);
     await insertAttempt(auth.database, auth.user.id, auth.access, body.mode);
     return Response.json(await placementState(auth.database, auth.user.id, auth.access, uiLanguage), { status: 201 });
   }

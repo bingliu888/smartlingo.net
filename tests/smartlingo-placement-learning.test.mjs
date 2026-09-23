@@ -31,6 +31,7 @@ import {
   tokenizeSentence,
 } from "../lib/smartlingo-sentence-exercises.ts";
 import { compareVocabularyLearningOrder } from "../lib/smartlingo-vocabulary-order.ts";
+import { fixedCourseId } from "../lib/smartlingo-course-packages.ts";
 
 test("daily session plans fill exactly 15, 30, 45, or 60 minutes", () => {
   for (const minutes of [15, 30, 45, 60]) {
@@ -156,6 +157,30 @@ test("daily vocabulary quiz exposes no answer key and is graded server-side", ()
 });
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
+
+test("placement recommendations route to the existing course catalog without starting Max", async () => {
+  const [entry, assessment, route, catalog, detail] = await Promise.all([
+    read("../app/[lang]/classes/[classId]/placement/page.tsx"),
+    read("../components/PlacementAssessment.tsx"),
+    read("../app/api/classes/[classId]/placement/route.ts"),
+    read("../components/LanguageSubscriptionCatalog.tsx"),
+    read("../app/api/classes/[classId]/route.ts"),
+  ]);
+  assert.deepEqual(["basic", "intermediate", "advanced"].map(tier => fixedCourseId("ja", tier)),
+    ["course_ja_basic", "course_ja_intermediate", "course_ja_advanced"]);
+  assert.match(entry, /<PlacementAssessment/);
+  assert.match(catalog, /languageCatalogEntry\(language\)!\.classId\}\/placement/);
+  assert.match(assessment, /recommendedLevel === "beginner" \? "basic"/);
+  assert.match(assessment, /<details className="placement-manual"/);
+  assert.match(assessment, /href=\{`\/\$\{routeLang\}\/classes\/\$\{encodeURIComponent\(recommendedCourse\)\}`\}/);
+  assert.match(route, /requirePublicLanguagePlacementClass\(database, classId\)/);
+  assert.match(route, /ensureFreePlacementMembership\(auth\.database, auth\.classId, auth\.user\.id\)/);
+  const placementGet = route.split("export async function GET(")[1]?.split("export async function POST(")[0] ?? "";
+  assert.ok(placementGet);
+  assert.doesNotMatch(placementGet, /ensureFreePlacementMembership|\.run\(|\.batch\(/);
+  assert.doesNotMatch(route, /startMaxTrial|\/enroll/);
+  assert.doesNotMatch(detail, /startMaxTrial|\/enroll/);
+});
 
 test("the learning catalog covers twelve languages, five skills, and three original versioned levels", () => {
   assert.deepEqual(
@@ -351,7 +376,7 @@ test("the learning calendar is a single-column five-skill log with community act
   assert.doesNotMatch(shellRule, /grid-template-columns/);
   assert.match(page, /<LearningWorkspace[^>]*calendarOnly/);
   assert.match(workspace, /<LearningLogCalendar/);
-  assert.match(placement, /约 30 分钟的自适应分级/);
+  assert.match(placement, /约 30 分钟的免费自适应测评/);
   assert.match(placement, /Beginner/);
   assert.match(placement, /Intermediate/);
   assert.match(placement, /Advanced/);
