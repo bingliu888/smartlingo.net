@@ -191,3 +191,14 @@ test("route and UI contracts preserve progress, retain retake history, create no
   assert.match(programs, /<LearningPathPlanner lang=\{locale\}/);
   assert.match(programs, /data-layout-page="programs"/);
 });
+
+test("new learners see placement first, and saving a goal cannot silently start Max", async () => {
+  const planner = await read("../components/LearningPathPlanner.tsx");
+  assert.match(planner, /useState<SmartLingoEntryMode>\("adaptive"\)/);
+  assert.match(planner, /\{\(\["adaptive", "fundamentals", "self_selected"\] as const\)\.map/);
+  assert.match(planner, /entryMode !== "adaptive" && <fieldset>/);
+  assert.match(planner, /const chosenLevel = entryMode === "self_selected" \? courseLevel : "beginner"/);
+  assert.match(planner, /const chosenDays = entryMode === "adaptive" \? 7 : courseDays/);
+  assert.match(planner, /The course-detail CTA is the explicit/);
+  assert.doesNotMatch(planner, /data-layout-track="onboarding-level"/);
+});

@@ -270,12 +270,44 @@ function sceneLevelPairs(sceneId: string, level: SmartLingoLevel): readonly Base
   return SMARTLINGO_EVERYDAY_DIALOGUE_BRIEFS[sceneId] || SMARTLINGO_EVERYDAY_DIALOGUE_BRIEFS.cafe;
 }
 
+// Bounded offline beginner lessons, paired with the authored English/Chinese
+// meanings in the same order. Other Japanese scenes/levels still need content.
+const JAPANESE_CAFE_BEGINNER_PAIRS: readonly (readonly [staff: string, learner: string])[] = [
+  ["いらっしゃいませ。ご注文は何にしますか。", "小さいサイズのコーヒーを一杯お願いします。"],
+  ["ホットとアイス、どちらにしますか。", "ホットでお願いします。"],
+  ["ミルクは普通の牛乳と豆乳、どちらにしますか。", "普通の牛乳でお願いします。"],
+  ["砂糖は入れますか。", "いいえ、砂糖は要りません。"],
+  ["食べ物も注文しますか。", "はい、サンドイッチを一つお願いします。"],
+  ["店内ですか、持ち帰りですか。", "店内でお願いします。"],
+  ["お名前を教えてください。", "アンナです。"],
+  ["お支払いは現金ですか、カードですか。", "カードでお願いします。"],
+  ["こちら、お飲み物です。ご注文はこちらでよろしいですか。", "はい、これで合っています。ありがとうございます。"],
+  ["ほかにご注文はありますか。", "いいえ、ありがとうございます。よい一日を。"],
+];
+
+const JAPANESE_GROCERY_BEGINNER_PAIRS: readonly (readonly [staff: string, learner: string])[] = [
+  ["いらっしゃいませ。何かお探しですか。", "はい、卵はどこにありますか。"],
+  ["白い卵と茶色い卵、どちらにしますか。", "茶色い卵をお願いします。"],
+  ["お肉はどのくらい必要ですか。", "半キロお願いします。"],
+  ["野菜は新鮮なものと冷凍のもの、どちらにしますか。", "新鮮な野菜をお願いします。"],
+  ["このりんごでよろしいですか。", "はい。でも四個だけください。"],
+  ["袋は必要ですか。", "はい、エコバッグを一つください。"],
+  ["ポイントカードはお持ちですか。", "いいえ、持っていません。"],
+  ["クーポンはお使いになりますか。", "はい、これがクーポンです。"],
+  ["お支払いは現金ですか、カードですか。", "カードでお願いします。"],
+  ["レシートは要りますか。", "はい、袋に入れてください。"],
+];
+
 function baseLines(sceneId: string, language: SmartLingoLearningLanguage, level: SmartLingoLevel): EverydayDialogueLine[] {
-  if (language !== "en" && language !== "zh") return [];
+  const japaneseBeginnerPairs = language === "ja" && level === "beginner"
+    ? sceneId === "cafe" ? JAPANESE_CAFE_BEGINNER_PAIRS : sceneId === "grocery" ? JAPANESE_GROCERY_BEGINNER_PAIRS : null
+    : null;
+  if (language !== "en" && language !== "zh" && !japaneseBeginnerPairs) return [];
   const pairs = sceneLevelPairs(sceneId, level);
   return pairs.flatMap((pair, pairIndex) => {
-    const question = language === "zh" ? pair[2] : pair[0];
-    const answer = language === "zh" ? pair[3] : pair[1];
+    const question = japaneseBeginnerPairs ? japaneseBeginnerPairs[pairIndex]?.[0] : language === "zh" ? pair[2] : pair[0];
+    const answer = japaneseBeginnerPairs ? japaneseBeginnerPairs[pairIndex]?.[1] : language === "zh" ? pair[3] : pair[1];
+    if (!question || !answer) throw new Error("Prebuilt Japanese beginner dialogue is incomplete");
     return [
       { role: "staff" as const, target: question, meaningZh: pair[2], meaningEn: pair[0], pairIndex },
       { role: "learner" as const, target: answer, meaningZh: pair[3], meaningEn: pair[1], pairIndex },
@@ -357,13 +389,14 @@ export async function everydayDialogueLines(input: {
   sceneId: string;
   language: SmartLingoLearningLanguage;
   level: SmartLingoLevel;
-  /** Deterministic test seam; production always uses the site AI gateway. */
+  /** Deterministic test seam for uncached languages without prebuilt lessons. */
   localize?: (pairs: readonly BasePair[], language: SmartLingoLearningLanguage, level: SmartLingoLevel) => Promise<string>;
 }): Promise<{ lines: EverydayDialogueLine[]; releaseId: string; sourceType: "prebuilt" | "gpt-5.6-luna" }> {
   const base = sceneLevelPairs(input.sceneId, input.level);
   const release = await input.database.prepare("SELECT release_id AS releaseId FROM smartlingo_learning_content_releases WHERE content_key='everyday-dialogues' LIMIT 1").first<{ releaseId: string }>();
   const releaseId = release?.releaseId || "bootstrap-2026-08-23";
-  if (input.language === "en" || input.language === "zh") return { lines: baseLines(input.sceneId, input.language, input.level), releaseId, sourceType: "prebuilt" };
+  const prebuilt = baseLines(input.sceneId, input.language, input.level);
+  if (prebuilt.length) return { lines: prebuilt, releaseId, sourceType: "prebuilt" };
   const cacheKey = `everyday:${releaseId}:${input.sceneId}:${input.language}:${input.level}:${stableHash(JSON.stringify(base))}`;
   const cached = await input.database.prepare("SELECT payload_json AS payloadJson,source_type AS sourceType FROM smartlingo_everyday_dialogue_sets WHERE cache_key=? AND release_id=? LIMIT 1").bind(cacheKey, releaseId).first<{ payloadJson: string; sourceType: string }>();
   if (cached?.sourceType === "gpt-5.6-luna") {

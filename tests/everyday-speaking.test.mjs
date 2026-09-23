@@ -15,7 +15,7 @@ test("everyday speaking provides twelve illustrated three-level scenarios with v
     for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
       for (const level of ["beginner", "intermediate", "advanced"]) {
         const deck = buildEverydaySpeakingDeck(language, scene.id, level);
-        const hasAuthoredDialogue = language === "en" || language === "zh";
+        const hasAuthoredDialogue = language === "en" || language === "zh" || (language === "ja" && (scene.id === "cafe" || scene.id === "grocery") && level === "beginner");
         assert.ok(deck.length >= (hasAuthoredDialogue ? 24 : 4), `${language}/${scene.id}/${level}`);
         assert.ok(deck.some(slide => slide.kind === "word"));
         const dialogue = deck.filter(slide => slide.kind === "sentence");
@@ -40,7 +40,7 @@ test("every authored staff question offers one answer and two distinct distracto
   for (const scene of SMARTLINGO_EVERYDAY_SCENARIOS) {
     for (const language of SMARTLINGO_COMMUNITY_LANGUAGE_CODES) {
       for (const level of ["beginner", "intermediate", "advanced"]) {
-        if (language !== "en" && language !== "zh") continue;
+        if (language !== "en" && language !== "zh" && !(language === "ja" && (scene.id === "cafe" || scene.id === "grocery") && level === "beginner")) continue;
         const deck = buildEverydaySpeakingDeck(language, scene.id, level);
         for (const [index, slide] of deck.entries()) {
           if (slide.kind !== "sentence" || slide.role !== "staff") continue;
@@ -55,7 +55,7 @@ test("every authored staff question offers one answer and two distinct distracto
       }
     }
   }
-  assert.equal(tested, 720);
+  assert.equal(tested, 740, "English/Chinese source pairs plus twenty offline Japanese beginner pairs");
 });
 
 test("unreviewed locales never receive the unrelated find-the-venue sentence bank as dialogue", async () => {

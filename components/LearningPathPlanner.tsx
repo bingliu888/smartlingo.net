@@ -60,24 +60,24 @@ const copy = {
     status: "基础内容已就绪；后续阶段为透明预览",
     version: "内容版本",
     onboardingKicker: "学习目标与起点",
-    onboardingTitle: "先告诉我们您想怎样使用这门语言。",
-    onboardingIntro: "选择会保存到您的账户并按语言分别保留。跳过定位测评不会生成五项技能分数；以后仍可重测。",
+    onboardingTitle: "先选学习目标，再由测评推荐起点。",
+    onboardingIntro: "不必先判断自己属于哪个级别。完成定位后会推荐课程；想直接从基础开始或自己选择级别，也可以切换。选择会按语言保存。",
     language: "目标语言",
     useCase: "使用场景",
     minutes: "每日时长",
     level: "自报水平",
-    course: "选择等级与累进课程",
+    course: "选择累进课程",
     courseIntro: "入门为 7、14、30 天；中级为 1、2、3 个月；高级为 3、6、12 个月。已有同级较短课程证书会自动承接下一天；每个课程日为可跨日续学的 60 分钟。",
     free: "免费",
     paidLater: "Max 会员开放",
     daily: "每天约",
-    entry: "起点方式",
+    entry: "怎样确定起点",
     useCases: { daily_life: "日常生活", travel: "旅行", work: "工作", study: "学习", community: "社区交流" },
     levels: { beginner: "初级", intermediate: "中级", advanced: "高级" },
     entries: {
       fundamentals: ["跳过测评，从基础开始", "不生成技能分数，直接进入基础第一单元。"],
       self_selected: ["采用自报水平", "按所选初、中、高级推荐起点，不生成技能分数。"],
-      adaptive: ["完成十五题自适应分级", "从中级起步，覆盖五项技能，可暂停、跳题和重测。"],
+      adaptive: ["测评后推荐起点（推荐）", "15 道题覆盖五项技能；可暂停、跳题和重测。未测完不会判定级别。"],
     },
     save: "保存并继续",
     saving: "正在保存…",
@@ -110,24 +110,24 @@ const copy = {
     status: "Foundation content ready; later stages shown as transparent previews",
     version: "Content version",
     onboardingKicker: "GOAL AND STARTING POINT",
-    onboardingTitle: "Tell us how you want to use this language.",
-    onboardingIntro: "Choices are saved to your account and retained separately for each language. Skipping placement creates no five-skill scores; you can take it later.",
+    onboardingTitle: "Choose a goal. Let placement recommend your starting point.",
+    onboardingIntro: "You do not need to decide your own level first. Placement recommends a course; you can still start with fundamentals or choose a level yourself. Choices are saved by language.",
     language: "Target language",
     useCase: "Use case",
     minutes: "Daily time",
     level: "Self-reported level",
-    course: "Choose a level and cumulative course",
+    course: "Choose a cumulative course",
     courseIntro: "Beginner offers 7, 14, and 30 days; intermediate offers 1, 2, and 3 months; advanced offers 3, 6, and 12 months. A shorter certificate continues at the next day. Every course day is a resumable 60-minute session.",
     free: "Free",
     paidLater: "Included with Max",
     daily: "About",
-    entry: "Starting method",
+    entry: "How to find your starting point",
     useCases: { daily_life: "Daily life", travel: "Travel", work: "Work", study: "Study", community: "Community" },
     levels: { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" },
     entries: {
       fundamentals: ["Skip placement and start with fundamentals", "Creates no skill scores and opens the first foundation unit."],
       self_selected: ["Use my self-reported level", "Recommends a beginner, intermediate, or advanced start without creating skill scores."],
-      adaptive: ["Take the 15-item adaptive placement", "Starts at intermediate, covers five skills, and can pause, skip items, or retake."],
+      adaptive: ["Get a placement recommendation (recommended)", "15 items cover five skills. Pause, skip, or retake; no level is assigned before completion."],
     },
     save: "Save and continue",
     saving: "Saving…",
@@ -162,8 +162,7 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
   const [joinedCourses, setJoinedCourses] = useState<Array<{ id: string; targetLanguage: string; classKind?: string }>>([]);
   const [useCase, setUseCase] = useState<SmartLingoUseCase>("daily_life");
   const [dailyMinutes, setDailyMinutes] = useState<SmartLingoDailyMinutes>(10);
-  const [selfReportedLevel, setSelfReportedLevel] = useState<SmartLingoLevel>("beginner");
-  const [entryMode, setEntryMode] = useState<SmartLingoEntryMode>("fundamentals");
+  const [entryMode, setEntryMode] = useState<SmartLingoEntryMode>("adaptive");
   const [courseLevel, setCourseLevel] = useState<SmartLingoCourseLevel>("beginner");
   const [courseDays, setCourseDays] = useState<SmartLingoCourseDays>(7);
   const [currentUnitId, setCurrentUnitId] = useState<string | null>(null);
@@ -188,18 +187,19 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       if (!initialLanguage) setTargetLanguage(active.targetLanguage);
       setUseCase(active.useCase);
       setDailyMinutes(active.dailyMinutes);
-      setSelfReportedLevel(active.selfReportedLevel);
+      setCourseLevel(active.selfReportedLevel);
+      setCourseDays(SMARTLINGO_COURSE_DURATIONS[active.selfReportedLevel][0]);
       setEntryMode(active.entryMode);
       setCurrentUnitId(active.currentUnitId);
     }).catch(() => undefined);
-    return () => {
-      if (languageFrame) window.cancelAnimationFrame(languageFrame);
-    };
     void fetch("/api/classes", { headers: { accept: "application/json" } }).then(async response => {
       if (!response.ok) return;
       const payload = await response.json() as { joinedClasses?: Array<{ id: string; targetLanguage: string; classKind?: string }>; classes?: Array<{ id: string; targetLanguage: string; classKind?: string; isJoined?: boolean; isOwner?: boolean }> };
       setJoinedCourses(payload.joinedClasses ?? payload.classes?.filter(item => item.isJoined || item.isOwner) ?? []);
     }).catch(() => undefined);
+    return () => {
+      if (languageFrame) window.cancelAnimationFrame(languageFrame);
+    };
   }, [initialLanguage]);
 
   function openCatalogLanguage(language: SmartLingoCommunityLanguage) {
@@ -218,10 +218,12 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
     setNotice("");
     setError("");
     try {
+      const chosenLevel = entryMode === "self_selected" ? courseLevel : "beginner";
+      const chosenDays = entryMode === "adaptive" ? 7 : courseDays;
       const response = await fetch("/api/learning-plan", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({ targetLanguage, useCase, dailyMinutes, selfReportedLevel, entryMode }),
+        body: JSON.stringify({ targetLanguage, useCase, dailyMinutes, selfReportedLevel: chosenLevel, entryMode }),
       });
       if (response.status === 401) {
         setNotice(t.auth);
@@ -237,11 +239,11 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       const quickCourse = await fetch("/api/quick-courses", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({ targetLanguage, level: courseLevel, durationDays: courseDays }),
+        body: JSON.stringify({ targetLanguage, level: chosenLevel, durationDays: chosenDays }),
       });
       if (!quickCourse.ok) throw new Error(t.saveOnly);
       const quickCoursePayload = await quickCourse.json() as { enrollment?: { status?: string } };
-      if (courseLevel !== "beginner") {
+      if (chosenLevel !== "beginner") {
         // Planning and placement are free. The course-detail CTA is the explicit
         // action that may start a one-time Max trial; saving a goal never does.
         window.location.assign(`/${lang}/classes/${encodeURIComponent(payload.path.classId)}`);
@@ -254,7 +256,7 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
       });
       if (!enrollment.ok) throw new Error(t.saveOnly);
 
-      const placementMode = entryMode === "fundamentals" ? "beginner" : selfReportedLevel;
+      const placementMode = chosenLevel;
       const placement = await fetch(`/api/classes/${encodeURIComponent(payload.path.classId)}/placement`, {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
@@ -313,12 +315,17 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
           <div className="sl-fixed-language" data-layout-track="onboarding-language"><span>{t.language}</span><strong dir={selected.direction}>{selected.nativeName} · {lang === "zh" ? selected.nameZh : selected.nameEn}</strong></div>
           <label data-layout-track="onboarding-use-case"><span>{t.useCase}</span><select value={useCase} onChange={event => setUseCase(event.target.value as SmartLingoUseCase)}>{SMARTLINGO_USE_CASES.map(value => <option value={value} key={value}>{t.useCases[value]}</option>)}</select></label>
           <label data-layout-track="onboarding-minutes"><span>{t.minutes}</span><select value={dailyMinutes} onChange={event => setDailyMinutes(Number(event.target.value) as SmartLingoDailyMinutes)}>{SMARTLINGO_DAILY_MINUTES.map(value => <option value={value} key={value}>{value} {lang === "zh" ? "分钟" : "minutes"}</option>)}</select></label>
-          <label data-layout-track="onboarding-level"><span>{t.level}</span><select value={selfReportedLevel} onChange={event => setSelfReportedLevel(event.target.value as SmartLingoLevel)}>{(["beginner", "intermediate", "advanced"] as const).map(value => <option value={value} key={value}>{t.levels[value]}</option>)}</select></label>
         </div>
         <fieldset>
+          <legend>{t.entry}</legend>
+          <div className="sl-entry-grid">
+            {(["adaptive", "fundamentals", "self_selected"] as const).map(value => <label className={entryMode === value ? "selected" : ""} data-layout-track={`entry-${value}`} key={value}><input type="radio" name="entryMode" value={value} checked={entryMode === value} onChange={() => { setEntryMode(value); if (value === "fundamentals") { setCourseLevel("beginner"); setCourseDays(7); } }}/><span><strong>{t.entries[value][0]}</strong><small>{t.entries[value][1]}</small></span></label>)}
+          </div>
+        </fieldset>
+        {entryMode !== "adaptive" && <fieldset>
           <legend>{t.course}</legend>
           <p className="sl-course-intro">{t.courseIntro}</p>
-          <div className="sl-course-levels" role="group" aria-label={t.level} style={{width:"100%",margin:"0 0 10px",display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
+          {entryMode === "self_selected" && <div className="sl-course-levels" role="group" aria-label={t.level} style={{width:"100%",margin:"0 0 10px",display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:8}}>
             {(["beginner", "intermediate", "advanced"] as const).map(level => <button
               type="button"
               className={courseLevel === level ? "selected" : ""}
@@ -330,23 +337,17 @@ export function LearningPathPlanner({ lang, initialLanguage, catalogOnly = false
               }}
               key={level}
             >{t.levels[level]}</button>)}
-          </div>
+          </div>}
           <div className="sl-course-grid" data-layout-fill="quick-course-options">
-            {SMARTLINGO_COURSE_DURATIONS[courseLevel].map(days => {
-              const course = buildQuickCourse(targetLanguage, days, courseLevel);
+            {SMARTLINGO_COURSE_DURATIONS[entryMode === "self_selected" ? courseLevel : "beginner"].map(days => {
+              const course = buildQuickCourse(targetLanguage, days, entryMode === "self_selected" ? courseLevel : "beginner");
               return <label className={courseDays === days ? "selected" : ""} data-layout-track={`quick-course-${days}`} key={days}>
                 <input type="radio" name="courseDays" value={days} checked={courseDays === days} onChange={() => setCourseDays(days)}/>
                 <span><b>{localized(course.title)}</b><small>{localized(course.summary)}</small><em>{course.isFreeDefault ? t.free : t.paidLater} · {t.daily} {course.schedule[0].estimatedMinutes} {interfaceText(lang, "minutes", "分钟")}</em></span>
               </label>;
             })}
           </div>
-        </fieldset>
-        <fieldset>
-          <legend>{t.entry}</legend>
-          <div className="sl-entry-grid">
-            {(["fundamentals", "self_selected", "adaptive"] as const).map(value => <label className={entryMode === value ? "selected" : ""} data-layout-track={`entry-${value}`} key={value}><input type="radio" name="entryMode" value={value} checked={entryMode === value} onChange={() => setEntryMode(value)}/><span><strong>{t.entries[value][0]}</strong><small>{t.entries[value][1]}</small></span></label>)}
-          </div>
-        </fieldset>
+        </fieldset>}
         <p className="sl-noncredential" data-readable-copy="noncredential-notice">{t.nonCredential}</p>
         <button className="primary-button" type="submit" disabled={busy}>{busy ? t.saving : t.save} →</button>
         {notice && <p className="sl-planner-notice" aria-live="polite">{notice}</p>}

@@ -9,7 +9,7 @@ test("saving a learning plan or quick course cannot start the Max trial", () => 
   const planner = read("../components/LearningPathPlanner.tsx");
   assert.match(quickCourse, /hasCourseTierAccess\(user, tier\)/);
   assert.doesNotMatch(quickCourse, /startMaxTrial: level !== "beginner"/);
-  assert.match(planner, /if \(courseLevel !== "beginner"\)/);
+  assert.match(planner, /if \(chosenLevel !== "beginner"\)/);
   assert.match(planner, /window\.location\.assign\(`\/\$\{lang\}\/classes\/\$\{encodeURIComponent\(payload\.path\.classId\)\}`\)/);
   assert.doesNotMatch(planner, /starts one 7-day Max trial automatically/);
 });
