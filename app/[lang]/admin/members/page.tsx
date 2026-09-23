@@ -18,6 +18,9 @@ type MemberRow = {
   createdAt: number;
   paymentCount: number;
   subscriberOverride: number;
+  expiresAt: number | null;
+  trialEndsAt: number | null;
+  activeMax: number;
 };
 
 function searchPattern(value: string) {
@@ -37,13 +40,17 @@ export default async function AdminMembersPage({ params, searchParams }: { param
   const query = (q ?? "").trim().slice(0, 80);
   const filters = ["COALESCE(a.status,'active')='active'"];
   if (active === "admins") filters.push("u.role='admin'");
-  if (active === "subscribers") filters.push("COALESCE(a.subscriber_override,0)<>-1 AND (COALESCE(a.subscriber_override,0)=1 OR EXISTS (SELECT 1 FROM smartlingo_platform_subscription_payments p2 WHERE p2.subscriber_user_id=u.id AND p2.status='paid'))");
+  if (active === "subscribers") filters.push("s.cadence='max' AND s.status='active' AND s.current_period_ends_at>unixepoch()");
   if (query) filters.push("(lower(u.email) LIKE ? ESCAPE '\\' OR lower(u.display_name) LIKE ? ESCAPE '\\')");
   const statement = getDatabase().prepare(`SELECT u.id,u.email,u.display_name AS displayName,u.role,u.created_at AS createdAt,
-    SUM(CASE WHEN p.status='paid' THEN 1 ELSE 0 END) AS paymentCount,COALESCE(a.subscriber_override,0) AS subscriberOverride
+    SUM(CASE WHEN p.status='paid' THEN 1 ELSE 0 END) AS paymentCount,
+    COALESCE(a.subscriber_override,0) AS subscriberOverride,
+    s.current_period_ends_at AS expiresAt,s.trial_ends_at AS trialEndsAt,
+    CASE WHEN s.cadence='max' AND s.status='active' AND s.current_period_ends_at>unixepoch() THEN 1 ELSE 0 END AS activeMax
     FROM users u
     LEFT JOIN smartlingo_platform_subscription_payments p ON p.subscriber_user_id=u.id
     LEFT JOIN platform_member_access a ON a.user_id=u.id
+    LEFT JOIN subscriptions s ON s.user_id=u.id
     WHERE ${filters.join(" AND ")}
     GROUP BY u.id
     ORDER BY ${active === "subscribers" ? "paymentCount DESC," : ""} u.created_at DESC LIMIT 100`);
@@ -55,9 +62,9 @@ export default async function AdminMembersPage({ params, searchParams }: { param
 
   return <main>
     <SiteHeader lang={lang}/>
-    <div className="admin-shell" data-layout-page="admin-members" data-layout-fill="admin-shell">
+    <div className="admin-shell" data-layout-page="admin-members" data-layout-fill="admin-shell" data-layout-ready="true">
       <div className="admin-toolbar">
-        <div><p className="section-kicker">{zh ? "用户权限" : "USER ACCESS"}</p><h1>{zh ? "用户管理" : "User management"}</h1><p>{zh ? "会员账户始终保留；管理员和订阅者权限分别添加或删除。" : "Member accounts remain intact; administrator and subscriber roles are added or removed separately."}</p></div>
+        <div><p className="section-kicker">{zh ? "用户权限" : "USER ACCESS"}</p><h1>{zh ? "用户管理" : "User management"}</h1><p>{zh ? "会员账户始终保留；管理员权限与有明确到期日的 Max 订阅分别管理。" : "Member accounts remain intact; administrator access and expiry-dated Max subscriptions are managed separately."}</p></div>
         <a href={`/${lang}/dashboard`}>← {zh ? "管理中心" : "Dashboard"}</a>
       </div>
       <form className="admin-search" method="get">
@@ -70,7 +77,13 @@ export default async function AdminMembersPage({ params, searchParams }: { param
         <a className={active === "subscribers" ? "active" : ""} href={`/${lang}/admin/members?tab=subscribers${suffix}`}>{zh ? "订阅者" : "Subscribers"}</a>
       </nav>
       <div className="admin-table-wrap">{members.length ? <table className="admin-table"><thead><tr><th>{zh ? "会员" : "Member"}</th><th>{zh ? "当前分页" : "Current tab"}</th><th>{zh ? "加入时间" : "Joined"}</th><th>{zh ? "订阅" : "Subscription"}</th><th>{zh ? "操作" : "Action"}</th></tr></thead><tbody>
-        {members.map((member) => <tr key={member.id}><td><strong>{member.displayName}</strong><br/><span>{member.email}</span></td><td><span className="admin-badge">{tabLabel}</span></td><td>{new Date(member.createdAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US")}</td><td>{member.paymentCount > 0 ? (zh ? `${member.paymentCount} 笔已付款` : `${member.paymentCount} paid`) : member.subscriberOverride === 1 ? (zh ? "管理员授予" : "Granted by admin") : (zh ? "无" : "None")}</td><td><span className="admin-row-actions"><a href={`/${lang}/admin/members/${encodeURIComponent(member.id)}`}>{zh ? "查看" : "View"}</a>{active === "admins" && <AdminRoleRemoveButton memberId={member.id} lang={lang === "zh" ? "zh" : "en"} kind="admin" locked={isBootstrapAdminEmail(member.email) || member.id === user.id}/>} {active === "subscribers" && <AdminRoleRemoveButton memberId={member.id} lang={lang === "zh" ? "zh" : "en"} kind="subscriber"/>}</span></td></tr>)}
+        {members.map((member) => {
+          const activeMax = member.activeMax === 1;
+          const source = member.paymentCount > 0 ? (zh ? `${member.paymentCount} 笔付款` : `${member.paymentCount} payments`)
+            : member.subscriberOverride === 1 ? (zh ? "管理员赠送" : "Admin grant")
+              : member.trialEndsAt === member.expiresAt ? (zh ? "7 天试用" : "7-day trial") : (zh ? "Max" : "Max");
+          return <tr key={member.id}><td><strong>{member.displayName}</strong><br/><span>{member.email}</span></td><td><span className="admin-badge">{tabLabel}</span></td><td>{new Date(member.createdAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US", { timeZone: "UTC" })}</td><td>{activeMax && member.expiresAt ? <>{source}<br/>{zh ? "到期：" : "Expires: "}{new Date(member.expiresAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US", { timeZone: "UTC" })}</> : (zh ? "无有效 Max" : "No active Max")}</td><td><span className="admin-row-actions"><a href={`/${lang}/admin/members/${encodeURIComponent(member.id)}`}>{zh ? "查看" : "View"}</a>{active === "admins" && <AdminRoleRemoveButton memberId={member.id} lang={zh ? "zh" : "en"} kind="admin" locked={isBootstrapAdminEmail(member.email) || member.id === user.id}/>} {active === "subscribers" && member.subscriberOverride === 1 && member.paymentCount === 0 && <AdminRoleRemoveButton memberId={member.id} lang={zh ? "zh" : "en"} kind="subscriber"/>}</span></td></tr>;
+        })}
       </tbody></table> : <div className="admin-empty">{query ? (zh ? "没有匹配的用户。" : "No matching users.") : (zh ? "此分页暂无用户。" : "No users in this tab yet.")}</div>}</div>
       <AdminMemberActions lang={lang === "zh" ? "zh" : "en"} tab={active}/>
     </div>

@@ -1,5 +1,5 @@
 import { getDatabase, type SessionUser } from "./auth";
-import { isAdminUser } from "./admin-access";
+import { isAdminUser, isPermanentAdmin } from "./admin-access";
 import { addAigcCredits } from "./aigc-credits";
 import { platformProduct, type SmartLingoPlatformProductId } from "./platform-commerce";
 
@@ -10,6 +10,83 @@ function addUtcMonths(startSeconds: number, months: number) {
   const date = new Date(startSeconds * 1_000);
   date.setUTCMonth(date.getUTCMonth() + months);
   return Math.floor(date.getTime() / 1_000);
+}
+
+export class AdminMaxSubscriptionError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+
+/** Admin and paid Max share the canonical subscriptions row; only real payments enter the payment ledger. */
+export async function changeAdminMaxSubscription(input: {
+  actor: SessionUser;
+  userId: string;
+  action: "grant" | "revoke";
+  months?: 6 | 12;
+  requestId: string;
+  now?: number;
+}) {
+  if (!isPermanentAdmin(input.actor)) throw new AdminMaxSubscriptionError(403, "Administrator access required");
+  if (!/^[0-9a-f-]{36}$/i.test(input.requestId)
+    || !["grant", "revoke"].includes(input.action)
+    || (input.action === "grant" && input.months !== 6 && input.months !== 12)) {
+    throw new AdminMaxSubscriptionError(400, "Invalid Max subscription request");
+  }
+  const database = getDatabase();
+  const now = input.now ?? Math.floor(Date.now() / 1_000);
+  const action = `max.${input.action}`;
+  const replay = await database.prepare("SELECT admin_user_id AS adminId,target_user_id AS targetId,action FROM platform_admin_audit WHERE id=? LIMIT 1")
+    .bind(input.requestId).first<{ adminId: string; targetId: string; action: string }>();
+  if (replay) {
+    if (replay.adminId !== input.actor.id || replay.targetId !== input.userId || replay.action !== action) {
+      throw new AdminMaxSubscriptionError(409, "Request already used");
+    }
+    const row = await database.prepare("SELECT current_period_ends_at AS expiresAt FROM subscriptions WHERE user_id=? LIMIT 1")
+      .bind(input.userId).first<{ expiresAt: number | null }>();
+    return { changed: false, expiresAt: Number(row?.expiresAt || 0) || null };
+  }
+  const current = await database.prepare(`SELECT cadence,status,trial_ends_at AS trialEndsAt,
+    current_period_ends_at AS expiresAt FROM subscriptions WHERE user_id=? LIMIT 1`)
+    .bind(input.userId).first<{ cadence: string; status: string; trialEndsAt: number | null; expiresAt: number | null }>();
+  if (input.action === "grant") {
+    const trialOnly = Number(current?.trialEndsAt || 0) > 0
+      && Number(current?.trialEndsAt || 0) === Number(current?.expiresAt || 0);
+    const base = trialOnly ? now : Math.max(now, Number(current?.expiresAt || 0));
+    const expiresAt = addUtcMonths(base, input.months!);
+    await database.batch([
+      database.prepare(`INSERT INTO subscriptions
+        (id,user_id,cadence,status,current_period_ends_at,cancel_at_period_end,created_at,updated_at)
+        VALUES(?,?,'max','active',?,1,?,?)
+        ON CONFLICT(user_id) DO UPDATE SET cadence='max',status='active',current_period_ends_at=excluded.current_period_ends_at,
+          cancel_at_period_end=1,updated_at=excluded.updated_at`)
+        .bind(crypto.randomUUID(), input.userId, expiresAt, now, now),
+      database.prepare(`INSERT INTO platform_member_access
+        (user_id,status,subscriber_override,updated_by_user_id,created_at,updated_at)
+        VALUES(?,'active',1,?,?,?)
+        ON CONFLICT(user_id) DO UPDATE SET status='active',subscriber_override=1,
+          updated_by_user_id=excluded.updated_by_user_id,updated_at=excluded.updated_at`)
+        .bind(input.userId, input.actor.id, now, now),
+      database.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)")
+        .bind(input.requestId, input.actor.id, input.userId, action, now),
+    ]);
+    return { changed: true, expiresAt };
+  }
+  const access = await database.prepare("SELECT subscriber_override AS subscriberOverride FROM platform_member_access WHERE user_id=? LIMIT 1")
+    .bind(input.userId).first<{ subscriberOverride: number }>();
+  if (access?.subscriberOverride !== 1 || current?.cadence !== "max" || current.status !== "active") {
+    throw new AdminMaxSubscriptionError(409, "No active admin-granted Max subscription");
+  }
+  const paid = await database.prepare("SELECT 1 AS paid FROM smartlingo_platform_subscription_payments WHERE subscriber_user_id=? AND status='paid' LIMIT 1")
+    .bind(input.userId).first<{ paid: number }>();
+  if (paid) throw new AdminMaxSubscriptionError(409, "Paid Max access cannot be revoked here");
+  await database.batch([
+    database.prepare("UPDATE subscriptions SET status='cancelled',current_period_ends_at=?,updated_at=? WHERE user_id=?")
+      .bind(now, now, input.userId),
+    database.prepare("UPDATE platform_member_access SET subscriber_override=-1,updated_by_user_id=?,updated_at=? WHERE user_id=?")
+      .bind(input.actor.id, now, input.userId),
+    database.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)")
+      .bind(input.requestId, input.actor.id, input.userId, action, now),
+  ]);
+  return { changed: true, expiresAt: now };
 }
 
 export async function hasActiveMaxSubscription(userId: string, now = Math.floor(Date.now() / 1_000)) {

@@ -254,7 +254,7 @@ test("Gold 3 identity routes create no temporary-password users and wallet metad
   assert.match(adminRoute, /now - 5 \* 60/);
   assert.match(adminRoute, /confirmVerifiedClerkGrantTarget\(target\)/);
   assert.match(adminPatch, /consumeAccountRequestLimit/);
-  assert.match(adminPatch, /boundedJsonBody<\{ action\?: RoleAction \}>\(request, 4 \* 1024\)/);
+  assert.match(adminPatch, /boundedJsonBody<\{ action\?: RoleAction; months\?: number; requestId\?: string \}>\(request, 4 \* 1024\)/);
   assert.match(adminPatch, /identityCheckedAt <= now - 5 \* 60/);
   assert.match(adminPatch, /confirmVerifiedClerkGrantTarget\(value\.target\)/);
   assert.doesNotMatch(adminPatch, /request\.json\(\)/);

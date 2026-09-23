@@ -9,11 +9,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 84);
-  assert.equal(result.firstRunApplied, 84);
+  assert.equal(result.migrationCount, 85);
+  assert.equal(result.firstRunApplied, 85);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0188_gpt6_luna_text_generation");
+  assert.equal(result.newestMigration, "0189_admin_max_subscription_backfill");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -53,11 +53,39 @@ test("tracked D1 migrations apply once, no-op on rerun, and support core reads a
   });
 });
 
+test("legacy audited admin subscriber grants become the same active Max subscription used by paid members", () => {
+  const database = new DatabaseSync(":memory:");
+  try {
+    database.exec("PRAGMA foreign_keys = ON");
+    const migrations = readMigrationManifest();
+    applyTrackedMigrations(database, migrations.slice(0, -1));
+    const now = Math.floor(Date.now() / 1_000);
+    const user = database.prepare("INSERT INTO users(id,email,display_name,password_hash,email_verified,created_at) VALUES(?,?,?,'test-only',0,?)");
+    user.run("audited-member", "audited-member@example.invalid", "Audited", now - 86_400);
+    user.run("old-role-only", "old-role-only@example.invalid", "Role only", now - 86_400);
+    const access = database.prepare("INSERT INTO platform_member_access(user_id,status,subscriber_override,created_at,updated_at) VALUES(?,'active',1,?,?)");
+    access.run("audited-member", now - 86_400, now - 86_400);
+    access.run("old-role-only", now - 86_400, now - 86_400);
+    database.prepare("INSERT INTO platform_admin_audit(id,target_user_id,action,created_at) VALUES(?,?,?,?)")
+      .run("legacy-audit", "audited-member", "role.grant-subscriber", now - 86_400);
+
+    applyTrackedMigrations(database, migrations);
+    const granted = database.prepare("SELECT cadence,status,current_period_ends_at AS expiresAt FROM subscriptions WHERE user_id='audited-member'").get();
+    assert.equal(granted.cadence, "max");
+    assert.equal(granted.status, "active");
+    assert.ok(granted.expiresAt > now + 150 * 86_400);
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM subscriptions WHERE user_id='old-role-only'").get().count, 0);
+    assert.equal(applyTrackedMigrations(database, migrations).applied.length, 0);
+  } finally {
+    database.close();
+  }
+});
+
 test("GPT-6 Luna migration preserves old cache rows and accepts newly generated content", () => {
   const database = new DatabaseSync(":memory:");
   try {
     const migrations = readMigrationManifest();
-    applyTrackedMigrations(database, migrations.slice(0, -1));
+    applyTrackedMigrations(database, migrations.slice(0, -2));
     database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets
       (cache_key,release_id,target_language,level,ui_language,vocabulary_ids_json,payload_json,source_type,created_at)
       VALUES(?,?,?,?,?,?,?,?,?)`).run("old-sentence", "old-release", "ja", "beginner", "en", "[]", "[]", "gpt-5.6-luna", 1);
@@ -65,7 +93,7 @@ test("GPT-6 Luna migration preserves old cache rows and accepts newly generated 
       (cache_key,release_id,target_language,level,scenario,payload_json,source_type,created_at)
       VALUES(?,?,?,?,?,?,?,?)`).run("old-dialogue", "old-release", "ja", "beginner", "cafe", "[]", "gpt-5.6-luna", 1);
 
-    applyTrackedMigrations(database, migrations);
+    applyTrackedMigrations(database, migrations.slice(0, -1));
     for (const table of ["smartlingo_adaptive_sentence_sets", "smartlingo_everyday_dialogue_sets"])
       assert.equal(database.prepare(`SELECT source_type FROM ${table} LIMIT 1`).get().source_type, "gpt-5.6-luna");
     database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets
@@ -78,6 +106,7 @@ test("GPT-6 Luna migration preserves old cache rows and accepts newly generated 
       assert.equal(database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count, 2);
     for (const contentKey of ["adaptive-sentences", "everyday-dialogues"])
       assert.equal(database.prepare("SELECT release_id FROM smartlingo_learning_content_releases WHERE content_key=?").get(contentKey).release_id, "gpt-6-luna-2026-09-22");
+    applyTrackedMigrations(database, migrations);
   } finally {
     database.close();
   }

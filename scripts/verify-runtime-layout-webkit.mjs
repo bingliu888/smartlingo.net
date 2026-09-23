@@ -36,6 +36,7 @@ export const SMARTLINGO_LAYOUT_ROUTES = Object.freeze([
   "/messages/live/layout-check",
   "/certificates",
   "/certificates/layout-certificate",
+  "/admin/members",
   "/admin/certificates",
   "/assistant",
   "/project",
@@ -54,6 +55,7 @@ export const SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES = Object.freeze([
   "/messages/live/layout-check",
   "/certificates",
   "/certificates/layout-certificate",
+  "/admin/members",
   "/admin/certificates",
 ]);
 
@@ -77,6 +79,7 @@ const expectedPageNames = Object.freeze({
   "/messages/live/layout-check": "live-chat",
   "/certificates": "certificates",
   "/certificates/layout-certificate": "certificate-detail",
+  "/admin/members": "admin-members",
   "/admin/certificates": "admin-certificates",
   "/assistant": "assistant",
   "/project": "project",
@@ -105,6 +108,7 @@ const requiredHooks = Object.freeze({
   "/messages/live/layout-check": { fills: 1, textFits: 1 },
   "/certificates": { fills: 1 },
   "/certificates/layout-certificate": { fills: 1 },
+  "/admin/members": { fills: 1 },
   "/admin/certificates": { fills: 1 },
   "/assistant": { fills: 2, readableCopy: 1 },
   "/project": { fills: 2, tracks: 1, readableCopy: 1, textFits: 1 },

@@ -46,6 +46,7 @@ test("runtime layout matrix pins both path locales and a short landscape lesson 
     "/messages/live/layout-check",
     "/certificates",
     "/certificates/layout-certificate",
+    "/admin/members",
     "/admin/certificates",
     "/assistant",
     "/project",
@@ -146,7 +147,7 @@ test("landscape Everyday Speaking keeps instructions through actions within one 
 });
 
 test("layout gate requires real page markers and representative hook categories", () => {
-  for (const page of ["home", "tutorial", "courses", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-certificates", "assistant", "project", "auth"]) {
+  for (const page of ["home", "tutorial", "courses", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-members", "admin-certificates", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
   }
   assert.match(runnerSource, /requiredHooks/);
@@ -165,6 +166,7 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
     "/messages/live/layout-check",
     "/certificates",
     "/certificates/layout-certificate",
+    "/admin/members",
     "/admin/certificates",
   ]);
   assert.match(runnerSource, /session cookies are allowed only for a loopback layout fixture/);

@@ -3,6 +3,7 @@ import { consumeAccountRequestLimit } from "../../../../../lib/account-request-l
 import { getDatabase, getSessionUser } from "../../../../../lib/auth";
 import { boundedJsonBody } from "../../../../../lib/bounded-request-body";
 import { confirmVerifiedClerkGrantTarget } from "../../../../../lib/clerk-grant-target";
+import { AdminMaxSubscriptionError, changeAdminMaxSubscription } from "../../../../../lib/platform-entitlements";
 
 type Target = {
   id: string;
@@ -33,6 +34,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
   const { memberId } = await params;
   const value = await context(request, memberId);
   if ("response" in value) return value.response;
+  if (request.headers.get("origin") !== new URL(request.url).origin) return Response.json({ error: "Invalid origin" }, { status: 403 });
   const limited = await consumeAccountRequestLimit({
     request,
     scope: "admin.members",
@@ -41,9 +43,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
     userId: value.admin.id,
   });
   if (limited) return limited;
-  let body: { action?: RoleAction };
+  let body: { action?: RoleAction; months?: number; requestId?: string };
   try {
-    body = await boundedJsonBody<{ action?: RoleAction }>(request, 4 * 1024);
+    body = await boundedJsonBody<{ action?: RoleAction; months?: number; requestId?: string }>(request, 4 * 1024);
   } catch (error) {
     return error instanceof Response
       ? error
@@ -71,17 +73,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ me
     return Response.json({ error: "Verified existing member not found" }, { status: 409 });
   }
 
+  if (action === "grant-subscriber" || action === "revoke-subscriber") {
+    try {
+      const result = await changeAdminMaxSubscription({
+        actor: value.admin, userId: value.target.id,
+        action: action === "grant-subscriber" ? "grant" : "revoke",
+        months: body.months as 6 | 12, requestId: body.requestId || "", now,
+      });
+      return Response.json({ ok: true, action, ...result }, { headers: { "cache-control": "no-store" } });
+    } catch (error) {
+      if (error instanceof AdminMaxSubscriptionError) return Response.json({ error: error.message }, { status: error.status });
+      throw error;
+    }
+  }
+
   const db = getDatabase();
   const statements = [];
   if (action === "grant-admin" || action === "revoke-admin") {
     statements.push(db.prepare("UPDATE users SET role=? WHERE id=?").bind(action === "grant-admin" ? "admin" : "member", value.target.id));
-  } else if (action === "grant-subscriber" || action === "revoke-subscriber") {
-    statements.push(db.prepare(`INSERT INTO platform_member_access
-      (user_id,status,subscriber_override,updated_by_user_id,created_at,updated_at)
-      VALUES(?,'active',?,?,?,?)
-      ON CONFLICT(user_id) DO UPDATE SET status='active',subscriber_override=excluded.subscriber_override,
-      updated_by_user_id=excluded.updated_by_user_id,updated_at=excluded.updated_at`)
-      .bind(value.target.id, action === "grant-subscriber" ? 1 : -1, value.admin.id, now, now));
   }
   statements.push(db.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)")
     .bind(crypto.randomUUID(), value.admin.id, value.target.id, `role.${action}`, now));

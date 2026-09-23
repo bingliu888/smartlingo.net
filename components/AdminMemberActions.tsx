@@ -23,7 +23,10 @@ export function AdminMemberActions({ lang, tab }: { lang: "en" | "zh"; tab: Role
     const response = await fetch("/api/admin/members", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: `grant-${kind}`, email: String(form.get("email") ?? "") }),
+      body: JSON.stringify({
+        action: `grant-${kind}`, email: String(form.get("email") ?? ""),
+        ...(kind === "subscriber" ? { months: Number(form.get("months")), requestId: crypto.randomUUID() } : {}),
+      }),
     });
     const data = await response.json().catch(() => ({})) as { error?: string };
     if (!response.ok) {
@@ -36,9 +39,12 @@ export function AdminMemberActions({ lang, tab }: { lang: "en" | "zh"; tab: Role
   const name = roleName(kind, zh);
   return <section className="admin-add-card">
     <h2>{zh ? `添加${name}` : `Add ${name}`}</h2>
-    <p>{zh ? `输入现有会员邮箱，只添加${name}角色；会员账户不会被替换。` : `Enter an existing member email. Only the ${name.toLowerCase()} role is added; the member account is unchanged.`}</p>
+    <p>{kind === "subscriber"
+      ? (zh ? "为已验证的现有会员开通或延长 Max；与付费 Max 共用订阅记录，不会产生付款流水。" : "Grant or extend Max for a verified existing member. It uses the same subscription record as paid Max without creating a payment.")
+      : (zh ? `输入现有会员邮箱，只添加${name}角色；会员账户不会被替换。` : `Enter an existing member email. Only the ${name.toLowerCase()} role is added; the member account is unchanged.`)}</p>
     <form onSubmit={submit}>
       <label>{zh ? "会员邮箱" : "Member email"}<input name="email" type="email" required autoComplete="off"/></label>
+      {kind === "subscriber" && <label>{zh ? "Max 期限" : "Max duration"}<select name="months" defaultValue="6"><option value="6">{zh ? "6 个月" : "6 months"}</option><option value="12">{zh ? "12 个月" : "12 months"}</option></select></label>}
       <button type="submit" disabled={busy}>{busy ? (zh ? "处理中…" : "Working…") : (zh ? `添加${name}` : `Add ${name}`)}</button>
       {message && <p className="admin-form-message" role="alert">{message}</p>}
     </form>
@@ -50,12 +56,14 @@ export function AdminRoleRemoveButton({ memberId, lang, kind, locked = false }: 
   const [busy, setBusy] = useState(false);
   const name = roleName(kind, zh);
   async function remove() {
-    if (locked || !confirm(zh ? `删除此会员的${name}角色？会员账户和其他角色会保留。` : `Remove this member's ${name.toLowerCase()} role? Their member account and other roles will remain.`)) return;
+    if (locked || !confirm(kind === "subscriber"
+      ? (zh ? "取消此会员由管理员赠送的 Max？会员账户会保留。" : "Revoke this member's admin-granted Max? Their account remains.")
+      : (zh ? `删除此会员的${name}角色？会员账户和其他角色会保留。` : `Remove this member's ${name.toLowerCase()} role? Their member account and other roles will remain.`))) return;
     setBusy(true);
     const response = await fetch(`/api/admin/members/${encodeURIComponent(memberId)}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: `revoke-${kind}` }),
+      body: JSON.stringify({ action: `revoke-${kind}`, ...(kind === "subscriber" ? { requestId: crypto.randomUUID() } : {}) }),
     });
     if (response.ok) {
       window.location.reload();
@@ -66,6 +74,6 @@ export function AdminRoleRemoveButton({ memberId, lang, kind, locked = false }: 
     setBusy(false);
   }
   return <button type="button" className="admin-delete" onClick={remove} disabled={locked || busy}>
-    {busy ? (zh ? "处理中…" : "Working…") : (zh ? `删除${name}` : `Delete ${name}`)}
+    {busy ? (zh ? "处理中…" : "Working…") : kind === "subscriber" ? (zh ? "取消赠送 Max" : "Revoke admin Max") : (zh ? `删除${name}` : `Delete ${name}`)}
   </button>;
 }

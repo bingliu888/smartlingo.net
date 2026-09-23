@@ -14,6 +14,8 @@ async function eligibilityRow(userId: string) {
     CASE WHEN u.role='admin' OR (
       COALESCE(access.status,'active')='active'
       AND COALESCE(access.subscriber_override,0)<>-1
+      AND EXISTS (SELECT 1 FROM subscriptions subscription WHERE subscription.user_id=u.id
+        AND subscription.cadence='max' AND subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
       AND (COALESCE(access.subscriber_override,0)=1 OR EXISTS (
         SELECT 1 FROM smartlingo_platform_subscription_payments payment
         WHERE payment.subscriber_user_id=u.id AND payment.status='paid'
@@ -43,6 +45,8 @@ export async function eligibleCourseSupervisorByRefId(value: unknown): Promise<C
     CASE WHEN u.role='admin' OR (
       COALESCE(access.status,'active')='active'
       AND COALESCE(access.subscriber_override,0)<>-1
+      AND EXISTS (SELECT 1 FROM subscriptions subscription WHERE subscription.user_id=u.id
+        AND subscription.cadence='max' AND subscription.status='active' AND subscription.current_period_ends_at>unixepoch())
       AND (COALESCE(access.subscriber_override,0)=1 OR EXISTS (
         SELECT 1 FROM smartlingo_platform_subscription_payments payment
         WHERE payment.subscriber_user_id=u.id AND payment.status='paid'

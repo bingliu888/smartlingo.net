@@ -4,13 +4,15 @@ import { getDatabase, getSessionUser } from "../../../../lib/auth";
 import { boundedJsonBody } from "../../../../lib/bounded-request-body";
 import { confirmVerifiedClerkGrantTarget } from "../../../../lib/clerk-grant-target";
 import { normalizeEmailAddress } from "../../../../lib/email-address";
+import { AdminMaxSubscriptionError, changeAdminMaxSubscription } from "../../../../lib/platform-entitlements";
 
-type Body = { action?: string; email?: string };
+type Body = { action?: string; email?: string; months?: number; requestId?: string };
 
 export async function POST(request: Request) {
   const admin = await getSessionUser(request);
   if (!admin) return Response.json({ error: "Authentication required" }, { status: 401 });
   if (!isPermanentAdmin(admin)) return Response.json({ error: "Administrator access required" }, { status: 403 });
+  if (request.headers.get("origin") !== new URL(request.url).origin) return Response.json({ error: "Invalid origin" }, { status: 403 });
   const limited = await consumeAccountRequestLimit({
     request,
     scope: "admin.members",
@@ -44,13 +46,18 @@ export async function POST(request: Request) {
   }
   if (body.action === "grant-admin") {
     await db.prepare("UPDATE users SET role='admin' WHERE id=?").bind(target.id).run();
-  } else if (body.action === "grant-subscriber") {
-    await db.prepare("INSERT INTO platform_member_access(user_id,status,subscriber_override,updated_by_user_id,created_at,updated_at) VALUES(?,'active',1,?,?,?) ON CONFLICT(user_id) DO UPDATE SET status='active',subscriber_override=1,updated_by_user_id=excluded.updated_by_user_id,updated_at=excluded.updated_at")
-      .bind(target.id, admin.id, now, now)
-      .run();
+    await db.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)")
+      .bind(crypto.randomUUID(), admin.id, target.id, `role.${body.action}`, now).run();
+    return Response.json({ ok: true, id: target.id });
   }
-  await db.prepare("INSERT INTO platform_admin_audit(id,admin_user_id,target_user_id,action,created_at) VALUES(?,?,?,?,?)")
-    .bind(crypto.randomUUID(), admin.id, target.id, `role.${body.action}`, now)
-    .run();
-  return Response.json({ ok: true, id: target.id });
+  try {
+    const result = await changeAdminMaxSubscription({
+      actor: admin, userId: target.id, action: "grant", months: body.months as 6 | 12,
+      requestId: body.requestId || "", now,
+    });
+    return Response.json({ ok: true, id: target.id, ...result }, { headers: { "cache-control": "no-store" } });
+  } catch (error) {
+    if (error instanceof AdminMaxSubscriptionError) return Response.json({ error: error.message }, { status: error.status });
+    throw error;
+  }
 }

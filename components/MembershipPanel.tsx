@@ -50,6 +50,9 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
   const maxActive = data.platformPlan.maxActive;
   const plan = maxActive ? "Max" : "Free";
   const maxDays = data.platformPlan.remainingDays;
+  const maxExpiry = maxActive && data.subscription?.currentPeriodEndsAt
+    ? new Date(data.subscription.currentPeriodEndsAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US", { timeZone: "UTC" })
+    : null;
 
   async function copyReferral() {
     await navigator.clipboard.writeText(data!.referral.url);
@@ -79,7 +82,7 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
 
   return <>
     <section className="dashboard-creator-summary dashboard-platform-summary">
-      <div><p className="eyebrow"><span/> MAX MEMBERSHIP</p><h2>Max</h2><p>{maxActive ? data.platformPlan.trialActive ? (zh ? `7 天试用 · 剩余 ${maxDays} 天` : `7-day trial · ${maxDays} days remaining`) : (zh ? `剩余 ${maxDays} 天` : `${maxDays} days remaining`) : (zh ? "当前为免费方案" : "Free plan active")}</p><Link href={`/${lang}/pricing`}>{maxActive ? (zh ? "延长" : "Extend") : (zh ? "升级" : "Upgrade")} →</Link></div>
+      <div><p className="eyebrow"><span/> MAX MEMBERSHIP</p><h2>Max</h2><p>{maxActive ? data.platformPlan.trialActive ? (zh ? `7 天试用 · 剩余 ${maxDays} 天 · 到期 ${maxExpiry}` : `7-day trial · ${maxDays} days remaining · expires ${maxExpiry}`) : (zh ? `剩余 ${maxDays} 天 · 到期 ${maxExpiry}` : `${maxDays} days remaining · expires ${maxExpiry}`) : (zh ? "当前为免费方案" : "Free plan active")}</p><Link href={`/${lang}/pricing`}>{maxActive ? (zh ? "延长" : "Extend") : (zh ? "升级" : "Upgrade")} →</Link></div>
       <div><p className="eyebrow"><span/> AIGC TOKEN CREDIT</p><h2>{data.aigcCredits.toLocaleString()}</h2><p>{zh ? "用于生成图片、音频与视频" : "For image, audio, and video generation"}</p><Link href={`/${lang}/pricing#aigc-credits`}>{zh ? "购买" : "Add"} →</Link></div>
     </section>
 
@@ -98,7 +101,7 @@ export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
 
       <div className="member-grid membership-tier-grid">
         <article className={!maxActive ? "active" : ""}><small>FREE</small><strong>{zh ? "免费方案（含广告）" : "Free with ads"}</strong><p>{zh ? "保留今日练习、SmartCard、生活口语、社区与公开 AI 学伴，以相关广告支持免费使用。" : "Daily practice, SmartCard, speaking scenarios, Community, and the public AI study partner remain free with ads."}</p><Link href={`/${lang}/pricing`}>{zh ? "查看方案" : "View plans"} →</Link></article>
-        <article className={maxActive ? "active" : ""}><small>MAX</small><strong>{zh ? "无广告 · 中高级课程" : "Ad-free · higher course levels"}</strong><p>{maxActive && data.subscription?.currentPeriodEndsAt ? (zh ? `有效期至 ${new Date(data.subscription.currentPeriodEndsAt * 1000).toLocaleDateString("zh-CN")}` : `Active through ${new Date(data.subscription.currentPeriodEndsAt * 1000).toLocaleDateString("en-US")}`) : (zh ? "初级永久免费；中级和高级在一次性 7 天试用后需要 Max。6 个月 $119 或年度 $199，不自动续费。" : "Beginner is always free; Intermediate and Advanced require Max after one 7-day trial. Choose 6 months for $119 or annual access for $199; no auto-renewal.")}</p><Link href={`/${lang}/pricing`}>{zh ? "管理 Max" : "Manage Max"} →</Link></article>
+        <article className={maxActive ? "active" : ""}><small>MAX</small><strong>{zh ? "无广告 · 中高级课程" : "Ad-free · higher course levels"}</strong><p>{maxExpiry ? (zh ? `有效期至 ${maxExpiry}` : `Active through ${maxExpiry}`) : (zh ? "初级永久免费；中级和高级在一次性 7 天试用后需要 Max。6 个月 $119 或年度 $199，不自动续费。" : "Beginner is always free; Intermediate and Advanced require Max after one 7-day trial. Choose 6 months for $119 or annual access for $199; no auto-renewal.")}</p><Link href={`/${lang}/pricing`}>{zh ? "管理 Max" : "Manage Max"} →</Link></article>
         <article><small>AIGC TOKEN CREDIT</small><strong>{data.aigcCredits}</strong><p>{zh ? "用于生成图片、音频与视频；$10 可购买 1,000 额度。" : "Use credits to generate image, audio, and video media. $10 buys 1,000 credits."}</p><Link href={`/${lang}/pricing`}>{zh ? "购买额度" : "Buy credits"} →</Link></article>
       </div>
 
