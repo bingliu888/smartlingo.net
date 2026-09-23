@@ -122,7 +122,7 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
 });
 
 test("landscape Everyday Speaking keeps instructions through actions within one viewport", () => {
-  assert.match(everydayCss, /\.everyday-player \.everyday-stage\{height:clamp\(200px,calc\(100vh - 560px\),290px\);min-height:0;max-height:290px/);
+  assert.match(everydayCss, /\.everyday-player \.everyday-stage\{height:260px;min-height:0;max-height:260px/);
   const report = {
     schemaVersion: 1,
     pageName: "everyday-player",

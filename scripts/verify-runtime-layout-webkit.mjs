@@ -454,11 +454,16 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
 
   const lessonStart = document.querySelector(".everyday-player .everyday-repeat-check");
   const lessonActions = document.querySelector(".everyday-player .everyday-controls");
+  const lessonStage = document.querySelector(".everyday-player .everyday-stage");
   const lessonFit = lessonStart && lessonActions ? {
     height: lessonActions.getBoundingClientRect().bottom - lessonStart.getBoundingClientRect().top,
     viewportHeight: window.innerHeight,
-    stageHeight: document.querySelector(".everyday-player .everyday-stage")?.getBoundingClientRect().height ?? null,
+    stageHeight: lessonStage?.getBoundingClientRect().height ?? null,
+    stageCssHeight: lessonStage ? getComputedStyle(lessonStage).height : null,
+    stageCssMinHeight: lessonStage ? getComputedStyle(lessonStage).minHeight : null,
+    stageCssMaxHeight: lessonStage ? getComputedStyle(lessonStage).maxHeight : null,
     compactViewportMatches: window.matchMedia("(max-height:900px) and (min-width:700px)").matches,
+    phoneViewportMatches: window.matchMedia("(max-width:620px)").matches,
   } : null;
 
   return {

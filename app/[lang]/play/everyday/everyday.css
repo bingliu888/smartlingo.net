@@ -127,7 +127,7 @@
 .everyday-player .everyday-repeat-check,.everyday-player .everyday-language-help{width:100%;margin-bottom:7px;padding:6px 12px}
 .everyday-player .everyday-repeat-check input{width:18px;height:18px}
 .everyday-player .everyday-repeat-check small{margin-top:0}
-.everyday-player .everyday-stage{height:clamp(200px,calc(100vh - 560px),290px);min-height:0;max-height:290px;border-radius:18px}
+.everyday-player .everyday-stage{height:260px;min-height:0;max-height:260px;border-radius:18px}
 .everyday-copy{width:min(900px,calc(100% - 48px))}
 .everyday-copy>p{margin:0;font-size:12px}
 .everyday-copy>small{margin-top:5px;font-size:11px}
@@ -152,6 +152,6 @@
 .everyday-reply-game p strong{font-size:17px}
 .everyday-reply-options{gap:5px}
 .everyday-reply-options button{min-height:39px;padding:5px 9px;font-size:15px}
-.everyday-player:has(.everyday-reply-game) .everyday-stage{height:clamp(180px,calc(100vh - 620px),240px)}
+.everyday-player:has(.everyday-reply-game) .everyday-stage{height:200px;max-height:200px}
 }
 .everyday-player .everyday-copy{animation:none}
