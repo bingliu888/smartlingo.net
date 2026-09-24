@@ -12,6 +12,9 @@ test("role tutor accepts only fixed scene, language, level and scene-owned role"
   assert.equal(cafe?.role, "coffee shop barista");
   assert.match(roleTutorInstructions(cafe), /simulated AI coffee shop barista/);
   assert.match(roleTutorInstructions(cafe), /not a real person/);
+  assert.match(roleTutorInstructions(cafe, 2), /guided opening/);
+  assert.match(roleTutorInstructions(cafe, 5), /situational variation/);
+  assert.match(roleTutorInstructions(cafe, 10), /independent transfer/);
   for (const bad of [
     { scene: "invented", language: "ja", level: "beginner", uiLanguage: "zh" },
     { scene: "cafe", language: "xx", level: "beginner", uiLanguage: "zh" },
@@ -57,7 +60,7 @@ test("SQLite user ownership and atomic reservation reject replay, overlap, expir
   database.close();
 });
 
-test("role tutor rollout stays independently off and never enables legacy live SDP", () => {
+test("role tutor uses explicit trial, speech authorization and keeps legacy live SDP disabled", () => {
   const route = readFileSync(new URL("../app/api/assistant/role-tutor/route.ts", import.meta.url), "utf8");
   const page = readFileSync(new URL("../app/[lang]/assistant/role-tutor/page.tsx", import.meta.url), "utf8");
   const live = readFileSync(new URL("../app/api/assistant/live/route.ts", import.meta.url), "utf8");
@@ -65,8 +68,18 @@ test("role tutor rollout stays independently off and never enables legacy live S
   const client = readFileSync(new URL("../components/RoleTutor.tsx", import.meta.url), "utf8");
   const everyday = readFileSync(new URL("../app/[lang]/play/everyday/page.tsx", import.meta.url), "utf8");
   const player = readFileSync(new URL("../components/EverydaySpeakingPlayer.tsx", import.meta.url), "utf8");
-  assert.match(route, /SMARTLINGO_ROLE_TUTOR_ENABLED !== "1"/);
-  assert.match(page, /SMARTLINGO_ROLE_TUTOR_ENABLED !== "1"/);
+  const speech = readFileSync(new URL("../app/api/assistant/role-tutor/speech/route.ts", import.meta.url), "utf8");
+  assert.match(route, /SMARTLINGO_ROLE_TUTOR_ENABLED === "0"/);
+  assert.match(page, /SMARTLINGO_ROLE_TUTOR_ENABLED === "0"/);
+  assert.match(route, /body\.action === "start-trial"/);
+  assert.match(route, /ensureSevenDayMaxTrial\(user\.id\)/);
+  assert.match(client, /onClick=\{startTrial\}/);
+  assert.match(client, /getUserMedia/);
+  assert.match(client, /speakLearningText/);
+  assert.match(speech, /hasMaxCourseAccess\(user\)/);
+  assert.match(speech, /WHERE id=\? AND user_id=\?/);
+  assert.match(speech, /transcribeSmartAiSpeech/);
+  assert.match(speech, /consumeAiDailyQuota\(user\.id, "assistant"\)/);
   assert.match(route, /hasMaxCourseAccess\(user\)/);
   assert.match(route, /consumeAiDailyQuota\(user\.id, "assistant"\)/);
   assert.match(route, /origin === new URL\(request\.url\)\.origin/);
@@ -75,5 +88,5 @@ test("role tutor rollout stays independently off and never enables legacy live S
   assert.match(client, /last four exchanges are kept briefly for context and cleared/);
   assert.match(everyday, /siteLang=\{lang\}/);
   assert.match(player, /\$\{siteLang\}\/assistant\/role-tutor/);
-  assert.doesNotMatch(route, /ensureSevenDayMaxTrial|startMaxTrial|clientSecret|sdp/);
+  assert.doesNotMatch(route, /clientSecret|sdp/);
 });

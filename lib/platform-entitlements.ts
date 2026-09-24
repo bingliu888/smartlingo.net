@@ -101,6 +101,12 @@ export async function hasMaxCourseAccess(user: SessionUser | null) {
   return await isAdminUser(user) || await hasActiveMaxSubscription(user.id);
 }
 
+export async function hasUsedMaxTrial(userId: string) {
+  const row = await getDatabase().prepare(`SELECT trial_ends_at AS trialEndsAt FROM subscriptions
+    WHERE user_id=? LIMIT 1`).bind(userId).first<{ trialEndsAt: number | null }>();
+  return row?.trialEndsAt != null;
+}
+
 export async function ensureSevenDayMaxTrial(userId: string, now = Math.floor(Date.now() / 1_000)) {
   const database = getDatabase();
   const current = await database.prepare(`SELECT cadence,status,trial_ends_at AS trialEndsAt,

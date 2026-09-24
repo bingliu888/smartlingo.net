@@ -1,6 +1,6 @@
 import { getDatabase } from "../../../../lib/auth";
 import { consumeAiDailyQuota } from "../../../../lib/ai-daily-quota";
-import { hasMaxCourseAccess } from "../../../../lib/platform-entitlements";
+import { ensureSevenDayMaxTrial, hasMaxCourseAccess } from "../../../../lib/platform-entitlements";
 import { requestUser } from "../../../../lib/request-user";
 import {
   askSmartAi, readSmartAiJsonRequest, safeSmartAiError, smartAiRequestCountry,
@@ -44,7 +44,7 @@ function readHistory(value: string): Exchange[] {
 }
 
 export async function POST(request: Request) {
-  if (process.env.SMARTLINGO_ROLE_TUTOR_ENABLED !== "1") return json({ error: "Not found." }, 404);
+  if (process.env.SMARTLINGO_ROLE_TUTOR_ENABLED === "0") return json({ error: "Not found." }, 404);
   if (!sameOrigin(request)) return json({ error: "Origin not allowed." }, 403);
   let body: TutorRequest;
   try {
@@ -57,6 +57,13 @@ export async function POST(request: Request) {
   const user = await requestUser();
   if (!user) return json({ error: localized(zh, "请先登录。", "Sign in is required.") }, 401);
   try {
+    if (body.action === "start-trial") {
+      if (await hasMaxCourseAccess(user)) return json({ active: true, trialStarted: false });
+      const trial = await ensureSevenDayMaxTrial(user.id);
+      return trial.active
+        ? json({ active: true, trialStarted: trial.trialStarted, trialEndsAt: trial.trialEndsAt })
+        : json({ error: localized(zh, "七天试用已使用，请选择 Max 方案。", "Your seven-day trial was already used. Choose a Max plan.") }, 403);
+    }
     if (!await hasMaxCourseAccess(user)) {
       return json({ error: localized(zh, "需要有效 Max 方案。此操作不会启动试用。", "An active Max plan is required. This does not start a trial.") }, 403);
     }
@@ -121,12 +128,13 @@ export async function POST(request: Request) {
       .bind(now + 25, now, row.id, user.id, now, ROLE_TUTOR_MAX_TURNS, now)
       .first<{ turnCount: number }>();
     if (!reserved) return json({ error: localized(zh, "上一句仍在处理，或练习已结束。", "The previous turn is still processing, or the session has ended.") }, 409);
+    let completed = false;
     try {
       const message = body.message.trim();
       const history = readHistory(row.transcriptJson);
       const answer = await askSmartAi({
         feature: "chat_guru", subject: `user:${user.id}`, language: mission.uiLanguage,
-        instructions: roleTutorInstructions(mission),
+        instructions: roleTutorInstructions(mission, reserved.turnCount),
         content: roleTutorTurnContent(history, message),
         deps: { providerPreference: user.aiProviderPreference ?? "auto", country: smartAiRequestCountry(request) },
       });
@@ -138,13 +146,17 @@ export async function POST(request: Request) {
         SET transcript_json=?,pending_until=0,updated_at=? WHERE id=? AND user_id=? AND turn_count=?
         RETURNING id`).bind(transcript, now, row.id, user.id, reserved.turnCount).first<{ id: string }>();
       if (!saved) return json({ error: localized(zh, "本次回复已过期，请重试。", "This reply expired. Please try again.") }, 409);
+      completed = true;
       return json({ reply, turnCount: reserved.turnCount, maxTurns: ROLE_TUTOR_MAX_TURNS, expiresAt: row.expiresAt });
     } catch (error) {
       const safe = safeSmartAiError(error, mission.uiLanguage, "guru");
       return json({ error: safe.message, code: safe.code }, safe.status);
     } finally {
-      await database.prepare(`UPDATE smartlingo_role_tutor_sessions SET pending_until=0 WHERE id=? AND user_id=? AND turn_count=?`)
-        .bind(row.id, user.id, reserved.turnCount).run();
+      if (!completed) {
+        await database.prepare(`UPDATE smartlingo_role_tutor_sessions
+          SET turn_count=turn_count-1,pending_until=0 WHERE id=? AND user_id=? AND turn_count=?`)
+          .bind(row.id, user.id, reserved.turnCount).run();
+      }
     }
   } catch {
     return json({ error: localized(zh, "导师暂时不可用，请稍后再试。", "The tutor is temporarily unavailable.") }, 503);
