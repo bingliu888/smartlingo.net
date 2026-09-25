@@ -1,55 +1,51 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-smartmeeting-v2-course-room-20260924-r12",
+  "releaseId": "smartlingo-konectible-header-wordmark-20260924-r13",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 课程教室迁移 SmartMeeting V2",
-    "en": "SmartMeeting V2 interactions in SmartLingo course rooms"
+    "zh": "SmartLingo 菜单按钮与品牌字样布局修复",
+    "en": "SmartLingo menu button and wordmark layout fix"
   },
   "purpose": {
-    "zh": "将已验证的 SmartMeeting V2 成员在线、私密支持聊天、媒体等待及录音附件体验完整适配至 SmartLingo 课程教室。",
-    "en": "Adapt the reviewed SmartMeeting V2 member presence, private support chat, media waiting, and recording and attachment interactions to SmartLingo course rooms."
+    "zh": "使汉堡菜单按钮沿用 Konectible 已验证的外观，并修复 iPad 横屏下品牌字样被强制拆成两行的问题。",
+    "en": "Reuse Konectible's verified hamburger-button appearance and stop the wordmark from being forced onto two lines in iPad landscape."
   },
   "features": {
     "zh": [
-      "所有课程教室只允许登录会员进入；同一会员只保留一个在线设备或标签页，在线人数包含自己；群组音频显示成员出入提示条。",
-      "单排操作栏、等待中的橙色扬声器、直播成员提及、主持团队定向回复的七天私密支持聊天及可滚动消息列表。",
-      "一个人等待第二位会员时不连接 RealtimeKit；媒体轨道状态与操作同步，独处和静音时按宽限期及服务端参与者复核收尾。",
-      "课程录音及附件侧栏提供本地 15 分钟录音、30 分钟音频文件试听上传和仅本机播放的文字朗读；保留原有课程录制资料。"
+      "汉堡按钮改为 Konectible 的白底蓝色线条与浅蓝色悬停、展开状态；保留 SmartLingo 的菜单内容与账户导航。",
+      "移除 1101–1320px 范围内强制将 Smart 与 Lingo 排成两行的旧规则。"
     ],
     "en": [
-      "Require a signed-in member in every course room; limit each member to one online device or tab, include self in presence, and show arrivals and departures in group audio.",
-      "Use a one-row action bar, orange waiting speaker, streaming-member mentions, seven-day private support chat with addressed host-team replies, and a scrollable message list.",
-      "Wait for a second distinct member before joining RealtimeKit, reconcile actual media tracks with controls, and close lone or idle connections after grace periods and an authoritative server recheck.",
-      "Add local 15-minute recording, 30-minute audio-file preview and upload, local-only text-to-speech, and attachment drawers while retaining existing course capture records."
+      "Match Konectible's white hamburger button, blue strokes, and pale-blue hover and expanded states while preserving SmartLingo's menu and account links.",
+      "Remove the old 1101–1320px rule that forced Smart and Lingo onto separate lines."
     ]
   },
   "affected": {
-    "zh": ["课程教室页面、成员在线及加入接口、私密聊天、录音和附件接口、D1 课程表；不改变学习内容、课程购买、Max 价格或支付流程。"],
-    "en": ["Course-room page, presence and join APIs, private chat, recording and attachment APIs, and course D1 tables; learning content, course checkout, Max pricing, and payments are unchanged."]
+    "zh": ["全站共用导航栏及首页品牌字样；不改变学习、会员或支付功能。"],
+    "en": ["Shared site header and homepage wordmark; learning, membership, and payments are unchanged."]
   },
   "changes": {
-    "zh": ["新增在线租约、定向聊天接收人和课程音频笔记的追加式迁移；音频文件存放 SmartLingo 自己的私有 R2，使用现有配额及延迟清理。"],
-    "en": ["Add an additive migration for online leases, chat recipients, and course audio notes; audio remains in SmartLingo's own private R2 under existing quota and durable cleanup rules."]
+    "zh": ["仅复用 Konectible 按钮样式并删除旧换行规则；扩展真实 WebKit 布局检查，确认 Smart 与 Lingo 保持同一行。"],
+    "en": ["Reuse Konectible's button styles, remove the obsolete wrap rule, and extend the real WebKit layout gate to confirm Smart and Lingo stay on one line."]
   },
   "validation": {
-    "zh": ["D1 首次及重复迁移、在线租约与私聊隔离测试、媒体回归、TypeScript、零警告 lint、全站测试、构建、敏感信息扫描和发布门禁；部署后核验站点和 Project 记录。"],
-    "en": ["Fresh and repeated D1 migrations, presence and private-chat isolation tests, media regressions, TypeScript, zero-warning lint, full-site tests, build, sensitive scan, and release gates; verify production and Project record after deployment."]
+    "zh": ["共享站点基线检查、476 项测试、TypeScript、零警告 lint、构建与敏感信息扫描通过；完成 WebKit 布局及生产浏览器核验。"],
+    "en": ["Shared-site baseline checks, 476 tests, TypeScript, zero-warning lint, build, and sensitive-data scan passed; complete WebKit layout and production-browser verification."]
   },
   "deferred": {
-    "zh": ["按用户先前指示，本次跨站迁移不对每个目标重复四人实时媒体浏览器演练；生产端检查课程教室入口与基础页面可用性。"],
-    "en": ["Per the owner's earlier instruction, this cross-site migration does not repeat the four-participant live-media browser exercise on every target; production verification covers course-room entry and basic availability."]
+    "zh": ["此发布不涉及登录、课程或支付流程；这些流程未因本次视觉改动重新演练。"],
+    "en": ["This visual-only release does not change sign-in, course, or payment flows; those flows are not re-exercised for this change."]
   },
   "siteAdaptations": {
-    "zh": ["SmartLingo 使用课程教室和 Free/Max 会员术语，并保留课程播放列表和既有课程录制；以站点自己的 D1、R2、Clerk 和 RealtimeKit 资源实现同一交互契约。"],
-    "en": ["SmartLingo uses course-room and Free/Max terminology and keeps its playlist and existing course capture; the interaction contract uses only this site's D1, R2, Clerk, and RealtimeKit resources."]
+    "zh": ["沿用 Konectible 已验证的按钮颜色与交互状态，保留 SmartLingo 独立品牌字样、语言选项和账户菜单。"],
+    "en": ["Carry over Konectible's reviewed button colors and interaction states while retaining SmartLingo's own wordmark, language choices, and account menu."]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": ["0190_private_classroom_support_and_presence"],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "zh": "应用迁移后结构保持追加式；若需回退应用，重新部署上一成功提交并保留新增表与列及已写入数据。",
-      "en": "The applied schema remains additive. To roll back the app, redeploy the previous successful commit while retaining new tables, columns, and written data."
+      "zh": "无需数据回退；如需撤销视觉调整，可重新部署上一成功提交。",
+      "en": "No data rollback is needed; redeploy the previous successful commit to revert the visual adjustment."
     }
   }
 }

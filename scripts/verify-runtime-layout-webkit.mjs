@@ -321,6 +321,11 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     };
   });
   const textFits = Array.from(document.querySelectorAll("[data-layout-text-fit]"), measureTextFit);
+  const wordmarkParts = document.querySelectorAll(".site-header .smartlingo-wordmark > span, .site-header .smartlingo-wordmark > em");
+  const wordmark = wordmarkParts.length === 2 ? {
+    first: rectValue(wordmarkParts[0].getBoundingClientRect()),
+    second: rectValue(wordmarkParts[1].getBoundingClientRect()),
+  } : null;
   const headings = Array.from(document.querySelectorAll("h1,h2,h3"), element => {
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
@@ -490,6 +495,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     tracks,
     readableCopy,
     textFits,
+    wordmark,
     headings,
     clipping,
     overlapChecks,
@@ -587,6 +593,9 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
         contentBox: item.contentBox,
       });
     }
+  }
+  if (report.wordmark && Math.abs(report.wordmark.first.top - report.wordmark.second.top) > tolerance) {
+    add("wordmark-wrap", ".site-header .smartlingo-wordmark", "SmartLingo wordmark must stay on one line", report.wordmark);
   }
   for (const item of report.clipping || []) {
     if (!item.allowedDecoration) add("clipped-content", item.selector, "visible key content is clipped or ellipsized", item);

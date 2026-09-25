@@ -146,6 +146,17 @@ test("landscape Everyday Speaking keeps instructions through actions within one 
   assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "landscape-scene-content-clipped"));
 });
 
+test("header wordmark keeps Smart and Lingo on one baseline", () => {
+  const report = {
+    schemaVersion: 1,
+    page: { document: { clientWidth: 1180, scrollWidth: 1180 }, body: { clientWidth: 1180, scrollWidth: 1180 } },
+    wordmark: { first: { top: 170 }, second: { top: 190 } },
+  };
+  assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "wordmark-wrap"));
+  report.wordmark.second.top = 170;
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "wordmark-wrap"));
+});
+
 test("layout gate requires real page markers and representative hook categories", () => {
   for (const page of ["home", "tutorial", "courses", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-members", "admin-certificates", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));
