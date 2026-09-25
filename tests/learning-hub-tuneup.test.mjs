@@ -23,7 +23,7 @@ test("vocabulary library pagination returns exactly twenty and clamps pages", ()
   assert.equal(last.items.length, 20);
 });
 
-test("home and dashboard use canonical feature routes without duplicate home panels", async () => {
+test("home and dashboard use canonical Flash, Max and Guru routes without duplicate panels", async () => {
   const [home, dashboard, dashboardHub, dashboardLinks, assistant, assistantRoute, locale] = await Promise.all([
     read("../app/[lang]/page.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
@@ -36,11 +36,10 @@ test("home and dashboard use canonical feature routes without duplicate home pan
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) {
     assert.match(locale, new RegExp(label));
   }
-  assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
-  for (const route of ["play/everyday", "programs", "assistant"]) assert.match(home, new RegExp(route));
+  for (const route of ["flash", "max", "assistant"]) assert.match(home, new RegExp(route));
   assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-ai/);
-  assert.match(dashboard, /DashboardLearningHub/);
-  assert.match(dashboard, /smartlingo_language_class_members/);
+  assert.match(dashboard, /LearningLanguageTiles/);
+  assert.match(dashboard, /memberLearningLanguages/);
   for (const path of ["play/everyday", "play/challenge", "smartcards", "programs"]) assert.match(dashboardHub, new RegExp(path));
   assert.match(dashboardLinks, /classes/);
   for (const label of ["Smart Card Practice", "Smart Card Challenge", "Everyday speaking", "Courses"]) assert.match(dashboardHub, new RegExp(label));

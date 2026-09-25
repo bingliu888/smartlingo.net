@@ -16,7 +16,7 @@ test("Chinese shared controls and account notices remain localized", async () =>
   assert.match(interfaceLocale, /主导航/);
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(interfaceLocale, new RegExp(label));
   assert.match(interfaceLocale, /页脚导航/);
-  assert.match(interfaceLocale, /从第一天开口 · 人工智能导师 · 三级课程 · 免费与 Max/);
+  assert.match(interfaceLocale, /footerTagline: "Flash · Max · Guru"/);
   assert.match(language, /interfaceLanguages/);
   assert.match(account, /条未读消息/);
   assert.match(assistant, /打开智能助手/);
@@ -42,7 +42,8 @@ test("Chinese public, dashboard, Project, and legal copy uses language-learning 
   assert.match(members, /消息与实时聊天/);
   assert.match(membership, /免费方案/);
   assert.match(membership, /平台订阅推荐/);
-  assert.match(dashboard, /DashboardLearningHub/);
+  assert.match(dashboard, /<LearningLanguageTiles lang=\{lang\} path="max"/);
+  assert.match(dashboard, /<LearningLanguageTiles lang=\{lang\} path="flash"/);
   assert.match(project, /二十天交付节奏/);
   assert.match(privacy, /语音与人工智能训练/);
   assert.match(terms, /内置课程/);
@@ -103,7 +104,7 @@ test("every Chinese route inherits localized language-learning metadata", async 
   assert.match(layout, /generateMetadata/);
   assert.match(layout, /SmartLingo — 从第一天开口，与课程一起进步/);
   assert.match(layout, /template: "%s \| SmartLingo"/);
-  assert.match(home, /metaTitle: "SmartLingo — 从第一天开口"/);
+  assert.match(home, /learningExperienceCopy\[lang\]\.homeTitle/);
   assert.match(programs, /interfaceText\(locale, "Language learning paths", "语言学习路径"\)/);
   assert.match(project, /interfaceText\(locale, "Project progress", "项目进展"\)/);
   assert.doesNotMatch(`${layout}\n${home}\n${programs}`, /人工智能实操学习与会员开班|21 天学会/);

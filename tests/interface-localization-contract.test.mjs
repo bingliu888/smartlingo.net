@@ -11,7 +11,8 @@ test("every selectable interface language is a real route instead of an English 
   ]);
   assert.doesNotMatch(menu, /code === "zh" \? "zh" : "en"/);
   assert.match(menu, /localizedPath\(window\.location\.pathname, code\)/);
-  assert.match(home, /safeInterfaceLanguage\(lang\)/);
+  assert.match(home, /isInterfaceLanguage\(lang\)/);
+  assert.match(home, /learningExperienceCopy\[lang\]/);
   for (const code of ["ja","ko","es","fr","de","ru","it","pt","ar","hi"]) {
     assert.match(generated, new RegExp(`^  "${code}":`, "m"));
   }

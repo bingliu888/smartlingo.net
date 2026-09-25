@@ -112,8 +112,7 @@ test("unreviewed locales never receive the unrelated find-the-venue sentence ban
 test("course details replace the back button with language-preserving everyday speaking", async () => {
   const page = await read("../app/[lang]/programs/[language]/page.tsx");
   assert.match(page, /play\/everyday\?language=\$\{language\}/);
-  assert.match(page, /生活口语/);
-  assert.match(page, /Everyday Speaking/);
+  assert.match(page, /\{ui\.everyday\}/);
   assert.doesNotMatch(page, /返回选择课程|Back to courses/);
 });
 

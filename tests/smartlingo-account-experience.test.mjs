@@ -7,9 +7,9 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 test("signed-in account menu keeps the simplified member navigation", async () => {
   const source = await read("components/HeaderAccount.tsx");
 
-  for (const label of ["用户面板", "个人资料", "我的课程", "消息", "选择课程"]) assert.match(source, new RegExp(label));
-  for (const label of ["Dashboard", "Profile", "My Courses", "Messages", "Choose course"]) assert.match(source, new RegExp(label));
-  assert.match(source, /\/classes\?mine=1/);
+  for (const label of ["用户面板", "个人资料", "消息"]) assert.match(source, new RegExp(label));
+  for (const label of ["Dashboard", "Profile", "Messages"]) assert.match(source, new RegExp(label));
+  assert.doesNotMatch(source, /\/classes\?mine=1|My Courses|我的课程|Choose course|选择课程/);
   assert.doesNotMatch(source, /\/classrooms\?view=mine|My Classrooms|\/community/);
   assert.doesNotMatch(source, /职业档案|人才库|Gold|Platinum|黄金|铂金|BACC|license/i);
 });
@@ -26,7 +26,7 @@ test("dashboard keeps learning, referrals, and built-in course access", async ()
   assert.doesNotMatch(joined, /每位会员都能开班|免费学习，也可以带领自己的语言班|不开启开班资格门槛/);
   assert.match(panel, /介绍人积分只在平台成功收取订阅费后产生/);
   assert.match(panel, /课程购买、班主收款、Stripe Connect 转账、退款、争议和打赏一律不产生介绍人积分/);
-  assert.match(dashboard, /DashboardLearningHub/);
+  assert.match(dashboard, /LearningLanguageTiles/);
   assert.doesNotMatch(joined, /白银会员|黄金会员|铂金会员|BACC|授权码|license key/i);
 });
 

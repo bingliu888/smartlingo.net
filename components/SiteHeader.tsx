@@ -20,10 +20,9 @@ export function SiteHeader({ lang }: { lang: InterfaceLanguage }) {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const links = [
-    [t.learn, `/${lang}/learn`, "learn", pathname === `/${lang}/learn` || pathname.startsWith(`/${lang}/learn/`)],
-    [t.practice, `/${lang}/smartcards`, "practice", pathname === `/${lang}/smartcards` || pathname.startsWith(`/${lang}/smartcards/`)],
-    [t.speak, `/${lang}/play/everyday`, "speak", pathname === `/${lang}/play/everyday` || pathname.startsWith(`/${lang}/play/everyday/`)],
-    [t.community, `/${lang}/community`, "community", pathname === `/${lang}/community` || pathname.startsWith(`/${lang}/community/`)],
+    ["Flash", `/${lang}/flash`, "flash", pathname === `/${lang}/flash` || pathname.startsWith(`/${lang}/flash/`)],
+    ["Max", `/${lang}/max`, "max", pathname === `/${lang}/max` || pathname.startsWith(`/${lang}/max/`)],
+    [t.askGuru, `/${lang}/assistant`, "guru", pathname === `/${lang}/assistant` || pathname.startsWith(`/${lang}/assistant/`)],
   ] as const;
   const [visibleLinkCount, setVisibleLinkCount] = useState<number>(links.length);
   const hiddenLinks = links.slice(visibleLinkCount);

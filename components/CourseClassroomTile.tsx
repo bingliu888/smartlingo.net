@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type RoomState = { code: string; title: string; live: boolean };
 type State = { teachingRoom: RoomState; practiceRoom: RoomState; isOwner: boolean } | null;
 
-export function CourseClassroomTile({ classId, lang, compact = false }: { classId: string; lang: "en" | "zh"; compact?: boolean }) {
+export function CourseClassroomTile({ classId, lang, compact = false }: { classId: string; lang: InterfaceLanguage; compact?: boolean }) {
   const zh = lang === "zh";
   const [state, setState] = useState<State>(null);
   const [error, setError] = useState(false);

@@ -112,7 +112,7 @@ test("course and anonymous Play expose six isolated learning activities", () => 
   assert.match(playPicker, /course_\$\{language\}_basic\/sprint\?minutes=/);
   assert.match(playPicker, /source=play/);
   assert.match(play, /href=\{links\.rankings\}/);
-  assert.match(dashboard, /DashboardDailySprint/);
+  assert.match(dashboard, /path="flash"/);
   assert.match(dashboardSprint, /添加语言/);
   assert.equal((dashboardSprint.match(/Add language/g) || []).length, 1);
   assert.match(dashboardSprint, /minutes\[language\.code\] \|\| 10/);
@@ -122,23 +122,16 @@ test("course and anonymous Play expose six isolated learning activities", () => 
   assert.match(rewardsRoute, /digital_redeem/);
 });
 
-test("Primary navigation exposes the four learning choices and the task image opens Sprint", () => {
+test("Primary navigation exposes Flash, Max and Guru with a compact homepage", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
-  assert.ok(header.indexOf('[t.learn,') < header.indexOf('[t.practice,'));
-  assert.ok(header.indexOf('[t.practice,') < header.indexOf('[t.speak,'));
-  assert.ok(header.indexOf('[t.speak,') < header.indexOf('[t.community,'));
-  assert.ok(home.indexOf('href={`/${locale}/play/everyday`}') < home.indexOf('href={`/${locale}/programs`}'));
-  for (const path of ["play/everyday", "programs", "assistant"]) assert.match(home, new RegExp(path));
-  assert.match(home, /play\?language=\$\{locale\}/);
+  assert.ok(header.indexOf('["Flash",') < header.indexOf('["Max",'));
+  assert.ok(header.indexOf('["Max",') < header.indexOf('[t.askGuru,'));
+  for (const path of ["flash", "max", "assistant"]) assert.match(home, new RegExp(path));
   assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-ai/);
-  assert.match(home, /PlayDailySprintPicker lang=\{locale\} initialLanguage=\{locale\}/);
-  assert.match(home, /triggerClassName="lingo-hero-visual"/);
-  assert.match(home, /triggerLabel=\{ui\.openSprint\}/);
-  assert.doesNotMatch(home, /className="lingo-hero-visual" href=/);
-  assert.match(home, /lingo-community-art/);
-  assert.match(home, /lingo-task-action/);
-  assert.match(home, /href=\{`\/\$\{locale\}\/play\?language=\$\{locale\}`\}/);
+  assert.match(home, /learning-path-card flash/);
+  assert.match(home, /learning-path-card max/);
+  assert.match(home, /learning-guru-card/);
 });
 
 test("anonymous Sprint resumes its matching short cookie while signed-in members resume D1 checkpoints", async () => {

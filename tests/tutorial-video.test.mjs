@@ -8,8 +8,8 @@ const copy = readFileSync("lib/smartlingo-tutorial.ts", "utf8");
 const css = readFileSync("app/[lang]/tutorial/tutorial.css", "utf8");
 
 test("home hero exposes a localized first-time tutorial action", () => {
-  assert.match(home, /smartLingoTutorialCopyFor\(locale\)/);
-  assert.match(home, /href=\{`\/\$\{locale\}\/tutorial`\}/);
+  assert.match(home, /smartLingoTutorialCopyFor\(lang\)/);
+  assert.match(home, /href=\{`\/\$\{lang\}\/tutorial`\}/);
   assert.match(home, /className="lingo-tour-spotlight"/);
   assert.match(home, /tutorial\.homeAction/);
   assert.match(home, /tutorial\.duration/);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("anchors Ask Guru as a root-layout viewport control outside the four-choice learning nav", async () => {
+test("anchors Ask Guru in the three-choice learning nav and retains the viewport shortcut", async () => {
   const [layout, assistant, header, css] = await Promise.all([
     readFile(new URL("../app/[lang]/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../components/FloatingAssistant.tsx", import.meta.url), "utf8"),
@@ -15,10 +15,8 @@ test("anchors Ask Guru as a root-layout viewport control outside the four-choice
   assert.doesNotMatch(assistant, /topLevelPages/);
   assert.match(assistant, /route === "\/assistant" \|\| route\.startsWith\("\/auth\/"\)/);
   assert.match(css, /\.floating-assistant\{\s*position:fixed!important;\s*inset:auto[^;]*safe-area-inset-right[^;]*safe-area-inset-bottom[^;]*auto!important;/);
-  for (const choice of ["learn", "practice", "speak", "community"]) {
-    assert.match(header, new RegExp(`\\[t\\.${choice},[\\s\\S]*?"${choice}"`));
-  }
-  assert.doesNotMatch(header, /href=\{`\/\$\{lang\}\/assistant`\}/);
+  for (const choice of ["flash", "max", "guru"]) assert.match(header, new RegExp(`"${choice}"`));
+  assert.match(header, /\[t\.askGuru, `\/\$\{lang\}\/assistant`, "guru"/);
 });
 
 test("keeps the supplementary Guru shortcut outside every release viewport", async () => {

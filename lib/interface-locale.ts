@@ -32,7 +32,7 @@ export const interfaceCopies: Record<InterfaceLanguage, InterfaceCopy> = {
   ar:{...en,everyday:"محادثات يومية",play:"تعلّم باللعب",courses:"اختر دورة",askAi:"اسأل الذكاء الاصطناعي",learn:"تعلّم",practice:"تدرّب",speak:"تحدّث",community:"المجتمع",me:"أنا",primaryNav:"التنقل الرئيسي",openMenu:"فتح القائمة",closeMenu:"إغلاق القائمة",home:"الصفحة الرئيسية لـ SmartLingo",language:"اللغة",chooseLanguage:"اختر اللغة",footerNav:"تنقل التذييل",footerTagline:"تحدث من اليوم الأول · معلّم ذكي · ثلاثة مستويات · تسع باقات محددة المدة",project:"المشروع",about:"من نحن",privacy:"الخصوصية",terms:"الشروط",askGuru:"اسأل المعلّم",account:"قائمة الحساب",signIn:"تسجيل الدخول"},
   hi:{...en,everyday:"दैनिक बातचीत",play:"खेलते हुए सीखें",courses:"पाठ्यक्रम चुनें",askAi:"AI से पूछें",learn:"सीखें",practice:"अभ्यास",speak:"बोलें",community:"समुदाय",me:"मैं",primaryNav:"मुख्य नेविगेशन",openMenu:"मेनू खोलें",closeMenu:"मेनू बंद करें",home:"SmartLingo होम",language:"भाषा",chooseLanguage:"भाषा चुनें",footerNav:"फुटर नेविगेशन",footerTagline:"पहले दिन से बोलें · AI शिक्षक · तीन स्तर · नौ निश्चित-अवधि पैकेज",project:"परियोजना",about:"हमारे बारे में",privacy:"गोपनीयता",terms:"शर्तें",askGuru:"शिक्षक से पूछें",account:"खाता मेनू",signIn:"साइन इन"},
 };
-export const interfaceCopyFor = (language: InterfaceLanguage) => interfaceCopies[language];
+export const interfaceCopyFor = (language: InterfaceLanguage) => ({ ...interfaceCopies[language], footerTagline: "Flash · Max · Guru" });
 
 type AssistantComposerCopy = { question:string; placeholder:string; faq:string; startVoice:string; stopVoice:string; send:string };
 export const assistantComposerCopy: Record<InterfaceLanguage, AssistantComposerCopy> = {

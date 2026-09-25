@@ -85,10 +85,10 @@ test("anonymous Beginner trial is public, reads the published catalog, and keeps
     read("../components/AnonymousBeginnerTrial.tsx"),
     read("../app/api/vocabulary/trial/route.ts"),
   ]);
-  assert.match(coursePage, /Free to Play[^]*Free Trial/);
-  assert.match(coursePage, /programs\/\$\{language\}\/trial/);
-  assert.match(coursePage, /className="ai-public-hero-shell"[^]*className="ai-public-hero"/);
-  assert.match(coursePage, /className="ai-cert-actions" data-layout-track="program-detail-actions"/);
+  assert.match(coursePage, /play\?language=\$\{language\}/);
+  assert.match(coursePage, /path === "max"/);
+  assert.match(coursePage, /learning-entry-intro/);
+  assert.match(coursePage, /labels\.findLevel/);
   assert.match(trialPage, /getBeginnerSessionVocabularyDeck/);
   assert.match(trialPage, /buildDailyPracticeItem/);
   assert.doesNotMatch(trialPage, /requestUser|redirect\(|getDatabase|smartlingo_course_enrollments/);

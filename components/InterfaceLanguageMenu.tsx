@@ -14,7 +14,7 @@ const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
 const INTERFACE_LANGUAGE_KEY = "smartlingo-interface-language";
 
 export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
-  window.localStorage.setItem(TARGET_LANGUAGE_KEY, code);
+  try { window.localStorage.setItem(TARGET_LANGUAGE_KEY, code); } catch { /* Private browsing can restrict storage; navigation still works. */ }
   window.dispatchEvent(new CustomEvent(TARGET_LANGUAGE_EVENT, { detail: code }));
 }
 

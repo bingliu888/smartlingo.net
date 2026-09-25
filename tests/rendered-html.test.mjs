@@ -48,30 +48,14 @@ test("renders the SmartLingo language-learning foundation", async () => {
   );
   const html = await response.text();
   assert.match(html, /SmartLingo/);
-  assert.match(html, /从第一天开始，开口说一门新语言/);
-  for (const language of ["中文", "English", "Español", "日本語", "한국어", "Français", "Deutsch", "Русский", "Italiano", "Português", "العربية", "हिन्दी"]) {
-    assert.match(html, new RegExp(language));
-  }
-  for (const skill of ["词汇", "阅读", "写作", "听力", "对话"]) assert.match(html, new RegExp(skill));
-  assert.match(html, /三级课程/);
-  assert.match(html, /初级永久免费，用 Max 更进一步/);
-  assert.match(html, /免费方案/);
-  assert.match(html, /6 个月/);
-  assert.match(html, /年度/);
-  assert.match(html, /\$119/);
-  assert.match(html, /\$199/);
-  assert.match(html, /人工智能生成额度/);
+  assert.match(html, /两种学习方式，从一门语言开始/);
+  assert.match(html, /适合休闲学习者/);
+  assert.match(html, /适合认真学习者/);
+  assert.match(html, /href="\/zh\/flash"/);
+  assert.match(html, /href="\/zh\/max"/);
+  assert.match(html, /href="\/zh\/assistant"/);
+  assert.match(html, /href="\/zh\/tutorial"/);
   assert.doesNotMatch(html, /九个套餐|30 \/ 50 \/ 80|60 \/ 100 \/ 160|120 \/ 200 \/ 320|课程套餐/);
-  assert.match(html, /社区/);
-  assert.match(html, /href="\/zh\/community"/);
-  assert.match(html, />学习<\/a>/);
-  assert.match(html, />练习<\/a>/);
-  assert.match(html, />开口<\/a>/);
-  assert.match(html, />社区<\/a>/);
-  assert.match(html, /\/zh\/project/);
-  assert.match(html, />项目</);
-  assert.match(html, /消息与实时聊天/);
-  assert.match(html, /人工智能导师与实时语音/);
   assert.doesNotMatch(html, /SmartCert\.pro|smartcert\.pro|SmartAICert|21 天人工智能实操|BACC|黄金会员|铂金会员/);
   assert.doesNotMatch(html, /SmartSAT|SmartNCT|GreatLove|大爱元宇宙|BingAcademy/);
   assert.doesNotMatch(html, /CatMe|GameFi|DeFi|SocialFi/);
@@ -83,7 +67,7 @@ test("renders localized, non-duplicated titles across public routes", async () =
   workerUrl.searchParams.set("test", `localized-titles-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
   const expected = new Map([
-    ["/zh", /SmartLingo — 从第一天开口/],
+    ["/zh", /两种学习方式，从一门语言开始/],
     ["/zh/programs", /语言学习路径/],
     ["/zh/auth/login", /登录或加入/],
   ]);

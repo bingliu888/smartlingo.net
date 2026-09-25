@@ -54,9 +54,9 @@ test("course entrances replace the standalone classroom directory", () => {
   const home = read("app/[lang]/page.tsx");
   const dashboard = read("app/[lang]/dashboard/page.tsx") + read("app/[lang]/dashboard/page.tsx");
   const community = read("app/[lang]/community/page.tsx");
-  assert.match(home, /classes/);
+  assert.match(home, /\$\{lang\}\/max/);
   assert.doesNotMatch(home, /classrooms\?view=mine/);
-  assert.match(dashboard, /DashboardLearningHub/);
+  assert.match(dashboard, /LearningLanguageTiles/);
   assert.doesNotMatch(dashboard, /classrooms\?view=mine/);
   assert.match(community, /CommunityMeetings/);
   assert.match(community, /NearbyLearning/);

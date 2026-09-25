@@ -48,15 +48,17 @@ test("Community always offers clearly disclosed AI classmates and keeps real mat
   assert.match(assistantRoute, /Take one short turn at a time/);
 });
 
-test("the dashboard places learning, practice, speaking, and community coherently", async () => {
+test("the dashboard separates Max and Flash while keeping community reachable", async () => {
   const [header, dashboard, hub, communityHub] = await Promise.all([
     read("../components/SiteHeader.tsx"),
     read("../app/[lang]/dashboard/page.tsx"),
     read("../components/DashboardLearningHub.tsx"),
     read("../components/DashboardCommunityHub.tsx"),
   ]);
-  for (const key of ["learn", "practice", "speak", "community"]) assert.match(header, new RegExp(`\\[t\\.${key},[\\s\\S]*?"${key}"`));
-  assert.match(dashboard, /DashboardCommunityHub/);
+  for (const key of ["flash", "max", "guru"]) assert.match(header, new RegExp(`"${key}"`));
+  assert.match(dashboard, /path="max"/);
+  assert.match(dashboard, /path="flash"/);
+  assert.match(dashboard, /\$\{lang\}\/community/);
   for (const domain of ["Learn", "Practice", "Speak"]) assert.match(hub, new RegExp(domain));
   assert.match(communityHub, /Nearby learning/);
   assert.match(communityHub, /Community/);

@@ -1,51 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-konectible-header-wordmark-20260924-r13",
+  "releaseId": "smartlingo-flash-max-guru-entry-20260924-r14",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 菜单按钮与品牌字样布局修复",
-    "en": "SmartLingo menu button and wordmark layout fix"
+    "zh": "SmartLingo Flash／Max／Guru 学习入口重组",
+    "en": "SmartLingo Flash, Max and Guru learning-entry redesign"
   },
   "purpose": {
-    "zh": "使汉堡菜单按钮沿用 Konectible 已验证的外观，并修复 iPad 横屏下品牌字样被强制拆成两行的问题。",
-    "en": "Reuse Konectible's verified hamburger-button appearance and stop the wordmark from being forced onto two lines in iPad landscape."
+    "zh": "让手机用户先选择免费休闲学习或认真学习，再从简洁的语言页进入练习、AI 导师和现有直播教室。",
+    "en": "Let phone learners choose casual free practice or focused Max learning, then enter practice, AI tutoring and existing live rooms from compact language hubs."
   },
   "features": {
     "zh": [
-      "汉堡按钮改为 Konectible 的白底蓝色线条与浅蓝色悬停、展开状态；保留 SmartLingo 的菜单内容与账户导航。",
-      "移除 1101–1320px 范围内强制将 Smart 与 Lingo 排成两行的旧规则。"
+      "首页改为 Flash、Max 与 Guru 三个清晰入口，保留十分钟新手视频链接；顶部菜单同步更新。",
+      "Flash 可匿名选择语言并玩免费活动；Max 登录后只触发一次七天试用，现有付费会员不会误标为试用。",
+      "用户面板分别显示 Max 与 Flash 语言，以及 Max 到期日和续订入口；语言页集中展示生活口语、游戏、智慧卡、测评、角色导师与既有教室入口。",
+      "Guru 保持干净聊天界面，并以列表图标打开常见问题。"
     ],
     "en": [
-      "Match Konectible's white hamburger button, blue strokes, and pale-blue hover and expanded states while preserving SmartLingo's menu and account links.",
-      "Remove the old 1101–1320px rule that forced Smart and Lingo onto separate lines."
+      "Replace the homepage with clear Flash, Max and Guru entries, retain the ten-minute tour link, and update the primary navigation.",
+      "Let visitors choose Flash languages anonymously; start the existing one-time seven-day trial on signed-in Max entry without mislabeling paid access as a trial.",
+      "Separate Max and Flash languages on the dashboard, show Max expiry and extension, and collect speaking, games, SmartCards, placement, role tutor and existing room links in each language hub.",
+      "Keep Guru as a clean chat and open suggested questions from a list icon."
     ]
   },
   "affected": {
-    "zh": ["全站共用导航栏及首页品牌字样；不改变学习、会员或支付功能。"],
-    "en": ["Shared site header and homepage wordmark; learning, membership, and payments are unchanged."]
+    "zh": ["首页、导航、Flash／Max 入口、用户面板、语言页、Guru 聊天；不改变支付价格或数据库结构。"],
+    "en": ["Home, navigation, Flash/Max entry, dashboard, language hubs and Guru chat; no price or database-schema changes."]
   },
   "changes": {
-    "zh": ["仅复用 Konectible 按钮样式并删除旧换行规则；扩展真实 WebKit 布局检查，确认 Smart 与 Lingo 保持同一行。"],
-    "en": ["Reuse Konectible's button styles, remove the obsolete wrap rule, and extend the real WebKit layout gate to confirm Smart and Lingo stay on one line."]
+    "zh": ["复用现有学习计划、一次性 Max 试用、课程教室和角色导师；Flash 语言保存在当前浏览器，Max 语言沿用现有会员学习计划。"],
+    "en": ["Reuse existing learning plans, one-time Max trials, course rooms and the role tutor; Flash language choices remain in the current browser while Max choices use existing member learning plans."]
   },
   "validation": {
-    "zh": ["共享站点基线检查、476 项测试、TypeScript、零警告 lint、构建与敏感信息扫描通过；完成 WebKit 布局及生产浏览器核验。"],
-    "en": ["Shared-site baseline checks, 476 tests, TypeScript, zero-warning lint, build, and sensitive-data scan passed; complete WebKit layout and production-browser verification."]
+    "zh": ["TypeScript、零警告 lint、构建与敏感信息扫描通过；全量自动测试及新增匿名 Flash／Max 权限测试通过；WebKit 与生产浏览器在部署时核验。"],
+    "en": ["TypeScript, zero-warning lint, build and sensitive-data scan passed; full automated suite and new anonymous Flash/Max access tests passed; WebKit and production browser are verified during release."]
   },
   "deferred": {
-    "zh": ["此发布不涉及登录、课程或支付流程；这些流程未因本次视觉改动重新演练。"],
-    "en": ["This visual-only release does not change sign-in, course, or payment flows; those flows are not re-exercised for this change."]
+    "zh": ["Flash 的匿名语言选择仅保存在当前浏览器；只有已加入语言班的会员才能进入对应教室。未产生真实付款或开启直播。"],
+    "en": ["Anonymous Flash choices are device-local; only members joined to a language class can enter its room. No real payment or live broadcast was initiated."]
   },
   "siteAdaptations": {
-    "zh": ["沿用 Konectible 已验证的按钮颜色与交互状态，保留 SmartLingo 独立品牌字样、语言选项和账户菜单。"],
-    "en": ["Carry over Konectible's reviewed button colors and interaction states while retaining SmartLingo's own wordmark, language choices, and account menu."]
+    "zh": ["沿用 SmartLingo 十二种界面语言、既有课程数据与教室权限；新入口在小屏上收敛为单列。"],
+    "en": ["Preserve SmartLingo's twelve interface languages, existing course data and room permissions; stack the new entries into one column on phones."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "无需数据回退；如需撤销视觉调整，可重新部署上一成功提交。",
-      "en": "No data rollback is needed; redeploy the previous successful commit to revert the visual adjustment."
+      "zh": "无需数据回退；若需撤销界面重组，重新部署上一成功提交即可，已有试用和学习计划记录保持原状。",
+      "en": "No data rollback is required; redeploy the previous successful commit to revert the UI while existing trials and learning plans remain intact."
     }
   }
 }

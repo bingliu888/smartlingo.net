@@ -4,12 +4,15 @@ import test from "node:test";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
-test("home ends with Free and Max subscription tiles and no legacy course pricing section", async () => {
+test("home leads with Flash, Max and Guru while pricing retains the Free and Max offers", async () => {
   const [home, plans, css, layout, locale] = await Promise.all([
     read("../app/[lang]/page.tsx"), read("../components/PlatformPlans.tsx"), read("../app/globals.css"),
     read("../app/[lang]/layout.tsx"), read("../lib/interface-locale.ts"),
   ]);
-  assert.match(home, /<PlatformPlans lang=\{locale\} compact\/>[\s\S]*<SiteFooter/);
+  assert.match(home, /learning-path-card flash/);
+  assert.match(home, /learning-path-card max/);
+  assert.match(home, /learning-guru-card/);
+  assert.match(home, /<SiteFooter lang=\{lang\}\/>/);
   assert.match(plans, /FREE PLAN/);
   assert.match(plans, /Every Beginner course stays free with ads/);
   assert.match(plans, /7-day Max trial/);
@@ -23,14 +26,15 @@ test("home ends with Free and Max subscription tiles and no legacy course pricin
   assert.match(locale, /免费与 Max/);
 });
 
-test("language pages show three learning levels without payment buttons", async () => {
+test("language hub exposes learning actions and keeps the three-level catalog available without payment buttons", async () => {
   const [detail, catalog, classes, admin] = await Promise.all([
     read("../app/[lang]/programs/[language]/page.tsx"), read("../components/LanguageSubscriptionCatalog.tsx"),
     read("../components/ClassStudio.tsx"), read("../app/[lang]/admin/language-classes/page.tsx"),
   ]);
-  assert.match(detail, /Find my level/);
-  assert.match(detail, /classes\/\$\{item\.classId\}\/placement/);
-  assert.match(detail, /only explicitly beginning a higher-level course can start a Max trial/);
+  assert.match(detail, /labels\.findLevel/);
+  assert.match(detail, /classes\/\$\{basicClassId\}\/placement/);
+  assert.match(detail, /path === "max" && user/);
+  assert.match(detail, /<CourseClassroomTile/);
   assert.match(catalog, /YOUR STARTING POINT/);
   assert.match(catalog, /Browse or choose a level myself/);
   assert.match(catalog, /SMARTLINGO_COURSE_PACKAGES\.map/);

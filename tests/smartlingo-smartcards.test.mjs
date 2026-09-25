@@ -227,7 +227,7 @@ test("game navigation keeps target language, progress, local-time art, and score
   const game = readFileSync(new URL("../components/PublicSmartCardChallenge.tsx", import.meta.url), "utf8");
   const leaderboard = readFileSync(new URL("../app/api/smartcards/leaderboard/route.ts", import.meta.url), "utf8");
   assert.match(course, /play\?language=\$\{language\}/);
-  assert.match(course, /免费游戏/);
+  assert.match(course, /\{ui\.play\}/);
   assert.deepEqual(playLanguageLinks("zh", "it"), {
     smartcards: "/zh/smartcards?language=it",
     challenge: "/zh/play/challenge?language=it",

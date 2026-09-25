@@ -28,6 +28,10 @@ test("runtime layout matrix pins both path locales and a short landscape lesson 
   ]);
   assert.deepEqual(SMARTLINGO_LAYOUT_ROUTES, [
     "/",
+    "/flash",
+    "/max",
+    "/programs/en?path=flash",
+    "/programs/en?path=max",
     "/tutorial",
     "/classes",
     "/programs",
@@ -169,6 +173,8 @@ test("layout gate requires real page markers and representative hook categories"
 test("authenticated surfaces require a loopback D1-backed session and their own ready marker", () => {
   assert.deepEqual(SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES, [
     "/classes",
+    "/max",
+    "/programs/en?path=max",
     "/classes/course_en_basic/learn",
     "/classes/course_en_basic/learn/session",
     "/classes/course_en_basic/vocabulary",

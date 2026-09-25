@@ -78,19 +78,15 @@ test("only a voice-originated AI reply requests automatic speech", () => {
   assert.equal(assistantReplyShouldSpeak("typed"), false);
 });
 
-test("signed-in dashboard exposes joined-language cards for the four requested learning features", async () => {
+test("signed-in dashboard exposes separate joined-language cards for Max and Flash", async () => {
   const [dashboard, hub] = await Promise.all([
     readFile(new URL("../app/[lang]/dashboard/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../components/DashboardLearningHub.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../components/LearningLanguageTiles.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(dashboard, /<DashboardLearningHub/);
-  assert.match(hub, /courses: DashboardJoinedCourse\[\]/);
-  assert.match(hub, /Smart Card Practice/);
-  assert.match(hub, /Smart Card Challenge/);
-  assert.match(hub, /Everyday speaking/);
-  assert.match(hub, /Courses/);
-  assert.doesNotMatch(hub, /assistant\?language|Ask AI|咨询AI/);
-  assert.match(hub, /生活口语/);
-  assert.match(hub, /智慧卡练习/);
+  assert.match(dashboard, /path="max" initialLanguages=\{languages\} signedIn/);
+  assert.match(dashboard, /path="flash"/);
+  assert.match(hub, /learning-language-add/);
+  assert.match(hub, /smartlingo-flash-languages-v1/);
+  assert.match(hub, /api\/learning-plan/);
 });

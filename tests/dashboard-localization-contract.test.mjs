@@ -9,9 +9,10 @@ test("every dashboard locale uses prebuilt interface copy and preserves user-aut
     read("app/[lang]/dashboard/page.tsx"), read("app/[lang]/layout.tsx"),
     read("components/LocaleRuntime.tsx"), read("lib/home-interface-translations.generated.ts"),
   ]);
-  assert.match(dashboard, /translateHomeCopy\(copy\.en, locale, homeInterfaceTranslations\)/);
-  assert.match(dashboard, /<SiteHeader lang=\{locale\} \/>/);
-  assert.match(dashboard, /data-no-translate>\{user\.email\}/);
+  assert.match(dashboard, /learningExperienceCopy\[lang\]/);
+  assert.match(dashboard, /learningUiCopy\[lang\]/);
+  assert.match(dashboard, /<SiteHeader lang=\{lang\}\/>/);
+  assert.match(dashboard, /\{user\.displayName\}/);
   assert.match(await read("components/DashboardDailySprint.tsx"), /text\("Start", "开始"\).*text\("minutes", "分钟"\)/);
   assert.match(layout, /<LocaleRuntime locale=\{safeLanguage\}/);
   assert.match(runtime, /script,style,textarea/);
