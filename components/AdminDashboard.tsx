@@ -25,11 +25,11 @@ export async function AdminDashboard({ lang, user }: { lang: "en" | "zh"; user: 
       </header>
       <section className="admin-overview-grid" aria-label={zh ? "管理概览" : "Admin overview"}>
         <article className="admin-overview-card">
-          <div><p>{zh ? "会员" : "Members"}</p><strong>{members.toLocaleString()}</strong><span>{zh ? `${subscribers.toLocaleString()} 位有效 Max 订阅会员（含试用）` : `${subscribers.toLocaleString()} active Max members (including trials)`}</span></div>
+          <div><p>{zh ? "会员" : "Members"}</p><strong>{members.toLocaleString()}</strong><span>{zh ? `${subscribers.toLocaleString()} 位有效旗舰版订阅会员（含试用）` : `${subscribers.toLocaleString()} active Max members (including trials)`}</span></div>
           <nav><a href={`/${lang}/admin/members?tab=members`}>{zh ? "全部会员" : "All members"} →</a><a href={`/${lang}/admin/members?tab=admins`}>{zh ? "管理员" : "Administrators"} →</a><a href={`/${lang}/admin/members?tab=subscribers`}>{zh ? "订阅者" : "Subscribers"} →</a></nav>
         </article>
         <article className="admin-overview-card">
-          <div><p>{zh ? "课程等级" : "Course levels"}</p><strong>3</strong><span>{zh ? "初级免费；中高级由试用或 Max 开放 · 0 个课程付款项目" : "Beginner free; trial or Max opens higher levels · 0 course payment items"}</span></div>
+          <div><p>{zh ? "课程等级" : "Course levels"}</p><strong>3</strong><span>{zh ? "初级免费；中高级由试用或旗舰版开放 · 0 个课程付款项目" : "Beginner free; trial or Max opens higher levels · 0 course payment items"}</span></div>
           <nav><a href={`/${lang}/admin/language-classes`}>{zh ? "查看课程等级" : "View course levels"} →</a></nav>
         </article>
         <article className="admin-overview-card">

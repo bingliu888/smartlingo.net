@@ -6,7 +6,7 @@ import { isAdminUser } from "../../../lib/admin-access";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { getDatabase } from "../../../lib/auth";
-import { learningExperienceCopy } from "../../../lib/learning-experience-copy";
+import { learningExperienceCopy, learningPathDisplayName } from "../../../lib/learning-experience-copy";
 import { memberLearningLanguages } from "../../../lib/learning-experience";
 import { learningUiCopy } from "../../../lib/learning-ui-copy";
 import { interfaceCopyFor, isInterfaceLanguage } from "../../../lib/interface-locale";
@@ -16,8 +16,9 @@ import "../../../components/learning-experience.css";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return { title: "Max · SmartLingo" };
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const { lang } = await params;
+  return { title: `${isInterfaceLanguage(lang) ? learningPathDisplayName(lang, "max") : "Max"} · SmartLingo` };
 }
 
 export default async function MaxPage({ params }: { params: Promise<{ lang: string }> }) {
@@ -41,7 +42,7 @@ export default async function MaxPage({ params }: { params: Promise<{ lang: stri
   return <main className="learning-entry-page" data-layout-page="max" data-layout-ready="true" data-layout-overlap-check="max-page">
     <SiteHeader lang={lang}/>
     <div className="learning-entry-shell">
-      <section className="learning-entry-intro"><p className="section-kicker">SMARTLINGO · MAX</p><h1>Max</h1><p>{t.maxBody}</p></section>
+      <section className="learning-entry-intro"><p className="section-kicker">SMARTLINGO · {learningPathDisplayName(lang, "max")}</p><h1>{learningPathDisplayName(lang, "max")}</h1><p>{t.maxBody}</p></section>
       <section className="learning-status-card" aria-live="polite"><div><strong>{active ? (isTrial ? t.trialStatus : labels.active) : t.trialUsed}</strong><p>{expires ? `${active ? labels.until : labels.ended} ${expires}` : t.maxBody}</p></div><Link href={`/${lang}/pricing`}>{active ? labels.extend : labels.getMax} →</Link></section>
       <LearningLanguageTiles lang={lang} path="max" initialLanguages={languages} signedIn/>
       <div className="learning-hub-grid">

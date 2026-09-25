@@ -27,7 +27,7 @@ export default async function RoleTutorPage({ params, searchParams }: {
     <p className="role-tutor-eyebrow">{zh ? "MAX · 场景角色练习" : "MAX · SCENE ROLE-PLAY"}</p>
     <h1>{zh ? mission.scene.nameZh : mission.scene.nameEn}</h1>
     <p>{zh ? mission.scene.goalZh : mission.scene.goalEn} · {mission.language.nativeName} · {mission.level}</p>
-    {!user ? <p><a href={`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/assistant/role-tutor?scene=${mission.scene.id}&language=${mission.language.code}&level=${mission.level}`)}`}>{zh ? "请先登录，再查看 Max 导师。" : "Sign in to access the Max tutor."}</a></p>
+    {!user ? <p><a href={`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/assistant/role-tutor?scene=${mission.scene.id}&language=${mission.language.code}&level=${mission.level}`)}`}>{zh ? "请先登录，再查看旗舰版导师。" : "Sign in to access the Max tutor."}</a></p>
       : <RoleTutor lang={lang} language={mission.language.code} scene={mission.scene.id} level={mission.level} role={mission.role} initialMax={max} trialAvailable={trialAvailable} speechLocale={mission.language.speechLocale}/>}
   </div><SiteFooter lang={lang}/></main>;
 }

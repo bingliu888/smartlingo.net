@@ -42,6 +42,16 @@ test("public Flash and language hub render, while anonymous Max requires sign-in
     const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) }, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: publishableKey };
     const ctx = { waitUntil() {}, passThroughOnException() {} };
     const load = path => worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "*/*" } }), env, ctx);
+    const home = await load("/zh");
+    assert.equal(home.status, 200);
+    const homeHtml = await home.text();
+    assert.match(homeHtml, /两种学习方式，从一门语言开始/);
+    assert.match(homeHtml, /快捷版/);
+    assert.match(homeHtml, /旗舰版/);
+    assert.match(homeHtml, /learning-entry-assist-row/);
+    assert.match(homeHtml, /观看 10 分钟新手教程/);
+    assert.match(homeHtml, /咨询专家/);
+    assert.doesNotMatch(homeHtml, /SMARTLINGO · 快捷版 \/ 旗舰版 \/ GURU/);
     const flash = await load("/zh/flash");
     assert.equal(flash.status, 200);
     assert.match(await flash.text(), /无需登录即可开始/);
@@ -66,7 +76,7 @@ test("Guru FAQ list icon visually replaces the legacy question mark", async () =
   const client = await source("components/AssistantClient.tsx");
   assert.match(css, /\.assistant-page \.faq-button\{[^}]*color:transparent!important/);
   assert.match(css, /\.assistant-page \.faq-button::after\{[^}]*content:"☰";[^}]*position:absolute/);
-  assert.match(client, /第一次学一门语言，选 Flash 还是 Max/);
+  assert.match(client, /第一次学一门语言，选快捷版还是旗舰版/);
   assert.match(client, /Should a new learner choose Flash or Max/);
   assert.doesNotMatch(client, /我应该从哪个职业英语阶段开始/);
 });

@@ -12,7 +12,7 @@ type Area = "everyday" | "courses" | "ai";
 type Choice = { id: string; titleZh: string; titleEn: string; bodyZh: string; bodyEn: string; image?: string; icon?: string };
 
 const COURSE_CHOICES: Choice[] = [
-  { id: "levels", icon: "3", titleZh: "三级课程", titleEn: "Three course levels", bodyZh: "初级、中级和高级都是学习等级；有效 Max 可学习全部等级。", bodyEn: "Beginner, Intermediate, and Advanced are learning levels; active Max opens them all." },
+  { id: "levels", icon: "3", titleZh: "三级课程", titleEn: "Three course levels", bodyZh: "初级、中级和高级都是学习等级；有效旗舰版可学习全部等级。", bodyEn: "Beginner, Intermediate, and Advanced are learning levels; active Max opens them all." },
 ];
 const AI_CHOICES: Choice[] = [
   { id: "conversation", icon: "●", titleZh: "生活对话", titleEn: "Everyday conversation", bodyZh: "围绕真实场景问答与角色练习。", bodyEn: "Questions and role-play around real situations." },

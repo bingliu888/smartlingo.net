@@ -7,6 +7,7 @@ import { HeaderAccount } from "./HeaderAccount";
 import { InterfaceLanguageMenu } from "./InterfaceLanguageMenu";
 import { SmartLingoWordmark } from "./SmartLingoWordmark";
 import { fittingNavigationCount } from "../lib/header-navigation-fit";
+import { learningPathDisplayName } from "../lib/learning-experience-copy";
 import { interfaceCopyFor, type InterfaceLanguage } from "../lib/interface-locale";
 
 export function SiteHeader({ lang }: { lang: InterfaceLanguage }) {
@@ -20,8 +21,8 @@ export function SiteHeader({ lang }: { lang: InterfaceLanguage }) {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const links = [
-    ["Flash", `/${lang}/flash`, "flash", pathname === `/${lang}/flash` || pathname.startsWith(`/${lang}/flash/`)],
-    ["Max", `/${lang}/max`, "max", pathname === `/${lang}/max` || pathname.startsWith(`/${lang}/max/`)],
+    [learningPathDisplayName(lang, "flash"), `/${lang}/flash`, "flash", pathname === `/${lang}/flash` || pathname.startsWith(`/${lang}/flash/`)],
+    [learningPathDisplayName(lang, "max"), `/${lang}/max`, "max", pathname === `/${lang}/max` || pathname.startsWith(`/${lang}/max/`)],
     [t.askGuru, `/${lang}/assistant`, "guru", pathname === `/${lang}/assistant` || pathname.startsWith(`/${lang}/assistant/`)],
   ] as const;
   const [visibleLinkCount, setVisibleLinkCount] = useState<number>(links.length);

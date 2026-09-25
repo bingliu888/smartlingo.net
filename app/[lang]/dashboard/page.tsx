@@ -8,7 +8,7 @@ import { SiteHeader } from "../../../components/SiteHeader";
 import { TextSizeControl } from "../../../components/TextSizeControl";
 import { isAdminUser } from "../../../lib/admin-access";
 import { getDatabase } from "../../../lib/auth";
-import { learningExperienceCopy } from "../../../lib/learning-experience-copy";
+import { learningExperienceCopy, learningPathDisplayName } from "../../../lib/learning-experience-copy";
 import { memberLearningLanguages } from "../../../lib/learning-experience";
 import { learningUiCopy } from "../../../lib/learning-ui-copy";
 import { interfaceCopyFor, isInterfaceLanguage } from "../../../lib/interface-locale";
@@ -38,13 +38,13 @@ export default async function Dashboard({ params }: { params: Promise<{ lang: st
     <SiteHeader lang={lang}/>
     <div className="learning-entry-shell">
       <section className="learning-entry-intro"><p className="section-kicker">SMARTLINGO · DASHBOARD</p><h1>{user.displayName}</h1><p>{t.homeIntro}</p></section>
-      <section className="learning-status-card" aria-label="Max">
+      <section className="learning-status-card" aria-label={learningPathDisplayName(lang, "max")}>
         <div><strong>{active ? (isTrial ? t.trialStatus : labels.active) : labels.inactive}</strong><p>{expires ? `${active ? labels.until : labels.ended} ${expires}` : t.maxBody}</p></div>
         <Link href={`/${lang}/pricing`}>{active ? labels.extend : labels.getMax} →</Link>
       </section>
       <div className="learning-dashboard-paths">
-        <section aria-label="Max"><div className="learning-dashboard-heading"><h2>Max</h2><Link href={`/${lang}/max`}>{t.continueLearning} →</Link></div><LearningLanguageTiles lang={lang} path="max" initialLanguages={languages} signedIn/></section>
-        <section aria-label="Flash"><div className="learning-dashboard-heading"><h2>Flash</h2><Link href={`/${lang}/flash`}>{t.continueLearning} →</Link></div><LearningLanguageTiles lang={lang} path="flash"/></section>
+        <section aria-label={learningPathDisplayName(lang, "max")}><div className="learning-dashboard-heading"><h2>{learningPathDisplayName(lang, "max")}</h2><Link href={`/${lang}/max`}>{t.continueLearning} →</Link></div><LearningLanguageTiles lang={lang} path="max" initialLanguages={languages} signedIn/></section>
+        <section aria-label={learningPathDisplayName(lang, "flash")}><div className="learning-dashboard-heading"><h2>{learningPathDisplayName(lang, "flash")}</h2><Link href={`/${lang}/flash`}>{t.continueLearning} →</Link></div><LearningLanguageTiles lang={lang} path="flash"/></section>
       </div>
       <div className="learning-hub-grid">
         <article className="learning-hub-card"><h2>{ui.askGuru}</h2><p>{t.guruBody}</p><Link href={`/${lang}/assistant`}>{ui.askGuru} →</Link></article>

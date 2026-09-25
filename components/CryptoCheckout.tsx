@@ -42,8 +42,8 @@ const displayAtomic = (value: string, decimals: number, maximumFractionDigits = 
 };
 
 const subscriptionTerm = (plan: Plan, _months: number, t: (english: string, chinese: string) => string) => {
-  if (plan === "max_6m") return t("Max · 6-month fixed-term access", "Max · 6 个月固定期限");
-  if (plan === "max_12m") return t("Max · 12-month fixed-term access", "Max · 12 个月固定期限");
+  if (plan === "max_6m") return t("Max · 6-month fixed-term access", "旗舰版 · 6 个月固定期限");
+  if (plan === "max_12m") return t("Max · 12-month fixed-term access", "旗舰版 · 12 个月固定期限");
   if (plan === "aigc_1000") return t("1,000 prepaid AIGC credits", "1,000 个预付人工智能生成额度");
   const level = plan === "basic"
     ? t("Beginner", "初期课程")

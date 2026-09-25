@@ -125,8 +125,8 @@ test("course and anonymous Play expose six isolated learning activities", () => 
 test("Primary navigation exposes Flash, Max and Guru with a compact homepage", () => {
   const header = readFileSync(new URL("../components/SiteHeader.tsx", import.meta.url), "utf8");
   const home = readFileSync(new URL("../app/[lang]/page.tsx", import.meta.url), "utf8");
-  assert.ok(header.indexOf('["Flash",') < header.indexOf('["Max",'));
-  assert.ok(header.indexOf('["Max",') < header.indexOf('[t.askGuru,'));
+  assert.ok(header.indexOf('[learningPathDisplayName(lang, "flash"),') < header.indexOf('[learningPathDisplayName(lang, "max"),'));
+  assert.ok(header.indexOf('[learningPathDisplayName(lang, "max"),') < header.indexOf('[t.askGuru,'));
   for (const path of ["flash", "max", "assistant"]) assert.match(home, new RegExp(path));
   assert.doesNotMatch(home, /HomeLearningChoices|home-everyday|home-courses|home-ai/);
   assert.match(home, /learning-path-card flash/);

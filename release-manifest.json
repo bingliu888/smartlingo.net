@@ -1,53 +1,53 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-guru-path-guidance-20260925-r17",
+  "releaseId": "smartlingo-chinese-path-home-layout-20260925-r18",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo Guru 学习路径引导修正",
-    "en": "SmartLingo Guru learning-path guidance correction"
+    "zh": "SmartLingo 中文学习路径名称与首页排版",
+    "en": "SmartLingo Chinese path names and homepage layout"
   },
   "purpose": {
-    "zh": "修正 Guru 的双重图标、旧问题、AI 的过时学习路径回答，以及部署探针对旧 Beginner 文案的依赖。",
-    "en": "Correct Guru's double icon, legacy suggestions, outdated AI path advice, and the deployment probe's dependency on retired Beginner copy."
+    "zh": "将中文学习入口明确命名为快捷版和旗舰版，移除首页重复眉题，并让新手视频和 Guru 入口在宽屏同排显示。",
+    "en": "Name the Chinese learning paths 快捷版 and 旗舰版, remove the duplicate home eyebrow, and align the tutorial and Guru entries on wider screens."
   },
   "features": {
     "zh": [
-      "Guru 常见问题按钮只显示居中的列表图标，保留无障碍名称；问题内容改为适合语言新人的 Flash／Max 引导。",
-      "AI 系统指引明确 Flash 是免登录的免费学习路径，Max 提供一次性七天试用与一对一角色导师，不再把 Flash 当成闪卡或推荐旧 Free 方案。",
-      "生产首页探针改为检查 Flash／Max 两种用户路径，避免旧 Beginner 文案让成功部署被误判；支付与会员数据不变。"
+      "中文导航、首页卡片、学习入口、会员状态与 Guru 引导统一使用快捷版／旗舰版，英文保留 Flash／Max。",
+      "删除首页重复的 SMARTLINGO · FLASH / MAX / GURU 眉题，放宽标题容器以利用可用屏宽。",
+      "新手视频与咨询专家入口在宽屏并排，窄屏自然纵向排列；付款、会员权益和数据库不变。"
     ],
     "en": [
-      "Show only the centered list glyph on Guru's FAQ button while preserving accessibility; make suggested questions relevant to new Flash/Max learners.",
-      "Tell the AI that Flash is the public free path and Max has a one-time seven-day trial and one-to-one role tutor; stop confusing Flash with flashcards or recommending the retired Free plan.",
-      "Make the production homepage probe check Flash and Max paths instead of retired Beginner copy; payment and membership data stay unchanged."
+      "Use 快捷版/旗舰版 across Chinese navigation, learning entries, membership status and Guru guidance, while retaining Flash/Max in English.",
+      "Remove the redundant SMARTLINGO · FLASH / MAX / GURU homepage eyebrow and let the hero title use available width.",
+      "Place the tutorial and Ask Guru entries side by side when space allows and stack them naturally on narrow screens; commerce and entitlement data are unchanged."
     ]
   },
   "affected": {
-    "zh": ["仅 Guru 常见问题样式、引导问题、AI 指引、生产发布探针和回归测试；不改变支付价格或数据库结构。"],
-    "en": ["Only Guru FAQ styling, suggestions, AI instructions, production release probe and regression tests; no price or database-schema changes."]
+    "zh": ["中文界面文案、首页布局、Guru 指引与回归测试；不改变路径 URL、支付价格或数据库结构。"],
+    "en": ["Chinese interface copy, homepage layout, Guru guidance and regression tests; no route URL, price or database-schema changes."]
   },
   "changes": {
-    "zh": ["旧问号在视觉上隐藏，列表图标居中；复用现有 Guru 服务端指引机制并改正产品事实，交互逻辑不变。"],
-    "en": ["Hide the old visual question mark, center the list icon, and correct product facts in the existing Guru server instruction without changing interaction behavior."]
+    "zh": ["复用既有学习路径组件和响应式网格，只改显示名称与首页内容顺序。"],
+    "en": ["Reuse existing learning-path components and responsive grid; change only displayed names and homepage content order."]
   },
   "validation": {
-    "zh": ["构建、零警告 lint、TypeScript、全量测试及 Guru 产品事实回归检查通过；WebKit 与生产真实对话在部署时重新核验。"],
-    "en": ["Build, zero-warning lint, TypeScript, full tests and Guru product-fact regressions passed; WebKit and a real production conversation are reverified during release."]
+    "zh": ["构建、零警告 lint、TypeScript、全量测试与中英首页 WebKit 布局检查；发布后核验生产页面与精确提交记录。"],
+    "en": ["Build, zero-warning lint, TypeScript, full tests and Chinese/English WebKit homepage layout checks; verify production and exact release commit after deployment."]
   },
   "deferred": {
-    "zh": ["普通会员的线上登录态验收仍需专用 QA 会话；本次不产生真实付款或开启直播。"],
-    "en": ["Real signed-in ordinary-member production acceptance still requires a dedicated QA session; no real payment or live broadcast was initiated."]
+    "zh": ["本次仅需匿名页面验收；不产生真实付款或改变订阅状态。"],
+    "en": ["This round requires anonymous-page acceptance only; no real payment or subscription-state change."]
   },
   "siteAdaptations": {
-    "zh": ["保留上一版本的十二种界面语言、Flash／Max 入口和既有教室权限。"],
-    "en": ["Preserve the previous release's twelve interface languages, Flash/Max entries and existing room permissions."]
+    "zh": ["保留十二种界面语言、现有 flash／max 路由和教室权限；其他语言继续使用原有名称。"],
+    "en": ["Preserve twelve interface languages, existing flash/max routes and classroom permissions; other locales retain their current naming."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "无需数据回退；若需撤销图标修正，重新部署上一成功提交即可。",
-      "en": "No data rollback is required; redeploy the previous successful commit to revert the icon correction."
+      "zh": "无需数据回退；若需撤销本次显示调整，重新部署上一成功提交即可。",
+      "en": "No data rollback is required; redeploy the previous successful commit to revert this presentation change."
     }
   }
 }

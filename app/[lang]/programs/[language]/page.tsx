@@ -6,7 +6,7 @@ import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
 import { isAdminUser } from "../../../../lib/admin-access";
 import { getDatabase } from "../../../../lib/auth";
-import { learningExperienceCopy } from "../../../../lib/learning-experience-copy";
+import { learningExperienceCopy, learningPathDisplayName } from "../../../../lib/learning-experience-copy";
 import { learningUiCopy } from "../../../../lib/learning-ui-copy";
 import { interfaceCopyFor, isInterfaceLanguage } from "../../../../lib/interface-locale";
 import { ensureSevenDayMaxTrial } from "../../../../lib/platform-entitlements";
@@ -54,9 +54,9 @@ export default async function LanguageHubPage({ params, searchParams }: {
     <SiteHeader lang={lang}/>
     <div className="learning-entry-shell">
       <section className="learning-entry-intro">
-        <p className="section-kicker">{path.toUpperCase()} · {language.toUpperCase()}</p>
+        <p className="section-kicker">{learningPathDisplayName(lang, path)} · {language.toUpperCase()}</p>
         <h1 dir={item.direction}>{item.nativeName}</h1><p>{t.languageIntro}</p>
-        <div className="learning-path-switch"><Link className={path === "flash" ? "active" : ""} href={`/${lang}/programs/${language}?path=flash`}>Flash</Link><Link className={path === "max" ? "active" : ""} href={`/${lang}/programs/${language}?path=max`}>Max</Link></div>
+        <div className="learning-path-switch"><Link className={path === "flash" ? "active" : ""} href={`/${lang}/programs/${language}?path=flash`}>{learningPathDisplayName(lang, "flash")}</Link><Link className={path === "max" ? "active" : ""} href={`/${lang}/programs/${language}?path=max`}>{learningPathDisplayName(lang, "max")}</Link></div>
       </section>
       {path === "max" && <section className="learning-status-card"><div><strong>{activeMax ? (trialMax ? t.trialStatus : labels.active) : t.trialUsed}</strong><p>{subscription?.endsAt ? `${activeMax ? labels.until : labels.ended} ${new Date(subscription.endsAt * 1000).toLocaleDateString(lang, { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })}` : t.maxBody}</p></div><Link href={`/${lang}/pricing`}>{activeMax ? labels.extend : labels.getMax} →</Link></section>}
       <div className="learning-hub-grid">
@@ -64,7 +64,7 @@ export default async function LanguageHubPage({ params, searchParams }: {
         <article className="learning-hub-card"><h2>{ui.everyday}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/play/everyday?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>SmartCards</h2><p>{t.flashBody}</p><Link href={`/${lang}/smartcards/starter-${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{ui.practice}</h2><p>{t.flashBody}</p><Link href={`/${lang}/play/challenge?language=${language}`}>{t.continueLearning} →</Link></article>
-        <article className="learning-hub-card"><h2>Max · AI</h2><p>{t.maxBody}</p><Link href={`/${lang}/assistant/role-tutor?language=${language}`}>{t.continueLearning} →</Link></article>
+        <article className="learning-hub-card"><h2>{learningPathDisplayName(lang, "max")} · AI</h2><p>{t.maxBody}</p><Link href={`/${lang}/assistant/role-tutor?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{labels.findLevel}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/classes/${basicClassId}/placement`}>{t.continueLearning} →</Link></article>
       </div>
       <section className="learning-hub-room"><h2>{labels.webinar}</h2><p>{t.webinarBody}</p>

@@ -24,5 +24,5 @@ export function platformProductForIds(mainId: string, secondId: string) {
 
 export function platformProductTerm(product: SmartLingoPlatformProduct, zh = false) {
   if (product.kind === "aigc") return zh ? "1,000 个人工智能生成额度" : "1,000 AIGC credits";
-  return zh ? `Max · ${product.months} 个月` : `Max · ${product.months} months`;
+  return zh ? `旗舰版 · ${product.months} 个月` : `Max · ${product.months} months`;
 }

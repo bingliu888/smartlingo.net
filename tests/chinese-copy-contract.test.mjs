@@ -16,7 +16,7 @@ test("Chinese shared controls and account notices remain localized", async () =>
   assert.match(interfaceLocale, /主导航/);
   for (const label of ["生活口语", "边玩边学", "选择课程", "咨询AI"]) assert.match(interfaceLocale, new RegExp(label));
   assert.match(interfaceLocale, /页脚导航/);
-  assert.match(interfaceLocale, /footerTagline: "Flash · Max · Guru"/);
+  assert.match(interfaceLocale, /footerTagline: language === "zh" \? "快捷版 · 旗舰版 · Guru" : "Flash · Max · Guru"/);
   assert.match(language, /interfaceLanguages/);
   assert.match(account, /条未读消息/);
   assert.match(assistant, /打开智能助手/);
