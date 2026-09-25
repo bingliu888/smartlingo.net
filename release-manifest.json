@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-smartmeeting-v2-course-room-20260924-r11",
+  "releaseId": "smartlingo-smartmeeting-v2-course-room-20260924-r12",
   "site": "smartlingo.net",
   "title": {
     "zh": "SmartLingo 课程教室迁移 SmartMeeting V2",
@@ -14,13 +14,13 @@
     "zh": [
       "所有课程教室只允许登录会员进入；同一会员只保留一个在线设备或标签页，在线人数包含自己；群组音频显示成员出入提示条。",
       "单排操作栏、等待中的橙色扬声器、直播成员提及、主持团队定向回复的七天私密支持聊天及可滚动消息列表。",
-      "一个人等待第二位会员时不连接 RealtimeKit；媒体轨道状态与操作同步，独处和静音时按宽限期收尾。",
+      "一个人等待第二位会员时不连接 RealtimeKit；媒体轨道状态与操作同步，独处和静音时按宽限期及服务端参与者复核收尾。",
       "课程录音及附件侧栏提供本地 15 分钟录音、30 分钟音频文件试听上传和仅本机播放的文字朗读；保留原有课程录制资料。"
     ],
     "en": [
       "Require a signed-in member in every course room; limit each member to one online device or tab, include self in presence, and show arrivals and departures in group audio.",
       "Use a one-row action bar, orange waiting speaker, streaming-member mentions, seven-day private support chat with addressed host-team replies, and a scrollable message list.",
-      "Wait for a second distinct member before joining RealtimeKit, reconcile actual media tracks with controls, and close lone or idle connections after grace periods.",
+      "Wait for a second distinct member before joining RealtimeKit, reconcile actual media tracks with controls, and close lone or idle connections after grace periods and an authoritative server recheck.",
       "Add local 15-minute recording, 30-minute audio-file preview and upload, local-only text-to-speech, and attachment drawers while retaining existing course capture records."
     ]
   },

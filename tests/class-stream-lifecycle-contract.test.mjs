@@ -18,7 +18,7 @@ test("a publisher leaving keeps silent viewers and the provider generation alive
   assert.match(client, /enabled=\{playlistEnabled\s*&&\s*!humanStreamActive\s*&&\s*!humanStreamSeen\}/);
   assert.match(client, /humanStreamActive/);
   assert.match(client, /onlineMembers\.length<2/);
-  assert.match(client, /void disconnect\(true\)\.then/);
+  assert.match(client, /shouldReleaseLoneClassMedia\(state\)/);
   assert.match(client, /},9000\)/);
   assert.match(media, /classMediaIdentityProjection\(identity, access\.manager\)/);
   assert.match(media, /hasOtherParticipants: activeUsers\.some/);

@@ -9,6 +9,7 @@ import {
   canDeleteClassroomChatMessage,canSeeClassroomChatMessage,validSupportReplyTarget,
 } from "../lib/classroom-chat-policy.ts";
 import { audioNoteDurationAllowed, MAX_AUDIO_NOTE_BYTES } from "../lib/class-room-audio-note-policy.ts";
+import { shouldReleaseIdleClassMedia, shouldReleaseLoneClassMedia } from "../lib/class-room-media-release.ts";
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),"utf8");
 test("one authenticated member has exactly one live course-room tab, and a crashed tab expires",()=>{
@@ -60,4 +61,16 @@ test("local audio notes use the same 15-minute capture and 30-minute file contra
   assert.equal(audioNoteDurationAllowed("file",1801),false);
   assert.equal(audioNoteDurationAllowed("meeting",300),false);
   assert.equal(MAX_AUDIO_NOTE_BYTES,100*1024*1024);
+});
+
+test("an expired page lease cannot cut a live provider peer or publisher",()=>{
+  // Presence may say one member while a background listener still has a
+  // connected RealtimeKit session. An uncertain server answer must retry.
+  assert.equal(shouldReleaseLoneClassMedia({hasOtherParticipants:true}),false);
+  assert.equal(shouldReleaseLoneClassMedia({}),false);
+  assert.equal(shouldReleaseLoneClassMedia({hasOtherParticipants:false}),true);
+  assert.equal(shouldReleaseIdleClassMedia({users:[{micOn:1,cameraOn:0}]}),false);
+  assert.equal(shouldReleaseIdleClassMedia({users:[{micOn:0,cameraOn:1}]}),false);
+  assert.equal(shouldReleaseIdleClassMedia({users:[],screenShareActive:true}),false);
+  assert.equal(shouldReleaseIdleClassMedia({users:[{micOn:0,cameraOn:0}]}),true);
 });

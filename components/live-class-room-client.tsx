@@ -32,6 +32,7 @@ import { createRemoteMediaRecovery } from "@/lib/remote-media-recovery";
 import { ClassroomSupportChat, type ClassroomSupportChatHandle } from "@/components/ClassroomSupportChat";
 import { RoomPresenceTicker, type RoomPresenceEvent } from "@/components/RoomPresenceTicker";
 import { roomPresenceChanges } from "@/lib/class-room-presence-events";
+import { shouldReleaseIdleClassMedia, shouldReleaseLoneClassMedia } from "@/lib/class-room-media-release";
 import { ClassRoomResources } from "@/components/ClassRoomResources";
 
 type RealtimeMode = "group_call" | "webinar" | "livestream";
@@ -1589,19 +1590,56 @@ export function LiveClassRoomClient({
   },[connect,joined,manager,onlineMembers.length,resourceBusy,roomPresenceReady,waitingMedia]);
   useEffect(()=>{
     if(!roomPresenceReady||!joined||onlineMembers.length>1||resourceBusy)return;
-    const timer=window.setTimeout(()=>{
-      const intent={...mediaIntent.current};
-      void disconnect(true).then(()=>{
-        if(intent.mic||intent.camera)setWaitingMedia(intent);
-      });
+    let alive=true;
+    let checking=false;
+    const timer=window.setInterval(()=>{
+      if(checking)return;
+      checking=true;
+      void (async()=>{
+        try {
+          // A background listener's page lease can expire while its provider
+          // session is still live. Confirm the provider count before leaving.
+          const response=await fetch(`/api/classrooms/${room.code}/media?identity=${encodeURIComponent(identity)}`,{
+            cache:"no-store",
+            headers:sessionToken?{"x-class-session-token":sessionToken}:{},
+          });
+          if(!response.ok)return;
+          const state=await response.json() as Media;
+          if(!alive||!shouldReleaseLoneClassMedia(state))return;
+          const intent={...mediaIntent.current};
+          await disconnect(true);
+          if(alive&&(intent.mic||intent.camera))setWaitingMedia(intent);
+        } catch {
+          // A failed recheck must not disconnect someone who may be listening.
+        } finally { checking=false; }
+      })();
     },9000);
-    return()=>window.clearTimeout(timer);
-  },[disconnect,joined,onlineMembers.length,resourceBusy,roomPresenceReady]);
+    return()=>{alive=false;window.clearInterval(timer)};
+  },[disconnect,identity,joined,onlineMembers.length,resourceBusy,room.code,roomPresenceReady,sessionToken]);
   useEffect(()=>{
     if(!joined||mic||camera||hasAnyPublisher||playlistEnabled||resourceBusy)return;
-    const timer=window.setTimeout(()=>void disconnect(true),15000);
-    return()=>window.clearTimeout(timer);
-  },[camera,disconnect,hasAnyPublisher,joined,mic,playlistEnabled,resourceBusy]);
+    let alive=true;
+    let checking=false;
+    const timer=window.setInterval(()=>{
+      if(checking)return;
+      checking=true;
+      void (async()=>{
+        try {
+          const response=await fetch(`/api/classrooms/${room.code}/media?identity=${encodeURIComponent(identity)}`,{
+            cache:"no-store",
+            headers:sessionToken?{"x-class-session-token":sessionToken}:{},
+          });
+          if(!response.ok)return;
+          const state=await response.json() as Media;
+          if(!alive||!shouldReleaseIdleClassMedia(state))return;
+          await disconnect(true);
+        } catch {
+          // Retry later rather than closing a call on a transient API failure.
+        } finally { checking=false; }
+      })();
+    },15000);
+    return()=>{alive=false;window.clearInterval(timer)};
+  },[camera,disconnect,hasAnyPublisher,identity,joined,mic,playlistEnabled,resourceBusy,room.code,sessionToken]);
   useEffect(() => {
     if (!joined || !client) {
       setLocalTrackHealth({ audio: false, video: false });

@@ -42,8 +42,8 @@ test("share lifecycle restores camera and remote video grids omit empty tiles", 
 test("presence controls media cost without ejecting chat-only members", () => {
   const room = read("components/live-class-room-client.tsx");
   assert.match(room, /onlineMembers\.length<2/);
-  assert.match(room, /void disconnect\(true\)\.then/);
+  assert.match(room, /shouldReleaseLoneClassMedia\(state\)/);
   assert.match(room, /!joined\|\|mic\|\|camera\|\|hasAnyPublisher\|\|playlistEnabled/);
-  assert.match(room, /disconnect\(true\),15000\)/);
+  assert.match(room, /shouldReleaseIdleClassMedia\(state\)/);
   assert.doesNotMatch(room, /<LoneParticipantGuard|<MediaActivityGuard/);
 });
