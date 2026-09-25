@@ -1,30 +1,30 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-guru-path-guidance-20260925-r16",
+  "releaseId": "smartlingo-guru-path-guidance-20260925-r17",
   "site": "smartlingo.net",
   "title": {
     "zh": "SmartLingo Guru 学习路径引导修正",
     "en": "SmartLingo Guru learning-path guidance correction"
   },
   "purpose": {
-    "zh": "修正 Guru 的双重图标、旧问题和 AI 将 Flash 误解为闪卡、推荐过时 Free 方案的回答。",
-    "en": "Correct Guru's double icon, legacy suggestions, and AI replies that confuse Flash with flashcards or recommend an obsolete Free plan."
+    "zh": "修正 Guru 的双重图标、旧问题、AI 的过时学习路径回答，以及部署探针对旧 Beginner 文案的依赖。",
+    "en": "Correct Guru's double icon, legacy suggestions, outdated AI path advice, and the deployment probe's dependency on retired Beginner copy."
   },
   "features": {
     "zh": [
       "Guru 常见问题按钮只显示居中的列表图标，保留无障碍名称；问题内容改为适合语言新人的 Flash／Max 引导。",
       "AI 系统指引明确 Flash 是免登录的免费学习路径，Max 提供一次性七天试用与一对一角色导师，不再把 Flash 当成闪卡或推荐旧 Free 方案。",
-      "Flash、Max 和 Guru 新入口及支付、会员数据均保持上一成功发布版本。"
+      "生产首页探针改为检查 Flash／Max 两种用户路径，避免旧 Beginner 文案让成功部署被误判；支付与会员数据不变。"
     ],
     "en": [
       "Show only the centered list glyph on Guru's FAQ button while preserving accessibility; make suggested questions relevant to new Flash/Max learners.",
       "Tell the AI that Flash is the public free path and Max has a one-time seven-day trial and one-to-one role tutor; stop confusing Flash with flashcards or recommending the retired Free plan.",
-      "Leave the Flash, Max and Guru entry flow, payment and membership data from the previous successful release unchanged."
+      "Make the production homepage probe check Flash and Max paths instead of retired Beginner copy; payment and membership data stay unchanged."
     ]
   },
   "affected": {
-    "zh": ["仅 Guru 常见问题样式、引导问题、AI 指引和回归测试；不改变支付价格或数据库结构。"],
-    "en": ["Only Guru FAQ styling, suggestions, AI instructions and regression tests; no price or database-schema changes."]
+    "zh": ["仅 Guru 常见问题样式、引导问题、AI 指引、生产发布探针和回归测试；不改变支付价格或数据库结构。"],
+    "en": ["Only Guru FAQ styling, suggestions, AI instructions, production release probe and regression tests; no price or database-schema changes."]
   },
   "changes": {
     "zh": ["旧问号在视觉上隐藏，列表图标居中；复用现有 Guru 服务端指引机制并改正产品事实，交互逻辑不变。"],

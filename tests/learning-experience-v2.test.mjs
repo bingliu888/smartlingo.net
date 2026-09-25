@@ -78,3 +78,12 @@ test("public Guru explains the current Flash and Max paths without legacy Free-p
   assert.match(route, /Signing in and explicitly entering Max starts a one-time seven-day trial/);
   assert.doesNotMatch(route, /Free is ad-supported/);
 });
+
+test("production homepage probe checks Flash and Max instead of retired Beginner copy", async () => {
+  const workflow = await source(".github/workflows/deploy-cloudflare.yml");
+  assert.match(workflow, /\$apex" == \*'For casual learners'/);
+  assert.match(workflow, /\$www" == \*'For casual learners'/);
+  assert.match(workflow, /\$apex" == \*'For committed learners'/);
+  assert.match(workflow, /\$www" == \*'For committed learners'/);
+  assert.doesNotMatch(workflow, /\$apex" == \*'Beginner'/);
+});

@@ -275,8 +275,8 @@ jobs:
           set -euo pipefail
           apex="$(curl --retry 12 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://smartlingo.net/en)"
           www="$(curl --retry 12 --retry-delay 5 --retry-all-errors --fail --silent --show-error https://www.smartlingo.net/en)"
-          [[ "$apex" == *'Beginner'* ]]
-          [[ "$www" == *'Beginner'* ]]
+          [[ "$apex" == *'For casual learners'* && "$apex" == *'For committed learners'* ]]
+          [[ "$www" == *'For casual learners'* && "$www" == *'For committed learners'* ]]
           for url in http://smartlingo.net/en http://www.smartlingo.net/en; do
             effective="$(curl --retry 6 --retry-delay 3 --retry-all-errors --fail --silent --show-error --location --output /dev/null --write-out '%{url_effective}' "$url")"
             [[ "$effective" == https://smartlingo.net/* || "$effective" == https://www.smartlingo.net/* ]]
