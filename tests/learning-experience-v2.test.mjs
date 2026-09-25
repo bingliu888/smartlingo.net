@@ -60,3 +60,13 @@ test("public Flash and language hub render, while anonymous Max requires sign-in
     else process.env.CLERK_SECRET_KEY = previousSecret;
   }
 });
+
+test("Guru FAQ list icon visually replaces the legacy question mark", async () => {
+  const css = await source("app/[lang]/assistant/composer-bottom.css");
+  const client = await source("components/AssistantClient.tsx");
+  assert.match(css, /\.assistant-page \.faq-button\{[^}]*color:transparent!important/);
+  assert.match(css, /\.assistant-page \.faq-button::after\{[^}]*content:"☰";[^}]*position:absolute/);
+  assert.match(client, /第一次学一门语言，选 Flash 还是 Max/);
+  assert.match(client, /Should a new learner choose Flash or Max/);
+  assert.doesNotMatch(client, /我应该从哪个职业英语阶段开始/);
+});
