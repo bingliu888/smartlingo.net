@@ -1,51 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-v2-max-role-tutor-20260924-r10",
+  "releaseId": "smartlingo-smartmeeting-v2-course-room-20260924-r11",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo V2 Max 一对一角色教师",
-    "en": "SmartLingo V2 Max one-to-one role tutor"
+    "zh": "SmartLingo 课程教室迁移 SmartMeeting V2",
+    "en": "SmartMeeting V2 interactions in SmartLingo course rooms"
   },
   "purpose": {
-    "zh": "开放 Max 会员的十二种生活场景一对一 AI 角色练习，并让学习者通过打字或按键说话完成真实应答。",
-    "en": "Open one-to-one AI role practice across twelve everyday scenes for Max learners, with typed or push-to-talk replies."
+    "zh": "将已验证的 SmartMeeting V2 成员在线、私密支持聊天、媒体等待及录音附件体验完整适配至 SmartLingo 课程教室。",
+    "en": "Adapt the reviewed SmartMeeting V2 member presence, private support chat, media waiting, and recording and attachment interactions to SmartLingo course rooms."
   },
   "features": {
     "zh": [
-      "复用已验证的场景、语言、等级和 AI 网关，开放期限受控的 Max 一对一角色练习；教师按引导、情境变化和独立迁移三阶段回应。",
-      "在角色练习中加入按键录音转写、教师朗读及慢速重听；非 Max 用户可主动开启一次七天试用，浏览页面不会自动试用。"
+      "所有课程教室只允许登录会员进入；同一会员只保留一个在线设备或标签页，在线人数包含自己；群组音频显示成员出入提示条。",
+      "单排操作栏、等待中的橙色扬声器、直播成员提及、主持团队定向回复的七天私密支持聊天及可滚动消息列表。",
+      "一个人等待第二位会员时不连接 RealtimeKit；媒体轨道状态与操作同步，独处和静音时按宽限期收尾。",
+      "课程录音及附件侧栏提供本地 15 分钟录音、30 分钟音频文件试听上传和仅本机播放的文字朗读；保留原有课程录制资料。"
     ],
     "en": [
-      "Reuse validated scenes, languages, levels, and the AI gateway for expiry-gated Max role practice; the tutor progresses through guided, situational, and independent-response phases.",
-      "Add push-to-talk transcription, tutor speech and slow replay; non-Max members may explicitly begin a one-time seven-day trial without page-view activation."
+      "Require a signed-in member in every course room; limit each member to one online device or tab, include self in presence, and show arrivals and departures in group audio.",
+      "Use a one-row action bar, orange waiting speaker, streaming-member mentions, seven-day private support chat with addressed host-team replies, and a scrollable message list.",
+      "Wait for a second distinct member before joining RealtimeKit, reconcile actual media tracks with controls, and close lone or idle connections after grace periods.",
+      "Add local 15-minute recording, 30-minute audio-file preview and upload, local-only text-to-speech, and attachment drawers while retaining existing course capture records."
     ]
   },
   "affected": {
-    "zh": ["影响生活口语任务完成后的 Max 入口、角色导师页面与接口、录音转写接口以及 Free/Max 说明；不改变支付或订阅价格。"],
-    "en": ["Affects the Max link after everyday missions, the role tutor page and APIs, speech transcription endpoint, and Free/Max copy; payment and subscription prices are unchanged."]
+    "zh": ["课程教室页面、成员在线及加入接口、私密聊天、录音和附件接口、D1 课程表；不改变学习内容、课程购买、Max 价格或支付流程。"],
+    "en": ["Course-room page, presence and join APIs, private chat, recording and attachment APIs, and course D1 tables; learning content, course checkout, Max pricing, and payments are unchanged."]
   },
   "changes": {
-    "zh": ["服务端逐次核验登录、Max 到期时间、场景归属、会话所有权、十分钟期限和十二次回复上限；语音从会话读取学习语言，失败的 AI 回复不消耗会话轮次。"],
-    "en": ["The server checks sign-in, Max expiry, scene ownership, session ownership, ten-minute expiry, and twelve-reply cap on each turn; speech derives language from the session and failed AI replies do not consume a session turn."]
+    "zh": ["新增在线租约、定向聊天接收人和课程音频笔记的追加式迁移；音频文件存放 SmartLingo 自己的私有 R2，使用现有配额及延迟清理。"],
+    "en": ["Add an additive migration for online leases, chat recipients, and course audio notes; audio remains in SmartLingo's own private R2 under existing quota and durable cleanup rules."]
   },
   "validation": {
-    "zh": ["角色与会话单元测试、全站测试、TypeScript、零警告 lint、构建和发布门禁；部署后核验匿名与普通会员浏览器路径及 Project 发布记录。"],
-    "en": ["Role and session tests, full-site tests, TypeScript, zero-warning lint, build and release gates; then anonymous and ordinary-member browser checks and the exact Project release record."]
+    "zh": ["D1 首次及重复迁移、在线租约与私聊隔离测试、媒体回归、TypeScript、零警告 lint、全站测试、构建、敏感信息扫描和发布门禁；部署后核验站点和 Project 记录。"],
+    "en": ["Fresh and repeated D1 migrations, presence and private-chat isolation tests, media regressions, TypeScript, zero-warning lint, full-site tests, build, sensitive scan, and release gates; verify production and Project record after deployment."]
   },
   "deferred": {
-    "zh": ["本轮语音是按键录音、转写及浏览器朗读，不是全双工实时 WebRTC；旧实时接口继续关闭。语音专用的试用每天 10 分钟／付费每天 30 分钟计时、正式评测、成绩持久化和重试历史留待后续发布。"],
-    "en": ["This release uses push-to-talk, transcription, and browser speech rather than full-duplex realtime WebRTC; the legacy live endpoint remains closed. Dedicated 10-minute trial and 30-minute paid daily voice metering, formal assessment, saved scores, and retry history remain for later release."]
+    "zh": ["按用户先前指示，本次跨站迁移不对每个目标重复四人实时媒体浏览器演练；生产端检查课程教室入口与基础页面可用性。"],
+    "en": ["Per the owner's earlier instruction, this cross-site migration does not repeat the four-participant live-media browser exercise on every target; production verification covers course-room entry and basic availability."]
   },
   "siteAdaptations": {
-    "zh": ["只复用 SmartLingo 已验证的场景数据、Max 订阅、AI 网关、语音转写和朗读组件，不引入新供应商或跨站数据。"],
-    "en": ["Reuse SmartLingo's validated scene data, Max subscription, AI gateway, transcription, and speech components without a new provider or cross-site data."]
+    "zh": ["SmartLingo 使用课程教室和 Free/Max 会员术语，并保留课程播放列表和既有课程录制；以站点自己的 D1、R2、Clerk 和 RealtimeKit 资源实现同一交互契约。"],
+    "en": ["SmartLingo uses course-room and Free/Max terminology and keeps its playlist and existing course capture; the interaction contract uses only this site's D1, R2, Clerk, and RealtimeKit resources."]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": ["0190_private_classroom_support_and_presence"],
     "rollback": {
-      "zh": "可回退到上一成功提交，或将 SMARTLINGO_ROLE_TUTOR_ENABLED 设为 0 关闭入口；此轮没有 D1 结构迁移。",
-      "en": "Revert to the previous successful commit or set SMARTLINGO_ROLE_TUTOR_ENABLED to 0 to close the entry; this release has no D1 schema migration."
+      "zh": "应用迁移后结构保持追加式；若需回退应用，重新部署上一成功提交并保留新增表与列及已写入数据。",
+      "en": "The applied schema remains additive. To roll back the app, redeploy the previous successful commit while retaining new tables, columns, and written data."
     }
   }
 }

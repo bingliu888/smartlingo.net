@@ -6,6 +6,7 @@ import {
   verifyClassEntryPassword,
 } from "@/lib/live-classrooms";
 import { createId, getDatabase, getSessionUser } from "@/lib/auth";
+import { hasMemberRoomTab, onlineClassMembers } from "@/lib/class-member-room-presence";
 import {
   abandonDefiniteParticipantAttempt,
   attachCompanionParticipant,
@@ -45,6 +46,7 @@ type JoinBody = {
   sessionToken?: unknown;
   mic?: unknown;
   camera?: unknown;
+  roomTabId?: unknown;
 };
 
 function joinFailure(error: unknown) {
@@ -108,9 +110,15 @@ export async function POST(
   }
 
   const user = await getSessionUser(request);
+  if (!user) return Response.json({error:"Members sign in to enter the course room"},{status:401});
   const access = await classAccess(room, user, true);
   if (!access.allowed)
     return Response.json({ error: "Private course invitation required" }, { status: 403 });
+  const roomTabId=String(body.roomTabId||"");
+  if (!await hasMemberRoomTab(room.id,user.id,roomTabId))
+    return Response.json({error:"Enter the course room before starting media",errorCode:"ROOM_PRESENCE_REQUIRED"},{status:409});
+  if ((await onlineClassMembers(room.id)).length < 2)
+    return Response.json({error:"WAITING_FOR_MEMBER",errorCode:"WAITING_FOR_MEMBER"},{status:409});
   if (room.realtimeMode === "livestream") await bindVerifiedStageSpeakers(user);
 
   if (room.hasPassword && !access.manager) {
@@ -133,8 +141,7 @@ export async function POST(
     .slice(0, 100);
   if (identity.length < 8)
     return Response.json({ error: "Invalid participant identity" }, { status: 400 });
-  const displayName = String(body.displayName || user?.displayName || "Guest")
-    .trim().slice(0, 80) || "Guest";
+  const displayName = user.displayName.trim().slice(0, 80);
   const wantsPublish = body.publish === true;
   const wantsStart = body.start === true;
   const wantsMic = body.mic === true;

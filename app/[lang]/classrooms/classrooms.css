@@ -94,3 +94,61 @@
   .class-room-controls>div>b,.class-room-controls>div>small{white-space:nowrap}
   .class-room-controls nav{flex:1 1 520px;justify-content:flex-end}
 }
+
+/* SmartMeeting v2 classroom action, presence, and private-support contract. */
+.class-room-controls{display:block;padding:10px 12px;margin:0 0 12px;min-width:0}
+.class-room-controls nav{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-start;width:100%;min-width:0;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.class-room-controls nav button{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 10px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.class-room-controls nav button svg{width:22px;height:22px;display:block}
+.class-room-controls nav button.leave{margin-left:auto;width:48px;height:48px;padding:11px;border:0;background:#d0473b;color:#fff}
+.class-room-controls nav button.leave svg{width:25px;height:25px}
+.class-room-controls nav button.pending{border-color:#d86b19;background:#e77820;color:#fff}
+.class-room-controls nav button.on{background:#008f72;color:#fff}
+.class-room-controls nav button span{font-size:12px;font-weight:800;white-space:nowrap}
+.class-streaming-members{display:flex;gap:7px;min-width:0;max-width:100%;overflow-x:auto;padding:6px 0 12px;-webkit-overflow-scrolling:touch}
+.class-streaming-members button{flex:0 0 auto;min-height:38px;padding:0 13px;border:1px solid #9dddc9;border-radius:999px;color:#096f56;background:#e7fbf3;font-weight:800;cursor:pointer}
+.class-room-drawer{position:fixed;z-index:90;top:0;right:0;bottom:0;width:min(420px,100vw);display:flex;flex-direction:column;min-width:0;border-left:1px solid #d3e7e3;background:#f8fcfb;box-shadow:-16px 0 48px #052a3926}
+.class-room-drawer>header{min-height:76px;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #d3e7e3;background:#fff}
+.class-room-drawer h2{margin:0;font-size:22px;overflow-wrap:anywhere}
+.class-room-drawer>header button{width:40px;height:40px;flex:0 0 auto;border:1px solid #d3e7e3;border-radius:50%;background:#fff;font-size:25px}
+.class-room-drawer-list{min-height:0;padding:16px;display:grid;align-content:start;gap:10px;overflow-y:auto}
+.class-room-drawer-list article,.class-room-drawer-list>button{min-width:0;padding:14px;border:1px solid #d3e7e3;border-radius:13px;background:#fff;text-align:left;overflow-wrap:anywhere}
+.class-room-drawer-list article{display:grid;gap:8px}
+.class-room-drawer-list audio{width:100%;min-width:0}
+.class-room-drawer-list small{color:#60727d}
+.class-room-drawer-list a{color:#078c70;font-weight:800}
+.class-room-drawer-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.class-room-upload-menu,.class-room-recording-active,.class-room-recording-draft,.class-room-speech-editor{margin:12px 16px 0;padding:14px;border:1px solid #d3e7e3;border-radius:13px;background:#fff;color:#122a32;font-size:14px}
+.class-room-upload-menu{display:grid;gap:6px;box-shadow:0 8px 24px #052a3917}
+.class-room-upload-menu button,.class-room-recording-draft button,.class-room-speech-editor button,.class-room-recording-active button,.class-room-drawer-list article button{min-height:34px;padding:6px 12px;border:1px solid #d3e7e3;border-radius:8px;background:#fff;color:#122a32;font:inherit;text-align:left;white-space:normal;line-height:1.25}
+.class-room-recording-active{display:flex;align-items:center;gap:8px;color:#b02d30;font-weight:700}
+.class-room-recording-active button{margin-left:auto}
+.class-room-recording-pulse{width:10px;height:10px;border-radius:50%;background:#de3939;animation:class-record-pulse 1s infinite alternate}
+@keyframes class-record-pulse{to{opacity:.25;transform:scale(.7)}}
+.class-room-recording-draft,.class-room-speech-editor{display:grid;gap:10px}
+.class-room-recording-draft audio{width:100%;min-width:0}
+.class-room-speech-editor label{display:grid;gap:8px}
+.class-room-speech-editor textarea{width:100%;min-width:0;resize:vertical;padding:10px;border:1px solid #d3e7e3;border-radius:8px;font:inherit}
+.class-support-chat{min-height:330px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
+.class-support-chat>header{gap:12px;align-items:center}
+.class-support-chat>header h2{font-size:18px}
+.class-support-chat>header span{font-size:11px;color:#60727d;text-align:right}
+.class-support-chat .chat-list{height:min(42vh,430px);min-height:160px;overflow-y:auto;padding:10px 16px;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.class-support-chat .chat-list article{padding:11px 0;border-bottom:1px solid #e5eeee}
+.class-support-chat .chat-list article>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.class-support-chat .chat-list strong,.class-support-chat .chat-list p{min-width:0;overflow-wrap:anywhere}
+.class-support-chat .chat-list p{margin:5px 0;line-height:1.5}
+.class-support-chat .chat-list time{font-size:11px;color:#71838a}
+.class-support-chat .chat-message-actions{display:flex;align-items:center;gap:4px}
+.class-support-chat .chat-reply-button,.class-support-chat .chat-delete-button{min-height:30px;padding:3px 8px;border:1px solid #b6e1d3;border-radius:8px;background:#effbf7;color:#08795c;font-size:12px}
+.class-support-chat .chat-composer{padding:12px 16px;border-top:1px solid #e5eeee}
+.class-support-chat .chat-composer label{display:block}
+.class-support-chat .chat-composer textarea{width:100%;min-height:72px;padding:10px;border:1px solid #cddddd;border-radius:10px;font-size:16px;resize:vertical}
+.class-support-chat .chat-composer>div{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.class-support-chat .chat-reply-target{color:#08795c;font-size:12px}
+.class-support-chat .chat-reply-target button,.class-support-chat .polish-button,.class-support-chat .send-button{min-height:36px;padding:4px 10px;border:0;border-radius:9px;background:#e3f9ef;color:#08795c;font-weight:800}
+.class-support-chat .send-button{background:#20dfb3;color:#052a39}
+.class-support-chat .chat-empty{min-height:140px;display:grid;place-content:center;text-align:center;color:#60727d}
+.class-waiting{min-height:140px;padding:20px;margin-bottom:12px}
+.class-waiting h2{font-size:clamp(20px,3vw,28px)}
+@media(max-width:760px){.class-room-controls{padding:8px}.class-room-controls nav{gap:6px}.class-support-chat .chat-list{height:min(46vh,410px)}}

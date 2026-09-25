@@ -19,6 +19,7 @@ import {
   releaseStorageResource,
 } from "./member-storage-quota";
 import { abortR2MultipartUploadIdempotently } from "./r2-batch-delete";
+import { CHAT_MESSAGE_RETENTION_SECONDS } from "./classroom-chat-policy";
 
 type FileBucket = {
   delete(keys: string | string[]): Promise<unknown>;
@@ -192,6 +193,12 @@ export async function runClassMaintenance(environment: ClassMaintenanceEnvironme
   const started = Date.now();
   const withinDeadline = () => Date.now() - started < DEADLINE_MS;
   await cleanupExpiredSessions();
+  if (withinDeadline()) await getDatabase().prepare(`DELETE FROM live_class_chat_messages WHERE id IN (
+    SELECT id FROM live_class_chat_messages WHERE created_at<=? ORDER BY created_at,id LIMIT 500
+  )`).bind(nowSeconds()-CHAT_MESSAGE_RETENTION_SECONDS).run();
+  if (withinDeadline()) await getDatabase().prepare(`DELETE FROM class_member_room_presence WHERE rowid IN (
+    SELECT rowid FROM class_member_room_presence WHERE last_seen_at<=? ORDER BY last_seen_at LIMIT 500
+  )`).bind(nowSeconds()-7*24*60*60).run();
   if (withinDeadline()) await cleanupRevokedProviderParticipants(8);
   if (withinDeadline()) await recoverAmbiguousParticipantCreates(12);
   if (withinDeadline()) await recoverAmbiguousRecordingStarts(4);

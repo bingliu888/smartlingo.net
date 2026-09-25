@@ -123,7 +123,7 @@ test("legacy classroom grants remain unbound until the verified-user binding pat
 
 test("tracked classroom migrations pass fresh D1 replay and a second no-op", () => {
   const result = validateD1Migrations();
-  assert.equal(result.newestMigration, "0189_admin_max_subscription_backfill");
+  assert.equal(result.newestMigration, "0190_private_classroom_support_and_presence");
   assert.equal(result.firstRunApplied, result.migrationCount);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
@@ -175,9 +175,10 @@ test("Gold 3 classroom migration is additive and deployment applies D1 before bu
   const deployStep = workflow.indexOf("- name: Deploy Worker");
 
   assert.doesNotMatch(migration, /DROP\s+(?:TABLE|COLUMN)/i);
-  assert.deepEqual(journal.entries.slice(-2).map(({ idx, tag }) => ({ idx, tag })), [
+  assert.deepEqual(journal.entries.slice(-3).map(({ idx, tag }) => ({ idx, tag })), [
     { idx: 83, tag: "0188_gpt6_luna_text_generation" },
     { idx: 84, tag: "0189_admin_max_subscription_backfill" },
+    { idx: 85, tag: "0190_private_classroom_support_and_presence" },
   ]);
   assert.ok(migrationStep >= 0 && migrationStep < buildStep && buildStep < deployStep);
 });

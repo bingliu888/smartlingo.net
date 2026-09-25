@@ -22,6 +22,12 @@ Any signed-in member may create a private class as a teacher or coordinator. Thi
 
 Public catalog placement is separate: the class must pass automated preflight and Admin human review before it appears in search.
 
+### Course-room V2 migration
+
+The course room follows SmartMeeting.club's reviewed V2 room interaction contract: signed-in members only, one active device/tab per member per course room, a presence count that includes the current member, a one-row mobile action bar, a waiting speaker state, and private support chat visible only to the sender and host/coordinator team. A host reply is addressed to one member. Group audio rooms show member entry and exit in a ticker. A lone microphone/camera intent waits for a second distinct online member before RealtimeKit joins; once joined, microphone mute leaves listening connected while other publishers are active, and an idle lone connection closes after the grace period.
+
+The room's recording and attachment controls use the same verified interaction pattern: local microphone notes stop at 15 minutes, selected audio files at 30 minutes, both have a preview before upload, and a text note can be spoken only on the listener's own device. The recording plus control is hidden while the user streams and otherwise requires host/coordinator authority plus admin or Max access with more than seven days left. SmartLingo retains its existing course provider-recording history and control separately; its course playlist, training content, Free/Max catalog, and site-owned D1/R2/RealtimeKit resources remain independent. SmartMeeting's meeting IDs, subscriptions, provider keys, and runtime data are not copied.
+
 ## Payments and rewards
 
 Class checkout is designed for Stripe Connect:

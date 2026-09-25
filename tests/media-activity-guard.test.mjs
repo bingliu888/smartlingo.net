@@ -2,15 +2,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("ghost publishers get a 15-second confirmation after three idle minutes", async () => {
-  const guard = await readFile(new URL("../components/MediaActivityGuard.tsx", import.meta.url), "utf8");
+test("lone media disconnects without ejecting a member from the course room", async () => {
   const room = await readFile(new URL("../components/live-class-room-client.tsx", import.meta.url), "utf8");
-  assert.match(guard, /MEDIA_IDLE_LIMIT_MS = 3 \* 60 \* 1000/);
-  assert.match(guard, /MEDIA_IDLE_CONFIRM_SECONDS = 15/);
-  assert.match(guard, /createMediaStreamSource/);
-  assert.match(guard, /getImageData/);
-  assert.match(room, /active=\{joined && localPublisherStarted\}/);
-  assert.match(room, /onExpire=\{\(\) => void leave\(\)\}/);
+  assert.match(room, /onlineMembers\.length<2/);
+  assert.match(room, /void disconnect\(true\)\.then/);
+  assert.match(room, /},9000\)/);
+  assert.match(room, /!joined\|\|mic\|\|camera\|\|hasAnyPublisher\|\|playlistEnabled/);
+  assert.match(room, /disconnect\(true\),15000\)/);
+  assert.doesNotMatch(room, /LoneParticipantGuard|MediaActivityGuard/);
 });
 
 test("unknown pages recover to the home page", async () => {
