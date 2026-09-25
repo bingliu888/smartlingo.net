@@ -161,6 +161,18 @@ test("header wordmark keeps Smart and Lingo on one baseline", () => {
   assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "wordmark-wrap"));
 });
 
+test("homepage type scale remains restrained on phone, tablet, and desktop", () => {
+  const report = {
+    schemaVersion: 1,
+    pageName: "home",
+    page: { document: { clientWidth: 1180, scrollWidth: 1180 }, body: { clientWidth: 1180, scrollWidth: 1180 } },
+    homeTypography: { title: 76, intro: 20, path: 60, guru: 30 },
+  };
+  assert.equal(findSmartLingoRuntimeLayoutIssues(report).filter(issue => issue.code === "home-type-scale").length, 4);
+  report.homeTypography = { title: 47.2, intro: 16, path: 31.86, guru: 23.6 };
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "home-type-scale"));
+});
+
 test("layout gate requires real page markers and representative hook categories", () => {
   for (const page of ["home", "tutorial", "courses", "programs", "anonymous-trial", "learning", "learning-session", "vocabulary-memory", "smartcards", "dashboard", "messages", "live-chat", "certificates", "certificate-detail", "admin-members", "admin-certificates", "assistant", "project", "auth"]) {
     assert.match(runnerSource, new RegExp(`\\"${page}\\"`));

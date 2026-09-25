@@ -1,53 +1,53 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-chinese-path-home-layout-20260925-r18",
+  "releaseId": "smartlingo-responsive-type-scale-20260925-r19",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 中文学习路径名称与首页排版",
-    "en": "SmartLingo Chinese path names and homepage layout"
+    "zh": "SmartLingo 响应式字阶与首页视觉层级",
+    "en": "SmartLingo responsive typography and homepage hierarchy"
   },
   "purpose": {
-    "zh": "将中文学习入口明确命名为快捷版和旗舰版，移除首页重复眉题，并让新手视频和 Guru 入口在宽屏同排显示。",
-    "en": "Name the Chinese learning paths 快捷版 and 旗舰版, remove the duplicate home eyebrow, and align the tutorial and Guru entries on wider screens."
+    "zh": "缩小平板和桌面首页过大的标题及卡片字阶，同时保持正文易读、明暗对比和移动端自然换行。",
+    "en": "Reduce oversized tablet and desktop homepage headings and card type while preserving readable body copy, contrast, and natural mobile wrapping."
   },
   "features": {
     "zh": [
-      "中文导航、首页卡片、学习入口、会员状态与 Guru 引导统一使用快捷版／旗舰版，英文保留 Flash／Max。",
-      "删除首页重复的 SMARTLINGO · FLASH / MAX / GURU 眉题，放宽标题容器以利用可用屏宽。",
-      "新手视频与咨询专家入口在宽屏并排，窄屏自然纵向排列；付款、会员权益和数据库不变。"
+      "将学习入口主标题上限从 76px 降至 52px，优化行高、字距和首屏留白。",
+      "将 Flash／Max 卡片标题上限从 60px 降至 36px，并收紧 Guru 标题和卡片间距。",
+      "保留可读正文及原有深色／浅色高对比配色；付款、会员权益和数据库不变。"
     ],
     "en": [
-      "Use 快捷版/旗舰版 across Chinese navigation, learning entries, membership status and Guru guidance, while retaining Flash/Max in English.",
-      "Remove the redundant SMARTLINGO · FLASH / MAX / GURU homepage eyebrow and let the hero title use available width.",
-      "Place the tutorial and Ask Guru entries side by side when space allows and stack them naturally on narrow screens; commerce and entitlement data are unchanged."
+      "Cap the learning-entry headline at 52px instead of 76px, with calmer line-height, tracking, and first-screen spacing.",
+      "Cap Flash/Max card headings at 36px instead of 60px and tighten Guru headings and card spacing.",
+      "Retain readable body text and the existing high-contrast light/dark palette; commerce, entitlements, and database remain unchanged."
     ]
   },
   "affected": {
-    "zh": ["中文界面文案、首页布局、Guru 指引与回归测试；不改变路径 URL、支付价格或数据库结构。"],
-    "en": ["Chinese interface copy, homepage layout, Guru guidance and regression tests; no route URL, price or database-schema changes."]
+    "zh": ["首页及共用学习入口字阶、WebKit 字号回归检查；不改变路径 URL、支付价格或数据库结构。"],
+    "en": ["Homepage and shared learning-entry typography plus a WebKit type-scale regression check; no route URL, price or database-schema changes."]
   },
   "changes": {
-    "zh": ["复用既有学习路径组件和响应式网格，只改显示名称与首页内容顺序。"],
-    "en": ["Reuse existing learning-path components and responsive grid; change only displayed names and homepage content order."]
+    "zh": ["复用既有学习路径组件与配色，只调整其 CSS 字阶和间距；在既有真实 WebKit 布局门禁加入计算后字号检查。"],
+    "en": ["Reuse existing learning-path components and colors, changing only CSS type scale and spacing; add computed-font-size checks to the existing real-WebKit layout gate."]
   },
   "validation": {
-    "zh": ["构建、零警告 lint、TypeScript、全量测试与中英首页 WebKit 布局检查；发布后核验生产页面与精确提交记录。"],
-    "en": ["Build, zero-warning lint, TypeScript, full tests and Chinese/English WebKit homepage layout checks; verify production and exact release commit after deployment."]
+    "zh": ["构建、零警告 lint、TypeScript、全量测试与中英首页五种屏宽的 WebKit 字阶／布局检查；发布后核验生产页面与精确提交记录。"],
+    "en": ["Build, zero-warning lint, TypeScript, full tests and WebKit type-scale/layout checks at five widths in Chinese and English; verify production and exact release commit after deployment."]
   },
   "deferred": {
     "zh": ["本次仅需匿名页面验收；不产生真实付款或改变订阅状态。"],
     "en": ["This round requires anonymous-page acceptance only; no real payment or subscription-state change."]
   },
   "siteAdaptations": {
-    "zh": ["保留十二种界面语言、现有 flash／max 路由和教室权限；其他语言继续使用原有名称。"],
-    "en": ["Preserve twelve interface languages, existing flash/max routes and classroom permissions; other locales retain their current naming."]
+    "zh": ["保留十二种界面语言、现有 flash／max 路由与教室权限；共用字阶同时修正各语言入口。"],
+    "en": ["Preserve twelve interface languages, existing flash/max routes and classroom permissions; the shared type scale improves every locale's entry page."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "无需数据回退；若需撤销本次显示调整，重新部署上一成功提交即可。",
-      "en": "No data rollback is required; redeploy the previous successful commit to revert this presentation change."
+      "zh": "无需数据回退；若需撤销本次字阶调整，重新部署上一成功提交即可。",
+      "en": "No data rollback is required; redeploy the previous successful commit to revert this typography change."
     }
   }
 }

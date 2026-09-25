@@ -493,6 +493,15 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     compactViewportMatches: window.matchMedia("(max-height:900px) and (min-width:700px)").matches,
     phoneViewportMatches: window.matchMedia("(max-width:620px)").matches,
   } : null;
+  const homeTypography = document.querySelector('[data-layout-page="home"]') ? Object.fromEntries([
+    ["title", ".learning-entry-intro h1"],
+    ["intro", ".learning-entry-intro > p:not(.section-kicker)"],
+    ["path", ".learning-path-card h2"],
+    ["guru", ".learning-entry-assist-row .learning-guru-card h2"],
+  ].map(([name, selector]) => {
+    const element = document.querySelector(selector);
+    return [name, element ? number(getComputedStyle(element).fontSize) : null];
+  })) : null;
 
   return {
     schemaVersion: 1,
@@ -517,6 +526,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     viewportExceeds,
     lessonFit,
     sceneCopyFit,
+    homeTypography,
   };
 }
 
@@ -610,6 +620,19 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
   }
   if (report.wordmark && Math.abs(report.wordmark.first.top - report.wordmark.second.top) > tolerance) {
     add("wordmark-wrap", ".site-header .smartlingo-wordmark", "SmartLingo wordmark must stay on one line", report.wordmark);
+  }
+  if (report.pageName === "home") {
+    for (const [name, minimum, maximum] of [
+      ["title", 30, 54],
+      ["intro", 16, 19],
+      ["path", 27, 38],
+      ["guru", 20, 28],
+    ]) {
+      const actual = report.homeTypography?.[name];
+      if (!Number.isFinite(actual) || actual < minimum || actual > maximum) {
+        add("home-type-scale", `.learning-entry-${name}`, "homepage typography must remain readable without oversized display text", actual, { minimum, maximum });
+      }
+    }
   }
   for (const item of report.clipping || []) {
     if (!item.allowedDecoration) add("clipped-content", item.selector, "visible key content is clipped or ellipsized", item);

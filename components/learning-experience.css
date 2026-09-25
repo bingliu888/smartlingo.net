@@ -1,21 +1,21 @@
 .learning-entry-page{min-height:100vh;background:#f9fbf7;color:#12242c}
-.learning-entry-shell{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:clamp(40px,7vw,88px) 0 80px}
-.learning-entry-intro{width:100%;min-width:0;margin-bottom:28px}
-.learning-entry-intro h1{margin:10px 0 16px;font-size:clamp(38px,6vw,76px);line-height:1.05;letter-spacing:-.045em}
-.learning-entry-intro p{margin:0;color:#50616a;font-size:clamp(16px,1.8vw,20px);line-height:1.55}
+.learning-entry-shell{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:clamp(36px,5vw,64px) 0 72px}
+.learning-entry-intro{width:100%;min-width:0;margin-bottom:24px}
+.learning-entry-intro h1{margin:0 0 14px;font-size:clamp(32px,4vw,52px);font-weight:700;line-height:1.14;letter-spacing:-.035em}
+.learning-entry-intro p{max-width:72ch;margin:0;color:#50616a;font-size:clamp(16px,1.35vw,18px);line-height:1.6}
 .learning-entry-assist-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:16px}
 .learning-entry-assist-row>.lingo-tour-spotlight{width:100%;min-width:0;margin:0;align-self:stretch}
 .learning-entry-assist-row>.learning-guru-card{min-width:0;margin:0;padding:16px 20px;align-items:center}
-.learning-entry-assist-row>.learning-guru-card h2{font-size:clamp(22px,2.5vw,30px)}
+.learning-entry-assist-row>.learning-guru-card h2{font-size:clamp(21px,2vw,26px)}
 .learning-entry-assist-row>.learning-guru-card p:not(.section-kicker){font-size:14px}
 .learning-entry-assist-row>.learning-guru-card a{flex:none;white-space:nowrap}
-.learning-path-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:32px}
+.learning-path-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px}
 .learning-path-card,.learning-guru-card,.learning-status-card,.learning-language-panel,.learning-hub-card{min-width:0;border:1px solid #d8e3df;border-radius:24px;background:#fff;box-shadow:0 12px 35px rgba(11,53,47,.04)}
-.learning-path-card{padding:clamp(24px,3vw,42px);display:flex;flex-direction:column;gap:12px}
+.learning-path-card{padding:clamp(22px,2.5vw,32px);display:flex;flex-direction:column;gap:12px}
 .learning-path-card.max{background:#0e3534;color:#fff}
 .learning-path-card .eyebrow{margin:0;color:#087b64;font-size:12px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
 .learning-path-card.max .eyebrow{color:#9ce7c9}
-.learning-path-card h2{margin:0;font-size:clamp(38px,5vw,60px);line-height:1}
+.learning-path-card h2{margin:0;font-size:clamp(28px,2.7vw,36px);line-height:1.16;letter-spacing:-.025em}
 .learning-path-card p{margin:0;line-height:1.6;color:#53646a}
 .learning-path-card.max p{color:#d4e5df}
 .learning-path-card a,.learning-guru-card a,.learning-status-card a,.learning-hub-card a{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;min-height:44px;margin-top:auto;padding:10px 17px;border:1px solid currentColor;border-radius:999px;font-weight:750;text-decoration:none;color:inherit}
