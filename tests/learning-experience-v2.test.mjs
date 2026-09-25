@@ -70,3 +70,11 @@ test("Guru FAQ list icon visually replaces the legacy question mark", async () =
   assert.match(client, /Should a new learner choose Flash or Max/);
   assert.doesNotMatch(client, /我应该从哪个职业英语阶段开始/);
 });
+
+test("public Guru explains the current Flash and Max paths without legacy Free-plan advice", async () => {
+  const route = await source("app/api/assistant/route.ts");
+  assert.match(route, /Flash is free, playful, casual practice/);
+  assert.match(route, /Flash is the name of the free learning path, not a synonym for flashcards/);
+  assert.match(route, /Signing in and explicitly entering Max starts a one-time seven-day trial/);
+  assert.doesNotMatch(route, /Free is ad-supported/);
+});

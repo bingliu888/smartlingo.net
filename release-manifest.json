@@ -1,36 +1,38 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-guru-faq-icon-20260925-r15",
+  "releaseId": "smartlingo-guru-path-guidance-20260925-r16",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo Guru 常见问题图标修正",
-    "en": "SmartLingo Guru FAQ icon correction"
+    "zh": "SmartLingo Guru 学习路径引导修正",
+    "en": "SmartLingo Guru learning-path guidance correction"
   },
   "purpose": {
-    "zh": "修正 Guru 常见问题按钮双重图标，并把旧职业英语与人才库问题换成 Flash／Max 学习引导。",
-    "en": "Correct the double icon on Guru's FAQ button and replace legacy career-English and talent questions with Flash/Max learning guidance."
+    "zh": "修正 Guru 的双重图标、旧问题和 AI 将 Flash 误解为闪卡、推荐过时 Free 方案的回答。",
+    "en": "Correct Guru's double icon, legacy suggestions, and AI replies that confuse Flash with flashcards or recommend an obsolete Free plan."
   },
   "features": {
     "zh": [
-      "Guru 常见问题按钮只显示居中的列表图标，保留原有无障碍名称与问题菜单；问题内容改为适合语言新人的 Flash／Max 引导。",
+      "Guru 常见问题按钮只显示居中的列表图标，保留无障碍名称；问题内容改为适合语言新人的 Flash／Max 引导。",
+      "AI 系统指引明确 Flash 是免登录的免费学习路径，Max 提供一次性七天试用与一对一角色导师，不再把 Flash 当成闪卡或推荐旧 Free 方案。",
       "Flash、Max 和 Guru 新入口及支付、会员数据均保持上一成功发布版本。"
     ],
     "en": [
-      "Show only the centered list glyph on Guru's FAQ button while preserving accessibility; make the suggested questions relevant to new Flash/Max learners.",
+      "Show only the centered list glyph on Guru's FAQ button while preserving accessibility; make suggested questions relevant to new Flash/Max learners.",
+      "Tell the AI that Flash is the public free path and Max has a one-time seven-day trial and one-to-one role tutor; stop confusing Flash with flashcards or recommending the retired Free plan.",
       "Leave the Flash, Max and Guru entry flow, payment and membership data from the previous successful release unchanged."
     ]
   },
   "affected": {
-    "zh": ["仅 Guru 常见问题按钮样式、引导问题和回归测试；不改变支付价格或数据库结构。"],
-    "en": ["Only the Guru FAQ button style, suggested questions and regression test; no price or database-schema changes."]
+    "zh": ["仅 Guru 常见问题样式、引导问题、AI 指引和回归测试；不改变支付价格或数据库结构。"],
+    "en": ["Only Guru FAQ styling, suggestions, AI instructions and regression tests; no price or database-schema changes."]
   },
   "changes": {
-    "zh": ["用不可见的旧字符占位和绝对居中的列表图标避免两个符号同时出现，交互逻辑不变。"],
-    "en": ["Hide the old visual character and center the list glyph without changing FAQ behavior."]
+    "zh": ["旧问号在视觉上隐藏，列表图标居中；复用现有 Guru 服务端指引机制并改正产品事实，交互逻辑不变。"],
+    "en": ["Hide the old visual question mark, center the list icon, and correct product facts in the existing Guru server instruction without changing interaction behavior."]
   },
   "validation": {
-    "zh": ["构建、零警告 lint、TypeScript、全量测试与图标回归检查通过；WebKit 与生产浏览器在部署时重新核验。"],
-    "en": ["Build, zero-warning lint, TypeScript, full tests and the icon regression check passed; WebKit and production browser are reverified during release."]
+    "zh": ["构建、零警告 lint、TypeScript、全量测试及 Guru 产品事实回归检查通过；WebKit 与生产真实对话在部署时重新核验。"],
+    "en": ["Build, zero-warning lint, TypeScript, full tests and Guru product-fact regressions passed; WebKit and a real production conversation are reverified during release."]
   },
   "deferred": {
     "zh": ["普通会员的线上登录态验收仍需专用 QA 会话；本次不产生真实付款或开启直播。"],
