@@ -19,6 +19,7 @@ const verifier = join(projectRoot, "scripts", "verify-runtime-layout-webkit.mjs"
 const protectedPages = [
   "/zh/classes",
   "/zh/max",
+  "/zh/max/tutor?language=ja",
   "/zh/programs/en?path=max",
   "/zh/classes/course_en_basic/learn",
   "/zh/classes/course_en_basic/vocabulary",

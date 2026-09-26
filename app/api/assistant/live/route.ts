@@ -8,6 +8,7 @@ import {
 import { readOpenTutorProfile, resolveOpenTutorMission } from "../../../../lib/smartlingo-open-tutor";
 import { interfaceLanguages } from "../../../../lib/interface-locale";
 import { maxLiveTutorInstructions } from "../../../../lib/smartlingo-live-tutor-instructions";
+import { validTutorVoice } from "../../../../lib/smartlingo-live-tutor-personas";
 import { requestUser } from "../../../../lib/request-user";
 
 function json(value: Record<string, unknown>, status = 200) {
@@ -46,8 +47,8 @@ export async function POST(request: Request) {
     FROM subscriptions WHERE user_id=? AND cadence='max' AND status='active' LIMIT 1`)
     .bind(user.id).first<{ endsAt: number }>();
   const tutor = await database.prepare(`SELECT target_language AS language,ui_language AS uiLanguage,
-    profile_json AS profileJson FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
-    .bind(tutorSessionId, user.id).first<{ language: string; uiLanguage: string; profileJson: string }>();
+    profile_json AS profileJson,voice_key AS voice FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
+    .bind(tutorSessionId, user.id).first<{ language: string; uiLanguage: string; profileJson: string; voice: string }>();
   const mission = resolveOpenTutorMission({ language, uiLanguage: tutor?.uiLanguage });
   if (!tutor || tutor.language !== language || !mission) return json({ error: "Invalid tutor language." }, 400);
   const now = Math.floor(Date.now() / 1_000);
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     level: profile.level, useCase: profile.useCase, slowSpeed, shortAnswer });
   try {
     const answer = await openSmartAiLiveVoice({ userId: user.id, subject: `user:${user.id}`,
-      paid: true, sdp, instructions, shortAnswer, onConnected: async callId => {
+      paid: true, sdp, instructions, voice: validTutorVoice(tutor.voice) ? tutor.voice : "marin", shortAnswer, onConnected: async callId => {
         if (!await activateMaxLiveTutorCall(database, id, user.id, callId)) {
           await hangupSmartAiLiveVoice(callId);
           throw new Error("Voice connection could not be recorded.");

@@ -977,6 +977,7 @@ export async function openSmartAiLiveVoice(input: {
   paid: boolean;
   sdp: string;
   instructions: string;
+  voice?: "marin" | "gleam" | "meridian" | "willow";
   shortAnswer?: boolean;
   onConnected?: (callId: string) => Promise<void>;
   deps?: SmartAiGatewayDependencies;
@@ -1003,6 +1004,7 @@ export async function openSmartAiLiveVoice(input: {
               session: {
                 model,
                 instructions: input.instructions,
+                audio: { output: { voice: input.voice || "marin" } },
                 store: false,
                 delegation: { type: "responses", responses: {
                   model: "gpt-6-luna",

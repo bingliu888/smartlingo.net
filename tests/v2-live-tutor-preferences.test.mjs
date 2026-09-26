@@ -16,6 +16,8 @@ test("live tutor responds in the learning language with bounded, switchable pace
   const normal = maxLiveTutorInstructions({ ...base, slowSpeed: false, shortAnswer: false });
   assert.match(normal, /under 30 spoken words total/);
   assert.match(normal, /natural conversational pace/);
+  assert.match(normal, /Understand speech in any language/);
+  assert.match(normal, /explicitly asks to speak or receive an explanation in another language/);
 });
 
 test("live tutor exposes scrollable bilingual transcript and updates preferences without restart", () => {

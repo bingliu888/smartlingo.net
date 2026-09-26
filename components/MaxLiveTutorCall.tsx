@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import { maxLiveTutorInstructions } from "../lib/smartlingo-live-tutor-instructions";
+import { SMARTLINGO_TUTOR_PORTRAITS, SMARTLINGO_TUTOR_VOICES,
+  validTutorPortrait, validTutorVoice, type SmartLingoTutorPortrait,
+  type SmartLingoTutorVoice } from "../lib/smartlingo-live-tutor-personas";
 import { translateTutorLines } from "../lib/smartlingo-tutor-translation-client";
 
 type CallState = "idle" | "connecting" | "live" | "ending";
@@ -12,30 +16,6 @@ type CaptionLine = { id: string; text: string; complete: boolean; supportText?: 
 
 function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-function drawVirtualTutor(canvas: HTMLCanvasElement, level: number, speaking: boolean, time: number) {
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  const width = canvas.width, height = canvas.height;
-  const background = context.createLinearGradient(0, 0, width, height);
-  background.addColorStop(0, "#113f3b"); background.addColorStop(1, "#087e69");
-  context.fillStyle = background; context.fillRect(0, 0, width, height);
-  context.strokeStyle = "#7fe4bd55"; context.lineWidth = 2;
-  for (let i = 0; i < 5; i++) {
-    context.beginPath(); context.arc(width / 2, height * .6, 130 + i * 60 + Math.sin(time / 1600 + i) * 7, 0, Math.PI * 2); context.stroke();
-  }
-  context.fillStyle = "#d8f5e7"; context.beginPath(); context.ellipse(width / 2, height * .99, 167, 132, 0, 0, Math.PI * 2); context.fill();
-  context.fillStyle = "#132b30"; context.beginPath(); context.ellipse(width / 2, height * .42, 107, 134, 0, 0, Math.PI * 2); context.fill();
-  context.fillStyle = "#e8b995"; context.beginPath(); context.ellipse(width / 2, height * .43, 83, 109, 0, 0, Math.PI * 2); context.fill();
-  context.fillStyle = "#132b30";
-  context.beginPath(); context.ellipse(width / 2 - 28, height * .4, 6, 7, 0, 0, Math.PI * 2); context.fill();
-  context.beginPath(); context.ellipse(width / 2 + 28, height * .4, 6, 7, 0, 0, Math.PI * 2); context.fill();
-  context.strokeStyle = "#934d4b"; context.lineWidth = 4;
-  context.beginPath(); context.moveTo(width / 2, height * .44); context.lineTo(width / 2 - 3, height * .52); context.stroke();
-  const mouth = speaking ? Math.max(4, Math.min(23, 5 + level * 80)) : 3;
-  context.fillStyle = "#813c43"; context.beginPath(); context.ellipse(width / 2, height * .61, 24, mouth, 0, 0, Math.PI * 2); context.fill();
-  context.fillStyle = "#b8f3d8"; context.beginPath(); context.arc(width - 36, 36, 8, 0, Math.PI * 2); context.fill();
 }
 
 export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supportLanguageName, profile,
@@ -55,7 +35,10 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const [captions, setCaptions] = useState<CaptionLine[]>([]);
   const [error, setError] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [portrait, setPortrait] = useState<SmartLingoTutorPortrait>("mei");
+  const [voice, setVoice] = useState<SmartLingoTutorVoice>("marin");
+  const [preferenceBusy, setPreferenceBusy] = useState(false);
+  const [loadedSessionId, setLoadedSessionId] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<RTCDataChannel | null>(null);
@@ -63,9 +46,6 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const callIdRef = useRef("");
   const deadlineRef = useRef(0);
   const timerRef = useRef<number | null>(null);
-  const frameRef = useRef<number | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const endingRef = useRef(false);
   const activeTutorItemRef = useRef("");
   const sessionReadyRef = useRef(false);
@@ -75,6 +55,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const transcriptAtBottomRef = useRef(true);
   const translationAttemptedRef = useRef<Set<string>>(new Set());
   const learningNativeName = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language)?.nativeName || learningName;
+  const selectedPortrait = SMARTLINGO_TUTOR_PORTRAITS.find(item => item.id === portrait) || SMARTLINGO_TUTOR_PORTRAITS[0];
+  const preferenceLoaded = loadedSessionId === sessionId;
 
   const sendPreferences = useCallback((channel: RTCDataChannel) => {
     if (channel.readyState !== "open") return;
@@ -95,6 +77,42 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
       }).catch(() => { if (active) setError(zh ? "语音额度暂时无法读取。" : "Voice allowance is temporarily unavailable."); });
     return () => { active = false; };
   }, [sessionId, zh]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+    void fetch(`/api/assistant/live/preferences?sessionId=${encodeURIComponent(sessionId)}`, {
+      credentials: "same-origin", cache: "no-store",
+    }).then(async response => {
+      if (!response.ok) throw new Error("Unable to read tutor choices.");
+      return response.json() as Promise<{ portrait?: unknown; voice?: unknown }>;
+    }).then(value => {
+      if (!active) return;
+      if (validTutorPortrait(value.portrait)) setPortrait(value.portrait);
+      if (validTutorVoice(value.voice)) setVoice(value.voice);
+      setLoadedSessionId(sessionId);
+    }).catch(() => {
+      if (active) setError(zh ? "暂时无法读取导师形象与声音，请稍后重试。" : "Tutor portrait and voice are temporarily unavailable. Try again later.");
+    });
+    return () => { active = false; };
+  }, [sessionId, zh]);
+
+  async function saveTutorChoice(nextPortrait: SmartLingoTutorPortrait, nextVoice: SmartLingoTutorVoice) {
+    if (state !== "idle" || preferenceBusy || !preferenceLoaded) return;
+    setPreferenceBusy(true); setError("");
+    try {
+      const response = await fetch("/api/assistant/live/preferences", {
+        method: "PATCH", credentials: "same-origin", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, portrait: nextPortrait, voice: nextVoice }),
+      });
+      const result = await response.json() as { portrait?: unknown; voice?: unknown; error?: string };
+      if (!response.ok || !validTutorPortrait(result.portrait) || !validTutorVoice(result.voice))
+        throw new Error(result.error || "Tutor choice could not be saved.");
+      setPortrait(result.portrait); setVoice(result.voice);
+    } catch {
+      setError(zh ? "导师选择未保存，请重试。" : "Tutor choice was not saved. Try again.");
+    } finally { setPreferenceBusy(false); }
+  }
 
   useEffect(() => {
     if (state === "live" && sessionReadyRef.current && channelRef.current) sendPreferences(channelRef.current);
@@ -123,8 +141,6 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   function cleanupMedia() {
     if (timerRef.current !== null) window.clearInterval(timerRef.current);
     timerRef.current = null;
-    if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
-    frameRef.current = null;
     sessionReadyRef.current = false;
     if (captionTimerRef.current !== null) window.clearTimeout(captionTimerRef.current);
     captionTimerRef.current = null;
@@ -132,8 +148,6 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
     peerRef.current?.close(); peerRef.current = null;
     micRef.current?.getTracks().forEach(track => track.stop()); micRef.current = null;
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.srcObject = null; }
-    if (audioContextRef.current) void audioContextRef.current.close().catch(() => undefined);
-    audioContextRef.current = null; analyserRef.current = null;
   }
 
   async function endCall(reason?: string) {
@@ -161,23 +175,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
     setState("idle"); onCallActive(false); endingRef.current = false;
   }
 
-  function animate() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const analyser = analyserRef.current;
-    let level = 0;
-    if (analyser) {
-      const values = new Uint8Array(analyser.fftSize);
-      analyser.getByteTimeDomainData(values);
-      for (const value of values) level += Math.abs(value - 128);
-      level /= values.length * 128;
-    }
-    drawVirtualTutor(canvas, level, speaking || level > .03, performance.now());
-    frameRef.current = window.requestAnimationFrame(animate);
-  }
-
   async function startCall() {
-    if (state !== "idle" || !sessionId || voiceRemaining <= 0) return;
+    if (state !== "idle" || !sessionId || voiceRemaining <= 0 || !preferenceLoaded || preferenceBusy) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === "undefined") {
       setError(zh ? "此浏览器不支持实时语音，请继续使用文字导师。" : "Live voice is unavailable in this browser. Continue with the text tutor.");
       return;
@@ -228,14 +227,6 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
           audioRef.current.srcObject = remote;
           void audioRef.current.play().then(() => setSoundBlocked(false)).catch(() => setSoundBlocked(true));
         }
-        try {
-          const context = new AudioContext(); audioContextRef.current = context;
-          const source = context.createMediaStreamSource(remote);
-          const analyser = context.createAnalyser(); analyser.fftSize = 256;
-          const silent = context.createGain(); silent.gain.value = 0;
-          source.connect(analyser); analyser.connect(silent); silent.connect(context.destination);
-          analyserRef.current = analyser; void context.resume().catch(() => undefined);
-        } catch { /* Captions and audio still work without visual amplitude. */ }
       });
       peer.addEventListener("connectionstatechange", () => {
         if ((peer.connectionState === "failed" || peer.connectionState === "disconnected") && callIdRef.current)
@@ -263,7 +254,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
       callIdRef.current = callId; deadlineRef.current = deadline;
       await peer.setRemoteDescription({ type: "answer", sdp: await response.text() });
       setSeconds(Math.max(0, deadline - Math.floor(Date.now() / 1_000)));
-      setState("live"); animate();
+      setState("live");
       timerRef.current = window.setInterval(async () => {
         const left = Math.max(0, deadlineRef.current - Math.floor(Date.now() / 1_000));
         setSeconds(left);
@@ -284,7 +275,6 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   }
 
   useEffect(() => {
-    if (canvasRef.current) drawVirtualTutor(canvasRef.current, 0, false, 0);
     const onHide = () => {
       if (callIdRef.current) void fetch("/api/assistant/live", { method: "DELETE", credentials: "same-origin",
         headers: { "x-live-call-id": callIdRef.current }, keepalive: true }).catch(() => undefined);
@@ -298,12 +288,31 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   return <section className="max-live-tutor" aria-label={zh ? "实时虚拟人导师" : "Live virtual tutor"}>
     <div className="max-live-tutor-heading"><div><small>MAX · LIVE</small><h3>{zh ? "和虚拟人导师实时对话" : "Talk live with your virtual tutor"}</h3></div>
       <span className="max-live-tutor-clock" role="status">{state === "live" ? formatTime(seconds) : formatTime(voiceRemaining)}</span></div>
-    <div className="max-live-tutor-stage"><canvas ref={canvasRef} width={640} height={360} role="img"
-      aria-label={zh ? "随导师语音同步变化的虚拟人物画面" : "Animated virtual tutor reacting to speech"}/>
+    <div className={`max-live-tutor-stage${speaking ? " speaking" : ""}`}>
+      <Image className="max-live-tutor-photo" src={selectedPortrait.image} fill unoptimized
+        sizes="(max-width: 540px) 90vw, 440px"
+        alt={zh ? `AI 生成的${selectedPortrait.nameZh}导师肖像` : `AI-generated portrait of tutor ${selectedPortrait.nameEn}`}/>
+      <span className="max-live-tutor-photo-badge">{zh ? "AI 生成形象" : "AI-generated portrait"}</span>
       <p className="max-live-tutor-caption" aria-live="polite" dir="auto">{state === "live"
         ? (zh ? "直接说话；下方可上下滚动查看对话。" : "Speak naturally; scroll the conversation below.")
         : (zh ? "开始后直接说话，导师会听你说并回应。" : "Start, then speak naturally. Your tutor listens and responds.")}</p>
       <audio ref={audioRef} autoPlay playsInline aria-label={zh ? "虚拟导师语音" : "Virtual tutor audio"}/></div>
+    <fieldset className="max-live-tutor-choices" disabled={state !== "idle" || preferenceBusy || !preferenceLoaded}>
+      <legend>{zh ? "选择导师形象" : "Choose your tutor portrait"}</legend>
+      <div className="max-live-tutor-portrait-options">{SMARTLINGO_TUTOR_PORTRAITS.map(item => <button
+        key={item.id} type="button" aria-pressed={portrait === item.id}
+        onClick={() => void saveTutorChoice(item.id, voice)}>
+        <Image src={item.image} alt="" width={72} height={72} sizes="72px" unoptimized/>
+        <span>{zh ? item.nameZh : item.nameEn}</span>
+      </button>)}</div>
+      <label className="max-live-tutor-voice-choice" htmlFor="max-tutor-voice">
+        <span>{zh ? "导师声音" : "Tutor voice"}</span>
+        <select id="max-tutor-voice" value={voice} onChange={event => {
+          if (validTutorVoice(event.target.value)) void saveTutorChoice(portrait, event.target.value);
+        }}>{SMARTLINGO_TUTOR_VOICES.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+      </label>
+      <p>{zh ? "形象与声音可分别更换；声音会在下一次通话生效。" : "Choose portrait and voice independently. A new voice takes effect on the next call."}</p>
+    </fieldset>
     {captions.length ? <div ref={transcriptRef} className="max-live-tutor-transcript" role="region" tabIndex={0} aria-live="off"
       aria-label={zh ? "实时对话文字" : "Live conversation transcript"} onScroll={event => {
         const element = event.currentTarget;
@@ -316,14 +325,14 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
       </p>)}
     </div> : null}
     <div className="max-live-tutor-actions">
-      {state === "idle" ? <button type="button" onClick={startCall} disabled={voiceRemaining <= 0}>{zh ? "开启实时语音与虚拟人物" : "Start live voice and avatar"}</button>
+      {state === "idle" ? <button type="button" onClick={startCall} disabled={voiceRemaining <= 0 || !preferenceLoaded || preferenceBusy}>{zh ? "开启实时语音" : "Start live voice"}</button>
         : state === "connecting" ? <button type="button" disabled>{zh ? "正在连接…" : "Connecting…"}</button>
         : <><button type="button" onClick={() => { micRef.current?.getAudioTracks().forEach(track => { track.enabled = muted; }); setMuted(!muted); }}
           aria-pressed={muted}>{muted ? (zh ? "打开麦克风" : "Unmute") : (zh ? "静音" : "Mute")}</button>
           <button type="button" className="max-live-tutor-end" onClick={() => void endCall()} disabled={state === "ending"}>{zh ? "结束通话" : "End call"}</button></>}
       {soundBlocked ? <button type="button" onClick={() => void audioRef.current?.play().then(() => setSoundBlocked(false)).catch(() => undefined)}>{zh ? "点此播放声音" : "Tap to hear audio"}</button> : null}
     </div>
-    <p className="max-live-tutor-note">{zh ? `这是 AI 虚拟人物动画，不是真人摄像视频。仅传送麦克风声音；不录制或保存原始音频。今日语音剩余 ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}；文字导师额度独立。` : `This is an animated AI character, not a human camera feed. Only microphone audio is sent; raw audio is not recorded or stored. Voice left today: ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}; text time is separate.`}</p>
+    <p className="max-live-tutor-note">{zh ? `这是 AI 生成的人像照片，不是真人视频或口型同步。仅传送麦克风声音；不录制或保存原始音频。今日语音剩余 ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}；文字导师额度独立。` : `This is an AI-generated still portrait, not human video or lip-sync. Only microphone audio is sent; raw audio is not recorded or stored. Voice left today: ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}; text time is separate.`}</p>
     {error ? <p className="role-tutor-error" role="alert">{error}</p> : null}
   </section>;
 }

@@ -1,61 +1,61 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-gpt-live-voice-independent-quota-20260926-r30",
+  "releaseId": "smartlingo-live-tutor-portrait-voice-20260926-r31",
   "site": "smartlingo.net",
   "title": {
-    "zh": "Max 导师 GPT-Live 实时语音与独立 5/15 分钟额度",
-    "en": "Max tutor GPT-Live voice with independent 5/15-minute allowance"
+    "zh": "Max 一对一导师形象与声音选择",
+    "en": "Max one-to-one tutor portrait and voice selection"
   },
   "purpose": {
-    "zh": "以更自然、可打断的 GPT-Live 双向语音配合 GPT-6 Luna 教学后端，并将昂贵语音与文字练习分开计时，控制试用及付费成本而不压缩文字学习。",
-    "en": "Use natural interruptible GPT-Live speech with a GPT-6 Luna teaching backend and separate costly voice time from text practice, controlling trial and paid costs without shortening text learning."
+    "zh": "让学生在进入实时对话前选择更亲切的 AI 导师形象和声音，并在下次会话沿用自己的选择。",
+    "en": "Let learners select a personable AI tutor portrait and voice before a live conversation, preserving their choices for future calls."
   },
   "features": {
     "zh": [
-      "Max 一对一虚拟人物语音切换到 GPT-Live WebRTC；GPT-6 Luna 作为委派教学模型，保留学习语言、辅助站点语言及简短回答偏好。",
-      "试用会员每日实时语音 5 分钟、付费会员 15 分钟；文字导师继续保留每日 10/30 分钟，与语音互不扣减。",
-      "只显示 AI 导师的可滚动语音字幕，不生成学生实时字幕；结束时由服务器确认提供方会话关闭，失败时不释放活动通话。"
+      "三位 AI 生成的虚构导师人像可选；画面按导师说话状态作轻微动态反馈，不声称是真人视频或唇形同步。",
+      "GPT-Live 提供四种可选声音；声音在下一次新连接时生效，学习者可随时以自己的语言提问或要求导师切换回答语言。",
+      "形象和声音保存在现有 Max 导师会话中，按登录用户隔离；通话期间不可修改。"
     ],
     "en": [
-      "Move the Max one-to-one avatar voice to GPT-Live WebRTC with GPT-6 Luna delegation, retaining learning/support languages and concise-answer preferences.",
-      "Allow five live voice minutes per trial day or fifteen per paid day while retaining separate 10/30-minute text tutor practice.",
-      "Display scrollable AI-tutor speech captions only, without learner live captions; confirm provider session closure server-side before releasing an active call."
+      "Choose among three AI-generated fictional tutor portraits with subtle speaking-state motion, without claiming human video or lip sync.",
+      "Choose one of four GPT-Live voices for the next connection; learners may speak in their own language or ask the tutor to switch reply language.",
+      "Save portrait and voice in the existing Max tutor session per signed-in learner, with changes locked during calls."
     ]
   },
   "affected": {
-    "zh": ["Max 一对一 AI 导师、实时语音网关、使用量接口及 D1 通话计时；订阅价格和支付不变。"],
-    "en": ["Max one-to-one tutor, live voice gateway, usage API and D1 call accounting; subscription pricing and checkout are unchanged."]
+    "zh": ["Max 一对一实时导师、导师偏好接口和 D1 会话表；支付、订阅价格、每日额度不变。"],
+    "en": ["Max one-to-one live tutor, preferences API and D1 session table; checkout, subscription prices and daily allowances remain unchanged."]
   },
   "changes": {
     "zh": [
-      "沿用 SmartLingo 已验证的 Max 会话、单活动通话、虚拟人物画面、按分钟清理与审计网关；仅按 GPT-Live 不兼容的新会话、事件与服务端附加 WebSocket 协议适配。",
-      "D1 迁移为新通话标记独立语音额度，旧 Realtime 通话继续按旧规则返还文字预留时长；失败的新连接绝不返还无关的文字时长。",
-      "实时语音按已关闭通话计时，连接初始化按至少 15 秒计入；浏览器限时关闭、服务端心跳与分钟清理作为多层保护。"
+      "沿用 SmartLingo 现有 Max 导师会话与 GPT-Live 网关，通过白名单关联本地人像资产和 OpenAI 声音名称。",
+      "新增 0195 增量迁移；已有导师会话默认 Mei/marin，后续更新会话不重置学生偏好。",
+      "将 Max 导师页加入手机、平板、横屏和桌面 WebKit 页面矩阵及登录保护检查。"
     ],
     "en": [
-      "Reuse verified SmartLingo Max sessions, one-active-call gating, avatar, minute cleanup and audited gateway; adapt only the incompatible GPT-Live session, event and server-side attached-WebSocket contracts.",
-      "A D1 migration marks new calls with independent voice accounting, preserves legacy Realtime text-reservation refunds and prevents failed new connections from refunding unrelated text time.",
-      "Account closed-call time with a 15-second minimum for Live initialization; browser deadline, server heartbeat and minute cleanup provide layered controls."
+      "Reuse existing SmartLingo Max tutor sessions and GPT-Live gateway with allowlisted local portrait assets and OpenAI voice names.",
+      "Add additive migration 0195; existing sessions default to Mei/marin and subsequent session updates preserve learner preferences.",
+      "Add the Max tutor page to phone, tablet, landscape and desktop WebKit layout and authentication checks."
     ]
   },
   "validation": {
-    "zh": ["TypeScript、零警告 lint、完整本地测试、生产构建、D1 重放及共享站点门禁。", "发布后核对真实 Chrome 普通 QA 用户的可用额度、连接、导师语音字幕、结束与重连，并核对 Project 精确发布记录。"],
-    "en": ["TypeScript, zero-warning lint, full local tests, production build, D1 replay and shared-site gates.", "After deployment, inspect a real ordinary-member Chrome QA session for allowance, connection, tutor speech captions, close and reconnect, then verify the exact Project release record."]
+    "zh": ["TypeScript、零警告 lint、完整测试、生产构建、D1 迁移重放、站点策略门禁及 WebKit 页面矩阵。", "发布后用普通 Max 测试会员核对更换、保存、刷新、实时连接和结束重连，并核对精确 Project 发布记录。"],
+    "en": ["TypeScript, zero-warning lint, full tests, production build, D1 migration replay, site-policy gates and WebKit layout matrix.", "After deployment, verify selection, persistence, refresh, live connection and reconnect as an ordinary Max QA member, plus the exact Project release record."]
   },
   "deferred": {
-    "zh": ["不执行付款、长期并发语音负载或会员数据修改。GPT-Live 按通话时长计费，服务器定时清理最长可能在额度截止后约一分钟执行；实际成本须持续监测。"],
-    "en": ["No payment, prolonged concurrent voice load or membership-data changes. GPT-Live bills by call duration; scheduled server cleanup may run up to about one minute after a deadline, so actual cost needs ongoing monitoring."]
+    "zh": ["不做真人摄像视频、音画唇形同步、自定义头像上传、付款或长时间并发语音负载测试。"],
+    "en": ["No human camera video, lip-synced video, custom portrait upload, payment or prolonged concurrent voice load testing."]
   },
   "siteAdaptations": {
-    "zh": ["学习语言仍独立于站点辅助语言；动画虚拟人物不冒充真人视频，且仍不保存原始麦克风音频。"],
-    "en": ["The learning language remains independent of the site support language; the animated avatar is not represented as human video, and raw microphone audio is not stored."]
+    "zh": ["学习语言仍与站点辅助语言独立；切换回话语言由学习者明确提出，不能保证识别每种语言或每次都完全正确。"],
+    "en": ["Learning and site-support languages remain separate; the learner may explicitly request a reply-language switch, but recognition across every language and every utterance is not guaranteed."]
   },
   "dataMigration": {
     "included": true,
-    "migrations": ["0194_live_voice_quota"],
+    "migrations": ["0195_live_tutor_personas"],
     "rollback": {
-      "zh": "如需回退，先停止新 GPT-Live 通话再部署前一版代码；D1 新列保留兼容，旧 Realtime 通话仍按共享文字额度计时与返还。",
-      "en": "To roll back, stop new GPT-Live calls before deploying the prior code; the additive D1 column stays compatible and legacy Realtime calls retain shared-text accounting and refunds."
+      "zh": "如需回退，先结束活动语音通话并部署前一版本；新增 D1 列保留，旧代码会忽略它们。",
+      "en": "To roll back, end active voice calls and deploy the prior version; the additive D1 columns remain and are ignored by older code."
     }
   }
 }

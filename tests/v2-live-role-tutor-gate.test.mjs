@@ -10,7 +10,7 @@ function fixture() {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec("PRAGMA foreign_keys=ON; CREATE TABLE users(id TEXT PRIMARY KEY);");
   sqlite.prepare("INSERT INTO users(id) VALUES(?)").run("member-1");
-  for (const file of ["0191_max_open_tutor.sql", "0192_max_live_tutor_calls.sql", "0194_live_voice_quota.sql"]) {
+  for (const file of ["0191_max_open_tutor.sql", "0192_max_live_tutor_calls.sql", "0194_live_voice_quota.sql", "0195_live_tutor_personas.sql"]) {
     const migration = readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8");
     for (const statement of migration.split("--> statement-breakpoint")) sqlite.exec(statement);
   }

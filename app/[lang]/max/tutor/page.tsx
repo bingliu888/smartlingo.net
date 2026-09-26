@@ -41,7 +41,7 @@ export default async function OpenTutorPage({ params, searchParams }: {
   if (selected && !await isAdminUser(user)) await ensureSevenDayMaxTrial(user.id);
   const max = selected ? await hasMaxCourseAccess(user) : false;
   const trialAvailable = Boolean(selected && !max && !await hasUsedMaxTrial(user.id));
-  return <main className="role-tutor-page" data-layout-page="max-tutor"><SiteHeader lang={lang}/><div className="role-tutor-shell">
+  return <main className="role-tutor-page" data-layout-page="max-tutor" data-layout-ready="true"><SiteHeader lang={lang}/><div className="role-tutor-shell">
     <p className="role-tutor-eyebrow">SMARTLINGO · MAX</p>
     <h1>{zh ? "你的 AI 语言导师" : "Your AI language tutor"}</h1>
     <p>{zh ? "不限定场景。先聊你的兴趣与目标，再由导师逐步判断练习起点；计划由你确认后保存。" : "No fixed scene. Talk about your interests and goals; the tutor gradually estimates your practice level, and you confirm any plan before it is saved."}</p>

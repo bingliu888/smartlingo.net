@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
+import test from "node:test";
+import { tsImport } from "tsx/esm/api";
+
+const personas = await tsImport("../lib/smartlingo-live-tutor-personas.ts", import.meta.url);
+
+test("the three fictional tutor portraits and four GPT-Live voices are allowlisted and locally hosted", () => {
+  assert.deepEqual(personas.SMARTLINGO_TUTOR_PORTRAITS.map(item => item.id), ["mei", "leo", "sofia"]);
+  assert.deepEqual(personas.SMARTLINGO_TUTOR_VOICES.map(item => item.id),
+    ["marin", "gleam", "meridian", "willow"]);
+  for (const item of personas.SMARTLINGO_TUTOR_PORTRAITS)
+    assert.equal(existsSync(new URL(`../public${item.image}`, import.meta.url)), true);
+  assert.equal(personas.validTutorPortrait("../../other-site.png"), false);
+  assert.equal(personas.validTutorVoice("not-a-provider-voice"), false);
+});
+
+test("portrait and voice persist through a tutor session refresh and cannot be changed during a call", () => {
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec("PRAGMA foreign_keys=ON; CREATE TABLE users(id TEXT PRIMARY KEY);");
+  sqlite.prepare("INSERT INTO users(id) VALUES(?)").run("member-1");
+  for (const file of ["0191_max_open_tutor.sql", "0192_max_live_tutor_calls.sql", "0194_live_voice_quota.sql", "0195_live_tutor_personas.sql"]) {
+    const migration = readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8");
+    for (const statement of migration.split("--> statement-breakpoint")) sqlite.exec(statement);
+  }
+  const now = 1_800_000_000;
+  const day = Math.floor(now / 86_400);
+  sqlite.prepare(`INSERT INTO smartlingo_max_tutor_sessions
+    (id,user_id,target_language,ui_language,usage_day,last_active_at,opening_text,created_at,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?)`).run("session-1", "member-1", "ja", "zh", day, now, "Hello", now, now);
+  const saved = sqlite.prepare(`UPDATE smartlingo_max_tutor_sessions
+    SET portrait_key=?,voice_key=?,updated_at=? WHERE id=? AND user_id=? AND NOT EXISTS (
+      SELECT 1 FROM smartlingo_max_live_tutor_calls
+      WHERE user_id=? AND status IN ('connecting','active','closing'))
+    RETURNING portrait_key AS portrait,voice_key AS voice`);
+  assert.deepEqual({ ...saved.get("leo", "meridian", now, "session-1", "member-1", "member-1") },
+    { portrait: "leo", voice: "meridian" });
+  assert.equal(saved.get("sofia", "willow", now, "session-1", "other-user", "other-user"), undefined);
+  sqlite.prepare(`INSERT INTO smartlingo_max_live_tutor_calls
+    (id,user_id,tutor_session_id,usage_day,language,started_at,last_heartbeat_at,deadline_at,reserved_seconds,status)
+    VALUES(?,?,?,?,?,?,?,?,?,?)`).run("call-1", "member-1", "session-1", day, "ja", now, now, now + 300, 300, "active");
+  assert.equal(saved.get("sofia", "willow", now, "session-1", "member-1", "member-1"), undefined);
+  sqlite.prepare("UPDATE smartlingo_max_live_tutor_calls SET status='closed',ended_at=?,used_seconds=15 WHERE id='call-1'").run(now + 15);
+  sqlite.prepare("UPDATE smartlingo_max_tutor_sessions SET target_language='es',usage_day=? WHERE id='session-1'").run(day + 1);
+  assert.deepEqual({ ...sqlite.prepare("SELECT portrait_key AS portrait,voice_key AS voice FROM smartlingo_max_tutor_sessions").get() },
+    { portrait: "leo", voice: "meridian" });
+  assert.throws(() => sqlite.prepare("UPDATE smartlingo_max_tutor_sessions SET voice_key='rogue' WHERE id='session-1'").run());
+  sqlite.close();
+});
+
+test("the preference route is owner-scoped and the client exposes separate, accessible portrait and voice choices", () => {
+  const route = readFileSync(new URL("../app/api/assistant/live/preferences/route.ts", import.meta.url), "utf8");
+  const client = readFileSync(new URL("../components/MaxLiveTutorCall.tsx", import.meta.url), "utf8");
+  assert.match(route, /requestUser\(\)/);
+  assert.match(route, /request\.headers\.get\("origin"\)/);
+  assert.match(route, /validTutorPortrait\(body\.portrait\)/);
+  assert.match(route, /validTutorVoice\(body\.voice\)/);
+  assert.match(route, /WHERE id=\? AND user_id=\?/);
+  assert.match(client, /aria-pressed=\{portrait === item\.id\}/);
+  assert.match(client, /<select id="max-tutor-voice"/);
+});

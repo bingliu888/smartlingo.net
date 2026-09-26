@@ -606,7 +606,7 @@ test("Max live voice records the provider call before returning SDP and uses the
   let providerBody;
   const answer = await gateway.openSmartAiLiveVoice({
     userId: "user-max", subject: "user:user-max", paid: true,
-    sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe",
+    sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe", voice: "willow",
     onConnected: async id => { connected = id; },
     deps: { apiKey: "test-only", database: fakeDatabase(),
       fetch: async (_url, init) => {
@@ -617,6 +617,7 @@ test("Max live voice records the provider call before returning SDP and uses the
   });
   assert.equal(providerBody.transport.sdp, "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n");
   assert.equal(providerBody.session.model, "gpt-live-1");
+  assert.equal(providerBody.session.audio.output.voice, "willow");
   assert.equal(providerBody.session.delegation.responses.model, "gpt-6-luna");
   assert.equal(providerBody.session.store, false);
   assert.equal(connected, "live_test123");

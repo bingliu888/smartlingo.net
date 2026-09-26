@@ -16,8 +16,10 @@ const releaseSource = await readFile(new URL("../scripts/verify-runtime-layout-r
 const fixtureAuthSource = await readFile(new URL("../lib/layout-fixture-auth.ts", import.meta.url), "utf8");
 const packageSource = await readFile(new URL("../package.json", import.meta.url), "utf8");
 const everydayCss = await readFile(new URL("../app/[lang]/play/everyday/everyday.css", import.meta.url), "utf8");
+const maxTutorSource = await readFile(new URL("../app/[lang]/max/tutor/page.tsx", import.meta.url), "utf8");
 
 test("runtime layout matrix pins both path locales and a short landscape lesson viewport", () => {
+  assert.match(maxTutorSource, /data-layout-page="max-tutor" data-layout-ready="true"/);
   assert.deepEqual(SMARTLINGO_LAYOUT_LANGUAGES, ["zh", "en"]);
   assert.deepEqual(SMARTLINGO_VIEWPORTS.map(({ width, height }) => [width, height]), [
     [390, 844],
@@ -30,6 +32,7 @@ test("runtime layout matrix pins both path locales and a short landscape lesson 
     "/",
     "/flash",
     "/max",
+    "/max/tutor?language=ja",
     "/programs/en?path=flash",
     "/programs/en?path=max",
     "/tutorial",
@@ -205,6 +208,7 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.deepEqual(SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES, [
     "/classes",
     "/max",
+    "/max/tutor?language=ja",
     "/programs/en?path=max",
     "/classes/course_en_basic/learn",
     "/classes/course_en_basic/learn/session",
