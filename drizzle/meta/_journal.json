@@ -624,6 +624,13 @@
       "when": 1790407000000,
       "tag": "0193_site_help_room",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "6",
+      "when": 1790440800000,
+      "tag": "0194_live_voice_quota",
+      "breakpoints": true
     }
   ]
 }

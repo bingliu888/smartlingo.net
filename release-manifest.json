@@ -1,67 +1,61 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-tutor-conversation-controls-20260926-r29",
+  "releaseId": "smartlingo-gpt-live-voice-independent-quota-20260926-r30",
   "site": "smartlingo.net",
   "title": {
-    "zh": "Max AI 导师简短对话、双语字幕与即时重连",
-    "en": "Max AI tutor concise conversation, bilingual captions and immediate reconnect"
+    "zh": "Max 导师 GPT-Live 实时语音与独立 5/15 分钟额度",
+    "en": "Max tutor GPT-Live voice with independent 5/15-minute allowance"
   },
   "purpose": {
-    "zh": "让 AI 导师用当前学习语言简短开场，提供慢速、站点语言译文和简短回答开关，移除学生实时字幕的旧转写模型，并修复结束语音后立即重连的限流误判。",
-    "en": "Introduce the tutor briefly in the learning language, offer pace, support-language and short-answer controls, remove the legacy learner-caption transcription model, and fix the false rate limit after ending and immediately restarting a voice call."
+    "zh": "以更自然、可打断的 GPT-Live 双向语音配合 GPT-6 Luna 教学后端，并将昂贵语音与文字练习分开计时，控制试用及付费成本而不压缩文字学习。",
+    "en": "Use natural interruptible GPT-Live speech with a GPT-6 Luna teaching backend and separate costly voice time from text practice, controlling trial and paid costs without shortening text learning."
   },
   "features": {
     "zh": [
-      "文字导师以选定学习语言简短开场；对话可切换慢速朗读、显示当前站点语言译文与简短回答。",
-      "实时虚拟导师遵循同一语言与回答偏好；导师字幕显示在独立、可上下滚动的对话区，不启用学生实时语音转写。",
-      "结束语音后可以立即重连，仍保持单通话、每日 10/30 分钟以及每分钟有限次数的保护；短语音转写升级为 GPT Transcribe。"
+      "Max 一对一虚拟人物语音切换到 GPT-Live WebRTC；GPT-6 Luna 作为委派教学模型，保留学习语言、辅助站点语言及简短回答偏好。",
+      "试用会员每日实时语音 5 分钟、付费会员 15 分钟；文字导师继续保留每日 10/30 分钟，与语音互不扣减。",
+      "只显示 AI 导师的可滚动语音字幕，不生成学生实时字幕；结束时由服务器确认提供方会话关闭，失败时不释放活动通话。"
     ],
     "en": [
-      "The text tutor opens briefly in the selected learning language and offers slow speech, current-site-language translation, and short-answer controls.",
-      "The live avatar tutor follows the same language and answer preferences; tutor captions appear in a separate scrollable transcript without live learner transcription.",
-      "An ended voice call can reconnect immediately while one-call-at-a-time, daily 10/30-minute and bounded per-minute protections remain; short recorded speech uses GPT Transcribe."
+      "Move the Max one-to-one avatar voice to GPT-Live WebRTC with GPT-6 Luna delegation, retaining learning/support languages and concise-answer preferences.",
+      "Allow five live voice minutes per trial day or fifteen per paid day while retaining separate 10/30-minute text tutor practice.",
+      "Display scrollable AI-tutor speech captions only, without learner live captions; confirm provider session closure server-side before releasing an active call."
     ]
   },
   "affected": {
-    "zh": ["Max 一对一 AI 导师、实时语音通话、字幕与翻译接口；不改变订阅方案和付款。"],
-    "en": ["Max one-to-one AI tutor, live voice calls, captions and translation API; plans and checkout are unchanged."]
+    "zh": ["Max 一对一 AI 导师、实时语音网关、使用量接口及 D1 通话计时；订阅价格和支付不变。"],
+    "en": ["Max one-to-one tutor, live voice gateway, usage API and D1 call accounting; subscription pricing and checkout are unchanged."]
   },
   "changes": {
     "zh": [
-      "沿用现有 Max 导师会话与统一 AI 网关，按学习语言选择开场及朗读语言，限制简短回答长度。",
-      "新增仅限已登录有效 Max 的短文本批量译文，导师实时字幕保留最近 30 条并可手动滚动；学生麦克风不做字幕转写。",
-      "将实时语音审计窗口从每分钟一次调整为最多六次，同时加入结束即重连的行为回归测试；短语音转写采用新版模型及其 languages[] 参数。"
+      "沿用 SmartLingo 已验证的 Max 会话、单活动通话、虚拟人物画面、按分钟清理与审计网关；仅按 GPT-Live 不兼容的新会话、事件与服务端附加 WebSocket 协议适配。",
+      "D1 迁移为新通话标记独立语音额度，旧 Realtime 通话继续按旧规则返还文字预留时长；失败的新连接绝不返还无关的文字时长。",
+      "实时语音按已关闭通话计时，连接初始化按至少 15 秒计入；浏览器限时关闭、服务端心跳与分钟清理作为多层保护。"
     ],
     "en": [
-      "Reuse the existing Max tutor session and unified AI gateway, selecting the opening and speech locale from the learning language and bounding short replies.",
-      "Add bounded batch translation for signed-in active Max learners and a manually scrollable recent 30-line tutor transcript; do not transcribe learner microphone audio for captions.",
-      "Raise the audited live-connection window from one to at most six per minute and add behavior regressions for end-and-reconnect; recorded short speech uses the current transcription model and its languages[] parameter."
+      "Reuse verified SmartLingo Max sessions, one-active-call gating, avatar, minute cleanup and audited gateway; adapt only the incompatible GPT-Live session, event and server-side attached-WebSocket contracts.",
+      "A D1 migration marks new calls with independent voice accounting, preserves legacy Realtime text-reservation refunds and prevents failed new connections from refunding unrelated text time.",
+      "Account closed-call time with a 15-second minimum for Live initialization; browser deadline, server heartbeat and minute cleanup provide layered controls."
     ]
   },
   "validation": {
-    "zh": [
-      "TypeScript、零警告 lint、完整本地测试、生产构建、敏感数据扫描与共享站点门禁。",
-      "WebKit 全页面布局门禁；发布后在真实 Chrome QA 会话检查开关、字幕布局、语言与重连权限，并核对线上 Project 精确发布记录。"
-    ],
-    "en": [
-      "TypeScript, zero-warning lint, full local tests, production build, sensitive-data scan and shared-site gates.",
-      "Complete WebKit layout gate, then real Chrome QA checks for controls, captions, language and reconnect entitlement, followed by exact production Project release verification."
-    ]
+    "zh": ["TypeScript、零警告 lint、完整本地测试、生产构建、D1 重放及共享站点门禁。", "发布后核对真实 Chrome 普通 QA 用户的可用额度、连接、导师语音字幕、结束与重连，并核对 Project 精确发布记录。"],
+    "en": ["TypeScript, zero-warning lint, full local tests, production build, D1 replay and shared-site gates.", "After deployment, inspect a real ordinary-member Chrome QA session for allowance, connection, tutor speech captions, close and reconnect, then verify the exact Project release record."]
   },
   "deferred": {
-    "zh": ["不会执行付款、长时并发语音负载或更改会员数据；若 QA 账户已用尽当日导师额度，真实语音重连验收须待额度恢复。"],
-    "en": ["No payments, prolonged concurrent voice load or membership-data changes; if the QA member's daily tutor allowance is exhausted, live reconnect acceptance must wait for the allowance to reset."]
+    "zh": ["不执行付款、长期并发语音负载或会员数据修改。GPT-Live 按通话时长计费，服务器定时清理最长可能在额度截止后约一分钟执行；实际成本须持续监测。"],
+    "en": ["No payment, prolonged concurrent voice load or membership-data changes. GPT-Live bills by call duration; scheduled server cleanup may run up to about one minute after a deadline, so actual cost needs ongoing monitoring."]
   },
   "siteAdaptations": {
-    "zh": ["继续使用 SmartLingo 独立的学习语言、站点语言、Max 日限额与虚拟人画面；译文走现有站点隔离 AI 网关。"],
-    "en": ["Keep SmartLingo's independent learning/site languages, Max daily cap and avatar UI; translations use its isolated existing AI gateway."]
+    "zh": ["学习语言仍独立于站点辅助语言；动画虚拟人物不冒充真人视频，且仍不保存原始麦克风音频。"],
+    "en": ["The learning language remains independent of the site support language; the animated avatar is not represented as human video, and raw microphone audio is not stored."]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": ["0194_live_voice_quota"],
     "rollback": {
-      "zh": "如需回退，回退本次代码发布；没有数据库迁移，原有 Max 会话和订阅仍保留。",
-      "en": "Revert this code release if required; there is no database migration and existing Max sessions and subscriptions remain."
+      "zh": "如需回退，先停止新 GPT-Live 通话再部署前一版代码；D1 新列保留兼容，旧 Realtime 通话仍按共享文字额度计时与返还。",
+      "en": "To roll back, stop new GPT-Live calls before deploying the prior code; the additive D1 column stays compatible and legacy Realtime calls retain shared-text accounting and refunds."
     }
   }
 }

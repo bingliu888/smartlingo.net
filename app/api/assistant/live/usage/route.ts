@@ -1,13 +1,17 @@
-import { maxTutorDailyLimit } from "../../../../../lib/smartlingo-open-tutor-entitlement";
+import { getDatabase } from "../../../../../lib/auth";
+import { maxLiveTutorDailyLimit } from "../../../../../lib/smartlingo-open-tutor-entitlement";
 import { smartAiLiveVoiceConfigured } from "../../../../../lib/smartlingo-ai-gateway";
+import { readMaxLiveTutorUsage } from "../../../../../lib/smartlingo-max-live-tutor";
 import { requestUser } from "../../../../../lib/request-user";
 
 export async function GET() {
   const user = await requestUser();
   if (!user) return Response.json({ error: "Sign in is required." }, { status: 401 });
-  const dailyLimitSeconds = await maxTutorDailyLimit(user);
+  const dailyLimitSeconds = await maxLiveTutorDailyLimit(user);
+  const usage = dailyLimitSeconds ? await readMaxLiveTutorUsage(getDatabase(), user.id,
+    Math.floor(Date.now() / 1_000), dailyLimitSeconds) : { usedSeconds: 0, remainingSeconds: 0 };
   return Response.json({ available: smartAiLiveVoiceConfigured(), maxActive: dailyLimitSeconds > 0,
-    dailyLimitSeconds }, { headers: { "cache-control": "no-store" } });
+    dailyLimitSeconds, ...usage }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST() {

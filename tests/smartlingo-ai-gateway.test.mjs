@@ -128,7 +128,7 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.transcription.model, "gpt-transcribe");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-2");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.audio.model, "gpt-4o-mini-tts");
-  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-live-1");
 });
 
 test("short multilingual pronunciation audio uses the audited transcription gateway", async () => {
@@ -603,34 +603,39 @@ test("a failed free live voice connection releases the reserved daily allowance"
 test("Max live voice records the provider call before returning SDP and uses the gateway for hangup", async () => {
   const gateway = await importGateway();
   let connected = "";
-  let providerForm;
+  let providerBody;
   const answer = await gateway.openSmartAiLiveVoice({
     userId: "user-max", subject: "user:user-max", paid: true,
     sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe",
     onConnected: async id => { connected = id; },
     deps: { apiKey: "test-only", database: fakeDatabase(),
       fetch: async (_url, init) => {
-        providerForm = init.body;
-        return new Response("v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", {
-          status: 201, headers: { location: "/v1/realtime/calls/rtc_test123" },
-        });
+        providerBody = JSON.parse(init.body);
+        return Response.json({ session: { id: "live_test123" },
+          transport: { type: "webrtc", sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n" } }, { status: 201 });
       } },
   });
-  assert.equal(providerForm.get("sdp"), "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n");
-  assert.equal(typeof providerForm.get("session"), "string");
-  const voiceSession = JSON.parse(providerForm.get("session"));
-  assert.equal(voiceSession.model, "gpt-realtime-2.1-mini");
-  assert.equal(voiceSession.audio.input.transcription, undefined);
-  assert.equal(voiceSession.max_output_tokens, 512);
-  assert.equal(connected, "rtc_test123");
+  assert.equal(providerBody.transport.sdp, "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n");
+  assert.equal(providerBody.session.model, "gpt-live-1");
+  assert.equal(providerBody.session.delegation.responses.model, "gpt-6-luna");
+  assert.equal(providerBody.session.store, false);
+  assert.equal(connected, "live_test123");
   assert.equal(answer.value.callId, connected);
-  let hangupMethod = "";
+  let closeCommand = "";
+  const listeners = {};
   const hungUp = await gateway.hangupSmartAiLiveVoice(connected, {
     credentialSource: { OPENAI_API_KEY: "test-only" },
-    fetcher: async (_url, init) => { hangupMethod = init.method; return new Response(null, { status: 204 }); },
+    fetcher: async (url, init) => {
+      assert.equal(url, "https://api.openai.com/v1/live/sessions/live_test123/attach");
+      assert.equal(init.headers.Upgrade, "websocket");
+      const socket = { accept() {}, addEventListener(type, fn) { listeners[type] = fn; },
+        send(command) { closeCommand = JSON.parse(command).type;
+          queueMicrotask(() => listeners.message({ data: JSON.stringify({ type: "session.closed" }) })); }, close() {} };
+      return Object.assign(new Response(null, { status: 200 }), { webSocket: socket });
+    },
   });
   assert.equal(hungUp, true);
-  assert.equal(hangupMethod, "POST");
+  assert.equal(closeCommand, "session.close");
 });
 
 test("a completed Max voice call can reconnect immediately while the bounded window still applies", async () => {
@@ -642,14 +647,13 @@ test("a completed Max voice call can reconnect immediately while the bounded win
     sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe",
     deps: { apiKey: "test-only", database, fetch: async () => {
       providerCalls += 1;
-      return new Response("v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", {
-        status: 201, headers: { location: `/v1/realtime/calls/rtc_reconnect${providerCalls}` },
-      });
+      return Response.json({ session: { id: `live_reconnect${providerCalls}` },
+        transport: { type: "webrtc", sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n" } }, { status: 201 });
     } },
   };
   for (let reconnect = 0; reconnect < 6; reconnect++) {
     const answer = await gateway.openSmartAiLiveVoice(input);
-    assert.equal(answer.value.callId, `rtc_reconnect${reconnect + 1}`);
+    assert.equal(answer.value.callId, `live_reconnect${reconnect + 1}`);
   }
   await assert.rejects(() => gateway.openSmartAiLiveVoice(input), error => error.code === "rate_limited");
   assert.equal(providerCalls, 6, "the seventh connection never reaches the provider");

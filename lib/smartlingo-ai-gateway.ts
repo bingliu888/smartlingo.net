@@ -163,7 +163,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "unavailable",
   },
   live_voice: {
-    model: "gpt-realtime-2.1-mini",
+    model: "gpt-live-1",
     maxInputUnits: 600,
     maxOutputUnits: 0,
     windowSeconds: 60,
@@ -990,36 +990,40 @@ export async function openSmartAiLiveVoice(input: {
       inputUnits: 600,
       deps: input.deps,
       request: (apiKey, subjectHash, signal, model) => {
-        const form = new FormData();
-        form.set("sdp", input.sdp);
-        form.set("session", JSON.stringify({
-          type: "realtime",
-          model,
-          instructions: input.instructions,
-          max_output_tokens: input.shortAnswer ? 256 : 512,
-          output_modalities: ["audio"],
-          audio: { input: { turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
-        }));
         return dependencies(input.deps).fetch(
-          "https://api.openai.com/v1/realtime/calls",
+          "https://api.openai.com/v1/live/sessions",
           {
             method: "POST",
             headers: {
               authorization: `Bearer ${apiKey}`,
               "OpenAI-Safety-Identifier": subjectHash,
+              "content-type": "application/json",
             },
-            body: form,
+            body: JSON.stringify({
+              session: {
+                model,
+                instructions: input.instructions,
+                store: false,
+                delegation: { type: "responses", responses: {
+                  model: "gpt-6-luna",
+                  instructions: `${input.instructions} Keep backend replies suitable for short spoken teaching turns.`,
+                  max_output_tokens: input.shortAnswer ? 128 : 256,
+                } },
+              },
+              transport: { type: "webrtc", sdp: input.sdp },
+            }),
             signal,
           },
         );
       },
       read: async response => {
-        const value = await response.text();
-        if (!value.startsWith("v=") || value.length > 200_000) throw new SmartAiGatewayError("invalid_response");
-        const callId = response.headers.get("location")?.split("/").pop() || "";
-        if (!/^rtc_[A-Za-z0-9_-]{6,128}$/.test(callId)) throw new SmartAiGatewayError("invalid_response");
+        const value = await response.json() as { session?: { id?: string }; transport?: { sdp?: string } };
+        const callId = value.session?.id || "";
+        const sdp = value.transport?.sdp || "";
+        if (!/^live_[A-Za-z0-9_-]{6,128}$/.test(callId) || !sdp.startsWith("v=") || sdp.length > 200_000)
+          throw new SmartAiGatewayError("invalid_response");
         await input.onConnected?.(callId);
-        return { value: { sdp: value, callId }, outputUnits: 0 };
+        return { value: { sdp, callId }, outputUnits: 0 };
       },
     });
   } catch (error) {
@@ -1037,11 +1041,41 @@ export function smartAiLiveVoiceConfigured() {
 export async function hangupSmartAiLiveVoice(callId: string, input: {
   credentialSource?: Record<string, unknown>; fetcher?: typeof fetch;
 } = {}) {
-  if (!/^rtc_[A-Za-z0-9_-]{6,128}$/.test(callId)) return false;
+  if (!/^(?:live|rtc)_[A-Za-z0-9_-]{6,128}$/.test(callId)) return false;
   const source = input.credentialSource;
   const apiKey = source ? String(source.OPENAI_API_KEY || "") : dependencies().apiKey;
   if (!apiKey) return false;
   try {
+    if (callId.startsWith("live_")) {
+      const response = await (input.fetcher || fetch)(`https://api.openai.com/v1/live/sessions/${callId}/attach`, {
+        headers: { authorization: `Bearer ${apiKey}`, Upgrade: "websocket" },
+      });
+      if (response.status === 404 || response.status === 410) return true;
+      const socket = (response as Response & { webSocket?: WebSocket & { accept(): void } }).webSocket;
+      if (!socket) return false;
+      socket.accept();
+      return await new Promise<boolean>(resolve => {
+        let settled = false;
+        const finish = (success: boolean) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          try { socket.close(); } catch { /* Socket may already be closed. */ }
+          resolve(success);
+        };
+        const timeout = setTimeout(() => finish(false), 12_000);
+        socket.addEventListener("message", event => {
+          try {
+            const item = JSON.parse(String(event.data)) as { type?: string };
+            if (item.type === "session.closed") finish(true);
+            else if (item.type === "error") finish(false);
+          } catch { /* Ignore unrelated event payloads. */ }
+        });
+        socket.addEventListener("close", () => finish(false));
+        socket.addEventListener("error", () => finish(false));
+        socket.send(JSON.stringify({ type: "session.close" }));
+      });
+    }
     const response = await (input.fetcher || fetch)(`https://api.openai.com/v1/realtime/calls/${callId}/hangup`, {
       method: "POST", headers: { authorization: `Bearer ${apiKey}` },
     });

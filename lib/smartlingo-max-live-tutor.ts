@@ -1,4 +1,3 @@
-import { OPEN_TUTOR_PAID_SECONDS } from "./smartlingo-open-tutor";
 import { hangupSmartAiLiveVoice } from "./smartlingo-ai-gateway";
 
 type Statement = {
@@ -26,46 +25,47 @@ const SELECT_CALL = `SELECT id,user_id AS userId,tutor_session_id AS tutorSessio
   deadline_at AS deadlineAt,reserved_seconds AS reservedSeconds,status
   FROM smartlingo_max_live_tutor_calls`;
 
+export async function readMaxLiveTutorUsage(database: LiveTutorDatabase, userId: string, now: number, limit: number) {
+  const day = Math.floor(now / 86_400);
+  const row = await database.prepare(`SELECT COALESCE(SUM(used_seconds),0) AS usedSeconds
+    FROM smartlingo_max_live_tutor_calls
+    WHERE user_id=? AND usage_day=? AND status='closed' AND quota_kind='voice'`)
+    .bind(userId, day).first<{ usedSeconds: number }>();
+  const usedSeconds = Math.max(0, Number(row?.usedSeconds || 0));
+  return { usedSeconds, remainingSeconds: Math.max(0, limit - usedSeconds) };
+}
+
 export async function reserveMaxLiveTutorCall(input: {
   database: LiveTutorDatabase; userId: string; tutorSessionId: string;
   language: string; limit: number; now: number; id: string; accessEndsAt?: number;
 }) {
   const { database, userId, tutorSessionId, language, limit, now, id } = input;
-  if (limit <= 0 || limit > OPEN_TUTOR_PAID_SECONDS) return null;
+  if (limit <= 0 || limit > 15 * 60) return null;
   const day = Math.floor(now / 86_400);
   const row = await database.prepare(`SELECT id,user_id AS userId,target_language AS language,
     usage_day AS usageDay,used_seconds AS usedSeconds,last_active_at AS lastActiveAt
     FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? AND usage_day=? LIMIT 1`)
     .bind(tutorSessionId, userId, day).first<TutorSession>();
-  if (!row || row.language !== language || row.usedSeconds >= limit) return null;
-  const reservedSeconds = limit - row.usedSeconds;
+  if (!row || row.language !== language) return null;
+  const { remainingSeconds: reservedSeconds } = await readMaxLiveTutorUsage(database, userId, now, limit);
+  if (!reservedSeconds) return null;
   const deadlineAt = Math.min(now + reservedSeconds, (day + 1) * 86_400,
     input.accessEndsAt || Number.POSITIVE_INFINITY);
   if (deadlineAt <= now) return null;
   try {
     const inserted = await database.prepare(`INSERT INTO smartlingo_max_live_tutor_calls
       (id,user_id,tutor_session_id,usage_day,language,provider_call_id,started_at,
-       last_heartbeat_at,deadline_at,reserved_seconds,status)
-      VALUES(?,?,?,?,?,NULL,?,?,?,?, 'connecting') RETURNING id`)
+       last_heartbeat_at,deadline_at,reserved_seconds,status,quota_kind)
+      VALUES(?,?,?,?,?,NULL,?,?,?,?, 'connecting','voice') RETURNING id`)
       .bind(id, userId, tutorSessionId, day, language, now, now, deadlineAt, reservedSeconds)
       .first<{ id: string }>();
     if (!inserted) return null;
   } catch { return null; } // A unique active-call index prevents concurrent connections.
-  const charged = await database.prepare(`UPDATE smartlingo_max_tutor_sessions
-    SET used_seconds=?,last_active_at=?,updated_at=?
-    WHERE id=? AND user_id=? AND usage_day=? AND used_seconds=? RETURNING id`)
-    .bind(limit, now, now, tutorSessionId, userId, day, row.usedSeconds).first<{ id: string }>();
-  if (!charged) {
-    await database.prepare(`DELETE FROM smartlingo_max_live_tutor_calls
-      WHERE id=? AND user_id=? AND status='connecting' AND provider_call_id IS NULL`)
-      .bind(id, userId).run();
-    return null;
-  }
   return { id, reservedSeconds, deadlineAt };
 }
 
 export async function activateMaxLiveTutorCall(database: LiveTutorDatabase, id: string, userId: string, providerCallId: string) {
-  if (!/^rtc_[A-Za-z0-9_-]{6,128}$/.test(providerCallId)) return false;
+  if (!/^(?:live|rtc)_[A-Za-z0-9_-]{6,128}$/.test(providerCallId)) return false;
   const active = await database.prepare(`UPDATE smartlingo_max_live_tutor_calls
     SET provider_call_id=?,status='active' WHERE id=? AND user_id=?
       AND status='connecting' AND provider_call_id IS NULL RETURNING id`)
@@ -93,17 +93,14 @@ export async function closeMaxLiveTutorCall(input: {
   if (row.providerCallId) {
     if (!await hangupSmartAiLiveVoice(row.providerCallId, input)) return null;
   }
-  const used = row.providerCallId ? Math.min(row.reservedSeconds, Math.max(0, now - row.startedAt)) : 0;
+  const used = row.providerCallId ? Math.min(row.reservedSeconds,
+    Math.max(row.providerCallId.startsWith("live_") ? 15 : 0, now - row.startedAt)) : 0;
   const ended = await database.prepare(`UPDATE smartlingo_max_live_tutor_calls
     SET status='closed',ended_at=?,used_seconds=?
     WHERE id=? AND status IN ('connecting','active','closing') RETURNING id`)
     .bind(now, used, id).first<{ id: string }>();
   if (!ended) return { usedSeconds: null, ended: true };
-  const refunded = await database.prepare(`SELECT used_seconds AS usedSeconds
-    FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? AND usage_day=? LIMIT 1`)
-    .bind(row.tutorSessionId, row.userId, row.usageDay)
-    .first<{ usedSeconds: number }>();
-  return { usedSeconds: refunded?.usedSeconds ?? null, ended: true };
+  return { usedSeconds: used, ended: true };
 }
 
 export async function cleanupMaxLiveTutorCalls(input: {

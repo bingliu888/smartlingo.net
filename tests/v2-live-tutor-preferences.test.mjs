@@ -23,9 +23,9 @@ test("live tutor exposes scrollable bilingual transcript and updates preferences
   const owner = readFileSync(new URL("../components/RoleTutor.tsx", import.meta.url), "utf8");
   const css = readFileSync(new URL("../app/[lang]/assistant/role-tutor/role-tutor.css", import.meta.url), "utf8");
   const translation = readFileSync(new URL("../app/api/assistant/tutor-translation/route.ts", import.meta.url), "utf8");
-  assert.match(client, /type: "session\.update"/);
+  assert.match(client, /type: "session\.instructions\.append"/);
   assert.doesNotMatch(client, /conversation\.item\.input_audio_transcription\.completed/);
-  assert.match(client, /response\.output_audio_transcript\.done/);
+  assert.match(client, /session\.output_transcript\.delta/);
   assert.match(client, /className="max-live-tutor-transcript" role="region" tabIndex=\{0\}/);
   assert.match(client, /showSupport && line\.supportText/);
   assert.match(css, /\.max-live-tutor-transcript\{[^}]*overflow-y:auto/);

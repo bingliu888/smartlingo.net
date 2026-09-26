@@ -123,7 +123,7 @@ test("legacy classroom grants remain unbound until the verified-user binding pat
 
 test("tracked classroom migrations pass fresh D1 replay and a second no-op", () => {
   const result = validateD1Migrations();
-  assert.equal(result.newestMigration, "0193_site_help_room");
+  assert.equal(result.newestMigration, "0194_live_voice_quota");
   assert.equal(result.firstRunApplied, result.migrationCount);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);

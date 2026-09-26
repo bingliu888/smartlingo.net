@@ -94,7 +94,7 @@ test("role tutor uses explicit trial, speech authorization and Max-gated live vo
   assert.match(route, /hasMaxCourseAccess\(user\)/);
   assert.match(route, /consumeAiDailyQuota\(user\.id, "assistant"\)/);
   assert.match(route, /origin === new URL\(request\.url\)\.origin/);
-  assert.match(live, /maxTutorDailyLimit\(user\)/);
+  assert.match(live, /maxLiveTutorDailyLimit\(user\)/);
   assert.match(live, /reserveMaxLiveTutorCall/);
   assert.match(live, /closeMaxLiveTutorCall/);
   assert.match(worker, /DELETE FROM smartlingo_role_tutor_sessions WHERE expires_at<=\?/);

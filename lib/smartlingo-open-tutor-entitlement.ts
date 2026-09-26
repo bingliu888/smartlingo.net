@@ -11,3 +11,9 @@ export async function maxTutorDailyLimit(user: SessionUser, now = Math.floor(Dat
   return Number(row.trialEndsAt || 0) > 0 && Number(row.trialEndsAt) === Number(row.endsAt)
     ? OPEN_TUTOR_TRIAL_SECONDS : OPEN_TUTOR_PAID_SECONDS;
 }
+
+// Live voice has its own budget; inexpensive text practice retains its existing allowance.
+export async function maxLiveTutorDailyLimit(user: SessionUser, now = Math.floor(Date.now() / 1_000)) {
+  const textLimit = await maxTutorDailyLimit(user, now);
+  return textLimit === OPEN_TUTOR_TRIAL_SECONDS ? 5 * 60 : textLimit > 0 ? 15 * 60 : 0;
+}

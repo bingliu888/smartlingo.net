@@ -1,9 +1,9 @@
 import { getDatabase } from "../../../../lib/auth";
 import { hangupSmartAiLiveVoice, openSmartAiLiveVoice, readSmartAiRequestText, safeSmartAiError, smartAiLiveVoiceConfigured } from "../../../../lib/smartlingo-ai-gateway";
-import { maxTutorDailyLimit } from "../../../../lib/smartlingo-open-tutor-entitlement";
+import { maxLiveTutorDailyLimit } from "../../../../lib/smartlingo-open-tutor-entitlement";
 import {
   activateMaxLiveTutorCall, closeMaxLiveTutorCall,
-  heartbeatMaxLiveTutorCall, reserveMaxLiveTutorCall,
+  heartbeatMaxLiveTutorCall, readMaxLiveTutorUsage, reserveMaxLiveTutorCall,
 } from "../../../../lib/smartlingo-max-live-tutor";
 import { readOpenTutorProfile, resolveOpenTutorMission } from "../../../../lib/smartlingo-open-tutor";
 import { interfaceLanguages } from "../../../../lib/interface-locale";
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const slowSpeed = request.headers.get("x-tutor-slow-speed") === "1";
   const shortAnswer = request.headers.get("x-tutor-short-answer") === "1";
   if (!uuid(tutorSessionId)) return json({ error: "Start a Max tutor session first." }, 400);
-  const limit = await maxTutorDailyLimit(user);
+  const limit = await maxLiveTutorDailyLimit(user);
   if (!limit) return json({ error: "An active Max plan is required." }, 403);
   if (!smartAiLiveVoiceConfigured()) return json({ error: "Live voice is temporarily unavailable." }, 503);
   let sdp: string;
@@ -87,14 +87,18 @@ export async function PATCH(request: Request) {
   if (!user) return json({ error: "Sign in is required." }, 401);
   const id = request.headers.get("x-live-call-id");
   if (!uuid(id)) return json({ error: "Invalid live call." }, 400);
-  if (!await maxTutorDailyLimit(user)) {
+  if (!await maxLiveTutorDailyLimit(user)) {
     await closeMaxLiveTutorCall({ database: getDatabase(), id, userId: user.id,
       now: Math.floor(Date.now() / 1_000) });
     return json({ error: "Max access has ended." }, 403);
   }
   const remainingSeconds = await heartbeatMaxLiveTutorCall(getDatabase(), id, user.id,
     Math.floor(Date.now() / 1_000));
-  if (remainingSeconds === null) return json({ error: "The live call has ended." }, 410);
+  if (remainingSeconds === null) {
+    await closeMaxLiveTutorCall({ database: getDatabase(), id, userId: user.id,
+      now: Math.floor(Date.now() / 1_000) }).catch(() => null);
+    return json({ error: "The live call has ended." }, 410);
+  }
   return json({ remainingSeconds });
 }
 
@@ -107,7 +111,7 @@ export async function DELETE(request: Request) {
   const result = await closeMaxLiveTutorCall({ database: getDatabase(), id, userId: user.id,
     now: Math.floor(Date.now() / 1_000) });
   if (!result) return json({ error: "The call could not be closed yet. It will be retried automatically." }, 503);
-  const limit = await maxTutorDailyLimit(user);
-  return json({ ended: true, remainingSeconds: typeof result.usedSeconds === "number"
-    ? Math.max(0, limit - result.usedSeconds) : null });
+  const limit = await maxLiveTutorDailyLimit(user);
+  const usage = await readMaxLiveTutorUsage(getDatabase(), user.id, Math.floor(Date.now() / 1_000), limit);
+  return json({ ended: true, remainingSeconds: usage.remainingSeconds });
 }

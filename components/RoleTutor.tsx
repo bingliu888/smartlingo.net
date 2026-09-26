@@ -279,7 +279,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     <p className="role-tutor-disclosure">{zh ? "AI 模拟导师 · 可打字或按键说话 · 非真人或专业建议" : "Simulated AI tutor · type or push to talk · not a real person or professional advice"}</p>
     <div className="role-tutor-intro"><div><h2>{role}</h2>
     <p>{mode === "open"
-      ? (zh ? "从你感兴趣的话题开始，导师会根据实际表达调整难度，并与你一起拟定学习计划。试用期每日最多 10 分钟，付费旗舰版每日最多 30 分钟。" : "Start with your interests. The tutor adapts to your actual language and helps shape a study plan. Daily tutor time is 10 minutes during trial or 30 minutes with paid Max.")
+      ? (zh ? "从你感兴趣的话题开始，导师会调整难度并与你一起拟定计划。文字练习每日试用 10 分钟、付费 30 分钟；实时语音另有每日 5 / 15 分钟。" : "Start with your interests. The tutor adapts and helps shape a plan. Text practice: 10 trial or 30 paid minutes/day; live voice separately allows 5 or 15 minutes/day.")
       : (zh ? "与场景角色一对一练习。每轮最多 10 分钟、12 次回复；不会自动启动旗舰版试用。" : "Practice one-to-one with a scene character. Each round lasts at most 10 minutes and 12 replies; it does not start a Max trial.")}</p></div>
     {sceneVisual ? <Image src={sceneVisual} alt={zh ? "模拟生活场景画面，并非实时视频" : "Illustrated role-play scene, not live video"} width={320} height={180} unoptimized/>
       : <span className="role-tutor-avatar" aria-hidden="true">AI</span>}</div>
@@ -299,10 +299,10 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         }}/>{zh ? `显示 ${supportName}` : `Show ${supportName}`}</label> : null}
         <label><input type="checkbox" checked={shortAnswer} onChange={event => setShortAnswer(event.target.checked)}/>{zh ? "简短回答" : "Short answers"}</label>
       </div> : null}
-      {mode === "open" && !ended ? <MaxLiveTutorCall sessionId={sessionId} language={language} lang={lang}
+      {mode === "open" ? <MaxLiveTutorCall sessionId={sessionId} language={language} lang={lang}
         learningName={learningName} supportLanguageName={supportLanguageName} profile={profile}
         slowSpeed={slowSpeed} shortAnswer={shortAnswer} showSupport={showSupport}
-        remainingSeconds={remainingSeconds} onRemaining={setRemainingSeconds} onCallActive={setLiveBusy}/> : null}
+        onCallActive={setLiveBusy}/> : null}
       <ol className="role-tutor-lines" aria-live="polite">{lines.map((line, index) => <li key={index} className={line.by}>
         <strong>{line.by === "learner" ? (zh ? "你" : "You") : (zh ? "AI 教师 · " : "AI teacher · ") + (line.by === "tutor" ? role : "")}</strong><span dir="auto">{line.text}</span>
         {showSupport && line.supportText ? <small className="role-tutor-translation" lang={lang} dir="auto">{line.supportText}</small> : null}
