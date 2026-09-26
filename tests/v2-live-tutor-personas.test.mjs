@@ -59,4 +59,33 @@ test("the preference route is owner-scoped and the client exposes separate, acce
   assert.match(route, /WHERE id=\? AND user_id=\?/);
   assert.match(client, /aria-pressed=\{portrait === item\.id\}/);
   assert.match(client, /<select id="max-tutor-voice"/);
+  assert.match(client, /function stepPortrait\(direction: -1 \| 1\)/);
+  assert.match(client, /saveTutorChoice\(SMARTLINGO_TUTOR_PORTRAITS\[nextIndex\]\.id, voice\)/);
+});
+
+test("portrait choices scroll horizontally and voice controls sit directly below the tutor image", () => {
+  const client = readFileSync(new URL("../components/MaxLiveTutorCall.tsx", import.meta.url), "utf8");
+  const owner = readFileSync(new URL("../components/RoleTutor.tsx", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../app/[lang]/assistant/role-tutor/role-tutor.css", import.meta.url), "utf8");
+  assert.match(css, /\.max-live-tutor-portrait-options\{[^}]*overflow-x:auto/);
+  assert.match(css, /\.max-live-tutor-portrait-options button\{[^}]*flex:0 0/);
+  const image = client.indexOf('className={`max-live-tutor-stage');
+  const voice = client.indexOf('className="max-live-tutor-voice-choice"');
+  const actions = client.indexOf('className="max-live-tutor-actions"');
+  const portraits = client.indexOf('className="max-live-tutor-choices"');
+  assert.ok(image >= 0 && image < voice && voice < actions && actions < portraits);
+  assert.match(css, /\.max-live-tutor-voice-choice\{[^}]*position:absolute/);
+  assert.match(client, /id="max-tutor-voice" value=\{voice\} disabled=\{state !== "idle"/);
+  assert.match(css, /\.max-live-tutor-voice-choice:has\(select:disabled\)\{[^}]*background:#d9dfdc/);
+  assert.match(client, /className="max-live-tutor-portrait-step previous"[^>]*onClick=\{\(\) => stepPortrait\(-1\)\}/);
+  assert.match(client, /className="max-live-tutor-portrait-step next"[^>]*onClick=\{\(\) => stepPortrait\(1\)\}/);
+  assert.match(client, /aria-label=\{zh \? "上一位导师" : "Previous tutor"\}/);
+  assert.match(client, /aria-label=\{zh \? "下一位导师" : "Next tutor"\}/);
+  assert.match(css, /\.max-live-tutor-portrait-step:disabled\{[^}]*opacity:\.45/);
+  assert.match(client, /const \[showTranscript, setShowTranscript\] = useState\(false\)/);
+  assert.match(client, /className="max-live-tutor-chat-toggle" onClick=\{\(\) => setShowTranscript/);
+  assert.match(client, /aria-controls="max-live-tutor-transcript" aria-expanded=\{showTranscript\}/);
+  assert.match(client, /id="max-live-tutor-transcript"[^>]*hidden=\{!showTranscript\}/);
+  assert.match(css, /\.max-live-tutor-transcript\{[^}]*overflow-y:auto/);
+  assert.doesNotMatch(owner, /role-tutor-avatar/);
 });

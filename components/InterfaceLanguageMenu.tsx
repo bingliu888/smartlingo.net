@@ -66,34 +66,28 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
       <button
         key={language.code}
         type="button"
-        role="menuitemradio"
-        aria-checked={lang === language.code}
+        aria-pressed={lang === language.code}
+        className={lang === language.code ? "active" : ""}
         onClick={() => choose(language.code)}
       >
-        <span className="interface-language-option">
-          <b dir={language.direction}>{language.nativeName}</b>
-        </span>
+        <span dir={language.direction}>{language.nativeName}</span>
       </button>
     );
   });
 
   if (mobile) return <section className="mobile-language-options" aria-label={t.chooseLanguage}>
     <strong><GlobeIcon/>{t.language}</strong>
-    <div role="menu">{options}</div>
+    <div>{options}</div>
   </section>;
 
   return (
-    <details ref={menu} className="interface-language-menu header-language-menu">
+    <details ref={menu} className="header-language-menu icon-language-menu">
       <summary className="language-icon-button" data-no-translate aria-label={`${t.language}: ${currentInterface.nativeName}`} title={`${t.language}: ${currentInterface.nativeName}`}>
         <GlobeIcon/>
       </summary>
-      <div className="interface-language-popover" role="menu" aria-label={t.chooseLanguage}>
-        <header>
-          <strong>{t.language}</strong>
-        </header>
-        <div>
-          {options}
-        </div>
+      <div className="header-language-options">
+        <strong>{t.language}</strong>
+        {options}
       </div>
     </details>
   );

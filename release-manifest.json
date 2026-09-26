@@ -1,61 +1,79 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-live-tutor-portrait-voice-20260926-r31",
+  "releaseId": "smartlingo-safari-language-menu-dismissal-20260926-r32",
   "site": "smartlingo.net",
   "title": {
-    "zh": "Max 一对一导师形象与声音选择",
-    "en": "Max one-to-one tutor portrait and voice selection"
+    "zh": "修复 Safari 语言弹窗并精简旗舰版导师界面",
+    "en": "Fix Safari language dismissal and streamline the Max tutor"
   },
   "purpose": {
-    "zh": "让学生在进入实时对话前选择更亲切的 AI 导师形象和声音，并在下次会话沿用自己的选择。",
-    "en": "Let learners select a personable AI tutor portrait and voice before a live conversation, preserving their choices for future calls."
+    "zh": "消除 Safari 语言弹窗关闭后的视觉残影，让导师形象与语音按钮在窄屏上更易使用。",
+    "en": "Remove the stale Safari language popover and make tutor portraits and voice controls easier to use on narrow screens."
   },
   "features": {
     "zh": [
-      "三位 AI 生成的虚构导师人像可选；画面按导师说话状态作轻微动态反馈，不声称是真人视频或唇形同步。",
-      "GPT-Live 提供四种可选声音；声音在下一次新连接时生效，学习者可随时以自己的语言提问或要求导师切换回答语言。",
-      "形象和声音保存在现有 Max 导师会话中，按登录用户隔离；通话期间不可修改。"
+      "沿用 Guandan 已验证的扁平语言选项与普通按钮结构，保留简体和繁体中文及原有语言顺序。",
+      "删除覆盖原生 details 关闭状态的重复 display:none 规则，保留点击外部和 Escape 关闭行为。",
+      "导师形象横排可滚动，照片上也可用左右箭头切换，通话中箭头置灰；照片左上角的对话按钮可展开或收起可滚动的导师文字；移除多余的 AI 圆形装饰；音色选择放在照片上，通话中置灰，实时语音按钮紧接照片下方。"
     ],
     "en": [
-      "Choose among three AI-generated fictional tutor portraits with subtle speaking-state motion, without claiming human video or lip sync.",
-      "Choose one of four GPT-Live voices for the next connection; learners may speak in their own language or ask the tutor to switch reply language.",
-      "Save portrait and voice in the existing Max tutor session per signed-in learner, with changes locked during calls."
+      "Reuse Guandan's verified flat language options and plain buttons while preserving Simplified and Traditional Chinese and the existing language order.",
+      "Remove the redundant display:none rule overriding the native details close state while retaining outside-click and Escape dismissal.",
+      "Let portrait choices scroll horizontally or switch with photo arrows that gray out during calls; add an initially-off chat toggle for scrollable tutor text, remove the extra AI circle, and place voice selection on the photo with a disabled gray state during calls and live-voice controls immediately below it."
     ]
   },
   "affected": {
-    "zh": ["Max 一对一实时导师、导师偏好接口和 D1 会话表；支付、订阅价格、每日额度不变。"],
-    "en": ["Max one-to-one live tutor, preferences API and D1 session table; checkout, subscription prices and daily allowances remain unchanged."]
+    "zh": [
+      "共享页头的语言切换弹窗及旗舰版 AI 导师页面；不改学习语言、账户、订阅或支付。"
+    ],
+    "en": [
+      "Shared-header language switcher and Max AI tutor page; no changes to learning languages, accounts, subscriptions, or payments."
+    ]
   },
   "changes": {
     "zh": [
-      "沿用 SmartLingo 现有 Max 导师会话与 GPT-Live 网关，通过白名单关联本地人像资产和 OpenAI 声音名称。",
-      "新增 0195 增量迁移；已有导师会话默认 Mei/marin，后续更新会话不重置学生偏好。",
-      "将 Max 导师页加入手机、平板、横屏和桌面 WebKit 页面矩阵及登录保护检查。"
+      "用 Guandan 的 details、summary、扁平选项及 aria-pressed 结构替换旧的 role=menu/menuitemradio 嵌套结构。",
+      "清理旧弹窗 CSS，尤其是造成 Safari 视觉残影的 details:not([open]) 额外隐藏规则；保持 SmartLingo 的配色及站点语言路径。",
+      "导师形象选择改成有边界的横向滚动，原面板不因新增照片悬浮箭头而改变；箭头共用现有保存逻辑；复用现有实时字幕并由照片上的对话按钮展开；音色下拉移到照片右上角，语音按钮移到照片下方，不改变语音通话逻辑。"
     ],
     "en": [
-      "Reuse existing SmartLingo Max tutor sessions and GPT-Live gateway with allowlisted local portrait assets and OpenAI voice names.",
-      "Add additive migration 0195; existing sessions default to Mei/marin and subsequent session updates preserve learner preferences.",
-      "Add the Max tutor page to phone, tablet, landscape and desktop WebKit layout and authentication checks."
+      "Replace the old role=menu/menuitemradio nesting with Guandan's details, summary, flat options, and aria-pressed structure.",
+      "Remove obsolete popover CSS, especially the extra details:not([open]) hiding rule that left a stale Safari visual layer; preserve SmartLingo colors and locale routing.",
+      "Keep the existing horizontally scrollable portrait chooser unchanged while adding floating photo arrows using the same preference-saving logic; toggle the existing transcript from the photo, overlay the voice selector on the photo, and move the existing voice-call controls without rewriting them."
     ]
   },
   "validation": {
-    "zh": ["TypeScript、零警告 lint、完整测试、生产构建、D1 迁移重放、站点策略门禁及 WebKit 页面矩阵。", "发布后用普通 Max 测试会员核对更换、保存、刷新、实时连接和结束重连，并核对精确 Project 发布记录。"],
-    "en": ["TypeScript, zero-warning lint, full tests, production build, D1 migration replay, site-policy gates and WebKit layout matrix.", "After deployment, verify selection, persistence, refresh, live connection and reconnect as an ordinary Max QA member, plus the exact Project release record."]
+    "zh": [
+      "站点策略门禁、TypeScript、零警告 lint、测试、构建与中英文 WebKit 响应式检查。",
+      "发布后在 Safari 和 Chrome 实测弹层打开、外部点击关闭、语言切换及导师页布局，并核对精确 Project 发布记录。"
+    ],
+    "en": [
+      "Site policy gates, TypeScript, zero-warning lint, tests, build, and Chinese/English responsive WebKit checks.",
+      "After deployment, test opening, outside dismissal, language switching, and the tutor layout in Safari and Chrome, then verify the exact Project release record."
+    ]
   },
   "deferred": {
-    "zh": ["不做真人摄像视频、音画唇形同步、自定义头像上传、付款或长时间并发语音负载测试。"],
-    "en": ["No human camera video, lip-synced video, custom portrait upload, payment or prolonged concurrent voice load testing."]
+    "zh": [
+      "无付款、账户或实时导师行为变更。"
+    ],
+    "en": [
+      "No payment, account, or live-tutor behavior changes."
+    ]
   },
   "siteAdaptations": {
-    "zh": ["学习语言仍与站点辅助语言独立；切换回话语言由学习者明确提出，不能保证识别每种语言或每次都完全正确。"],
-    "en": ["Learning and site-support languages remain separate; the learner may explicitly request a reply-language switch, but recognition across every language and every utterance is not guaranteed."]
+    "zh": [
+      "沿用 SmartLingo 的十三个界面语言及路径、本地学习语言选择与现有品牌色。"
+    ],
+    "en": [
+      "Preserve SmartLingo's thirteen interface locales, routes, independent learning-language selection, and brand colors."
+    ]
   },
   "dataMigration": {
-    "included": true,
-    "migrations": ["0195_live_tutor_personas"],
+    "included": false,
+    "migrations": [],
     "rollback": {
-      "zh": "如需回退，先结束活动语音通话并部署前一版本；新增 D1 列保留，旧代码会忽略它们。",
-      "en": "To roll back, end active voice calls and deploy the prior version; the additive D1 columns remain and are ignored by older code."
+      "zh": "回退到上一部署提交；数据库无变更。",
+      "en": "Deploy the prior commit; no database change is involved."
     }
   }
 }

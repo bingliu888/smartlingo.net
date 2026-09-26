@@ -28,7 +28,7 @@ test("live tutor exposes scrollable bilingual transcript and updates preferences
   assert.match(client, /type: "session\.instructions\.append"/);
   assert.doesNotMatch(client, /conversation\.item\.input_audio_transcription\.completed/);
   assert.match(client, /session\.output_transcript\.delta/);
-  assert.match(client, /className="max-live-tutor-transcript" role="region" tabIndex=\{0\}/);
+  assert.match(client, /className="max-live-tutor-transcript" role="region" tabIndex=\{showTranscript \? 0 : -1\} hidden=\{!showTranscript\}/);
   assert.match(client, /showSupport && line\.supportText/);
   assert.match(css, /\.max-live-tutor-transcript\{[^}]*overflow-y:auto/);
   assert.match(owner, /checked=\{slowSpeed\}/);

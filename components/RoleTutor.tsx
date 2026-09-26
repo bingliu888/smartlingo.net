@@ -277,12 +277,11 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   const ended = sessionId && (turns >= maxTurns || expired || (mode === "open" && !liveBusy && remainingSeconds !== null && remainingSeconds <= 0));
   return <section className="role-tutor-card" aria-label={zh ? "人工智能导师练习" : "AI tutor practice"}>
     <p className="role-tutor-disclosure">{zh ? "AI 模拟导师 · 可打字或按键说话 · 非真人或专业建议" : "Simulated AI tutor · type or push to talk · not a real person or professional advice"}</p>
-    <div className="role-tutor-intro"><div><h2>{role}</h2>
+    <div className={sceneVisual ? "role-tutor-intro" : undefined}><div><h2>{role}</h2>
     <p>{mode === "open"
       ? (zh ? "从你感兴趣的话题开始，导师会调整难度并与你一起拟定计划。文字练习每日试用 10 分钟、付费 30 分钟；实时语音另有每日 5 / 15 分钟。" : "Start with your interests. The tutor adapts and helps shape a plan. Text practice: 10 trial or 30 paid minutes/day; live voice separately allows 5 or 15 minutes/day.")
       : (zh ? "与场景角色一对一练习。每轮最多 10 分钟、12 次回复；不会自动启动旗舰版试用。" : "Practice one-to-one with a scene character. Each round lasts at most 10 minutes and 12 replies; it does not start a Max trial.")}</p></div>
-    {sceneVisual ? <Image src={sceneVisual} alt={zh ? "模拟生活场景画面，并非实时视频" : "Illustrated role-play scene, not live video"} width={320} height={180} unoptimized/>
-      : <span className="role-tutor-avatar" aria-hidden="true">AI</span>}</div>
+    {sceneVisual ? <Image src={sceneVisual} alt={zh ? "模拟生活场景画面，并非实时视频" : "Illustrated role-play scene, not live video"} width={320} height={180} unoptimized/> : null}</div>
     <p>{mode === "open"
       ? (zh ? "聊天可自由换题；最近八组问答仅为今天的对话上下文，过期后清除。程度判断仅供练习参考，学习计划经你确认才保存。请勿输入敏感资料。" : "Change topics freely. The latest eight exchanges are short-lived conversation context and are cleared after today. Level estimates are practice guidance, and a plan is saved only with your confirmation. Do not enter sensitive information.")
       : (zh ? "为保持对话连贯，最近四组问答会临时保留，并在练习结束后定时清除。请勿输入敏感资料。" : "The last four exchanges are kept briefly for context and cleared after the session ends. Do not enter sensitive information.")}</p>
