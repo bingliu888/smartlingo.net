@@ -12,6 +12,11 @@ import {
   SMARTLINGO_LAYOUT_ROUTES,
   SMARTLINGO_VIEWPORTS,
 } from "./verify-runtime-layout-webkit.mjs";
+import {
+  layoutSchemaFingerprint,
+  restoreLayoutSchemaCache,
+  saveLayoutSchemaCache,
+} from "./layout-schema-cache.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const wrangler = join(projectRoot, "node_modules", "wrangler", "bin", "wrangler.js");
@@ -231,7 +236,16 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
     await writeFile(sessionCookieFile, `${token}\n`, { mode: 0o600 });
 
     const common = ["--local", "--persist-to", state, "--config", config];
-    await run(process.execPath, [wrangler, "d1", "migrations", "apply", "DB", ...common], { cwd: projectRoot, env: isolatedEnv });
+    const schemaCacheDirectory = process.env.SMARTLINGO_LAYOUT_SCHEMA_CACHE_DIR;
+    const schemaFingerprint = schemaCacheDirectory ? layoutSchemaFingerprint() : "";
+    const restoredSchema = await restoreLayoutSchemaCache(schemaCacheDirectory, state, schemaFingerprint);
+    if (restoredSchema) {
+      process.stderr.write("WebKit D1 migration-only schema restored from cache.\n");
+    } else {
+      await run(process.execPath, [wrangler, "d1", "migrations", "apply", "DB", ...common], { cwd: projectRoot, env: isolatedEnv });
+      await saveLayoutSchemaCache(schemaCacheDirectory, state, schemaFingerprint);
+    }
+    // The randomly generated login session is inserted only after the cache copy.
     await run(process.execPath, [wrangler, "d1", "execute", "DB", ...common, "--file", fixture, "-y"], { cwd: projectRoot, env: isolatedEnv });
     process.stderr.write(`WebKit fixture ready after ${Math.round((Date.now() - startedAt) / 1_000)}s.\n`);
 

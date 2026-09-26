@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
+import { restoreLayoutSchemaCache, saveLayoutSchemaCache } from "../scripts/layout-schema-cache.mjs";
 import {
   SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES,
   SMARTLINGO_LAYOUT_LANGUAGES,
@@ -17,6 +20,36 @@ const fixtureAuthSource = await readFile(new URL("../lib/layout-fixture-auth.ts"
 const packageSource = await readFile(new URL("../package.json", import.meta.url), "utf8");
 const everydayCss = await readFile(new URL("../app/[lang]/play/everyday/everyday.css", import.meta.url), "utf8");
 const maxTutorSource = await readFile(new URL("../app/[lang]/max/tutor/page.tsx", import.meta.url), "utf8");
+
+test("WebKit schema cache holds only a migration snapshot, never a generated session", async () => {
+  const work = await mkdtemp(join(tmpdir(), "smartlingo-layout-cache-test-"));
+  const cache = join(work, "cache");
+  const migrated = join(work, "migrated");
+  const restored = join(work, "restored");
+  const fingerprint = "verified-migrations";
+  try {
+    await mkdir(join(migrated, "v3", "d1"), { recursive: true });
+    await writeFile(join(migrated, "v3", "d1", "schema.sqlite"), "migrated schema");
+    await saveLayoutSchemaCache(cache, migrated, fingerprint);
+    await writeFile(join(migrated, "v3", "d1", "session.sqlite"), "ephemeral login");
+    assert.deepEqual((await readdir(join(cache, "d1"))), ["schema.sqlite"]);
+    assert.equal(await restoreLayoutSchemaCache(cache, restored, fingerprint), true);
+    assert.deepEqual((await readdir(join(restored, "v3", "d1"))), ["schema.sqlite"]);
+    assert.equal(await restoreLayoutSchemaCache(cache, join(work, "stale"), "changed-migrations"), false);
+    await rm(join(cache, "migration-fingerprint"));
+    assert.equal(await restoreLayoutSchemaCache(cache, join(work, "partial"), fingerprint), false);
+  } finally {
+    await rm(work, { recursive: true, force: true });
+  }
+});
+
+test("release runner inserts the randomized fixture only after cache creation", () => {
+  const restore = releaseSource.indexOf("restoreLayoutSchemaCache(schemaCacheDirectory, state, schemaFingerprint)");
+  const migrate = releaseSource.indexOf('"migrations", "apply", "DB"');
+  const save = releaseSource.indexOf("saveLayoutSchemaCache(schemaCacheDirectory, state, schemaFingerprint)");
+  const fixture = releaseSource.indexOf('"execute", "DB", ...common, "--file", fixture');
+  assert.ok(restore > 0 && restore < migrate && migrate < save && save < fixture);
+});
 
 test("runtime layout matrix pins both path locales and a short landscape lesson viewport", () => {
   assert.match(maxTutorSource, /data-layout-page="max-tutor" data-layout-ready="true"/);

@@ -100,8 +100,24 @@ jobs:
       - name: Build exact source for WebKit
         run: npm run build
 
+      - name: Restore migration-only WebKit D1 schema
+        id: layout-schema-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/smartlingo-layout-schema
+          key: smartlingo-layout-d1-macos15-v1-${{ hashFiles('package-lock.json', 'drizzle/*.sql', 'drizzle/meta/_journal.json') }}
+
       - name: Verify the complete WebKit route and viewport matrix
         run: npm run validate:layout
+        env:
+          SMARTLINGO_LAYOUT_SCHEMA_CACHE_DIR: ${{ runner.temp }}/smartlingo-layout-schema
+
+      - name: Save migration-only WebKit D1 schema
+        if: always() && steps.layout-schema-cache.outcome == 'success' && steps.layout-schema-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/smartlingo-layout-schema
+          key: ${{ steps.layout-schema-cache.outputs.cache-primary-key }}
 
   deploy:
     name: Deploy validated SmartLingo release

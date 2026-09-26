@@ -1,69 +1,67 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-tutor-controls-20260926-r37",
+  "releaseId": "smartlingo-webkit-schema-cache-20260926-r38",
   "site": "smartlingo.net",
   "title": {
-    "zh": "修复导师轮播、简化实时操作并稳定 WebKit 发布验证",
-    "en": "Fix the tutor carousel, simplify live controls, and stabilize WebKit validation"
+    "zh": "缩短 WebKit 发布验证的数据库准备时间",
+    "en": "Reduce WebKit release validation database setup time"
   },
   "purpose": {
-    "zh": "完成未能部署的导师轮播与操作区更新，并对 WebKit 测试 Worker 意外断连加入有界重试。",
-    "en": "Complete the previously blocked tutor carousel and controls release, with bounded recovery when a WebKit test Worker unexpectedly disconnects."
+    "zh": "复用仅含迁移结果的隔离 D1 缓存，避免每次 GitHub 发布检查都重放全部 SQL 迁移，同时保留完整页面验证。",
+    "en": "Reuse an isolated migration-only D1 cache so each GitHub release check need not replay every SQL migration while preserving the complete page matrix."
   },
   "features": {
     "zh": [
-      "修复网格零宽导致中央导师照片消失的问题并保持完整比例；两侧预览在自身边界内裁切、加深遮罩，停用通话中切换。",
-      "照片下方按聊天、开始／结束、音色图标排列；音色只列出与导师形象相符的声音，通话中禁用。",
-      "文字导师首次介绍不自动朗读，实时通话等学生先开口；移除顶部停止朗读按钮，说明与文字练习设置移到面板之后。"
+      "为 WebKit 布局任务恢复并保存按迁移文件与依赖锁文件定址的 D1 结构缓存。",
+      "保留原有 310 组中英文页面与视口测量，每次仍生成独立登录会话和用户样本。"
     ],
     "en": [
-      "Restore the center portrait after a zero-width grid track, keep it uncropped, and crop shaded side previews within their own bounds while locking changes during calls.",
-      "Place chat, Start/End, and an icon-only voice selector below the portrait; offer only voices matching the portrait and disable changes during calls.",
-      "Do not auto-read the initial text introduction or greet before the learner speaks live; remove the upper Stop voice button and move detailed guidance and text settings below the live tutor panel."
+      "Restore and save a migration-and-lockfile-keyed D1 schema cache for the WebKit layout job.",
+      "Keep all 310 Chinese/English page and viewport measurements, with a new isolated login session and user fixture on every run."
     ]
   },
   "affected": {
     "zh": [
-      "旗舰版一对一导师页面、实时语音偏好 API、WebKit 发布验证；不改订阅或付款。"
+      "仅影响 GitHub WebKit 发布验证的本地样本准备；线上学习、订阅和付款行为不变。"
     ],
     "en": [
-      "Max one-to-one tutor, live-voice preference API, and WebKit release validation; no subscription or payment change."
+      "Only local fixture preparation in GitHub WebKit release validation; production learning, subscriptions, and payments are unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "服务端与界面共同校验导师形象和音色；旧会话的不匹配音色在读取和连接时采用相符默认值，数据库结构不变。",
-      "保留全部 310 组 WebKit 页面、语言及视口测量；每组使用新端口，独立访问控制最多四路并行、复用测量程序，Worker 断连时只重测完整分组且最多重试两次。"
+      "先复制迁移完成的本地 D1 结构，再插入随机会话；缓存不含真实账号、测试登录令牌或生产数据。",
+      "迁移文件或依赖锁文件变化会触发重建；缺失、未完成或指纹不符的缓存回退到完整迁移。"
     ],
     "en": [
-      "Validate portrait and voice together in client and server; normalize legacy mismatched choices when reading or connecting, without a schema change.",
-      "Keep all 310 WebKit route-language-viewport measurements; use a fresh port per group, bound independent access checks to four at a time, reuse the compiled harness, and retry a full group at most twice after a Worker disconnect."
+      "Copy the migrated local D1 schema before inserting a random session; cache neither real accounts, test login tokens, nor production data.",
+      "Rebuild when migrations or the dependency lockfile change; a missing, incomplete, or mismatched cache falls back to full migration replay."
     ]
   },
   "validation": {
     "zh": [
-      "站点策略门禁、TypeScript、零警告 lint、全套测试、构建与中英文 WebKit 响应式检查。",
-      "发布后实测宽屏轮播、手机控制排列、音色筛选，核对精确 Project 发布记录。"
+      "缓存命中、失效、随机会话隔离行为测试；站点策略门禁、TypeScript、零警告 lint、全套测试与构建。",
+      "GitHub 完整 WebKit 检查通过后核对线上页面和精确 Project 发布记录。"
     ],
     "en": [
-      "Site policy gates, TypeScript, zero-warning lint, full tests, build, and Chinese/English responsive WebKit checks.",
-      "After deployment, inspect the wide carousel, phone control order, filtered voice selector, and exact Project release record."
+      "Cache hit, invalidation, and random-session isolation tests; site policy gates, TypeScript, zero-warning lint, full tests, and build.",
+      "After the complete GitHub WebKit gate, inspect the production page and exact Project release record."
     ]
   },
   "deferred": {
     "zh": [
-      "不提交付款；自动化不录制或保存真实学员音频。"
+      "首次遇到新迁移键时仍须完整重建，后续命中才节省准备时间；不提交付款。"
     ],
     "en": [
-      "No payment is submitted; automated checks do not record or store real learner audio."
+      "The first run for a new migration key still rebuilds fully; later cache hits save setup time. No payment is submitted."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "沿用 SmartLingo 现有导师照片、GPT-Live 音色和十三种界面语言。"
+      "仅缓存 SmartLingo 自有的本地 D1 测试结构，不复制其他站点资源。"
     ],
     "en": [
-      "Reuse SmartLingo's existing tutor portraits, GPT-Live voices, and thirteen interface locales."
+      "Cache only SmartLingo's own local D1 test schema; copy no other site's resources."
     ]
   },
   "dataMigration": {
