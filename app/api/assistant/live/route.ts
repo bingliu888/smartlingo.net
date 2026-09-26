@@ -5,7 +5,7 @@ import {
   activateMaxLiveTutorCall, closeMaxLiveTutorCall,
   heartbeatMaxLiveTutorCall, readMaxLiveTutorUsage, reserveMaxLiveTutorCall,
 } from "../../../../lib/smartlingo-max-live-tutor";
-import { readOpenTutorProfile, resolveOpenTutorMission } from "../../../../lib/smartlingo-open-tutor";
+import { resolveOpenTutorMission } from "../../../../lib/smartlingo-open-tutor";
 import { interfaceLanguages } from "../../../../lib/interface-locale";
 import { maxLiveTutorInstructions } from "../../../../lib/smartlingo-live-tutor-instructions";
 import { preferredTutorVoice, validTutorPortrait } from "../../../../lib/smartlingo-live-tutor-personas";
@@ -47,8 +47,8 @@ export async function POST(request: Request) {
     FROM subscriptions WHERE user_id=? AND cadence='max' AND status='active' LIMIT 1`)
     .bind(user.id).first<{ endsAt: number }>();
   const tutor = await database.prepare(`SELECT target_language AS language,ui_language AS uiLanguage,
-    profile_json AS profileJson,portrait_key AS portrait,voice_key AS voice FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
-    .bind(tutorSessionId, user.id).first<{ language: string; uiLanguage: string; profileJson: string; portrait: string; voice: string }>();
+    portrait_key AS portrait,voice_key AS voice FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
+    .bind(tutorSessionId, user.id).first<{ language: string; uiLanguage: string; portrait: string; voice: string }>();
   const mission = resolveOpenTutorMission({ language, uiLanguage: tutor?.uiLanguage });
   if (!tutor || tutor.language !== language || !mission) return json({ error: "Invalid tutor language." }, 400);
   const now = Math.floor(Date.now() / 1_000);
@@ -57,11 +57,10 @@ export async function POST(request: Request) {
     tutorSessionId, language, limit, now, id,
     accessEndsAt: Number(subscription?.endsAt || 0) > now ? subscription?.endsAt : undefined });
   if (!reservation) return json({ error: "Voice time is used up, or another call is active." }, 429);
-  const profile = readOpenTutorProfile(tutor.profileJson);
   const support = interfaceLanguages.find(item => item.code === mission.uiLanguage)?.nameEn || "English";
   const instructions = maxLiveTutorInstructions({ learningLanguage: mission.language.nameEn,
     learningNativeName: mission.language.nativeName, supportLanguage: support,
-    level: profile.level, useCase: profile.useCase, slowSpeed, shortAnswer });
+    slowSpeed, shortAnswer });
   try {
     const answer = await openSmartAiLiveVoice({ userId: user.id, subject: `user:${user.id}`,
       paid: true, sdp, instructions, voice: preferredTutorVoice(validTutorPortrait(tutor.portrait) ? tutor.portrait : "mei", tutor.voice), shortAnswer, onConnected: async callId => {

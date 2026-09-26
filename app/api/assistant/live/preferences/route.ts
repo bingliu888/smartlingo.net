@@ -16,11 +16,17 @@ export async function GET(request: Request) {
   const user = await requestUser();
   if (!user) return json({ error: "Sign in is required." }, 401);
   const sessionId = new URL(request.url).searchParams.get("sessionId");
-  if (!uuid(sessionId)) return json({ error: "Invalid tutor session." }, 400);
-  const row = await getDatabase().prepare(`SELECT portrait_key AS portrait,voice_key AS voice
-    FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
-    .bind(sessionId, user.id).first<{ portrait: string; voice: string }>();
-  if (!row) return json({ error: "Tutor session not found." }, 404);
+  if (sessionId && !uuid(sessionId)) return json({ error: "Invalid tutor session." }, 400);
+  if (!sessionId && !await maxLiveTutorDailyLimit(user)) return json({ error: "An active Max plan is required." }, 403);
+  const row = sessionId
+    ? await getDatabase().prepare(`SELECT portrait_key AS portrait,voice_key AS voice
+      FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
+      .bind(sessionId, user.id).first<{ portrait: string; voice: string }>()
+    : await getDatabase().prepare(`SELECT portrait_key AS portrait,voice_key AS voice
+      FROM smartlingo_max_tutor_sessions WHERE user_id=? LIMIT 1`)
+      .bind(user.id).first<{ portrait: string; voice: string }>();
+  if (!row && sessionId) return json({ error: "Tutor session not found." }, 404);
+  if (!row) return json({ portrait: "mei", voice: preferredTutorVoice("mei", "gleam") });
   const portrait = validTutorPortrait(row.portrait) ? row.portrait : "mei";
   return json({ portrait, voice: preferredTutorVoice(portrait, row.voice) });
 }

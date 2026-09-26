@@ -1,75 +1,67 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-webkit-schema-cache-20260926-r38",
+  "releaseId": "smartlingo-max-voice-only-welcome-20260926-r39",
   "site": "smartlingo.net",
   "title": {
-    "zh": "缩短 WebKit 发布验证的数据库准备时间",
-    "en": "Reduce WebKit release validation database setup time"
+    "zh": "Max 导师直达实时语音，并主动欢迎学员",
+    "en": "Open Max tutors directly in live voice with a spoken welcome"
   },
   "purpose": {
-    "zh": "复用仅含迁移结果的隔离 D1 缓存，避免每次 GitHub 发布检查都重放全部 SQL 迁移，同时保留完整页面验证。",
-    "en": "Reuse an isolated migration-only D1 cache so each GitHub release check need not replay every SQL migration while preserving the complete page matrix."
+    "zh": "让学员打开 1:1 页面就能选择导师与音色，按下开始后由导师以学习语言简短问候；移除重复的文字导师入口和额度。",
+    "en": "Let learners choose a tutor and voice immediately, then hear a brief welcome in the learning language after pressing Start; remove the duplicate text-tutor path and allowance."
   },
   "features": {
     "zh": [
-      "为 WebKit 布局任务恢复并保存按迁移文件与依赖锁文件定址的 D1 结构缓存。",
-      "保留原有 310 组中英文页面与视口测量，每次仍生成独立登录会话和用户样本。"
+      "1:1 页面直接显示已有的导师肖像轮播及实时语音按钮，不再有单独的文字对话启动步骤。",
+      "接通后导师只问候、自我介绍和欢迎一次，再等待学员说话；音色选择改用波形图标。"
     ],
     "en": [
-      "Restore and save a migration-and-lockfile-keyed D1 schema cache for the WebKit layout job.",
-      "Keep all 310 Chinese/English page and viewport measurements, with a new isolated login session and user fixture on every run."
+      "The 1:1 page directly shows the existing tutor portrait carousel and live voice controls without a separate text-conversation start step.",
+      "Once connected, the tutor greets, introduces itself, and welcomes the learner once before listening; voice choice uses a waveform icon."
     ]
   },
   "affected": {
     "zh": [
-      "仅影响 GitHub WebKit 发布验证的本地样本准备；线上学习、订阅和付款行为不变。"
+      "Max 1:1 实时导师、试用及付费用户语音额度、可选导师字幕；独立场景练习保持原状。"
     ],
     "en": [
-      "Only local fixture preparation in GitHub WebKit release validation; production learning, subscriptions, and payments are unchanged."
+      "Max 1:1 live tutor, trial and paid voice limits, optional tutor captions; separate scene practice remains unchanged."
     ]
   },
   "changes": {
     "zh": [
-      "先复制迁移完成的本地 D1 结构，再插入随机会话；缓存不含真实账号、测试登录令牌或生产数据。",
-      "迁移文件或依赖锁文件变化会触发重建；缺失、未完成或指纹不符的缓存回退到完整迁移。"
+      "文字导师的回复、录音转文字和文字计时 API 已移除；现有用户专属会话行仅用于实时通话，不新增数据库结构。",
+      "导师预览不消耗语音或文字额度；点击开始才请求麦克风和建立服务器会话。"
     ],
     "en": [
-      "Copy the migrated local D1 schema before inserting a random session; cache neither real accounts, test login tokens, nor production data.",
-      "Rebuild when migrations or the dependency lockfile change; a missing, incomplete, or mismatched cache falls back to full migration replay."
+      "Text-tutor replies, speech-to-text, and text-time APIs are removed; the existing owner-bound session row only supports live calls, without a database migration.",
+      "Tutor preview consumes no voice or text allowance; pressing Start requests microphone access and creates the server session."
     ]
   },
   "validation": {
     "zh": [
-      "缓存命中、失效、随机会话隔离行为测试；站点策略门禁、TypeScript、零警告 lint、全套测试与构建。",
-      "GitHub 完整 WebKit 检查通过后核对线上页面和精确 Project 发布记录。"
+      "语言与权限单测、实时会话测试、TypeScript、零警告 lint、完整测试、构建及 WebKit 页面矩阵。",
+      "部署后用普通测试会员及 Mac Safari 验证导师直达、声音、单次欢迎和精确 Project 发布记录。"
     ],
     "en": [
-      "Cache hit, invalidation, and random-session isolation tests; site policy gates, TypeScript, zero-warning lint, full tests, and build.",
-      "After the complete GitHub WebKit gate, inspect the production page and exact Project release record."
+      "Language and entitlement tests, live session tests, TypeScript, zero-warning lint, full suite, build, and WebKit page matrix.",
+      "After deployment, verify direct tutor entry, audio, one-time welcome, and the exact Project release record with an ordinary QA member and Mac Safari."
     ]
   },
   "deferred": {
-    "zh": [
-      "首次遇到新迁移键时仍须完整重建，后续命中才节省准备时间；不提交付款。"
-    ],
-    "en": [
-      "The first run for a new migration key still rebuilds fully; later cache hits save setup time. No payment is submitted."
-    ]
+    "zh": ["导师仍为 AI 生成人像静态照片，不是真人视频或口型同步；不提交付款。"],
+    "en": ["Tutor portraits remain AI-generated stills, not human video or lip-sync. No payment is submitted."]
   },
   "siteAdaptations": {
-    "zh": [
-      "仅缓存 SmartLingo 自有的本地 D1 测试结构，不复制其他站点资源。"
-    ],
-    "en": [
-      "Cache only SmartLingo's own local D1 test schema; copy no other site's resources."
-    ]
+    "zh": ["沿用 SmartLingo 已验证的实时导师画面、WebRTC 通话、会员权限与数据库会话，没有复制未经验证的新聊天界面。"],
+    "en": ["Reuse SmartLingo's verified live tutor stage, WebRTC call, membership checks, and session row, without adding an unverified chat interface."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "部署上一稳定提交；数据库结构无变更。",
-      "en": "Deploy the previous stable commit; no database schema change is involved."
+      "zh": "部署上一稳定提交；数据库结构与现存学习计划保持不变。",
+      "en": "Deploy the prior stable commit; the database schema and existing learning plans remain unchanged."
     }
   }
 }

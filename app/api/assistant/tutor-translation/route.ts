@@ -1,5 +1,5 @@
 import { requestUser } from "../../../../lib/request-user";
-import { maxTutorDailyLimit } from "../../../../lib/smartlingo-open-tutor-entitlement";
+import { maxLiveTutorDailyLimit } from "../../../../lib/smartlingo-open-tutor-entitlement";
 import { resolveOpenTutorMission } from "../../../../lib/smartlingo-open-tutor";
 import { interfaceLanguages } from "../../../../lib/interface-locale";
 import { consumeAiDailyQuota } from "../../../../lib/ai-daily-quota";
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid origin." }, { status: 403 });
   const user = await requestUser();
   if (!user) return Response.json({ error: "Sign in is required." }, { status: 401 });
-  if (!await maxTutorDailyLimit(user))
+  if (!await maxLiveTutorDailyLimit(user))
     return Response.json({ error: "An active Max plan is required." }, { status: 403 });
   try {
     const body = await readSmartAiJsonRequest<TranslationRequest>(request, 8_000);

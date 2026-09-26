@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import { maxLiveTutorInstructions } from "../lib/smartlingo-live-tutor-instructions";
 import { SMARTLINGO_TUTOR_PORTRAITS,
@@ -18,10 +17,10 @@ function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supportLanguageName, profile,
-  slowSpeed, shortAnswer, showSupport, onCallActive }: {
-  sessionId: string; language: string; lang: string;
-  learningName: string; supportLanguageName: string; profile: OpenTutorProfile | null;
+export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supportLanguageName,
+  slowSpeed, shortAnswer, showSupport, onCallActive, prepareSession }: {
+  sessionId: string | null; prepareSession: () => Promise<string | null>; language: string; lang: string;
+  learningName: string; supportLanguageName: string;
   slowSpeed: boolean; shortAnswer: boolean; showSupport: boolean;
   onCallActive: (active: boolean) => void;
 }) {
@@ -62,19 +61,17 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const portraitIndex = SMARTLINGO_TUTOR_PORTRAITS.findIndex(item => item.id === selectedPortrait.id);
   const previousPortrait = SMARTLINGO_TUTOR_PORTRAITS[(portraitIndex - 1 + SMARTLINGO_TUTOR_PORTRAITS.length) % SMARTLINGO_TUTOR_PORTRAITS.length];
   const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS[(portraitIndex + 1) % SMARTLINGO_TUTOR_PORTRAITS.length];
-  const preferenceLoaded = loadedSessionId === sessionId;
+  const preferenceLoaded = loadedSessionId === (sessionId || "preview");
 
   const sendPreferences = useCallback((channel: RTCDataChannel) => {
     if (channel.readyState !== "open") return;
     channel.send(JSON.stringify({ type: "session.instructions.append", delegation_id: null,
       content: maxLiveTutorInstructions({ learningLanguage: learningName, learningNativeName,
-        supportLanguage: supportLanguageName, level: profile?.level || "unknown",
-        useCase: profile?.useCase || "daily_life", slowSpeed, shortAnswer }),
+        supportLanguage: supportLanguageName, slowSpeed, shortAnswer }),
     }));
-  }, [learningName, learningNativeName, supportLanguageName, profile, slowSpeed, shortAnswer]);
+  }, [learningName, learningNativeName, supportLanguageName, slowSpeed, shortAnswer]);
 
   useEffect(() => {
-    if (!sessionId) return;
     let active = true;
     void fetch("/api/assistant/live/usage", { credentials: "same-origin", cache: "no-store" })
       .then(response => response.json())
@@ -85,9 +82,9 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   }, [sessionId, zh]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (state !== "idle") return;
     let active = true;
-    void fetch(`/api/assistant/live/preferences?sessionId=${encodeURIComponent(sessionId)}`, {
+    void fetch(`/api/assistant/live/preferences${sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ""}`, {
       credentials: "same-origin", cache: "no-store",
     }).then(async response => {
       if (!response.ok) throw new Error("Unable to read tutor choices.");
@@ -96,15 +93,16 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
       if (!active) return;
       if (validTutorPortrait(value.portrait)) setPortrait(value.portrait);
       if (validTutorVoice(value.voice)) setVoice(value.voice);
-      setLoadedSessionId(sessionId);
+      setLoadedSessionId(sessionId || "preview");
     }).catch(() => {
       if (active) setError(zh ? "暂时无法读取导师形象与声音，请稍后重试。" : "Tutor portrait and voice are temporarily unavailable. Try again later.");
     });
     return () => { active = false; };
-  }, [sessionId, zh]);
+  }, [sessionId, state, zh]);
 
   async function saveTutorChoice(nextPortrait: SmartLingoTutorPortrait, nextVoice: SmartLingoTutorVoice) {
     if (state !== "idle" || preferenceBusy || !preferenceLoaded) return;
+    if (!sessionId) { setPortrait(nextPortrait); setVoice(nextVoice); return; }
     setPreferenceBusy(true); setError("");
     try {
       const response = await fetch("/api/assistant/live/preferences", {
@@ -189,9 +187,9 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   }
 
   async function startCall() {
-    if (state !== "idle" || !sessionId || voiceRemaining <= 0 || !preferenceLoaded || preferenceBusy) return;
+    if (state !== "idle" || voiceRemaining <= 0 || !preferenceLoaded || preferenceBusy) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof RTCPeerConnection === "undefined") {
-      setError(zh ? "此浏览器不支持实时语音，请继续使用文字导师。" : "Live voice is unavailable in this browser. Continue with the text tutor.");
+      setError(zh ? "此浏览器不支持实时语音，请换用支持麦克风的浏览器。" : "Live voice is unavailable here. Try a browser with microphone support.");
       return;
     }
     setError(""); setCaptions([]); setMuted(false); setSpeaking(false); setSoundBlocked(false);
@@ -201,6 +199,16 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
       micRef.current = stream;
+      const activeSessionId = sessionId || await prepareSession();
+      if (!activeSessionId) throw new Error(zh ? "无法准备导师会话，请重试。" : "Could not prepare the tutor session. Try again.");
+      if (!sessionId) {
+        const choice = await fetch("/api/assistant/live/preferences", {
+          method: "PATCH", credentials: "same-origin", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sessionId: activeSessionId, portrait, voice: preferredTutorVoice(portrait, voice) }),
+        });
+        if (!choice.ok) throw new Error(zh ? "导师选择未保存，请重试。" : "Tutor choice could not be saved. Try again.");
+        setLoadedSessionId(activeSessionId);
+      }
       const peer = new RTCPeerConnection(); peerRef.current = peer;
       stream.getTracks().forEach(track => peer.addTrack(track, stream));
       const channel = peer.createDataChannel("oai-events"); channelRef.current = channel;
@@ -210,6 +218,10 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         if (item.type === "session.started") {
           sessionReadyRef.current = true;
           sendPreferences(channel);
+          channel.send(JSON.stringify({ type: "session.instructions.append", delegation_id: null,
+            client_event_id: crypto.randomUUID(),
+            content: `The learner just pressed Start. Speak now in ${learningName}: briefly say hello, introduce yourself as ${selectedPortrait.nameEn}, warmly welcome the learner, and ask one simple question. Use one or two short sentences, then stop and listen. This opening happens once per call.`,
+          }));
         } else if (item.type === "session.output_transcript.delta" && typeof item.delta === "string") {
           const gap = typeof item.start_ms === "number" ? item.start_ms - lastTranscriptEndRef.current : 0;
           if (!activeTutorItemRef.current || gap > 1_200) activeTutorItemRef.current = crypto.randomUUID();
@@ -254,7 +266,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         peer.addEventListener("icegatheringstatechange", check);
       });
       const response = await fetch("/api/assistant/live", { method: "POST", credentials: "same-origin",
-        headers: { "content-type": "application/sdp", "x-tutor-session-id": sessionId, "x-learning-language": language,
+        headers: { "content-type": "application/sdp", "x-tutor-session-id": activeSessionId, "x-learning-language": language,
           "x-tutor-slow-speed": slowSpeed ? "1" : "0", "x-tutor-short-answer": shortAnswer ? "1" : "0" },
         body: peer.localDescription?.sdp || offer.sdp });
       if (!response.ok) {
@@ -333,14 +345,14 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         aria-label={zh ? "下一位导师" : "Next tutor"}>›</button>
       <p className="max-live-tutor-caption" aria-live="polite" dir="auto">{state === "live"
         ? (showTranscript ? (zh ? "直接说话；下方可滚动查看导师文字。" : "Speak naturally; scroll tutor text below.") : (zh ? "直接说话，导师会听你说并回应。" : "Speak naturally. Your tutor listens and responds."))
-        : (zh ? "开始后直接说话，导师会听你说并回应。" : "Start, then speak naturally. Your tutor listens and responds.")}</p>
+        : (zh ? "点击开始，导师会先打招呼，再听你说话。" : "Press Start. Your tutor will greet you, then listen.")}</p>
       <audio ref={audioRef} autoPlay playsInline aria-label={zh ? "虚拟导师语音" : "Virtual tutor audio"}/></div>
     <div className="max-live-tutor-actions">
       <button type="button" className="max-live-tutor-chat-toggle" onClick={() => setShowTranscript(value => !value)}
-        aria-label={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}
+        aria-label={zh ? (showTranscript ? "隐藏导师字幕" : "显示导师字幕") : (showTranscript ? "Hide tutor captions" : "Show tutor captions")}
         aria-controls="max-live-tutor-transcript" aria-expanded={showTranscript} aria-pressed={showTranscript}
-        title={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}>
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1 2 2H8l-5 2V7a2 2 0 0 1 2-2Z"/><path d="M7 10h10M7 14h7"/></svg>
+        title={zh ? (showTranscript ? "隐藏导师字幕" : "显示导师字幕") : (showTranscript ? "Hide tutor captions" : "Show tutor captions")}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M10 10a2 2 0 1 0 0 4M17 10a2 2 0 1 0 0 4"/></svg>
       </button>
       <div className="max-live-tutor-call-controls">
       {state === "idle" ? <button type="button" onClick={startCall} disabled={voiceRemaining <= 0 || !preferenceLoaded || preferenceBusy}>{zh ? "开启实时语音" : "Start live voice"}</button>
@@ -351,7 +363,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
       </div>
       <label className="max-live-tutor-voice-choice" htmlFor="max-tutor-voice">
         <span className="max-live-tutor-sr-only">{zh ? "导师音色" : "Tutor voice"}</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9h4l4-4v14l-4-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9v6M7 5v14M11 10v4M15 3v18M19 8v8M23 11v2"/></svg>
         <select id="max-tutor-voice" value={preferredTutorVoice(portrait, voice)}
           aria-label={zh ? "选择导师音色" : "Choose tutor voice"}
           title={zh ? "选择导师音色" : "Choose tutor voice"}
@@ -372,7 +384,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         {showSupport && line.supportText ? <small lang={lang} dir="auto">{line.supportText}</small> : null}
       </p>) : <p className="max-live-tutor-transcript-empty">{zh ? "开始对话后，导师说的话会显示在这里。" : "Your tutor's words will appear here when the conversation starts."}</p>}
     </div>
-    <p className="max-live-tutor-note">{zh ? `这是 AI 生成的人像照片，不是真人视频或口型同步。仅传送麦克风声音；不录制或保存原始音频。今日语音剩余 ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}；文字导师额度独立。` : `This is an AI-generated still portrait, not human video or lip-sync. Only microphone audio is sent; raw audio is not recorded or stored. Voice left today: ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}; text time is separate.`}</p>
+    <p className="max-live-tutor-note">{zh ? `这是 AI 生成的人像照片，不是真人视频或口型同步。仅传送麦克风声音；不录制或保存原始音频。今日语音剩余 ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}。` : `This is an AI-generated still portrait, not human video or lip-sync. Only microphone audio is sent; raw audio is not recorded or stored. Voice left today: ${formatTime(voiceRemaining)} / ${formatTime(voiceLimit)}.`}</p>
     {error ? <p className="role-tutor-error" role="alert">{error}</p> : null}
   </section>;
 }

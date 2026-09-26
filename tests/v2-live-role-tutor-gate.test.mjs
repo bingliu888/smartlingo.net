@@ -121,7 +121,7 @@ test("the forward migration preserves refund for an in-flight legacy Realtime ca
   sqlite.close();
 });
 
-test("a failed new Live connection cannot refund unrelated text tutor time", async () => {
+test("a failed new Live connection cannot refund unrelated legacy quota", async () => {
   const { sqlite, database, now } = fixture();
   sqlite.prepare("UPDATE smartlingo_max_tutor_sessions SET used_seconds=100 WHERE id='session-1'").run();
   assert.ok(await live.reserveMaxLiveTutorCall({ database, userId: "member-1", tutorSessionId: "session-1",
@@ -150,5 +150,6 @@ test("live API exposes server-validated SDP, Max entitlement, heartbeats, and cl
   assert.match(client, /cleanupMedia\(\)/);
   assert.match(worker, /cleanupMaxLiveTutorCalls/);
   const entitlement = readFileSync(new URL("../lib/smartlingo-open-tutor-entitlement.ts", import.meta.url), "utf8");
-  assert.match(entitlement, /textLimit === OPEN_TUTOR_TRIAL_SECONDS \? 5 \* 60 : textLimit > 0 \? 15 \* 60/);
+  assert.match(entitlement, /\? 5 \* 60 : 15 \* 60/);
+  assert.doesNotMatch(entitlement, /maxTutorDailyLimit|OPEN_TUTOR_PAID_SECONDS/);
 });

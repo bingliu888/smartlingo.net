@@ -80,7 +80,7 @@ test("tutor voices match the selected portrait", () => {
 
 test("portrait carousel preserves the selected tutor's full ratio, supports touch swipes, and leaves no duplicate tutor row", () => {
   const client = readFileSync(new URL("../components/MaxLiveTutorCall.tsx", import.meta.url), "utf8");
-  const owner = readFileSync(new URL("../components/RoleTutor.tsx", import.meta.url), "utf8");
+  const owner = readFileSync(new URL("../components/MaxVoiceTutor.tsx", import.meta.url), "utf8");
   const css = readFileSync(new URL("../app/[lang]/assistant/role-tutor/role-tutor.css", import.meta.url), "utf8");
   assert.match(css, /\.max-live-tutor-filmstrip\{[^}]*display:flex;align-items:center;justify-content:center/);
   assert.doesNotMatch(css, /\.max-live-tutor-filmstrip\{[^}]*display:grid/);
@@ -121,6 +121,6 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   assert.match(css, /\.max-live-tutor-photo\{[^}]*width:auto;height:100%;max-width:100%;flex:none;object-fit:contain/);
   assert.doesNotMatch(css, /\.max-live-tutor-stage\.speaking \.max-live-tutor-photo\{[^}]*transform:/);
   assert.doesNotMatch(owner, /role-tutor-avatar/);
-  assert.match(owner, /if \(mode === "scene" && result\.opening/);
-  assert.match(owner, /mode === "open" \? <MaxLiveTutorCall[\s\S]*<p className="role-tutor-progress"/);
+  assert.match(owner, /<MaxLiveTutorCall sessionId=\{sessionId\} prepareSession=\{prepareSession\}/);
+  assert.doesNotMatch(owner, /role-tutor-progress|role-tutor-lines|role-tutor-message/);
 });
