@@ -12,6 +12,10 @@ const TARGET_LANGUAGE_KEY = "smartlingo-target-language";
 const TARGET_LANGUAGE_EVENT = "smartlingo-target-language-change";
 const INTERFACE_LANGUAGE_KEY = "smartlingo-interface-language";
 
+export function isOutsideLanguageMenu(menu: Pick<HTMLDetailsElement, "open" | "contains"> | null, target: EventTarget | null) {
+  return Boolean(menu?.open && !menu.contains(target as Node));
+}
+
 export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
   try { window.localStorage.setItem(TARGET_LANGUAGE_KEY, code); } catch { /* Private browsing can restrict storage; navigation still works. */ }
   window.dispatchEvent(new CustomEvent(TARGET_LANGUAGE_EVENT, { detail: code }));
@@ -29,7 +33,7 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
   const menu = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     function dismiss(event: PointerEvent) {
-      if (menu.current?.open && !menu.current.contains(event.target as Node)) menu.current.open = false;
+      if (isOutsideLanguageMenu(menu.current, event.target) && menu.current) menu.current.open = false;
     }
     function escape(event: KeyboardEvent) {
       if (event.key === "Escape" && menu.current) menu.current.open = false;
@@ -83,10 +87,9 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
       <summary className="language-icon-button" data-no-translate aria-label={`${t.language}: ${currentInterface.nativeName}`} title={`${t.language}: ${currentInterface.nativeName}`}>
         <GlobeIcon/>
       </summary>
-      <button type="button" className="interface-language-dismiss" aria-label={t.closeMenu} onClick={() => { if (menu.current) menu.current.open = false; }}/>
       <div className="interface-language-popover" role="menu" aria-label={t.chooseLanguage}>
         <header>
-          <strong>{t.chooseLanguage}</strong>
+          <strong>{t.language}</strong>
         </header>
         <div>
           {options}

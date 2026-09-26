@@ -1,62 +1,56 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-traditional-menu-live-tutor-20260926-r26",
+  "releaseId": "smartlingo-guandan-language-menu-20260926-r27",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 繁体中文、语言菜单与实时导师修复",
-    "en": "SmartLingo Traditional Chinese, language menu, and live tutor fixes"
+    "zh": "SmartLingo 语言菜单顺序与外部点按修复",
+    "en": "SmartLingo language order and outside-tap dismissal"
   },
   "purpose": {
-    "zh": "让界面语言菜单在外部点击时关闭，补齐繁体中文站点语言，修正 Max 实时导师连接格式，并简化学习入口。",
-    "en": "Make the interface-language menu dismissible, add a Traditional Chinese site locale, correct the Max live-tutor connection payload, and simplify the learning entrance."
+    "zh": "按 Guandan 已验证的顺序显示全部 13 种界面语言，并让桌面与触屏用户点按弹窗外即可关闭。",
+    "en": "Show all 13 interface languages in Guandan's verified order and close the popover on an outside click or tap."
   },
   "features": {
     "zh": [
-      "站点语言新增中文（繁體），与学习语言分开保存；语言弹层支持点按外部关闭。",
-      "Max 首页只保留所选学习语言，进入语言页后将一对一 AI 导师列为第一项，删除重复入口。",
-      "实时语音会话改用官方 WebRTC 通话接口要求的 SDP 和 session 字符串表单字段。",
-      "修复首页及学习页在平板横屏时页眉与内容边距不齐。"
+      "界面语言从中文（简体）、中文（繁體）开始，后续语言与 Guandan 顺序一致；桌面与汉堡菜单使用同一列表。",
+      "移除拦截触屏外部点按的透明遮罩，复用 Guandan 的文档级外部点击和 Escape 关闭交互。"
     ],
     "en": [
-      "Add Traditional Chinese as a site-interface locale separate from learning languages and dismiss the language popover on outside taps.",
-      "Keep selected learning languages on the Max landing, put the one-to-one AI tutor first inside each language hub, and remove duplicate entry cards.",
-      "Send SDP and session as string form fields to the official WebRTC calls endpoint.",
-      "Align the header and content gutters on Home and learning pages at tablet landscape widths."
+      "Start the shared desktop and hamburger language list with Simplified and Traditional Chinese, then follow Guandan's remaining locale order.",
+      "Remove the transparent full-page control that intercepted touch events; reuse Guandan's document-level outside-pointer and Escape dismissal."
     ]
   },
   "affected": {
-    "zh": ["首页、站点语言菜单、快捷版与旗舰版、学习语言详情、实时 AI 导师、响应式布局。"],
-    "en": ["Home, interface-language menu, Flash and Max, learning-language hubs, live AI tutor, and responsive layout."]
+    "zh": ["所有使用共享页眉的页面、界面语言弹窗和汉堡菜单。"],
+    "en": ["All shared-header pages, the interface-language popover, and the hamburger language list."]
   },
   "changes": {
     "zh": [
-      "复用冠丹站已验证的简转繁静态词典生成方式；不新增课程或改变原有学习数据。",
-      "修复会话表单编码，并为实时语音网关加入请求结构回归测试。",
-      "统一页眉与内容容器的响应式边距，并保留 WebKit 布局门禁。"
+      "沿用 Guandan 的语言顺序、双列紧凑布局与文档级外部点按关闭方式，仅保留 SmartLingo 的品牌和路由适配。",
+      "新增语言顺序与外部点按行为回归测试；不修改学习语言、会员或付款数据。"
     ],
     "en": [
-      "Reuse Guandan's verified static Simplified-to-Traditional dictionary approach without adding a course or changing learning data.",
-      "Correct the session form encoding and add a live-voice gateway contract regression test.",
-      "Unify responsive header and content gutters and retain the WebKit layout gate."
+      "Reuse Guandan's locale order, compact two-column layout, and document-level outside-pointer dismissal with only SmartLingo branding and route adapters.",
+      "Add behavioral regressions for order and outside taps without changing learning, membership, or payment data."
     ]
   },
   "validation": {
     "zh": [
-      "TypeScript、零警告 lint、完整单元测试与生产构建及敏感数据扫描；Chrome 多尺寸和 Safari 本地繁体菜单检查。",
-      "发布时运行 WebKit 布局与受保护路由检查；发布后核对线上版本及可用语音状态。"
+      "TypeScript、零警告 lint、菜单行为回归测试、生产构建与敏感数据扫描。",
+      "WebKit 中英文多尺寸布局检查；发布后在真实浏览器点按弹窗外并核对线上 Project 发布记录。"
     ],
     "en": [
-      "TypeScript, zero-warning lint, the full unit suite, production build and sensitive-data scan; local Chrome viewport and Safari Traditional Chinese menu checks.",
-      "Run the WebKit layout and protected-route gate during release, then verify the production version and live-voice availability."
+      "TypeScript, zero-warning lint, menu behavior regressions, production build, and sensitive-data scan.",
+      "WebKit Chinese/English viewport checks, followed by real-browser outside-tap acceptance and exact production Project record verification."
     ]
   },
   "deferred": {
-    "zh": ["不提交真实付款；真实设备麦克风和 OpenAI 连接仍须在发布后按实际权限与服务状态验证。"],
-    "en": ["No real payment is submitted; live device microphone and OpenAI connectivity still require post-release verification with actual permissions and service status."]
+    "zh": ["本次不涉及付款、实时音视频或会员数据变更。"],
+    "en": ["Payments, live media, and membership data are outside this language-menu change."]
   },
   "siteAdaptations": {
-    "zh": ["沿用 SmartLingo 的 12 种学习语言数据；繁体中文仅为第 13 种界面语言，实时导师仍受现有 Max 权限与限时规则约束。"],
-    "en": ["Keep SmartLingo's 12 learning-language records; Traditional Chinese is only a thirteenth interface locale, and the live tutor remains subject to existing Max access and time limits."]
+    "zh": ["沿用 SmartLingo 的 12 种学习语言数据与独立学习目标；本次仅调整 13 种界面语言的显示顺序和弹窗交互。"],
+    "en": ["Keep SmartLingo's 12 learning-language records and independent learning target; only the 13 interface-language display order and popover interaction change."]
   },
   "dataMigration": {
     "included": false,

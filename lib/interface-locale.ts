@@ -5,8 +5,9 @@ import { traditionalChineseText } from "./traditional-chinese";
 export type InterfaceLanguage = SmartLingoCommunityLanguage | "zh-tw";
 export type BaseInterfaceLanguage = SmartLingoCommunityLanguage;
 export const interfaceLanguages = [
-  ...SMARTLINGO_LANGUAGE_COMMUNITIES,
+  { ...SMARTLINGO_LANGUAGE_COMMUNITIES[0], nativeName: "中文（简体）" },
   { code: "zh-tw", nameZh: "繁體中文", nameEn: "Traditional Chinese", nativeName: "中文（繁體）", speechLocale: "zh-TW", direction: "ltr" },
+  ...SMARTLINGO_LANGUAGE_COMMUNITIES.slice(1),
 ] as const;
 export const interfaceLanguageCodes = new Set<string>(interfaceLanguages.map(({ code }) => code));
 export const isInterfaceLanguage = (value: string): value is InterfaceLanguage => interfaceLanguageCodes.has(value);

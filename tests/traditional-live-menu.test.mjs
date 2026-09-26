@@ -12,7 +12,7 @@ test("Traditional Chinese is an interface locale, not a thirteenth learning cour
   ]);
   assert.match(locale, /SmartLingoCommunityLanguage \| "zh-tw"/);
   assert.match(menu, /interfaceLanguages\.map/);
-  assert.match(menu, /interface-language-dismiss/);
+  assert.doesNotMatch(menu, /interface-language-dismiss/);
   assert.match(runtime, /zh-Hant-TW/);
   assert.match(clerk, /"zh-tw": zhTW/);
   assert.doesNotMatch(learning, /code: "zh-tw"/);

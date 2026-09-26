@@ -1054,8 +1054,9 @@ body{min-width:0}
 .interface-language-menu>summary.language-icon-button{width:42px;min-width:42px;min-height:42px;padding:0;display:grid;place-items:center;border:1px solid rgba(16,43,51,.16);border-radius:13px;color:var(--ink);background:rgba(255,255,255,.76);cursor:pointer}
 .interface-language-menu>summary.language-icon-button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .interface-language-menu:not([open])>.interface-language-popover{display:none}
-.interface-language-menu:not([open])>.interface-language-dismiss{display:none}
-.interface-language-dismiss{position:fixed;inset:0;z-index:179;border:0;background:transparent;cursor:default}
+.interface-language-popover{width:min(330px,calc(100vw - 28px));padding:13px}
+.interface-language-popover>header strong{color:#65777d;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.interface-language-popover>div{grid-template-columns:repeat(2,minmax(0,1fr))}
 .site-header .hamburger-button{width:42px;min-width:42px;min-height:42px;margin:0;padding:0;display:inline-grid;place-items:center;position:relative;align-content:center;gap:4px;border:1px solid rgba(8,33,42,.13);border-radius:13px;color:#176ebd;background:rgba(255,255,255,.76);cursor:pointer}
 .site-header .hamburger-button:hover,.site-header .hamburger-button[aria-expanded="true"]{border-color:rgba(63,156,255,.5);background:#eef7ff}
 .mobile-header-menu{max-height:min(76vh,680px);padding:18px 56px 24px;position:absolute;inset:100% 0 auto;display:grid;gap:18px;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid rgba(16,43,51,.12);border-bottom:1px solid rgba(16,43,51,.12);background:rgba(248,255,249,.98);box-shadow:0 24px 65px rgba(8,33,42,.16);color:var(--ink);backdrop-filter:blur(20px)}
