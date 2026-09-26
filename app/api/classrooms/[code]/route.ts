@@ -19,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ co
   const user = await getSessionUser(request);
   if (!room || !user) return Response.json({ error: "Not found" }, { status: 404 });
   if (!await canManageClass(room, user)) return Response.json({ error: "Manager access required" }, { status: 403 });
+  if (room.isHelpRoom) return Response.json({ error: "Help room settings are fixed" }, { status: 409 });
   let body: Record<string, unknown>;
   try { body = await boundedJsonBody<Record<string, unknown>>(request, 16 * 1024); }
   catch (error) {
@@ -65,6 +66,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ c
   const user = await getSessionUser(request);
   if (!room || !user) return Response.json({ error: "Not found" }, { status: 404 });
   if (!await canManageClass(room, user)) return Response.json({ error: "Manager access required" }, { status: 403 });
+  if (room.isHelpRoom) return Response.json({ error: "Help room cannot be deleted" }, { status: 409 });
   const database = getDatabase();
   if (await database.prepare(`SELECT room_id FROM smartlingo_course_classrooms WHERE room_id=?
     UNION ALL SELECT room_id FROM smartlingo_course_practice_rooms WHERE room_id=? LIMIT 1`).bind(room.id, room.id).first()) {

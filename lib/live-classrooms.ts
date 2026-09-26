@@ -15,7 +15,7 @@ export type ClassRoom = {
   providerMeetingId: string | null; streamActive: number; muteAll: number;
   providerGeneration: number; providerGenerationStartedAt: number | null;
   liveStartedAt: number | null; timeZone: string; providerCreateDeadlineAt: number | null;
-  status: "active" | "archived"; createdAt: number; updatedAt: number;
+  status: "active" | "archived"; createdAt: number; updatedAt: number; isHelpRoom: number;
 };
 
 const selection = `SELECT r.id,r.code,r.host_user_id AS hostUserId,r.host_email AS hostEmail,r.host_name AS hostName,
@@ -26,7 +26,8 @@ const selection = `SELECT r.id,r.code,r.host_user_id AS hostUserId,r.host_email 
   r.provider_generation AS providerGeneration,r.provider_generation_started_at AS providerGenerationStartedAt,
   r.live_started_at AS liveStartedAt,r.time_zone AS timeZone,
   r.provider_create_deadline_at AS providerCreateDeadlineAt,
-  r.status,r.created_at AS createdAt,r.updated_at AS updatedAt
+  r.status,r.created_at AS createdAt,r.updated_at AS updatedAt,
+  CASE WHEN EXISTS(SELECT 1 FROM site_help_rooms help WHERE help.room_id=r.id) THEN 1 ELSE 0 END AS isHelpRoom
   FROM live_class_rooms r`;
 
 export async function classByCode(code: string) {

@@ -1,57 +1,75 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-live-language-audio-20260925-r23",
+  "releaseId": "smartlingo-site-help-audio-webinar-20260926-r24",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo Max 实时语音导师与学习语言分离",
-    "en": "SmartLingo Max live voice tutor and independent learning language"
+    "zh": "SmartLingo 公开音频 Help 会议室",
+    "en": "SmartLingo public audio Help room"
   },
   "purpose": {
-    "zh": "让旗舰版学习者以已选目标语言直接进入一对一导师，用网站语言获得必要解释，并在每日限时内使用可打断的实时语音和动画虚拟人物；修复 Safari 朗读无声却显示播放的问题。",
-    "en": "Open the selected learning language directly in Max, use the site language for support, add interruptible time-limited live voice with an animated virtual tutor, and fix Safari's false read-aloud playback state."
+    "zh": "已登录会员从账户菜单直接进入站点帮助室，与主持团队私聊；主持团队可按需启动音频，会议卡片保持普通样式且不显示介绍。",
+    "en": "Let signed-in members open the site Help room from the account menu for private host-team chat and optional host audio, with an ordinary undescribed room card."
   },
   "features": {
     "zh": [
-      "Max 实时 WebRTC 双向语音接入现有 AI 网关，配合响应声音的动画虚拟人物；文字导师继续可用。",
-      "实时语音沿用试用每日 10 分钟、付费每日 30 分钟额度；服务器预留、挂断、过期清理及未用时长退回，并在会员到期时终止通话。",
-      "快捷版和旗舰版统一称为“我的学习语言”；切换网站语言保留学习目标和页面参数，进入一对一导师时默认使用已选语言。",
-      "Safari 朗读改为点击时直接启动、保留语音对象，只有实际开始播放才显示计时；无声启动失败会提示重试。",
-      "WebKit 发布检查按完整路由分组重启本地测试服务器，避免长时间矩阵测试时服务器断开；所有页面与尺寸仍逐项检查。"
+      "账户菜单在退出登录前显示本地化 Help 入口，直达公开免费音频 Webinar。",
+      "Help 会议室复用现有私密支持聊天、录音、附件、在线成员及按需连接 RealtimeKit 的课堂功能。",
+      "Help 会议室没有介绍文字或专属卡片样式，只有已验证管理员可主持。"
     ],
     "en": [
-      "Add bidirectional WebRTC voice through the existing AI gateway with a speech-reactive animated virtual tutor; keep the text tutor available.",
-      "Share the trial's 10-minute and paid Max's 30-minute daily tutor allowance with server reservation, hangup, expiry cleanup and refund of unused time.",
-      "Label Flash and Max tiles as learning languages, preserve the target across site-language switches, and open the selected language directly in the one-to-one tutor.",
-      "Start Safari read-aloud synchronously from the tap, retain the utterance, show playback only after speech actually starts, and report silent startup failures.",
-      "Restart the isolated test Worker between bounded route groups so the complete WebKit release matrix survives a long run without losing any route or viewport check."
+      "Add a localized Help entry immediately before Sign out, leading to a public free audio Webinar.",
+      "Reuse the existing private support chat, audio notes, attachments, member presence, and demand-driven RealtimeKit lifecycle.",
+      "Keep the Help card ordinary and without description, hosted by a verified administrator."
     ]
   },
   "affected": {
-    "zh": ["快捷版和旗舰版语言卡片、Max 导师页面、Ask Guru 朗读、实时语音 API、定时清理及新通话数据表。"],
-    "en": ["Flash and Max language tiles, Max tutor page, Ask Guru read-aloud, live voice API, scheduled cleanup, and a new call table."]
+    "zh": [
+      "登录账户菜单、Help 路由、Help 会议室资料及会议详情页。"
+    ],
+    "en": [
+      "Signed-in account menu, Help route, Help room record, and room detail page."
+    ]
   },
   "changes": {
-    "zh": ["沿用 SmartLingo 现有 AI 网关、Max 权限及学习计划表；保留数据重建导师会话表以支持十二种网站语言，新增带唯一活动通话约束的 D1 表和每分钟清理，课堂维护仍为每五分钟。"],
-    "en": ["Reuse the existing AI gateway, Max entitlement, and learning plans; rebuild the tutor-session table while preserving rows to allow twelve site languages, then add a D1 call table with a single-active-call constraint and minute cleanup while class maintenance remains five-minute."]
+    "zh": [
+      "D1 迁移创建单例 Help 会议室；如管理员在迁移后建立，则入口可安全补建。Help 媒体类型及公开权限固定，防止误改或误删。"
+    ],
+    "en": [
+      "A D1 migration seeds the singleton Help room; its entry can safely provision it when the admin arrives after migration. Lock the public audio settings against accidental edits or deletion."
+    ]
   },
   "validation": {
-    "zh": ["TypeScript、零警告 lint、全量测试、D1 迁移重放、构建和共享站点检查；上线后用真实浏览器验证匿名与会员流程及精确发布记录。"],
-    "en": ["TypeScript, zero-warning lint, full tests, D1 migration replay, build and shared-site gates; then real-browser anonymous/member checks and exact release-record verification."]
+    "zh": [
+      "全量 TypeScript、零警告 lint、Vinext 构建与敏感数据扫描、D1 全量迁移重放及 Help 音频 Webinar 数据校验、全量单元测试。"
+    ],
+    "en": [
+      "Full TypeScript, zero-warning lint, Vinext build and sensitive-data scan, complete D1 replay and Help audio Webinar assertions, and the full unit suite."
+    ]
   },
   "deferred": {
-    "zh": ["虚拟人物为随音量变化的动画，并非真人摄像视频或逐音素口型同步；不保存原始音频。不会提交真实付款。"],
-    "en": ["The virtual character is a speech-reactive animation, not live human video or phoneme-accurate lip sync; raw audio is not stored. No real payment is submitted."]
+    "zh": [
+      "不自动开始媒体连接；多用户实时收听验收沿用课堂独立 QA 流程。"
+    ],
+    "en": [
+      "No automatic media connection; multi-user live listening remains part of the independent classroom QA flow."
+    ]
   },
   "siteAdaptations": {
-    "zh": ["学习语言与十二种网站语言独立；以现有 Max 七天试用和付费权限控制语音，导师明确披露 AI 身份。"],
-    "en": ["Keep the learning target independent of all twelve site languages; gate voice by the existing seven-day trial and paid Max entitlement, and disclose AI identity."]
+    "zh": [
+      "使用 SmartLingo 自有 D1、Clerk、RealtimeKit 与十二语言菜单，不导入其他站点运行时代码。"
+    ],
+    "en": [
+      "Use SmartLingo-owned D1, Clerk, and RealtimeKit resources and a twelve-language menu without cross-site runtime imports."
+    ]
   },
   "dataMigration": {
     "included": true,
-    "migrations": ["drizzle/0192_max_live_tutor_calls.sql"],
+    "migrations": [
+      "drizzle/0193_site_help_room.sql"
+    ],
     "rollback": {
-      "zh": "此迁移复制并保留旧导师会话数据后重建表的语言约束，同时新增实时通话表与时长结算触发器。可回退应用代码，但数据库结构不得直接逆转；如需回退结构，先备份并单独审查迁移。",
-      "en": "This migration copies and preserves existing tutor sessions while rebuilding their language constraint, and adds the live-call table and settlement trigger. Application code can be rolled back, but the schema must not be reversed directly; back up and review any future schema rollback separately."
+      "zh": "可回退应用代码；迁移是新增表与会议室记录。若需删除数据，先确认无会员聊天、录音或附件并单独审查。",
+      "en": "Application code can be rolled back; the migration adds a table and room record. Review member chat, recordings, and attachments before any separate data removal."
     }
   }
 }

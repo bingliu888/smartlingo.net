@@ -1705,7 +1705,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0192_max_live_tutor_calls");
+  assert.equal(migrations.at(-1)?.tag, "0193_site_help_room");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1722,6 +1722,15 @@ export function validateD1Migrations() {
     assert.deepEqual(firstRun.skipped, []);
     assertDatabaseIntegrity(database);
     assert.ok(database.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='smartlingo_max_live_tutor_calls'").get());
+    const helpRoom = database.prepare(`SELECT room.title,room.description,room.class_type AS classType,
+      room.streaming_mode AS streamingMode,room.realtime_mode AS realtimeMode,
+      room.tuition_cents AS tuitionCents,admin.role
+      FROM site_help_rooms help JOIN live_class_rooms room ON room.id=help.room_id
+      JOIN users admin ON admin.id=room.host_user_id WHERE help.singleton=1`).get();
+    assert.deepEqual({ ...helpRoom }, {
+      title: "Help · 帮助中心", description: "", classType: "public",
+      streamingMode: "audio", realtimeMode: "webinar", tuitionCents: 0, role: "admin",
+    });
     assertClerkIdentitySchema(database);
     const stateAfterFirstRun = migrationState(database);
 
