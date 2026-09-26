@@ -502,6 +502,12 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     const element = document.querySelector(selector);
     return [name, element ? number(getComputedStyle(element).fontSize) : null];
   })) : null;
+  const learningHeader = document.querySelector(".learning-entry-page > .site-header");
+  const learningShell = document.querySelector(".learning-entry-page > .learning-entry-shell");
+  const learningShellAlignment = learningHeader && learningShell ? {
+    headerContent: contentBox(learningHeader),
+    shellContent: contentBox(learningShell),
+  } : null;
 
   return {
     schemaVersion: 1,
@@ -527,6 +533,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     lessonFit,
     sceneCopyFit,
     homeTypography,
+    learningShellAlignment,
   };
 }
 
@@ -622,6 +629,9 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
     add("wordmark-wrap", ".site-header .smartlingo-wordmark", "SmartLingo wordmark must stay on one line", report.wordmark);
   }
   if (report.pageName === "home") {
+    if (!report.learningShellAlignment) {
+      add("missing-entry-alignment", ".learning-entry-shell", "homepage header and content alignment must be measured");
+    }
     for (const [name, minimum, maximum] of [
       ["title", 30, 54],
       ["intro", 16, 19],
@@ -632,6 +642,13 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
       if (!Number.isFinite(actual) || actual < minimum || actual > maximum) {
         add("home-type-scale", `.learning-entry-${name}`, "homepage typography must remain readable without oversized display text", actual, { minimum, maximum });
       }
+    }
+  }
+  if (report.learningShellAlignment) {
+    const { headerContent, shellContent } = report.learningShellAlignment;
+    if (Math.abs(headerContent.left - shellContent.left) > tolerance
+      || Math.abs(headerContent.right - shellContent.right) > tolerance) {
+      add("entry-shell-misalignment", ".learning-entry-shell", "learning content edges must align with the header content edges", shellContent, headerContent);
     }
   }
   for (const item of report.clipping || []) {

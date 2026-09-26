@@ -127,6 +127,25 @@ test("issue detector rejects overflow, non-filling rows, clipping, overlap, and 
   assert.ok(codes.includes("viewport-exceed"));
 });
 
+test("learning page content aligns with the shared header at every viewport", () => {
+  const report = {
+    schemaVersion: 1,
+    pageName: "home",
+    viewport: { width: 1180, height: 820 },
+    page: {
+      document: { clientWidth: 1180, scrollWidth: 1180 },
+      body: { clientWidth: 1180, scrollWidth: 1180 },
+    },
+    learningShellAlignment: {
+      headerContent: { left: 56, right: 1124 },
+      shellContent: { left: 20, right: 1160 },
+    },
+  };
+  assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "entry-shell-misalignment"));
+  report.learningShellAlignment.shellContent = { left: 56, right: 1124 };
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "entry-shell-misalignment"));
+});
+
 test("landscape Everyday Speaking keeps instructions through actions within one viewport", () => {
   assert.match(everydayCss, /\.everyday-player \.everyday-stage\{height:260px;min-height:0;max-height:260px/);
   const report = {
