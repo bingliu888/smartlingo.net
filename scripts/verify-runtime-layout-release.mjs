@@ -232,27 +232,46 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
     await run(process.execPath, [wrangler, "d1", "migrations", "apply", "DB", ...common], { cwd: projectRoot, env: isolatedEnv });
     await run(process.execPath, [wrangler, "d1", "execute", "DB", ...common, "--file", fixture, "-y"], { cwd: projectRoot, env: isolatedEnv });
 
-    worker = spawn(process.execPath, [
-      wrangler, "dev", ...common, "--ip", "127.0.0.1", "--port", String(port), "--log-level", "warn",
-    ], { cwd: projectRoot, env: isolatedEnv, stdio: ["ignore", "pipe", "pipe"] });
-    worker.stdout.on("data", value => { workerDiagnostics += String(value); });
-    worker.stderr.on("data", value => { workerDiagnostics += String(value); });
-    await waitForServer(baseURL, worker, () => workerDiagnostics);
-    await assertControls(baseURL, token);
-    const verified = await run(process.execPath, [verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile, ...process.argv.slice(2)], {
-      cwd: projectRoot,
-      env: isolatedEnv,
-    });
     const selectedRoutes = process.argv.slice(2).flatMap((value, index, args) => value === "--route" ? [args[index + 1]] : []);
-    const expectedLayoutCount = (selectedRoutes.length ? new Set(selectedRoutes).size : SMARTLINGO_LAYOUT_ROUTES.length)
+    const uniqueRoutes = selectedRoutes.length ? [...new Set(selectedRoutes)] : SMARTLINGO_LAYOUT_ROUTES;
+    const expectedLayoutCount = uniqueRoutes.length
       * SMARTLINGO_LAYOUT_LANGUAGES.length
       * SMARTLINGO_VIEWPORTS.length;
-    const evidence = verified.stdout.match(new RegExp(
-      `WebKit runtime layout verified: ${expectedLayoutCount}\/${expectedLayoutCount}[^\\n]*`,
-    ))?.[0];
-    if (!evidence) {
-      throw new Error(`Expected ${expectedLayoutCount}/${expectedLayoutCount} WebKit evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+    let verifiedLayoutCount = 0;
+    // A full matrix keeps one Wrangler dev Worker alive for nearly eight
+    // minutes on macOS CI; that Worker can stop accepting loopback requests
+    // before WebKit finishes. Reopen the same isolated D1 fixture between
+    // bounded route groups without skipping any route or viewport assertion.
+    for (let index = 0; index < uniqueRoutes.length; index += 10) {
+      workerDiagnostics = "";
+      worker = spawn(process.execPath, [
+        wrangler, "dev", ...common, "--ip", "127.0.0.1", "--port", String(port), "--log-level", "warn",
+      ], { cwd: projectRoot, env: isolatedEnv, stdio: ["ignore", "pipe", "pipe"] });
+      worker.stdout.on("data", value => { workerDiagnostics += String(value); });
+      worker.stderr.on("data", value => { workerDiagnostics += String(value); });
+      await waitForServer(baseURL, worker, () => workerDiagnostics);
+      if (index === 0) await assertControls(baseURL, token);
+      const routeGroup = uniqueRoutes.slice(index, index + 10);
+      const groupCount = routeGroup.length * SMARTLINGO_LAYOUT_LANGUAGES.length * SMARTLINGO_VIEWPORTS.length;
+      let verified;
+      try {
+        verified = await run(process.execPath, [
+          verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile,
+          ...routeGroup.flatMap(route => ["--route", route]),
+        ], { cwd: projectRoot, env: isolatedEnv });
+      } catch (error) {
+        throw new Error(`${error instanceof Error ? error.message : String(error)}\nWorker exit: ${worker.exitCode}; Worker diagnostics: ${workerDiagnostics.slice(-4000)}`);
+      }
+      if (!verified.stdout.includes(`WebKit runtime layout verified: ${groupCount}/${groupCount}`)) {
+        throw new Error(`Expected ${groupCount}/${groupCount} WebKit group evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+      }
+      verifiedLayoutCount += groupCount;
+      process.stderr.write(`WebKit route group ${Math.floor(index / 10) + 1}: ${groupCount}/${groupCount} verified.\n`);
+      await stopChild(worker);
+      worker = null;
     }
+    if (verifiedLayoutCount !== expectedLayoutCount) throw new Error(`Expected ${expectedLayoutCount} WebKit measurements, received ${verifiedLayoutCount}`);
+    const evidence = `WebKit runtime layout verified: ${verifiedLayoutCount}/${expectedLayoutCount} · ${uniqueRoutes.length} routes · ${SMARTLINGO_LAYOUT_LANGUAGES.length} languages · ${SMARTLINGO_VIEWPORTS.length} viewports · ${baseURL}`;
     await writeFile(join(tmpdir(), "smartlingo-layout-release-evidence.txt"), `${evidence}\n`, { mode: 0o600 });
     process.stderr.write(`${evidence}\n`);
   } finally {

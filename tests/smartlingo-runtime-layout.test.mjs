@@ -238,6 +238,10 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /anonymous page control failed/);
   assert.match(releaseSource, /anonymous API control failed/);
   assert.match(releaseSource, /public-read API control failed/);
+  assert.match(releaseSource, /uniqueRoutes\.slice\(index, index \+ 10\)/);
+  assert.match(releaseSource, /await stopChild\(worker\);\s*worker = null/);
+  assert.match(releaseSource, /verifiedLayoutCount !== expectedLayoutCount/);
+  assert.match(releaseSource, /Worker diagnostics:/);
   assert.match(releaseSource, /const publicReadApis = \[/);
   assert.match(releaseSource, /rm\(work, \{ recursive: true, force: true \}\)/);
   assert.match(packageSource, /"validate:layout": "node scripts\/verify-runtime-layout-release\.mjs"/);
@@ -259,7 +263,7 @@ test("full release matrix uses bounded fresh-WebKit batches and one merged count
   assert.match(runnerSource, /code: "path-mismatch"/);
   assert.match(runnerSource, /required: \{ overlapChecks: 1/);
   assert.match(swiftSource, /Double\(combinationCount\) \* 12\.0/);
-  assert.match(releaseSource, /SMARTLINGO_LAYOUT_ROUTES\.length/);
+  assert.match(releaseSource, /selectedRoutes\.length \? \[\.\.\.new Set\(selectedRoutes\)\] : SMARTLINGO_LAYOUT_ROUTES/);
   assert.match(releaseSource, /SMARTLINGO_LAYOUT_LANGUAGES\.length/);
   assert.match(releaseSource, /SMARTLINGO_VIEWPORTS\.length/);
   assert.doesNotMatch(releaseSource, /270\/270/);
