@@ -305,7 +305,9 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
           aria-label={zh ? `选择${previousPortrait.nameZh}导师` : `Choose tutor ${previousPortrait.nameEn}`}>
           <Image src={previousPortrait.image} width={previousPortrait.width} height={previousPortrait.height} unoptimized alt=""/>
         </button>
-        <div className="max-live-tutor-photo-frame" style={{ aspectRatio: `${selectedPortrait.width} / ${selectedPortrait.height}` }}
+        <Image className="max-live-tutor-photo" src={selectedPortrait.image}
+          width={selectedPortrait.width} height={selectedPortrait.height} unoptimized
+          alt={zh ? `AI 生成的${selectedPortrait.nameZh}导师肖像` : `AI-generated portrait of tutor ${selectedPortrait.nameEn}`}
           onTouchStart={event => { swipeStartXRef.current = event.touches[0]?.clientX ?? null; }}
           onTouchEnd={event => {
             const start = swipeStartXRef.current;
@@ -313,11 +315,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
             const end = event.changedTouches[0]?.clientX;
             if (start === null || end === undefined || Math.abs(end - start) < 50) return;
             stepPortrait(end < start ? 1 : -1);
-          }} onTouchCancel={() => { swipeStartXRef.current = null; }}>
-          <Image className="max-live-tutor-photo" src={selectedPortrait.image}
-            width={selectedPortrait.width} height={selectedPortrait.height} unoptimized
-            alt={zh ? `AI 生成的${selectedPortrait.nameZh}导师肖像` : `AI-generated portrait of tutor ${selectedPortrait.nameEn}`}/>
-        </div>
+          }} onTouchCancel={() => { swipeStartXRef.current = null; }}/>
         <button type="button" className="max-live-tutor-preview next" onClick={() => stepPortrait(1)}
           disabled={state !== "idle" || preferenceBusy || !preferenceLoaded}
           aria-label={zh ? `选择${nextPortrait.nameZh}导师` : `Choose tutor ${nextPortrait.nameEn}`}>

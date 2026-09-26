@@ -10,10 +10,9 @@
 .max-live-tutor-heading small{color:#096b55;font-weight:800;letter-spacing:.1em}
 .max-live-tutor-clock{font-variant-numeric:tabular-nums;font-weight:800;color:#075c4d}
 .max-live-tutor-stage{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:min(45vh,440px);border-radius:15px;overflow:hidden;background:#fff}
-.max-live-tutor-filmstrip{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
-.max-live-tutor-photo-frame{height:100%;max-width:100%;min-width:0;overflow:hidden;touch-action:pan-y}
-.max-live-tutor-photo{display:block;width:100%;height:100%;object-fit:contain;object-position:center;transition:filter .7s ease}
-.role-tutor-card .max-live-tutor-preview{display:none;height:100%;min-width:0;margin:0;padding:0;overflow:hidden;border:0;border-radius:0;background:#fff;opacity:.65;cursor:pointer}
+.max-live-tutor-filmstrip{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px}
+.max-live-tutor-photo{display:block;width:auto;height:100%;max-width:100%;flex:none;object-fit:contain;object-position:center;touch-action:pan-y;transition:filter .7s ease}
+.role-tutor-card .max-live-tutor-preview{display:none;height:100%;min-width:0;flex:1 1 0;margin:0;padding:0;overflow:hidden;border:0;border-radius:0;background:#fff;opacity:.65;cursor:pointer}
 .max-live-tutor-preview.previous{justify-content:flex-end}.max-live-tutor-preview.next{justify-content:flex-start}
 .max-live-tutor-preview img{display:block;width:auto;height:100%;max-width:none;object-fit:contain}
 .role-tutor-card .max-live-tutor-preview:not(:disabled):hover{opacity:.85}

@@ -512,6 +512,15 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     headerContent: contentBox(learningHeader),
     shellContent: contentBox(learningShell),
   } : null;
+  const tutorImage = document.querySelector(".max-live-tutor-photo");
+  const tutorStage = document.querySelector(".max-live-tutor-stage");
+  const tutorPortrait = tutorImage && tutorStage ? {
+    image: rectValue(tutorImage.getBoundingClientRect()),
+    stage: rectValue(tutorStage.getBoundingClientRect()),
+    naturalWidth: tutorImage.naturalWidth,
+    naturalHeight: tutorImage.naturalHeight,
+    objectFit: getComputedStyle(tutorImage).objectFit,
+  } : null;
 
   return {
     schemaVersion: 1,
@@ -538,6 +547,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
     sceneCopyFit,
     homeTypography,
     learningShellAlignment,
+    tutorPortrait,
   };
 }
 
@@ -653,6 +663,22 @@ export function findSmartLingoRuntimeLayoutIssues(report, options = {}) {
     if (Math.abs(headerContent.left - shellContent.left) > tolerance
       || Math.abs(headerContent.right - shellContent.right) > tolerance) {
       add("entry-shell-misalignment", ".learning-entry-shell", "learning content edges must align with the header content edges", shellContent, headerContent);
+    }
+  }
+  if (report.pageName === "max-tutor") {
+    const portrait = report.tutorPortrait;
+    if (!portrait || portrait.naturalWidth <= 0 || portrait.naturalHeight <= 0
+      || portrait.image.width < 80 || portrait.image.height < 80) {
+      add("hidden-tutor-portrait", ".max-live-tutor-photo", "selected tutor portrait must render at a usable size", portrait);
+    } else {
+      if (portrait.objectFit !== "contain") {
+        add("cropped-tutor-portrait", ".max-live-tutor-photo", "selected tutor portrait must preserve the whole image", portrait.objectFit, "contain");
+      }
+      const imageCenter = (portrait.image.left + portrait.image.right) / 2;
+      const stageCenter = (portrait.stage.left + portrait.stage.right) / 2;
+      if (Math.abs(imageCenter - stageCenter) > tolerance + 2) {
+        add("off-center-tutor-portrait", ".max-live-tutor-photo", "selected tutor portrait must be centered in its stage", imageCenter, stageCenter);
+      }
     }
   }
   for (const item of report.clipping || []) {
@@ -799,6 +825,8 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
             : SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)
               ? '[data-layout-ready="true"]'
               : "[data-layout-page]",
+          actionSelector: route === "/max/tutor?language=ja" ? '[data-layout-start-tutor="true"]' : null,
+          readyAfterActionSelector: route === "/max/tutor?language=ja" ? ".max-live-tutor-photo" : null,
         })),
         languages: SMARTLINGO_LAYOUT_LANGUAGES,
         viewports: SMARTLINGO_VIEWPORTS,

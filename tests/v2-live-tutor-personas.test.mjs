@@ -69,7 +69,8 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   const client = readFileSync(new URL("../components/MaxLiveTutorCall.tsx", import.meta.url), "utf8");
   const owner = readFileSync(new URL("../components/RoleTutor.tsx", import.meta.url), "utf8");
   const css = readFileSync(new URL("../app/[lang]/assistant/role-tutor/role-tutor.css", import.meta.url), "utf8");
-  assert.match(css, /\.max-live-tutor-filmstrip\{[^}]*grid-template-columns:minmax\(0,1fr\) auto minmax\(0,1fr\)/);
+  assert.match(css, /\.max-live-tutor-filmstrip\{[^}]*display:flex;align-items:center;justify-content:center/);
+  assert.doesNotMatch(css, /\.max-live-tutor-filmstrip\{[^}]*display:grid/);
   assert.match(css, /\.max-live-tutor\{[^}]*container-type:inline-size/);
   assert.match(css, /@container \(min-width:820px\)\{\.max-live-tutor-stage\{height:min\(42vh,380px\)\}\.role-tutor-card \.max-live-tutor-preview\{display:flex\}\.role-tutor-card \.max-live-tutor-portrait-step\{display:none\}\}/);
   const image = client.indexOf('className={`max-live-tutor-stage');
@@ -83,7 +84,6 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   assert.match(client, /className="max-live-tutor-preview previous" onClick=\{\(\) => stepPortrait\(-1\)\}/);
   assert.match(client, /className="max-live-tutor-preview next" onClick=\{\(\) => stepPortrait\(1\)\}/);
   assert.match(client, /className="max-live-tutor-preview previous" onClick=\{\(\) => stepPortrait\(-1\)\}\s+disabled=\{state !== "idle"/);
-  assert.match(client, /style=\{\{ aspectRatio: `\$\{selectedPortrait\.width\} \/ \$\{selectedPortrait\.height\}` \}\}/);
   assert.match(css, /\.max-live-tutor-voice-choice\{[^}]*position:absolute/);
   assert.match(client, /id="max-tutor-voice" value=\{voice\} disabled=\{state !== "idle"/);
   assert.match(css, /\.max-live-tutor-voice-choice:has\(select:disabled\)\{[^}]*background:#d9dfdc/);
@@ -100,7 +100,7 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   assert.match(client, /width=\{selectedPortrait\.width\} height=\{selectedPortrait\.height\}/);
   assert.doesNotMatch(client, /className="max-live-tutor-photo"[^>]* fill /);
   assert.match(css, /\.max-live-tutor-stage\{[^}]*height:min\(45vh,440px\)[^}]*background:#fff/);
-  assert.match(css, /\.max-live-tutor-photo\{[^}]*width:100%;height:100%;object-fit:contain/);
+  assert.match(css, /\.max-live-tutor-photo\{[^}]*width:auto;height:100%;max-width:100%;flex:none;object-fit:contain/);
   assert.doesNotMatch(css, /\.max-live-tutor-stage\.speaking \.max-live-tutor-photo\{[^}]*transform:/);
   assert.doesNotMatch(owner, /role-tutor-avatar/);
 });

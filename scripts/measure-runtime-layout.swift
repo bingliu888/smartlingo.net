@@ -12,6 +12,8 @@ struct LayoutRoute: Decodable {
   let route: String
   let loadPath: String
   let readySelector: String?
+  let actionSelector: String?
+  let readyAfterActionSelector: String?
 }
 
 struct LayoutConfig: Decodable {
@@ -181,7 +183,12 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
       guard let self else { return }
       if result as? Bool == true {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(self.config.settleMilliseconds)) {
-          self.measureCurrentViewport()
+          if let actionSelector = route.actionSelector,
+             let readyAfterActionSelector = route.readyAfterActionSelector {
+            self.activateAction(actionSelector, readySelector: readyAfterActionSelector)
+          } else {
+            self.measureCurrentViewport()
+          }
         }
       } else if remainingAttempts > 0 {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200)) {
@@ -194,6 +201,38 @@ final class LayoutRunner: NSObject, WKNavigationDelegate {
           let language = self.config.languages[self.languageIndex]
           self.fail("page never reached runtime selector \(selector): \(self.localizedPath(route: route, language: language)) · \(value as? String ?? "no diagnostic")")
         }
+      }
+    }
+  }
+
+  private func activateAction(_ selector: String, readySelector: String) {
+    let script = """
+      (() => { const button = document.querySelector(\(jsonString(selector))); if (!button || button.disabled) return false; button.click(); return true; })()
+      """
+    webView.evaluateJavaScript(script) { [weak self] result, _ in
+      guard let self else { return }
+      if result as? Bool == true {
+        self.waitForActionReady(readySelector, remainingAttempts: 60)
+      } else {
+        self.fail("could not activate runtime layout action \(selector)")
+      }
+    }
+  }
+
+  private func waitForActionReady(_ selector: String, remainingAttempts: Int) {
+    let readiness = """
+      (() => { const image = document.querySelector(\(jsonString(selector))); return Boolean(image && image.complete && image.naturalWidth > 0); })()
+      """
+    webView.evaluateJavaScript(readiness) { [weak self] result, _ in
+      guard let self else { return }
+      if result as? Bool == true {
+        self.measureCurrentViewport()
+      } else if remainingAttempts > 0 {
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200)) {
+          self.waitForActionReady(selector, remainingAttempts: remainingAttempts - 1)
+        }
+      } else {
+        self.fail("runtime layout action did not reveal a loaded image at \(selector)")
       }
     }
   }

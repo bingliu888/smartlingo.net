@@ -149,6 +149,27 @@ test("learning page content aligns with the shared header at every viewport", ()
   assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "entry-shell-misalignment"));
 });
 
+test("Max tutor layout rejects a loaded but zero-width selected portrait", () => {
+  const report = {
+    schemaVersion: 1,
+    pageName: "max-tutor",
+    page: { document: { clientWidth: 1180, scrollWidth: 1180 }, body: { clientWidth: 1180, scrollWidth: 1180 } },
+    tutorPortrait: {
+      naturalWidth: 1024,
+      naturalHeight: 1024,
+      objectFit: "contain",
+      image: { left: 590, right: 590, width: 0, height: 380 },
+      stage: { left: 120, right: 1060, width: 940, height: 380 },
+    },
+  };
+  assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "hidden-tutor-portrait"));
+  report.tutorPortrait.image = { left: 400, right: 780, width: 380, height: 380 };
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "hidden-tutor-portrait"));
+  assert.ok(!findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "off-center-tutor-portrait"));
+  report.tutorPortrait.image = { left: 120, right: 500, width: 380, height: 380 };
+  assert.ok(findSmartLingoRuntimeLayoutIssues(report).some(issue => issue.code === "off-center-tutor-portrait"));
+});
+
 test("landscape Everyday Speaking keeps instructions through actions within one viewport", () => {
   assert.match(everydayCss, /\.everyday-player \.everyday-stage\{height:260px;min-height:0;max-height:260px/);
   const report = {

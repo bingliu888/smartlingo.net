@@ -1,55 +1,51 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-tutor-photo-carousel-20260926-r34",
+  "releaseId": "smartlingo-max-tutor-center-image-20260926-r35",
   "site": "smartlingo.net",
   "title": {
-    "zh": "横屏导师照片轮播并精简导师选择",
-    "en": "Add a wide-screen tutor portrait carousel without a duplicate choice row"
+    "zh": "修复横屏导师照片未显示并增加实时布局回归检查",
+    "en": "Restore the selected tutor portrait on wide screens and add a runtime layout regression"
   },
   "purpose": {
-    "zh": "宽屏居中完整显示当前导师照片，两侧露出相邻导师；滑动或点击侧边预览可切换，窄屏保留箭头，并删去重复的导师卡片行。",
-    "en": "Center the complete selected tutor portrait, preview adjacent tutors at either side on wide screens, switch by swipe or side-preview click, retain arrows on narrow screens, and remove the redundant tutor row."
+    "zh": "修复上一版轮播中间照片因网格轨道收缩为零而消失的问题，并让 WebKit 在真实打开导师面板后测量照片。",
+    "en": "Fix the previous carousel's center portrait disappearing when a grid track collapsed to zero, and make WebKit measure the portrait after opening the actual tutor panel."
   },
   "features": {
     "zh": [
-      "当前导师照片保持原比例、完整居中；宽屏左右各露出相邻导师的半幅预览。",
-      "可左右滑动照片或点侧边预览切换导师；宽屏隐藏箭头，窄屏保留；通话期间锁定。",
-      "删除照片下方重复的导师卡片行，缩短手机页面。"
+      "复用已验证的中央照片尺寸，将轮播轨道改为弹性布局，照片保持完整比例与居中，两侧预览仍可切换。",
+      "WebKit 在打开真实导师面板后检查照片已加载、尺寸可用、未裁切且居中，防止类似漏检。"
     ],
     "en": [
-      "Keep the current tutor portrait complete and centered at its natural ratio, with half-visible adjacent previews on wide screens.",
-      "Switch tutors by swiping or selecting a side preview; hide arrows when side previews fit, retain them on narrow screens, and lock selection during calls.",
-      "Remove the duplicate tutor-card row below the photo to shorten mobile pages."
+      "Reuse the verified central portrait sizing in a flex row so the complete selected image stays centered while adjacent previews remain selectable.",
+      "Open the real tutor panel in WebKit and assert that the loaded portrait has a usable size, remains uncropped, and is centered."
     ]
   },
   "affected": {
     "zh": [
-      "旗舰版实时导师照片选择界面；不改通话、导师偏好、账户或付款。"
+      "旗舰版实时导师照片和响应式验证；不改通话、导师偏好、账户或付款。"
     ],
     "en": [
-      "The Max live tutor portrait selection UI; no changes to calls, preferences, accounts, or payments."
+      "The Max live tutor portrait and responsive verification; no changes to calls, preferences, accounts, or payments."
     ]
   },
   "changes": {
     "zh": [
-      "复用现有三张照片和偏好保存接口，在固定高度照片区域加入当前导师与左右相邻导师预览。",
-      "照片触控滑动和侧边预览按钮调用现有导师切换逻辑；宽屏按容器宽度显示预览并隐藏箭头，窄屏沿用箭头；通话时全部禁用。",
-      "移除重复的导师选择栏及其样式，保留照片、字幕和通话按钮布局。"
+      "修正中心照片轨道，避免 CSS 网格自动轨道宽度为零；保留原有轮播与通话锁定逻辑。",
+      "为已登录 WebKit 布局页加入开启导师面板步骤，并检查真实照片的宽度、比例和中心位置。"
     ],
     "en": [
-      "Reuse the three existing portraits and preference endpoint in a bounded-height stage with centered selection and adjacent previews.",
-      "Map touch swipes and side-preview buttons to the existing tutor-switch logic; use container width to swap wide previews for narrow-screen arrows, and disable selection during calls.",
-      "Remove the redundant tutor-selector row and its styles while preserving captions and call actions."
+      "Correct the center portrait track so CSS grid auto sizing cannot collapse it, while preserving carousel selection and in-call locking.",
+      "Open the authenticated tutor panel in WebKit layout checks and measure the real image size, uncropped fit, and centering."
     ]
   },
   "validation": {
     "zh": [
       "站点策略门禁、TypeScript、零警告 lint、全套测试、构建与中英文 WebKit 响应式检查。",
-      "发布后实测桌面和手机下照片比例、轮播与通话锁定，并核对精确 Project 发布记录。"
+      "发布后实测桌面照片显示与侧边切换，核对精确 Project 发布记录。"
     ],
     "en": [
       "Site policy gates, TypeScript, zero-warning lint, full tests, build, and Chinese/English responsive WebKit checks.",
-      "After deployment, inspect wide and phone portrait ratios, carousel selection and in-call lock, then verify the exact Project release record."
+      "After deployment, inspect the wide selected portrait and side-preview switching, then verify the exact Project release record."
     ]
   },
   "deferred": {
