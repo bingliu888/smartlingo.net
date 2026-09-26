@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-voice-only-welcome-20260926-r43",
+  "releaseId": "smartlingo-max-voice-only-welcome-20260926-r44",
   "site": "smartlingo.net",
   "title": {
     "zh": "Max 导师直达实时语音，并主动欢迎学员",
@@ -16,14 +16,14 @@
       "接通后导师只问候、自我介绍和欢迎一次，再等待学员说话；音色选择改用波形图标。",
       "WebKit 页面矩阵直接检查导师肖像，不再点击已删除的文字导师按钮。",
       "语音页用画面内的小标题保留语义；WebKit 测量器遵守原生关闭菜单的不可见状态，避免把菜单项误报为肖像箭头重叠。",
-      "线上普通会员短通话发现提供方会话错误后，把基础教学与首次问候合并为一次实时指令，并在失败时显示安全错误码。"
+      "线上普通会员短通话发现提供方会话错误后，仅在开始通话时发送一次简短欢迎指令，加入事件 ID 并避免设置状态重复下发；失败时显示安全错误码。"
     ],
     "en": [
       "The 1:1 page directly shows the existing tutor portrait carousel and live voice controls without a separate text-conversation start step.",
       "Once connected, the tutor greets, introduces itself, and welcomes the learner once before listening; voice choice uses a waveform icon.",
       "The WebKit page matrix checks the tutor portrait directly instead of clicking the removed text-tutor button.",
       "The live stage uses a compact visible heading; WebKit measurement honors native closed-menu visibility instead of reporting its options as portrait-arrow overlaps.",
-      "After an ordinary-member live smoke test exposed a provider session error, combine teaching guidance and the one-time welcome into one live instruction event and expose a safe error code on failure."
+      "After an ordinary-member live smoke test exposed a provider session error, send one short welcome instruction with an event ID, avoid duplicate sends on state changes, and expose a safe error code on failure."
     ]
   },
   "affected": {

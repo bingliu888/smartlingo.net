@@ -11,7 +11,6 @@ export function MaxVoiceTutor({ lang, language, initialMax, trialAvailable }: {
 }) {
   const zh = lang === "zh" || lang === "zh-tw";
   const learningName = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language)?.nameEn || language;
-  const supportLanguageName = interfaceLanguages.find(item => item.code === lang)?.nameEn || "English";
   const supportName = interfaceLanguages.find(item => item.code === lang)?.nativeName || lang;
   const [max, setMax] = useState(initialMax);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -64,7 +63,7 @@ export function MaxVoiceTutor({ lang, language, initialMax, trialAvailable }: {
       <Link href={`/${lang}/pricing`}>{zh ? "查看旗舰版" : "Explore Max"}</Link>
     </div> : <>
       <MaxLiveTutorCall sessionId={sessionId} prepareSession={prepareSession} language={language} lang={lang}
-        learningName={learningName} supportLanguageName={supportLanguageName}
+        learningName={learningName}
         slowSpeed={slowSpeed} shortAnswer={shortAnswer} showSupport={showSupport} onCallActive={setLiveBusy}/>
       <div className="role-tutor-preferences" aria-label={zh ? "实时导师设置" : "Live tutor settings"}>
         <label><input type="checkbox" checked={slowSpeed} onChange={event => setSlowSpeed(event.target.checked)}/>{zh ? "慢速" : "Slow speed"}</label>

@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
-import { maxLiveTutorInstructions } from "../lib/smartlingo-live-tutor-instructions";
 import { SMARTLINGO_TUTOR_PORTRAITS,
   preferredTutorVoice, tutorVoiceOptions, validTutorPortrait, validTutorVoice, type SmartLingoTutorPortrait,
   type SmartLingoTutorVoice } from "../lib/smartlingo-live-tutor-personas";
@@ -21,10 +19,10 @@ function secondsUntil(deadline: number) {
   return Math.max(0, deadline - Math.floor(Date.now() / 1_000));
 }
 
-export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supportLanguageName,
+export function MaxLiveTutorCall({ sessionId, language, lang, learningName,
   slowSpeed, shortAnswer, showSupport, onCallActive, prepareSession }: {
   sessionId: string | null; prepareSession: () => Promise<string | null>; language: string; lang: string;
-  learningName: string; supportLanguageName: string;
+  learningName: string;
   slowSpeed: boolean; shortAnswer: boolean; showSupport: boolean;
   onCallActive: (active: boolean) => void;
 }) {
@@ -59,7 +57,6 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const transcriptAtBottomRef = useRef(true);
   const swipeStartXRef = useRef<number | null>(null);
   const translationAttemptedRef = useRef<Set<string>>(new Set());
-  const learningNativeName = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language)?.nativeName || learningName;
   const selectedPortrait = SMARTLINGO_TUTOR_PORTRAITS.find(item => item.id === portrait) || SMARTLINGO_TUTOR_PORTRAITS[0];
   const availableVoices = tutorVoiceOptions(selectedPortrait.id);
   const portraitIndex = SMARTLINGO_TUTOR_PORTRAITS.findIndex(item => item.id === selectedPortrait.id);
@@ -67,17 +64,14 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS[(portraitIndex + 1) % SMARTLINGO_TUTOR_PORTRAITS.length];
   const preferenceLoaded = loadedSessionId === (sessionId || "preview");
 
-  const sendPreferences = useCallback((channel: RTCDataChannel, welcomeName?: string) => {
+  const preferenceSignature = `${slowSpeed}:${shortAnswer}`;
+  const sentPreferenceSignatureRef = useRef("");
+  const sendInstruction = useCallback((channel: RTCDataChannel, content: string) => {
     if (channel.readyState !== "open") return;
-    const instructions = maxLiveTutorInstructions({ learningLanguage: learningName, learningNativeName,
-      supportLanguage: supportLanguageName, slowSpeed, shortAnswer });
-    const welcome = welcomeName
-      ? ` The learner just pressed Start. Speak now in ${learningName}: briefly say hello, introduce yourself as ${welcomeName}, warmly welcome the learner, and ask one simple question. Use one or two short sentences, then stop and listen. This opening happens once per call.`
-      : "";
-    channel.send(JSON.stringify({ type: "session.instructions.append", delegation_id: null,
-      content: instructions + welcome,
+    channel.send(JSON.stringify({ type: "session.instructions.append", event_id: crypto.randomUUID(),
+      delegation_id: null, content,
     }));
-  }, [learningName, learningNativeName, supportLanguageName, slowSpeed, shortAnswer]);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -134,8 +128,15 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   }
 
   useEffect(() => {
-    if (state === "live" && sessionReadyRef.current && channelRef.current) sendPreferences(channelRef.current);
-  }, [state, sendPreferences]);
+    if (state !== "live" || !sessionReadyRef.current || !channelRef.current
+      || sentPreferenceSignatureRef.current === preferenceSignature) return;
+    sentPreferenceSignatureRef.current = preferenceSignature;
+    sendInstruction(channelRef.current, `For subsequent replies, ${shortAnswer
+      ? "use one short sentence of at most 12 spoken words"
+      : "use at most two short sentences and one question, under 30 spoken words total"}; ${slowSpeed
+      ? "speak at a noticeably slow but natural teaching pace"
+      : "speak at a natural conversational pace"}. Then listen.`);
+  }, [state, preferenceSignature, shortAnswer, slowSpeed, sendInstruction]);
 
   useEffect(() => {
     const container = transcriptRef.current;
@@ -161,6 +162,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
     if (timerRef.current !== null) window.clearInterval(timerRef.current);
     timerRef.current = null;
     sessionReadyRef.current = false;
+    sentPreferenceSignatureRef.current = "";
     if (captionTimerRef.current !== null) window.clearTimeout(captionTimerRef.current);
     captionTimerRef.current = null;
     channelRef.current?.close(); channelRef.current = null;
@@ -225,7 +227,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         try { item = JSON.parse(String(event.data)) as VoiceEvent; } catch { return; }
         if (item.type === "session.started") {
           sessionReadyRef.current = true;
-          sendPreferences(channel, selectedPortrait.nameEn);
+          sentPreferenceSignatureRef.current = preferenceSignature;
+          sendInstruction(channel, `The learner pressed Start. Immediately speak in ${learningName}: briefly say hello, introduce yourself as ${selectedPortrait.nameEn}, warmly welcome the learner, and ask one easy question. Then stop and listen. Greet only once per call.`);
         } else if (item.type === "session.output_transcript.delta" && typeof item.delta === "string") {
           const gap = typeof item.start_ms === "number" ? item.start_ms - lastTranscriptEndRef.current : 0;
           if (!activeTutorItemRef.current || gap > 1_200) activeTutorItemRef.current = crypto.randomUUID();
