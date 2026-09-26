@@ -42,7 +42,7 @@ export default async function OpenTutorPage({ params, searchParams }: {
   const max = selected ? await hasMaxCourseAccess(user) : false;
   const trialAvailable = Boolean(selected && !max && !await hasUsedMaxTrial(user.id));
   return <main className="role-tutor-page" data-layout-page="max-tutor" data-layout-ready="true"><SiteHeader lang={lang}/><div className={`role-tutor-shell${selected ? " teacher-ready" : ""}`}>
-    {selected ? <h1 className="max-live-tutor-sr-only">{zh ? "选择你的 AI 语言导师" : "Choose your AI language tutor"}</h1> : <>
+    {selected ? null : <>
       <p className="role-tutor-eyebrow">SMARTLINGO · MAX</p>
       <h1>{zh ? "选择一门学习语言" : "Choose a learning language"}</h1>
     </>}

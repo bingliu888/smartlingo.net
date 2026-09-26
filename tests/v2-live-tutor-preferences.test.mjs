@@ -26,7 +26,8 @@ test("Max tutor opens directly on tutor choices and greets once after Start", ()
   const owner = readFileSync(new URL("../components/MaxVoiceTutor.tsx", import.meta.url), "utf8");
   const client = readFileSync(new URL("../components/MaxLiveTutorCall.tsx", import.meta.url), "utf8");
   const preferences = readFileSync(new URL("../app/api/assistant/live/preferences/route.ts", import.meta.url), "utf8");
-  assert.match(page, /selected \? <h1 className="max-live-tutor-sr-only"/);
+  assert.match(page, /selected \? null :/);
+  assert.match(client, /<h1>\{zh \? "和虚拟人导师实时对话"/);
   assert.match(owner, /<MaxLiveTutorCall sessionId=\{sessionId\} prepareSession=\{prepareSession\}/);
   assert.doesNotMatch(owner, /Start open conversation|role-tutor-message/);
   assert.match(client, /navigator\.mediaDevices\.getUserMedia[\s\S]*sessionId \|\| await prepareSession\(\)/);

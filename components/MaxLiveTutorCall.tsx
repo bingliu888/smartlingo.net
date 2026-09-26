@@ -311,7 +311,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   }, [onCallActive]);
 
   return <section className="max-live-tutor" aria-label={zh ? "实时虚拟人导师" : "Live virtual tutor"}>
-    <div className="max-live-tutor-heading"><div><small>MAX · LIVE</small><h3>{zh ? "和虚拟人导师实时对话" : "Talk live with your virtual tutor"}</h3></div>
+    <div className="max-live-tutor-heading"><div><small>MAX · LIVE</small><h1>{zh ? "和虚拟人导师实时对话" : "Talk live with your virtual tutor"}</h1></div>
       <span className="max-live-tutor-clock" role="status">{state === "live" ? formatTime(seconds) : formatTime(voiceRemaining)}</span></div>
     <div className={`max-live-tutor-stage${speaking ? " speaking" : ""}`}>
       <div className="max-live-tutor-filmstrip">
