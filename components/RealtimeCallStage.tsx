@@ -18,7 +18,7 @@ export function RealtimeCallStage({ session, lang, currentUserId, onClose }: {
   currentUserId: string;
   onClose: () => void;
 }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [meeting, initMeeting] = useRealtimeKitClient({ resetOnLeave: true });
   const [error, setError] = useState("");
 

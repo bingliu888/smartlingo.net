@@ -29,14 +29,14 @@ function searchPattern(value: string) {
 
 export default async function AdminMembersPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ tab?: string; q?: string }> }) {
   const [{ lang }, { tab, q }] = await Promise.all([params, searchParams]);
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "zh-tw" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") ?? "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/members`);
   if (!isPermanentAdmin(user)) redirect(`/${lang}/dashboard`);
 
   const active: Tab = tab === "admins" ? "admins" : tab === "subscribers" ? "subscribers" : "members";
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const query = (q ?? "").trim().slice(0, 80);
   const filters = ["COALESCE(a.status,'active')='active'"];
   if (active === "admins") filters.push("u.role='admin'");
@@ -85,7 +85,7 @@ export default async function AdminMembersPage({ params, searchParams }: { param
           return <tr key={member.id}><td><strong>{member.displayName}</strong><br/><span>{member.email}</span></td><td><span className="admin-badge">{tabLabel}</span></td><td>{new Date(member.createdAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US", { timeZone: "UTC" })}</td><td>{activeMax && member.expiresAt ? <>{source}<br/>{zh ? "到期：" : "Expires: "}{new Date(member.expiresAt * 1000).toLocaleDateString(zh ? "zh-CN" : "en-US", { timeZone: "UTC" })}</> : (zh ? "无有效 Max" : "No active Max")}</td><td><span className="admin-row-actions"><a href={`/${lang}/admin/members/${encodeURIComponent(member.id)}`}>{zh ? "查看" : "View"}</a>{active === "admins" && <AdminRoleRemoveButton memberId={member.id} lang={zh ? "zh" : "en"} kind="admin" locked={isBootstrapAdminEmail(member.email) || member.id === user.id}/>} {active === "subscribers" && member.subscriberOverride === 1 && member.paymentCount === 0 && <AdminRoleRemoveButton memberId={member.id} lang={zh ? "zh" : "en"} kind="subscriber"/>}</span></td></tr>;
         })}
       </tbody></table> : <div className="admin-empty">{query ? (zh ? "没有匹配的用户。" : "No matching users.") : (zh ? "此分页暂无用户。" : "No users in this tab yet.")}</div>}</div>
-      <AdminMemberActions lang={lang === "zh" ? "zh" : "en"} tab={active}/>
+      <AdminMemberActions lang={(lang === "zh" || lang === "zh-tw") ? "zh" : "en"} tab={active}/>
     </div>
     <SiteFooter lang={lang}/>
   </main>;

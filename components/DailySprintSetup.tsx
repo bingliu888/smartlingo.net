@@ -10,7 +10,7 @@ import { LearningDayPicker } from "./LearningDayPicker";
 const DURATIONS = [5, 10, 15, 20] as const;
 
 export function DailySprintSetup({ lang }: { lang: InterfaceLanguage }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const text = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const sourceName = interfaceLanguages.find(item => item.code === lang)?.nativeName ?? "English";
   const [language, setLanguage] = useState("");

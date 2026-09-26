@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { homeInterfaceTranslations } from "../../../lib/home-interface-translations.generated";
-import { isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy } from "../../../lib/interface-locale";
+import { isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy, translateTraditionalCopy } from "../../../lib/interface-locale";
 
 const copy = {
   en: {
@@ -47,7 +47,7 @@ const copy = {
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
   const locale = safeInterfaceLanguage(lang);
-  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  const t = locale === "zh" ? copy.zh : locale === "zh-tw" ? translateTraditionalCopy(copy.zh) : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
   return { title: t.metadata };
 }
 
@@ -55,6 +55,6 @@ export default async function PrivacyPage({ params }: { params: Promise<{ lang: 
   const { lang } = await params;
   if (!isInterfaceLanguage(lang)) notFound();
   const locale = safeInterfaceLanguage(lang);
-  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  const t = locale === "zh" ? copy.zh : locale === "zh-tw" ? translateTraditionalCopy(copy.zh) : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
   return <main className="ai-cert-legal-page lingo-public-page"><SiteHeader lang={locale}/><article className="ai-cert-legal-main"><div className="ai-draft-note"><strong>{t.draft}</strong><span>{t.intro}</span></div><p className="section-kicker">{t.eyebrow}</p><h1>{t.title}</h1><div className="ai-legal-sections">{t.sections.map(([title, body]) => <section key={title}><h2>{title}</h2><p>{body}</p></section>)}</div></article><SiteFooter lang={locale}/></main>;
 }

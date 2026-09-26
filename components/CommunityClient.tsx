@@ -14,7 +14,7 @@ type Data = { currentUserId: string; viewerAuthenticated?: boolean; members: Mem
 const channels = ["all", "general", "learning", "projects", "events"] as const;
 
 export function CommunityClient({ lang, signedIn }: { lang: InterfaceLanguage; signedIn: boolean }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [data, setData] = useState<Data>({ currentUserId: "", members: [], topics: [], replies: [] });
   const [loaded, setLoaded] = useState(false);
   const [channel, setChannel] = useState<(typeof channels)[number]>("all");

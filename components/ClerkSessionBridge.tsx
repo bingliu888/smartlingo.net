@@ -12,7 +12,7 @@ export function ClerkSessionBridge({
   lang: InterfaceLanguage;
   returnTo: string;
 }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const { getToken, isLoaded, userId } = useAuth();
   const running = useRef(false);
   const [retry, setRetry] = useState(0);

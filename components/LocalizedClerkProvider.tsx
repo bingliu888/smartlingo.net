@@ -12,14 +12,16 @@ import {
   ptBR,
   ruRU,
   zhCN,
+  zhTW,
 } from "@clerk/localizations";
 import type { ComponentProps, ReactNode } from "react";
-import type { SmartLingoCommunityLanguage } from "../lib/smartlingo-language-communities";
+import type { InterfaceLanguage } from "../lib/interface-locale";
 
 type ClerkLocalization = NonNullable<ComponentProps<typeof ClerkProvider>["localization"]>;
 
-const clerkLocalizations: Record<SmartLingoCommunityLanguage, ClerkLocalization> = {
+const clerkLocalizations: Record<InterfaceLanguage, ClerkLocalization> = {
   zh: zhCN,
+  "zh-tw": zhTW,
   en: enUS,
   es: esES,
   ja: jaJP,
@@ -33,6 +35,6 @@ const clerkLocalizations: Record<SmartLingoCommunityLanguage, ClerkLocalization>
   hi: hiIN,
 };
 
-export function LocalizedClerkProvider({ children, language }: { children: ReactNode; language: SmartLingoCommunityLanguage }) {
+export function LocalizedClerkProvider({ children, language }: { children: ReactNode; language: InterfaceLanguage }) {
   return <ClerkProvider localization={clerkLocalizations[language]}>{children}</ClerkProvider>;
 }

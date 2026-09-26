@@ -1,71 +1,69 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-learning-shell-alignment-20260926-r25",
+  "releaseId": "smartlingo-traditional-menu-live-tutor-20260926-r26",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 首页页眉与内容对齐",
-    "en": "Align SmartLingo learning-page header and content"
+    "zh": "SmartLingo 繁体中文、语言菜单与实时导师修复",
+    "en": "SmartLingo Traditional Chinese, language menu, and live tutor fixes"
   },
   "purpose": {
-    "zh": "修复 iPad 横屏等中等宽度下页眉留白与首页内容边距不一致的问题，使卡片、标题与页眉沿相同左右边线排列。",
-    "en": "Fix mismatched header and content gutters at iPad landscape and other widths so the title and cards align with the shared header edges."
+    "zh": "让界面语言菜单在外部点击时关闭，补齐繁体中文站点语言，修正 Max 实时导师连接格式，并简化学习入口。",
+    "en": "Make the interface-language menu dismissible, add a Traditional Chinese site locale, correct the Max live-tutor connection payload, and simplify the learning entrance."
   },
   "features": {
     "zh": [
-      "将首页及复用该容器的快捷版、旗舰版、语言详情与面板统一到相同最大宽度与响应式左右边距。",
-      "为 WebKit 运行时布局检查增加页眉内容框与学习页面内容框左右边线的测量及回归断言。"
+      "站点语言新增中文（繁體），与学习语言分开保存；语言弹层支持点按外部关闭。",
+      "Max 首页只保留所选学习语言，进入语言页后将一对一 AI 导师列为第一项，删除重复入口。",
+      "实时语音会话改用官方 WebRTC 通话接口要求的 SDP 和 session 字符串表单字段。",
+      "修复首页及学习页在平板横屏时页眉与内容边距不齐。"
     ],
     "en": [
-      "Use the same maximum width and responsive horizontal gutters for the header and learning-page content on Home, Flash, Max, language detail, and Dashboard.",
-      "Measure the header and learning content edges in the WebKit runtime layout gate and reject regressions."
+      "Add Traditional Chinese as a site-interface locale separate from learning languages and dismiss the language popover on outside taps.",
+      "Keep selected learning languages on the Max landing, put the one-to-one AI tutor first inside each language hub, and remove duplicate entry cards.",
+      "Send SDP and session as string form fields to the official WebRTC calls endpoint.",
+      "Align the header and content gutters on Home and learning pages at tablet landscape widths."
     ]
   },
   "affected": {
-    "zh": [
-      "首页、快捷版、旗舰版、语言详情、会员面板及 WebKit 布局验证。"
-    ],
-    "en": [
-      "Home, Flash, Max, language detail, member dashboard, and WebKit layout verification."
-    ]
+    "zh": ["首页、站点语言菜单、快捷版与旗舰版、学习语言详情、实时 AI 导师、响应式布局。"],
+    "en": ["Home, interface-language menu, Flash and Max, learning-language hubs, live AI tutor, and responsive layout."]
   },
   "changes": {
     "zh": [
-      "修正原本页眉 56px 内边距与内容 20px 边距分开计算的 CSS；仅改变展示布局，不改路由、账户或数据。"
+      "复用冠丹站已验证的简转繁静态词典生成方式；不新增课程或改变原有学习数据。",
+      "修复会话表单编码，并为实时语音网关加入请求结构回归测试。",
+      "统一页眉与内容容器的响应式边距，并保留 WebKit 布局门禁。"
     ],
     "en": [
-      "Replace separate 56px header padding and 20px content gutters with one responsive alignment rule; no route, account, or data changes."
+      "Reuse Guandan's verified static Simplified-to-Traditional dictionary approach without adding a course or changing learning data.",
+      "Correct the session form encoding and add a live-voice gateway contract regression test.",
+      "Unify responsive header and content gutters and retain the WebKit layout gate."
     ]
   },
   "validation": {
     "zh": [
-      "共享站点规则与架构检查、TypeScript、零警告 lint、全量测试、构建与敏感数据扫描，以及中英双语五种屏幕尺寸的 WebKit 运行时布局检查；部署后真实浏览器再次量测。"
+      "TypeScript、零警告 lint、完整单元测试与生产构建及敏感数据扫描；Chrome 多尺寸和 Safari 本地繁体菜单检查。",
+      "发布时运行 WebKit 布局与受保护路由检查；发布后核对线上版本及可用语音状态。"
     ],
     "en": [
-      "Shared policy/architecture checks, TypeScript, zero-warning lint, full tests, build and sensitive-data scan, plus Chinese/English WebKit layout checks at five viewport sizes and post-deploy real-browser measurements."
+      "TypeScript, zero-warning lint, the full unit suite, production build and sensitive-data scan; local Chrome viewport and Safari Traditional Chinese menu checks.",
+      "Run the WebKit layout and protected-route gate during release, then verify the production version and live-voice availability."
     ]
   },
   "deferred": {
-    "zh": [
-      "本次仅改布局；不提交真实付款，也不更改或声称实测麦克风、实时媒体功能。"
-    ],
-    "en": [
-      "Visual-only change; no real payment is submitted, and microphone or live-media behavior is not changed or claimed to have been retested."
-    ]
+    "zh": ["不提交真实付款；真实设备麦克风和 OpenAI 连接仍须在发布后按实际权限与服务状态验证。"],
+    "en": ["No real payment is submitted; live device microphone and OpenAI connectivity still require post-release verification with actual permissions and service status."]
   },
   "siteAdaptations": {
-    "zh": [
-      "沿用现有 SmartLingo 页眉和学习页容器，无跨站资源、账号或密钥变动。"
-    ],
-    "en": [
-      "Reuse the existing SmartLingo header and learning shell without cross-site resources, accounts, or secrets."
-    ]
+    "zh": ["沿用 SmartLingo 的 12 种学习语言数据；繁体中文仅为第 13 种界面语言，实时导师仍受现有 Max 权限与限时规则约束。"],
+    "en": ["Keep SmartLingo's 12 learning-language records; Traditional Chinese is only a thirteenth interface locale, and the live tutor remains subject to existing Max access and time limits."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "如需回退，仅回退此布局提交；本次没有数据库迁移。",
-      "en": "Revert this layout commit if needed; there is no database migration."
+      "zh": "如需回退，回退本次代码发布；没有数据库迁移。",
+      "en": "Revert this code release if needed; there is no database migration."
     }
   }
 }

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function PlayPage({ params, searchParams }: { params: Promise<{ lang: string }>; searchParams: Promise<{ language?: string }> }) {
   const value = await params;
   if (!isInterfaceLanguage(value.lang)) notFound();
-  const lang = value.lang; const zh = lang === "zh";
+  const lang = value.lang; const zh = lang === "zh" || lang === "zh-tw";
   const requestedLanguage = (await searchParams).language || "";
   const selectedLanguage = isSmartLingoCommunityLanguage(requestedLanguage) ? requestedLanguage : undefined;
   const links = playLanguageLinks(lang, selectedLanguage);

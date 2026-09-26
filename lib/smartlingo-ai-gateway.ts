@@ -990,14 +990,14 @@ export async function openSmartAiLiveVoice(input: {
       deps: input.deps,
       request: (apiKey, subjectHash, signal, model) => {
         const form = new FormData();
-        form.set("sdp", new Blob([input.sdp], { type: "application/sdp" }), "offer.sdp");
-        form.set("session", new Blob([JSON.stringify({
+        form.set("sdp", input.sdp);
+        form.set("session", JSON.stringify({
           type: "realtime",
           model,
           instructions: input.instructions,
           output_modalities: ["audio"],
           audio: { input: { turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
-        })], { type: "application/json" }), "session.json");
+        }));
         return dependencies(input.deps).fetch(
           "https://api.openai.com/v1/realtime/calls",
           {

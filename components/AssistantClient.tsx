@@ -73,7 +73,7 @@ function silenceRecognition(instance: Recognition, stop: boolean) {
 }
 
 export function AssistantClient({ lang, targetLanguage, speechLocale, mode, partner: partnerId }: { lang: InterfaceLanguage; targetLanguage?: string; speechLocale?: string; mode?: string; partner?: SmartLingoAiStudyPartnerId }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const composerCopy = assistantComposerCopy[lang];
   const partner = smartLingoAiStudyPartner(partnerId);
   const assistantLabel = partner ? `${partner.name} · AI` : (zh ? "智能导师" : "Guru");

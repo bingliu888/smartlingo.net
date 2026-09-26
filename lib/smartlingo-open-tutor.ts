@@ -30,6 +30,7 @@ export function resolveOpenTutorMission(input: { language?: unknown; uiLanguage?
 export function openTutorOpening(uiLanguage: InterfaceLanguage) {
   const openings: Record<InterfaceLanguage, string> = {
     zh: "你好！我是 SmartLingo AI 语言导师，不是真人。你想用这门语言聊什么？旅行、工作、爱好，还是别的话题？",
+    "zh-tw": "你好！我是 SmartLingo AI 語言導師，不是真人。你想用這門語言聊什麼？旅行、工作、愛好，還是別的話題？",
     en: "Hi! I’m your SmartLingo AI language tutor, not a person. What would you enjoy talking about in this language—travel, work, a hobby, or something else?",
     es: "¡Hola! Soy tu tutor de idiomas de IA de SmartLingo, no una persona. ¿De qué te gustaría hablar en el idioma que aprendes?",
     ja: "こんにちは！私は人間ではなく、SmartLingo の AI 語学チューターです。学習中の言語で何について話したいですか？",

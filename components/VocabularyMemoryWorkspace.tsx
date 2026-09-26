@@ -40,7 +40,7 @@ const SPEECH_LOCALES: Record<string, string> = { zh: "zh-CN", en: "en-US", es: "
 const SCENES: Record<string, string> = { greetings: "☀️", introductions: "👋", transport: "🚆", directions: "🧭", restaurant: "🍜", shopping: "🛍️", help: "🛟" };
 
 export function VocabularyMemoryWorkspace({ lang, classId }: { lang: InterfaceLanguage; classId: string }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const unavailableMessage = interfaceText(lang, "The course vocabulary is temporarily unavailable.", "暂时无法读取课程词库。");
   const [data, setData] = useState<Payload | null>(null);

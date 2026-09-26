@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { homeInterfaceTranslations } from "../lib/home-interface-translations.generated";
+import traditionalUiTranslations from "../lib/traditional-ui-translations.generated";
 import { interfaceLanguages, type InterfaceLanguage } from "../lib/interface-locale";
 
 type ValueState = { source: string; rendered: string };
@@ -55,9 +56,9 @@ function localize(root: Node, dictionary: Record<string, string>) {
 
 export function LocaleRuntime({ locale }: { locale: InterfaceLanguage }) {
   useEffect(() => {
-    document.documentElement.lang = locale === "zh" ? "zh-CN" : locale;
+    document.documentElement.lang = locale === "zh" ? "zh-CN" : locale === "zh-tw" ? "zh-Hant-TW" : locale;
     document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
-    const dictionary = homeInterfaceTranslations[locale];
+    const dictionary = locale === "zh-tw" ? traditionalUiTranslations : homeInterfaceTranslations[locale];
     if (!dictionary || locale === "zh" || locale === "en") return;
     localize(document, dictionary);
     const observer = new MutationObserver((records) => {

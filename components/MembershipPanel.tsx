@@ -25,7 +25,7 @@ type PlatformData = {
 };
 
 export function MembershipPanel({ lang }: { lang: InterfaceLanguage }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [data, setData] = useState<PlatformData | null>(null);
   const [message, setMessage] = useState("");
   const [showHistory, setShowHistory] = useState(false);

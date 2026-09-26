@@ -32,7 +32,7 @@ function countdown(seconds: number, zh: boolean) {
 }
 
 export function CommunityMeetings({ lang, signedIn }: { lang: InterfaceLanguage; signedIn: boolean }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [open, setOpen] = useState(true);
   const [tab, setTab] = useState<"live" | "upcoming">("live");

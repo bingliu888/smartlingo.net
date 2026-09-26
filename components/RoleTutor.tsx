@@ -16,7 +16,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   level?: "beginner" | "intermediate" | "advanced"; role: string; sceneVisual?: string; speechLocale: string;
   initialMax: boolean; trialAvailable: boolean; mode?: "scene" | "open";
 }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const supportSpeechLocale = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === lang)?.speechLocale || "en-US";
   const [max, setMax] = useState(initialMax);
   const [sessionId, setSessionId] = useState<string | null>(null);

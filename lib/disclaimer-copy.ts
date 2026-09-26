@@ -1,3 +1,5 @@
+import { translateTraditionalCopy } from "./interface-locale";
+
 export const DISCLAIMER_LOCALES = [
   "zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi",
   "id", "bn", "ur", "pa", "ta", "te", "ne", "si", "tr",
@@ -268,5 +270,6 @@ const copies: Record<DisclaimerLocale, DisclaimerCopy> = {
 };
 
 export function disclaimerFor(locale: string | null | undefined): DisclaimerCopy {
+  if (locale === "zh-tw") return translateTraditionalCopy(copies.zh);
   return copies[(DISCLAIMER_LOCALES as readonly string[]).includes(locale ?? "") ? locale as DisclaimerLocale : "en"];
 }

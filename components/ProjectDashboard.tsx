@@ -9,7 +9,7 @@ export async function ProjectDashboard({ lang, month }: { lang: InterfaceLanguag
   const runtime = await getProjectRuntime();
   const projectReports = runtime.reports;
   const latestReport = projectReports.at(-1)!;
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const dataLanguage = zh ? "zh" : "en";
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const done = projectTasks.filter(task => task.status === "done").length;

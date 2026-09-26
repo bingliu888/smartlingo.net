@@ -25,7 +25,7 @@ function vocabularyOptions(round: SprintPlan["rounds"][number], wordIndex: numbe
 }
 
 export function DailySprint({ lang, classId, durationMinutes, dayNumber: requestedDay, publicPlay = false, freshAnonymous = false }: { lang: InterfaceLanguage; classId: string; durationMinutes: 5 | 10 | 15 | 20; dayNumber?: number; publicPlay?: boolean; freshAnonymous?: boolean }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [runId, setRunId] = useState(""), [plan, setPlan] = useState<SprintPlan | null>(null), [courseTitle, setCourseTitle] = useState(""), [anonymous, setAnonymous] = useState(false);
   const [roundIndex, setRoundIndex] = useState(0), [stage, setStage] = useState<Stage>("vocabulary"), [wordIndex, setWordIndex] = useState(0), [responses, setResponses] = useState<SprintAnswer[]>([]);
   const [vocabFlipped, setVocabFlipped] = useState(false), [vocabChoice, setVocabChoice] = useState(""), [vocabChecked, setVocabChecked] = useState(false);

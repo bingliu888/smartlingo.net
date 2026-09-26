@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { InterfaceLanguage } from "../lib/interface-locale";
+import { translateTraditionalCopy, type BaseInterfaceLanguage, type InterfaceLanguage } from "../lib/interface-locale";
 import type { SmartLingoPlatformProductId } from "../lib/platform-commerce";
 
 type PaymentCopy = { eyebrow:string; title:string; intro:string; card:string; cardHint:string; crypto:string; cryptoHint:string; continueCard:string; back:string; busy:string; confirming:string; error:string; success:string; pending:string; cancelled:string };
 
-const paymentCopy: Record<InterfaceLanguage, PaymentCopy> = {
+const basePaymentCopy: Record<BaseInterfaceLanguage, PaymentCopy> = {
   en:{eyebrow:"PAYMENT METHOD",title:"Choose how to pay",intro:"Card, US bank-account, and crypto payments activate one fixed service term. SmartLingo does not automatically renew it.",card:"Credit card or US bank account",cardHint:"Secure hosted checkout by Stripe, with no Stripe or Link account required.",crypto:"Crypto",cryptoHint:"On-chain payment through SmartPay5.",continueCard:"Pay by credit card or US bank account",back:"Back",busy:"Opening secure checkout…",confirming:"Confirming the Stripe payment…",error:"Credit-card or bank-account checkout is temporarily unavailable.",success:"Payment confirmed and your account has been updated.",pending:"Stripe is still confirming this payment. Refresh shortly; do not pay again.",cancelled:"Payment was cancelled. Nothing was charged."},
   zh:{eyebrow:"付款方式",title:"选择付款方式",intro:"信用卡、美国银行账户与加密货币付款均会激活一个固定服务期；SmartLingo 不会自动续费。",card:"信用卡或美国银行账户",cardHint:"由 Stripe 托管安全结账，无需 Stripe 或 Link 账户。",crypto:"加密货币",cryptoHint:"通过 SmartPay5 链上付款。",continueCard:"使用信用卡或美国银行账户付款",back:"返回",busy:"正在打开安全结账…",confirming:"正在确认 Stripe 付款…",error:"暂时无法打开信用卡或银行账户结账。",success:"付款已确认，账户权益已经更新。",pending:"Stripe 仍在确认付款。请稍后刷新，不要重复付款。",cancelled:"付款已取消，没有收费。"},
   ja:{eyebrow:"支払い方法",title:"支払い方法を選択",intro:"カード、米国銀行口座、暗号資産の支払いで固定期間が有効になります。自動更新はありません。",card:"クレジットカードまたは米国銀行口座",cardHint:"Stripe がホストする安全な決済です。Stripe または Link アカウントは不要です。",crypto:"暗号資産",cryptoHint:"SmartPay5 によるオンチェーン決済。",continueCard:"カードまたは米国銀行口座で支払う",back:"戻る",busy:"安全な決済を開いています…",confirming:"Stripe 支払いを確認しています…",error:"カードまたは銀行口座での決済は現在利用できません。",success:"支払いを確認し、アカウントを更新しました。",pending:"Stripe が支払いを確認中です。しばらくして更新し、再度支払わないでください。",cancelled:"支払いをキャンセルしました。請求はありません。"},
@@ -20,6 +20,10 @@ const paymentCopy: Record<InterfaceLanguage, PaymentCopy> = {
   pt:{eyebrow:"FORMA DE PAGAMENTO",title:"Escolha como pagar",intro:"Cartão, conta bancária dos EUA e cripto ativam um período fixo sem renovação automática.",card:"Cartão ou conta bancária dos EUA",cardHint:"Pagamento seguro hospedado pela Stripe, sem exigir conta Stripe ou Link.",crypto:"Cripto",cryptoHint:"Pagamento on-chain pelo SmartPay5.",continueCard:"Pagar com cartão ou conta bancária",back:"Voltar",busy:"Abrindo pagamento seguro…",confirming:"Confirmando o pagamento da Stripe…",error:"O pagamento com cartão ou conta bancária está temporariamente indisponível.",success:"Pagamento confirmado e conta atualizada.",pending:"A Stripe ainda está confirmando o pagamento. Atualize em breve e não pague novamente.",cancelled:"Pagamento cancelado. Nenhuma cobrança foi feita."},
   ar:{eyebrow:"طريقة الدفع",title:"اختر طريقة الدفع",intro:"تفعّل مدفوعات البطاقة والحساب المصرفي الأمريكي والعملات المشفرة مدة خدمة ثابتة دون تجديد تلقائي.",card:"بطاقة ائتمان أو حساب مصرفي أمريكي",cardHint:"دفع آمن مستضاف من Stripe من دون الحاجة إلى حساب Stripe أو Link.",crypto:"عملة مشفرة",cryptoHint:"دفع على السلسلة عبر SmartPay5.",continueCard:"الدفع بالبطاقة أو الحساب المصرفي",back:"رجوع",busy:"جارٍ فتح الدفع الآمن…",confirming:"جارٍ تأكيد دفعة Stripe…",error:"الدفع بالبطاقة أو الحساب المصرفي غير متاح مؤقتًا.",success:"تم تأكيد الدفع وتحديث الحساب.",pending:"لا يزال Stripe يؤكد الدفع. حدّث الصفحة لاحقًا ولا تدفع مرة أخرى.",cancelled:"أُلغي الدفع ولم يتم الخصم."},
   hi:{eyebrow:"भुगतान विधि",title:"भुगतान का तरीका चुनें",intro:"कार्ड, अमेरिकी बैंक खाते और क्रिप्टो भुगतान से एक निश्चित सेवा अवधि सक्रिय होती है; स्वतः नवीनीकरण नहीं होगा।",card:"क्रेडिट कार्ड या अमेरिकी बैंक खाता",cardHint:"Stripe द्वारा सुरक्षित होस्टेड चेकआउट; Stripe या Link खाता आवश्यक नहीं है।",crypto:"क्रिप्टो",cryptoHint:"SmartPay5 से ऑन-चेन भुगतान।",continueCard:"कार्ड या बैंक खाते से भुगतान करें",back:"वापस",busy:"सुरक्षित चेकआउट खुल रहा है…",confirming:"Stripe भुगतान की पुष्टि हो रही है…",error:"कार्ड या बैंक-खाता चेकआउट अभी उपलब्ध नहीं है।",success:"भुगतान की पुष्टि हुई और खाता अपडेट हो गया।",pending:"Stripe अभी भुगतान की पुष्टि कर रहा है। थोड़ी देर बाद रीफ़्रेश करें और दोबारा भुगतान न करें।",cancelled:"भुगतान रद्द हुआ। कोई शुल्क नहीं लगा।"},
+};
+const paymentCopy: Record<InterfaceLanguage, PaymentCopy> = {
+  ...basePaymentCopy,
+  "zh-tw": translateTraditionalCopy(basePaymentCopy.zh),
 };
 
 export function PaymentMethodChooser({ locale, product, returnTo, result, sessionId, cardConfigured }: {

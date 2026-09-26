@@ -10,7 +10,7 @@ import { interfaceLanguages, interfaceText, type InterfaceLanguage } from "../li
 const DURATIONS = [5, 10, 15, 20] as const;
 
 export function DashboardDailySprint({ lang, courses }: { lang: InterfaceLanguage; courses: DashboardJoinedCourse[] }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const text = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const [minutes, setMinutes] = useState<Record<string, (typeof DURATIONS)[number]>>({});
   const entries = useMemo(() => SMARTLINGO_LANGUAGE_COMMUNITIES.flatMap(language => {

@@ -16,7 +16,7 @@ const MAX_ATTACHMENT_BYTES = 900 * 1024;
 const URL_PATTERN = /((?:https?:\/\/|www\.)[^\s<]+)/gi;
 
 export function LiveChatRoom({ threadId, lang }: { threadId: string; lang: string }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const { openCall } = usePersistentCall();
   const [room, setRoom] = useState<Room | null>(null); const [draft, setDraft] = useState(""); const [guruLive, setGuruLive] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [attachOpen, setAttachOpen] = useState(false); const [recording, setRecording] = useState(false); const [memberOpen, setMemberOpen] = useState(false); const [memberQuery, setMemberQuery] = useState(""); const [directory, setDirectory] = useState<Member[]>([]); const [messageMenu, setMessageMenu] = useState(""); const [editingId, setEditingId] = useState(""); const [editDraft, setEditDraft] = useState(""); const [copiedId, setCopiedId] = useState("");
   const logRef = useRef<HTMLDivElement>(null); const lastKeyboardAt = useRef(0); const initialized = useRef(false); const handled = useRef(new Set<string>()); const cameraInput = useRef<HTMLInputElement>(null); const photoInput = useRef<HTMLInputElement>(null); const fileInput = useRef<HTMLInputElement>(null); const recorder = useRef<MediaRecorder | null>(null);

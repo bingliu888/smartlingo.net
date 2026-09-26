@@ -1,4 +1,4 @@
-import type { InterfaceLanguage } from "./interface-locale";
+import { translateTraditionalCopy, type BaseInterfaceLanguage, type InterfaceLanguage } from "./interface-locale";
 
 export type SmartLingoTutorialCopy = {
   metaTitle: string;
@@ -48,7 +48,7 @@ const en: SmartLingoTutorialCopy = {
   startLink: "Start learning free",
 };
 
-export const smartLingoTutorialCopies = {
+const baseSmartLingoTutorialCopies = {
   en,
   zh: {
     metaTitle: "新手视频教程",
@@ -313,14 +313,19 @@ export const smartLingoTutorialCopies = {
     homeLink: "होम पर लौटें",
     startLink: "मुफ़्त सीखना शुरू करें",
   },
-} satisfies Record<InterfaceLanguage, SmartLingoTutorialCopy>;
+} satisfies Record<BaseInterfaceLanguage, SmartLingoTutorialCopy>;
+
+export const smartLingoTutorialCopies: Record<InterfaceLanguage, SmartLingoTutorialCopy> = {
+  ...baseSmartLingoTutorialCopies,
+  "zh-tw": translateTraditionalCopy(baseSmartLingoTutorialCopies.zh),
+};
 
 export function smartLingoTutorialCopyFor(language: InterfaceLanguage) {
   return smartLingoTutorialCopies[language];
 }
 
 export function smartLingoTutorialMediaFor(language: InterfaceLanguage) {
-  const narrationLanguage = language === "zh" ? "zh" : "en";
+  const narrationLanguage = language === "zh" || language === "zh-tw" ? "zh" : "en";
   return {
     narrationLanguage,
     video: `/tutorials/smartlingo-first-time-tour-${narrationLanguage}.mp4`,

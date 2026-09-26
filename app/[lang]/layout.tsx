@@ -9,7 +9,7 @@ import { FloatingAssistant } from "../../components/FloatingAssistant";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   return {
     title: {
       default: zh ? "SmartLingo — 从第一天开口，与课程一起进步" : "SmartLingo — Speak from day one. Learn together.",
@@ -24,5 +24,5 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function LanguageLayout({ children, params }: Readonly<{ children: React.ReactNode; params: Promise<{ lang: string }> }>) {
   const { lang } = await params;
   const safeLanguage: SiteLanguage = safeInterfaceLanguage(lang);
-  return <LocalizedClerkProvider language={safeLanguage}><NotificationBar/><PersistentCallProvider lang={safeLanguage === "zh" ? "zh" : "en"}><LocaleRuntime locale={safeLanguage}/><LanguageSync lang={safeLanguage}/>{children}</PersistentCallProvider><FloatingAssistant/></LocalizedClerkProvider>;
+  return <LocalizedClerkProvider language={safeLanguage}><NotificationBar/><PersistentCallProvider lang={safeLanguage === "zh" || safeLanguage === "zh-tw" ? "zh" : "en"}><LocaleRuntime locale={safeLanguage}/><LanguageSync lang={safeLanguage}/>{children}</PersistentCallProvider><FloatingAssistant/></LocalizedClerkProvider>;
 }

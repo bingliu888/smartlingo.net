@@ -15,7 +15,7 @@ export function ClassAudioCallDock({ session, lang, onClose }: {
   lang: string;
   onClose: () => void;
 }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [meeting, initMeeting] = useRealtimeKitClient({ resetOnLeave: true });
   const [joined, setJoined] = useState(false);
   const [muted, setMuted] = useState(false);

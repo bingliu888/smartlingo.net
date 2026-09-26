@@ -587,15 +587,22 @@ test("a failed free live voice connection releases the reserved daily allowance"
 test("Max live voice records the provider call before returning SDP and uses the gateway for hangup", async () => {
   const gateway = await importGateway();
   let connected = "";
+  let providerForm;
   const answer = await gateway.openSmartAiLiveVoice({
     userId: "user-max", subject: "user:user-max", paid: true,
     sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe",
     onConnected: async id => { connected = id; },
     deps: { apiKey: "test-only", database: fakeDatabase(),
-      fetch: async () => new Response("v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", {
-        status: 201, headers: { location: "/v1/realtime/calls/rtc_test123" },
-      }) },
+      fetch: async (_url, init) => {
+        providerForm = init.body;
+        return new Response("v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", {
+          status: 201, headers: { location: "/v1/realtime/calls/rtc_test123" },
+        });
+      } },
   });
+  assert.equal(providerForm.get("sdp"), "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n");
+  assert.equal(typeof providerForm.get("session"), "string");
+  assert.equal(JSON.parse(providerForm.get("session")).model, "gpt-realtime-2.1-mini");
   assert.equal(connected, "rtc_test123");
   assert.equal(answer.value.callId, connected);
   let hangupMethod = "";

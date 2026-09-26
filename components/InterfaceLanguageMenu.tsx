@@ -2,10 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import {
-  SMARTLINGO_LANGUAGE_COMMUNITIES,
   type SmartLingoCommunityLanguage,
 } from "../lib/smartlingo-language-communities";
-import { interfaceCopyFor, isInterfaceLanguage, type InterfaceLanguage } from "../lib/interface-locale";
+import { interfaceCopyFor, interfaceLanguages, isInterfaceLanguage, type InterfaceLanguage } from "../lib/interface-locale";
 
 type Lang = InterfaceLanguage;
 
@@ -46,10 +45,10 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
   // The header reports the interface language, not the independently selected
   // learning target. Keeping these two states separate prevents an English
   // page from being labelled 中文 after someone joins a Chinese class.
-  const currentInterface = SMARTLINGO_LANGUAGE_COMMUNITIES.find(language => language.code === lang)
-    ?? SMARTLINGO_LANGUAGE_COMMUNITIES[0];
+  const currentInterface = interfaceLanguages.find(language => language.code === lang)
+    ?? interfaceLanguages[0];
 
-  function choose(code: SmartLingoCommunityLanguage) {
+  function choose(code: InterfaceLanguage) {
     try { window.localStorage.setItem(INTERFACE_LANGUAGE_KEY, code); } catch { /* Locale routing also works without persistent storage. */ }
     if (menu.current) menu.current.open = false;
     onNavigate?.();
@@ -58,7 +57,7 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
     window.location.assign(localizedPath(window.location.pathname, code, window.location.search, window.location.hash));
   }
 
-  const options = SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {
+  const options = interfaceLanguages.map(language => {
     return (
       <button
         key={language.code}
@@ -84,6 +83,7 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
       <summary className="language-icon-button" data-no-translate aria-label={`${t.language}: ${currentInterface.nativeName}`} title={`${t.language}: ${currentInterface.nativeName}`}>
         <GlobeIcon/>
       </summary>
+      <button type="button" className="interface-language-dismiss" aria-label={t.closeMenu} onClick={() => { if (menu.current) menu.current.open = false; }}/>
       <div className="interface-language-popover" role="menu" aria-label={t.chooseLanguage}>
         <header>
           <strong>{t.chooseLanguage}</strong>

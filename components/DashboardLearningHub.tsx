@@ -31,7 +31,7 @@ function addHref(feature: Feature, lang: InterfaceLanguage) {
 }
 
 export function DashboardLearningHub({ lang, courses }: { lang: InterfaceLanguage; courses: DashboardJoinedCourse[] }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const text = (english: string, chinese: string) => interfaceText(lang, english, chinese);
   const sourceName = interfaceLanguages.find(item => item.code === lang)?.nativeName ?? "English";
   const languages = SMARTLINGO_LANGUAGE_COMMUNITIES.filter(language => courses.some(course => course.targetLanguage === language.code));

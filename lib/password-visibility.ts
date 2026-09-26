@@ -1,7 +1,8 @@
-export type PasswordVisibilityLanguage = "zh" | "en" | "ja" | "ko" | "es" | "fr" | "de" | "ru" | "it" | "pt" | "ar" | "hi";
+export type PasswordVisibilityLanguage = "zh" | "zh-tw" | "en" | "ja" | "ko" | "es" | "fr" | "de" | "ru" | "it" | "pt" | "ar" | "hi";
 
 const labels: Record<PasswordVisibilityLanguage, { show: string; hide: string }> = {
   zh: { show: "显示密码", hide: "隐藏密码" },
+  "zh-tw": { show: "顯示密碼", hide: "隱藏密碼" },
   en: { show: "Show password", hide: "Hide password" },
   ja: { show: "パスワードを表示", hide: "パスワードを隠す" },
   ko: { show: "비밀번호 표시", hide: "비밀번호 숨기기" },

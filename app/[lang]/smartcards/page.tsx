@@ -14,7 +14,7 @@ export default async function SmartCardsPage({ params, searchParams }: { params:
   const { lang } = await params;
   if (!["en","zh","es","ja","ko","fr","de","ru","it","pt","ar","hi"].includes(lang)) notFound();
   const interfaceLanguage = lang as InterfaceLanguage;
-  const zh = lang === "zh", challenge = (await searchParams).mode === "challenge";
+  const zh = lang === "zh" || lang === "zh-tw", challenge = (await searchParams).mode === "challenge";
   return <main className="smartcard-directory"><SiteHeader lang={interfaceLanguage}/>
     <section className="smartcard-directory-hero"><p>{challenge ? "DAILY SMART CARD CHALLENGE" : "SMART CARD PRACTICE"}</p><h1>{challenge ? (zh ? "选择今天要挑战的语言。" : "Choose today's challenge language.") : (zh ? "从 21 天渐进词汇开始练习。" : "Practice a progressive 21-day vocabulary path.")}</h1><p>{zh ? "每级都有 500 道高频题库。每张卡只显示一个目标词：看图选择、听正常或真正慢速发音，再按需开口跟读。" : "Every level has a 500-item frequent-word pool. See one target word, choose by picture, hear normal or truly slow speech, and optionally repeat aloud."}</p><div><strong>500</strong><span>{zh ? "每级题库" : "items per level"}</span><strong>20</strong><span>{zh ? "每天" : "per day"}</span><strong>21</strong><span>{zh ? "学习日" : "learning days"}</span></div></section>
     <SmartCardDirectoryGrid lang={zh?"zh":"en"} challenge={challenge}/>

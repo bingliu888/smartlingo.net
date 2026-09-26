@@ -37,7 +37,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, 
   sessionId: string; language: string; lang: string; remainingSeconds: number | null;
   onRemaining: (seconds: number) => void; onCallActive: (active: boolean) => void;
 }) {
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const [state, setState] = useState<CallState>("idle");
   const [seconds, setSeconds] = useState(Math.max(0, remainingSeconds || 0));
   const [muted, setMuted] = useState(false);

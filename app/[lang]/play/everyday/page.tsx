@@ -24,7 +24,7 @@ export default async function EverydaySpeakingPage({ params, searchParams }: {
   const { lang: rawLang } = await params;
   if (!isInterfaceLanguage(rawLang)) notFound();
   const lang = rawLang;
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const query = await searchParams;
   const language = query.language && isSmartLingoCommunityLanguage(query.language) ? query.language : undefined;
   const selected = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language);

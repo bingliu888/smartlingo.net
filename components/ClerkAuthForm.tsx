@@ -16,7 +16,7 @@ import { PasswordInput } from "./PasswordInput";
 
 export function ClerkAuthForm({ lang, returnTo = `/${lang}/dashboard` }: { lang: InterfaceLanguage; returnTo?: string }) {
   const t = (english: string, chinese: string) => interfaceText(lang, english, chinese);
-  const baseLang = lang === "zh" ? "zh" : "en";
+  const baseLang = lang === "zh" || lang === "zh-tw" ? "zh" : "en";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");

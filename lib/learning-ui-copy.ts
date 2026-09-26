@@ -1,8 +1,8 @@
-import type { InterfaceLanguage } from "./interface-locale";
+import { translateTraditionalCopy, type BaseInterfaceLanguage, type InterfaceLanguage } from "./interface-locale";
 
 type Copy = { active: string; inactive: string; until: string; ended: string; extend: string; getMax: string; findLevel: string; webinar: string; score: string; certificates: string; signOut: string; saveError: string };
 
-export const learningUiCopy: Record<InterfaceLanguage, Copy> = {
+const baseLearningUiCopy: Record<BaseInterfaceLanguage, Copy> = {
   en: { active: "Max is active", inactive: "Max is not active", until: "Until", ended: "Ended", extend: "Extend Max", getMax: "Get Max", findLevel: "Find your starting point", webinar: "Language webinar", score: "Score history", certificates: "Certificates", signOut: "Sign out", saveError: "Could not save this language. Please try again." },
   zh: { active: "旗舰版已生效", inactive: "旗舰版尚未生效", until: "到期日", ended: "已于此日结束", extend: "延长旗舰版", getMax: "开通旗舰版", findLevel: "测一测起点", webinar: "语言直播教室", score: "成绩记录", certificates: "结业证书", signOut: "退出登录", saveError: "暂时无法保存语言，请重试。" },
   es: { active: "Max está activo", inactive: "Max no está activo", until: "Hasta", ended: "Finalizó", extend: "Ampliar Max", getMax: "Activar Max", findLevel: "Descubre tu nivel", webinar: "Seminario de idiomas", score: "Historial de resultados", certificates: "Certificados", signOut: "Cerrar sesión", saveError: "No se pudo guardar el idioma. Inténtalo de nuevo." },
@@ -15,4 +15,8 @@ export const learningUiCopy: Record<InterfaceLanguage, Copy> = {
   pt: { active: "Max está ativo", inactive: "Max não está ativo", until: "Até", ended: "Terminou em", extend: "Estender Max", getMax: "Ativar Max", findLevel: "Descubra seu nível", webinar: "Webinar de idiomas", score: "Histórico de pontuação", certificates: "Certificados", signOut: "Sair", saveError: "Não foi possível salvar o idioma. Tente novamente." },
   ar: { active: "Max نشط", inactive: "Max غير نشط", until: "حتى", ended: "انتهى في", extend: "مدّد Max", getMax: "ابدأ Max", findLevel: "اكتشف مستواك", webinar: "ندوة اللغة", score: "سجل الدرجات", certificates: "الشهادات", signOut: "تسجيل الخروج", saveError: "تعذّر حفظ اللغة. حاول مرة أخرى." },
   hi: { active: "Max सक्रिय है", inactive: "Max सक्रिय नहीं है", until: "तक", ended: "समाप्त हुआ", extend: "Max बढ़ाएँ", getMax: "Max शुरू करें", findLevel: "अपना स्तर जानें", webinar: "भाषा वेबिनार", score: "अंक इतिहास", certificates: "प्रमाणपत्र", signOut: "साइन आउट", saveError: "भाषा सहेज नहीं सके। फिर कोशिश करें।" },
+};
+export const learningUiCopy: Record<InterfaceLanguage, Copy> = {
+  ...baseLearningUiCopy,
+  "zh-tw": translateTraditionalCopy(baseLearningUiCopy.zh),
 };

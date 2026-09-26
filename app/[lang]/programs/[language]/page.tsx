@@ -60,11 +60,11 @@ export default async function LanguageHubPage({ params, searchParams }: {
       </section>
       {path === "max" && <section className="learning-status-card"><div><strong>{activeMax ? (trialMax ? t.trialStatus : labels.active) : t.trialUsed}</strong><p>{subscription?.endsAt ? `${activeMax ? labels.until : labels.ended} ${new Date(subscription.endsAt * 1000).toLocaleDateString(lang, { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })}` : t.maxBody}</p></div><Link href={`/${lang}/pricing`}>{activeMax ? labels.extend : labels.getMax} →</Link></section>}
       <div className="learning-hub-grid">
+        {path === "max" && <article className="learning-hub-card"><h2>{lang === "zh" || lang === "zh-tw" ? "一对一 AI 语言导师" : "1:1 AI language tutor"}</h2><p>{t.maxBody}</p><Link href={`/${lang}/max/tutor?language=${language}`}>{t.continueLearning} →</Link></article>}
         <article className="learning-hub-card"><h2>{ui.play}</h2><p>{t.flashBody}</p><Link href={`/${lang}/play?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{ui.everyday}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/play/everyday?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>SmartCards</h2><p>{t.flashBody}</p><Link href={`/${lang}/smartcards/starter-${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{ui.practice}</h2><p>{t.flashBody}</p><Link href={`/${lang}/play/challenge?language=${language}`}>{t.continueLearning} →</Link></article>
-        <article className="learning-hub-card"><h2>{learningPathDisplayName(lang, "max")} · AI</h2><p>{t.maxBody}</p><Link href={`/${lang}/max/tutor?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{labels.findLevel}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/classes/${basicClassId}/placement`}>{t.continueLearning} →</Link></article>
       </div>
       <section className="learning-hub-room"><h2>{labels.webinar}</h2><p>{t.webinarBody}</p>

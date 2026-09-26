@@ -18,7 +18,7 @@ type Detail = {
 
 export default async function AdminMemberDetail({ params }: { params: Promise<{ lang: string; memberId: string }> }) {
   const { lang, memberId } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "zh-tw" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const incoming = await headers();
   const admin = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") ?? "" } }));
   if (!admin) redirect(`/${lang}/auth/login?returnTo=/${lang}/admin/members/${encodeURIComponent(memberId)}`);
@@ -34,7 +34,7 @@ export default async function AdminMemberDetail({ params }: { params: Promise<{ 
     LEFT JOIN subscriptions s ON s.user_id=u.id WHERE u.id=? LIMIT 1`)
     .bind(memberId).first<Detail>();
   if (!member) notFound();
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   const activeMax = member.activeMax === 1;
   const expiry = activeMax && member.expiresAt
     ? new Date(member.expiresAt * 1_000).toLocaleDateString(zh ? "zh-CN" : "en-US", { timeZone: "UTC" })

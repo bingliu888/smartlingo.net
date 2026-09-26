@@ -17,6 +17,7 @@
     "scan:sensitive": "node scripts/scan-sensitive-data.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "i18n:traditional": "node scripts/generate-traditional-translations.mjs",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "db:validate": "node scripts/validate-d1-migrations.mjs",
     "validate:layout": "node scripts/verify-runtime-layout-release.mjs"
@@ -55,6 +56,7 @@
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.3.3",
+    "opencc-js": "1.4.2",
     "react-server-dom-webpack": "19.2.8",
     "solc": "^0.8.36",
     "tailwindcss": "4.2.1",

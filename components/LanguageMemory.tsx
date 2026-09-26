@@ -11,7 +11,7 @@ export function LanguageSync({ lang }: { lang: SiteLanguage }) {
   useEffect(() => {
     window.localStorage.setItem(storageKey, lang);
     const selected = interfaceLanguages.find(language => language.code === lang);
-    document.documentElement.lang = selected?.speechLocale ?? lang;
+    document.documentElement.lang = lang === "zh-tw" ? "zh-Hant-TW" : selected?.speechLocale ?? lang;
     document.documentElement.dir = selected?.direction ?? "ltr";
   }, [lang]);
   return null;

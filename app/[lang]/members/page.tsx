@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 
 export default async function MembersPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "zh-tw" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const incoming = await headers();
   const user = await getSessionUser(new Request("https://smartlingo.net", { headers: { cookie: incoming.get("cookie") || "" } }));
   if (!user) redirect(`/${lang}/auth/login?returnTo=/${lang}/members`);
-  return <main className="members-page-shell"><SiteHeader lang={lang}/><MembersDirectory lang={lang === "zh" ? "zh" : "en"}/><SiteFooter lang={lang}/></main>;
+  return <main className="members-page-shell"><SiteHeader lang={lang}/><MembersDirectory lang={(lang === "zh" || lang === "zh-tw") ? "zh" : "en"}/><SiteFooter lang={lang}/></main>;
 }

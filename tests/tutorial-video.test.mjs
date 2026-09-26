@@ -26,8 +26,8 @@ test("tutorial player is public, accessible, captioned, and not autoplaying", ()
   assert.doesNotMatch(page, /requestUser|auth\(/);
 });
 
-test("Chinese selects Chinese media and every other site locale selects English", () => {
-  assert.match(copy, /const narrationLanguage = language === "zh" \? "zh" : "en"/);
+test("both Chinese scripts select Chinese media and every other site locale selects English", () => {
+  assert.match(copy, /const narrationLanguage = language === "zh" \|\| language === "zh-tw" \? "zh" : "en"/);
   assert.match(copy, /smartlingo-first-time-tour-\$\{narrationLanguage\}\.mp4/);
   for (const locale of ["zh", "en", "es", "ja", "ko", "fr", "de", "ru", "it", "pt", "ar", "hi"]) {
     assert.match(copy, new RegExp(`\\n  ${locale}(?::|,)`), `missing tutorial UI copy for ${locale}`);

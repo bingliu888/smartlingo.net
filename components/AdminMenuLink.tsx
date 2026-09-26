@@ -6,6 +6,7 @@ import type { InterfaceLanguage } from "../lib/interface-locale";
 const labels: Record<InterfaceLanguage, { dashboard: string; crypto: string }> = {
   en: { dashboard: "Admin dashboard", crypto: "Crypto payments" },
   zh: { dashboard: "管理员面板", crypto: "加密货币付款" },
+  "zh-tw": { dashboard: "管理員面板", crypto: "加密貨幣付款" },
   ja: { dashboard: "管理者ダッシュボード", crypto: "暗号資産決済" },
   ko: { dashboard: "관리자 대시보드", crypto: "암호화폐 결제" },
   es: { dashboard: "Panel de administración", crypto: "Pagos con criptomonedas" },

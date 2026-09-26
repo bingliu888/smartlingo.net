@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";
 import { homeInterfaceTranslations } from "../../../lib/home-interface-translations.generated";
-import { interfaceCopyFor, isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy } from "../../../lib/interface-locale";
+import { interfaceCopyFor, isInterfaceLanguage, safeInterfaceLanguage, translateHomeCopy, translateTraditionalCopy } from "../../../lib/interface-locale";
 
 const copy = {
   en: {
@@ -50,7 +50,7 @@ export default async function AboutPage({ params }: { params: Promise<{ lang: st
   const { lang } = await params;
   if (!isInterfaceLanguage(lang)) notFound();
   const locale = safeInterfaceLanguage(lang);
-  const t = locale === "zh" ? copy.zh : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
+  const t = locale === "zh" ? copy.zh : locale === "zh-tw" ? translateTraditionalCopy(copy.zh) : translateHomeCopy(copy.en, locale, homeInterfaceTranslations);
   return (
     <main className="ai-cert-legal-page">
       <SiteHeader lang={locale}/>

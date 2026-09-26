@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  return { title: `${lang === "zh" ? "旗舰版 AI 语言导师" : "Max AI language tutor"} · SmartLingo` };
+  return { title: `${lang === "zh" || lang === "zh-tw" ? "旗舰版 AI 语言导师" : "Max AI language tutor"} · SmartLingo` };
 }
 
 export default async function OpenTutorPage({ params, searchParams }: {
@@ -37,7 +37,7 @@ export default async function OpenTutorPage({ params, searchParams }: {
   const learningLanguage = tutorLearningLanguage(query.language, joined);
   const selected = learningLanguage
     ? SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === learningLanguage) : null;
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   if (selected && !await isAdminUser(user)) await ensureSevenDayMaxTrial(user.id);
   const max = selected ? await hasMaxCourseAccess(user) : false;
   const trialAvailable = Boolean(selected && !max && !await hasUsedMaxTrial(user.id));

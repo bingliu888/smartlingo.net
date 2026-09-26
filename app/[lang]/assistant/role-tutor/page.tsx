@@ -5,6 +5,7 @@ import { SiteHeader } from "../../../../components/SiteHeader";
 import { hasMaxCourseAccess, hasUsedMaxTrial } from "../../../../lib/platform-entitlements";
 import { requestUser } from "../../../../lib/request-user";
 import { resolveRoleTutorMission } from "../../../../lib/smartlingo-role-tutor";
+import { isInterfaceLanguage } from "../../../../lib/interface-locale";
 import "./role-tutor.css";
 
 export const dynamic = "force-dynamic";
@@ -15,14 +16,14 @@ export default async function RoleTutorPage({ params, searchParams }: {
 }) {
   if (process.env.SMARTLINGO_ROLE_TUTOR_ENABLED === "0") notFound();
   const { lang } = await params;
-  if (lang !== "zh" && lang !== "en" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
+  if (!isInterfaceLanguage(lang)) notFound();
   const query = await searchParams;
-  const mission = resolveRoleTutorMission({ ...query, uiLanguage: lang === "zh" ? "zh" : "en" });
+  const mission = resolveRoleTutorMission({ ...query, uiLanguage: lang === "zh" || lang === "zh-tw" ? "zh" : "en" });
   if (!mission) notFound();
   const user = await requestUser();
   const max = await hasMaxCourseAccess(user);
   const trialAvailable = Boolean(user && !max && !await hasUsedMaxTrial(user.id));
-  const zh = lang === "zh";
+  const zh = lang === "zh" || lang === "zh-tw";
   return <main className="role-tutor-page"><SiteHeader lang={lang}/><div className="role-tutor-shell">
     <p className="role-tutor-eyebrow">{zh ? "MAX · 场景角色练习" : "MAX · SCENE ROLE-PLAY"}</p>
     <h1>{zh ? mission.scene.nameZh : mission.scene.nameEn}</h1>

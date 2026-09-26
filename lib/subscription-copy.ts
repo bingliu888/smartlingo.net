@@ -30,5 +30,6 @@ const labels: Record<SubscriptionLocale, string> = {
 };
 
 export function subscriptionLabelFor(locale: string): string {
+  if (locale === "zh-tw") return "訂閱";
   return labels[locale as SubscriptionLocale] ?? labels.en;
 }

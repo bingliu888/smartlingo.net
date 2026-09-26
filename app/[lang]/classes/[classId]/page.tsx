@@ -23,7 +23,7 @@ export default async function ClassPage({
   searchParams: Promise<{ invite?: string; language?: string }>;
 }) {
   const { lang, classId } = await params;
-  if (lang !== "en" && lang !== "zh" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
+  if (lang !== "en" && lang !== "zh" && lang !== "zh-tw" && lang !== "es" && lang !== "ja" && lang !== "ko" && lang !== "fr" && lang !== "de" && lang !== "ru" && lang !== "it" && lang !== "pt" && lang !== "ar" && lang !== "hi") notFound();
   const query = await searchParams;
   const courseMatch=/^course_([a-z]{2})_(basic|intermediate|advanced)$/.exec(classId);
   const targetLanguage=query.language||courseMatch?.[1]||"";

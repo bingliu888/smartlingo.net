@@ -10,7 +10,7 @@ function sourceFiles(directory) {
   });
 }
 
-test("every language-prefixed page accepts all twelve site languages", () => {
+test("every language-prefixed page accepts all thirteen interface languages", () => {
   for (const file of sourceFiles("app")) {
     for (const [index, line] of readFileSync(file, "utf8").split("\n").entries()) {
       const guarded = [...line.matchAll(/[A-Za-z0-9_.]*lang\s*!==\s*"(en|zh)"/gi)].map(match => match[1]);
@@ -18,6 +18,7 @@ test("every language-prefixed page accepts all twelve site languages", () => {
       const context = `${file}:${index + 1}: ${line}`;
       assert.match(line, /[A-Za-z0-9_.]*lang\s*!==\s*"ja"/i, `stale bilingual-only route guard: ${context}`);
       assert.match(line, /[A-Za-z0-9_.]*lang\s*!==\s*"hi"/i, `incomplete twelve-language route guard: ${context}`);
+      assert.match(line, /[A-Za-z0-9_.]*lang\s*!==\s*"zh-tw"/i, `Traditional Chinese route guard missing: ${context}`);
     }
   }
 });
