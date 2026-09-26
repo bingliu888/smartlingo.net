@@ -10,11 +10,15 @@ import { SMARTLINGO_TUTOR_PORTRAITS,
 import { translateTutorLines } from "../lib/smartlingo-tutor-translation-client";
 
 type CallState = "idle" | "connecting" | "live" | "ending";
-type VoiceEvent = { type?: string; delta?: string; start_ms?: number; end_ms?: number; error?: { message?: string } };
+type VoiceEvent = { type?: string; delta?: string; start_ms?: number; end_ms?: number; error?: { message?: string; code?: string } };
 type CaptionLine = { id: string; text: string; complete: boolean; supportText?: string };
 
 function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function secondsUntil(deadline: number) {
+  return Math.max(0, deadline - Math.floor(Date.now() / 1_000));
 }
 
 export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supportLanguageName,
@@ -63,11 +67,15 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS[(portraitIndex + 1) % SMARTLINGO_TUTOR_PORTRAITS.length];
   const preferenceLoaded = loadedSessionId === (sessionId || "preview");
 
-  const sendPreferences = useCallback((channel: RTCDataChannel) => {
+  const sendPreferences = useCallback((channel: RTCDataChannel, welcomeName?: string) => {
     if (channel.readyState !== "open") return;
+    const instructions = maxLiveTutorInstructions({ learningLanguage: learningName, learningNativeName,
+      supportLanguage: supportLanguageName, slowSpeed, shortAnswer });
+    const welcome = welcomeName
+      ? ` The learner just pressed Start. Speak now in ${learningName}: briefly say hello, introduce yourself as ${welcomeName}, warmly welcome the learner, and ask one simple question. Use one or two short sentences, then stop and listen. This opening happens once per call.`
+      : "";
     channel.send(JSON.stringify({ type: "session.instructions.append", delegation_id: null,
-      content: maxLiveTutorInstructions({ learningLanguage: learningName, learningNativeName,
-        supportLanguage: supportLanguageName, slowSpeed, shortAnswer }),
+      content: instructions + welcome,
     }));
   }, [learningName, learningNativeName, supportLanguageName, slowSpeed, shortAnswer]);
 
@@ -217,11 +225,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         try { item = JSON.parse(String(event.data)) as VoiceEvent; } catch { return; }
         if (item.type === "session.started") {
           sessionReadyRef.current = true;
-          sendPreferences(channel);
-          channel.send(JSON.stringify({ type: "session.instructions.append", delegation_id: null,
-            client_event_id: crypto.randomUUID(),
-            content: `The learner just pressed Start. Speak now in ${learningName}: briefly say hello, introduce yourself as ${selectedPortrait.nameEn}, warmly welcome the learner, and ask one simple question. Use one or two short sentences, then stop and listen. This opening happens once per call.`,
-          }));
+          sendPreferences(channel, selectedPortrait.nameEn);
         } else if (item.type === "session.output_transcript.delta" && typeof item.delta === "string") {
           const gap = typeof item.start_ms === "number" ? item.start_ms - lastTranscriptEndRef.current : 0;
           if (!activeTutorItemRef.current || gap > 1_200) activeTutorItemRef.current = crypto.randomUUID();
@@ -243,7 +247,9 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         } else if (item.type === "session.closed") {
           void endCall();
         } else if (item.type === "error") {
-          setError(zh ? "实时导师遇到问题，请结束通话后重试。" : "The live tutor encountered an error. End the call and retry.");
+          const code = typeof item.error?.code === "string" && /^[a-z0-9_.-]{1,60}$/i.test(item.error.code)
+            ? ` (${item.error.code})` : "";
+          setError((zh ? "实时导师遇到问题，请结束通话后重试。" : "The live tutor encountered an error. End the call and retry.") + code);
         }
       });
       peer.addEventListener("track", event => {
@@ -278,10 +284,10 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
       if (!callId || !Number.isFinite(deadline)) throw new Error("Incomplete live call response.");
       callIdRef.current = callId; deadlineRef.current = deadline;
       await peer.setRemoteDescription({ type: "answer", sdp: await response.text() });
-      setSeconds(Math.max(0, deadline - Math.floor(Date.now() / 1_000)));
+      setSeconds(secondsUntil(deadline));
       setState("live");
       timerRef.current = window.setInterval(async () => {
-        const left = Math.max(0, deadlineRef.current - Math.floor(Date.now() / 1_000));
+        const left = secondsUntil(deadlineRef.current);
         setSeconds(left);
         if (!left) { void endCall(); return; }
         const currentId = callIdRef.current;

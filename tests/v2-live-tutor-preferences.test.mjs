@@ -31,8 +31,9 @@ test("Max tutor opens directly on tutor choices and greets once after Start", ()
   assert.match(owner, /<MaxLiveTutorCall sessionId=\{sessionId\} prepareSession=\{prepareSession\}/);
   assert.doesNotMatch(owner, /Start open conversation|role-tutor-message/);
   assert.match(client, /navigator\.mediaDevices\.getUserMedia[\s\S]*sessionId \|\| await prepareSession\(\)/);
-  assert.match(client, /item\.type === "session\.started"[\s\S]*The learner just pressed Start/);
-  assert.match(client, /introduce yourself as \$\{selectedPortrait\.nameEn\}/);
+  assert.match(client, /The learner just pressed Start[\s\S]*introduce yourself as \$\{welcomeName\}/);
+  assert.match(client, /item\.type === "session\.started"[\s\S]*sendPreferences\(channel, selectedPortrait\.nameEn\)/);
+  assert.doesNotMatch(client, /client_event_id/);
   assert.match(preferences, /if \(!sessionId && !await maxLiveTutorDailyLimit\(user\)\)/);
 });
 
