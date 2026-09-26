@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-voice-only-welcome-20260926-r41",
+  "releaseId": "smartlingo-max-voice-only-welcome-20260926-r42",
   "site": "smartlingo.net",
   "title": {
     "zh": "Max 导师直达实时语音，并主动欢迎学员",
@@ -15,13 +15,13 @@
       "1:1 页面直接显示已有的导师肖像轮播及实时语音按钮，不再有单独的文字对话启动步骤。",
       "接通后导师只问候、自我介绍和欢迎一次，再等待学员说话；音色选择改用波形图标。",
       "WebKit 页面矩阵直接检查导师肖像，不再点击已删除的文字导师按钮。",
-      "语音页用画面内的小标题保留语义，选导师箭头移到肖像上缘，避免窄屏控件相互覆盖。"
+      "语音页用画面内的小标题保留语义；WebKit 测量器遵守原生关闭菜单的不可见状态，避免把菜单项误报为肖像箭头重叠。"
     ],
     "en": [
       "The 1:1 page directly shows the existing tutor portrait carousel and live voice controls without a separate text-conversation start step.",
       "Once connected, the tutor greets, introduces itself, and welcomes the learner once before listening; voice choice uses a waveform icon.",
       "The WebKit page matrix checks the tutor portrait directly instead of clicking the removed text-tutor button.",
-      "The live stage uses a compact visible heading and places tutor arrows near the upper portrait edges to avoid narrow-screen control overlap."
+      "The live stage uses a compact visible heading; WebKit measurement honors native closed-menu visibility instead of reporting its options as portrait-arrow overlaps."
     ]
   },
   "affected": {

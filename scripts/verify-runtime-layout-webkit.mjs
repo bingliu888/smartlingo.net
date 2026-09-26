@@ -179,6 +179,7 @@ export function collectSmartLingoRuntimeLayout(options = {}) {
   const isVisible = (element, style = getComputedStyle(element), rect = element.getBoundingClientRect()) => (
     style.display !== "none"
     && style.visibility !== "hidden"
+    && !element.closest("details:not([open]) > :not(summary)")
     && Number(style.opacity || 1) !== 0
     && rect.width > 0
     && rect.height > 0
