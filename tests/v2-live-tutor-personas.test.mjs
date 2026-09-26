@@ -58,23 +58,32 @@ test("the preference route is owner-scoped and the client exposes separate, acce
   assert.match(route, /validTutorPortrait\(body\.portrait\)/);
   assert.match(route, /validTutorVoice\(body\.voice\)/);
   assert.match(route, /WHERE id=\? AND user_id=\?/);
-  assert.match(client, /aria-pressed=\{portrait === item\.id\}/);
+  assert.match(client, /const previousPortrait = SMARTLINGO_TUTOR_PORTRAITS\[/);
+  assert.match(client, /const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS\[/);
   assert.match(client, /<select id="max-tutor-voice"/);
   assert.match(client, /function stepPortrait\(direction: -1 \| 1\)/);
   assert.match(client, /saveTutorChoice\(SMARTLINGO_TUTOR_PORTRAITS\[nextIndex\]\.id, voice\)/);
 });
 
-test("portrait choices scroll horizontally and voice controls sit directly below the tutor image", () => {
+test("portrait carousel preserves the selected tutor's full ratio, supports touch swipes, and leaves no duplicate tutor row", () => {
   const client = readFileSync(new URL("../components/MaxLiveTutorCall.tsx", import.meta.url), "utf8");
   const owner = readFileSync(new URL("../components/RoleTutor.tsx", import.meta.url), "utf8");
   const css = readFileSync(new URL("../app/[lang]/assistant/role-tutor/role-tutor.css", import.meta.url), "utf8");
-  assert.match(css, /\.max-live-tutor-portrait-options\{[^}]*overflow-x:auto/);
-  assert.match(css, /\.max-live-tutor-portrait-options button\{[^}]*flex:0 0/);
+  assert.match(css, /\.max-live-tutor-filmstrip\{[^}]*grid-template-columns:minmax\(0,1fr\) auto minmax\(0,1fr\)/);
+  assert.match(css, /\.max-live-tutor\{[^}]*container-type:inline-size/);
+  assert.match(css, /@container \(min-width:820px\)\{\.max-live-tutor-stage\{height:min\(42vh,380px\)\}\.role-tutor-card \.max-live-tutor-preview\{display:flex\}\.role-tutor-card \.max-live-tutor-portrait-step\{display:none\}\}/);
   const image = client.indexOf('className={`max-live-tutor-stage');
   const voice = client.indexOf('className="max-live-tutor-voice-choice"');
   const actions = client.indexOf('className="max-live-tutor-actions"');
-  const portraits = client.indexOf('className="max-live-tutor-choices"');
-  assert.ok(image >= 0 && image < voice && voice < actions && actions < portraits);
+  assert.ok(image >= 0 && image < voice && voice < actions);
+  assert.doesNotMatch(client, /max-live-tutor-choices|max-live-tutor-portrait-options/);
+  assert.match(client, /onTouchStart=\{event =>/);
+  assert.match(client, /onTouchEnd=\{event =>/);
+  assert.match(client, /stepPortrait\(end < start \? 1 : -1\)/);
+  assert.match(client, /className="max-live-tutor-preview previous" onClick=\{\(\) => stepPortrait\(-1\)\}/);
+  assert.match(client, /className="max-live-tutor-preview next" onClick=\{\(\) => stepPortrait\(1\)\}/);
+  assert.match(client, /className="max-live-tutor-preview previous" onClick=\{\(\) => stepPortrait\(-1\)\}\s+disabled=\{state !== "idle"/);
+  assert.match(client, /style=\{\{ aspectRatio: `\$\{selectedPortrait\.width\} \/ \$\{selectedPortrait\.height\}` \}\}/);
   assert.match(css, /\.max-live-tutor-voice-choice\{[^}]*position:absolute/);
   assert.match(client, /id="max-tutor-voice" value=\{voice\} disabled=\{state !== "idle"/);
   assert.match(css, /\.max-live-tutor-voice-choice:has\(select:disabled\)\{[^}]*background:#d9dfdc/);
@@ -91,7 +100,7 @@ test("portrait choices scroll horizontally and voice controls sit directly below
   assert.match(client, /width=\{selectedPortrait\.width\} height=\{selectedPortrait\.height\}/);
   assert.doesNotMatch(client, /className="max-live-tutor-photo"[^>]* fill /);
   assert.match(css, /\.max-live-tutor-stage\{[^}]*height:min\(45vh,440px\)[^}]*background:#fff/);
-  assert.match(css, /\.max-live-tutor-photo\{[^}]*width:auto;height:100%;max-width:100%;object-fit:contain/);
+  assert.match(css, /\.max-live-tutor-photo\{[^}]*width:100%;height:100%;object-fit:contain/);
   assert.doesNotMatch(css, /\.max-live-tutor-stage\.speaking \.max-live-tutor-photo\{[^}]*transform:/);
   assert.doesNotMatch(owner, /role-tutor-avatar/);
 });

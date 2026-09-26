@@ -1,55 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-tutor-portrait-fit-20260926-r33",
+  "releaseId": "smartlingo-max-tutor-photo-carousel-20260926-r34",
   "site": "smartlingo.net",
   "title": {
-    "zh": "横屏完整显示导师照片并修复手机语言弹窗边界",
-    "en": "Show complete tutor portraits and fit the phone language menu"
+    "zh": "横屏导师照片轮播并精简导师选择",
+    "en": "Add a wide-screen tutor portrait carousel without a duplicate choice row"
   },
   "purpose": {
-    "zh": "横屏宽容器保持导师照片原始比例、左右留白，并修正手机 WebKit 检出的语言菜单轻微越界。",
-    "en": "Preserve each tutor portrait's natural ratio with white side space in landscape and fix the phone language menu overflow found by WebKit."
+    "zh": "宽屏居中完整显示当前导师照片，两侧露出相邻导师；滑动或点击侧边预览可切换，窄屏保留箭头，并删去重复的导师卡片行。",
+    "en": "Center the complete selected tutor portrait, preview adjacent tutors at either side on wide screens, switch by swipe or side-preview click, retain arrows on narrow screens, and remove the redundant tutor row."
   },
   "features": {
     "zh": [
-      "三张导师照片按已核实的原图尺寸显示，使用 contain 并在宽屏左右留白。",
-      "移除会压扁照片区域的 16:9 加最大高度组合，也移除说话时放大导致的边缘裁切。",
-      "手机语言菜单按 SmartLingo 的页头留白缩窄，保持 Guandan 的弹窗结构和点击外部关闭行为。"
+      "当前导师照片保持原比例、完整居中；宽屏左右各露出相邻导师的半幅预览。",
+      "可左右滑动照片或点侧边预览切换导师；宽屏隐藏箭头，窄屏保留；通话期间锁定。",
+      "删除照片下方重复的导师卡片行，缩短手机页面。"
     ],
     "en": [
-      "Render the three verified tutor photos at their source dimensions with contain fitting and white side space on wide screens.",
-      "Remove the conflicting 16:9 plus max-height panel sizing and the speaking zoom that could trim image edges.",
-      "Narrow the phone language popover for SmartLingo's header gutters while retaining Guandan's menu structure and outside-click dismissal."
+      "Keep the current tutor portrait complete and centered at its natural ratio, with half-visible adjacent previews on wide screens.",
+      "Switch tutors by swiping or selecting a side preview; hide arrows when side previews fit, retain them on narrow screens, and lock selection during calls.",
+      "Remove the duplicate tutor-card row below the photo to shorten mobile pages."
     ]
   },
   "affected": {
     "zh": [
-      "旗舰版实时导师照片及手机语言弹窗宽度；不改通话、导师偏好、账户或付款。"
+      "旗舰版实时导师照片选择界面；不改通话、导师偏好、账户或付款。"
     ],
     "en": [
-      "The Max live tutor portrait display and phone language popover width; no changes to calls, preferences, accounts, or payments."
+      "The Max live tutor portrait selection UI; no changes to calls, preferences, accounts, or payments."
     ]
   },
   "changes": {
     "zh": [
-      "为现有三张照片登记真实宽高，不换图或导师选项。",
-      "照片区域使用固定的视口内高度与白底，图像保持完整比例居中；保留悬浮箭头、音色、字幕和通话按钮位置。",
-      "将 420px 以下的语言菜单宽度限定为视口减去页头控件留白，消除 390px WebKit 的左边缘 -3px 越界。"
+      "复用现有三张照片和偏好保存接口，在固定高度照片区域加入当前导师与左右相邻导师预览。",
+      "照片触控滑动和侧边预览按钮调用现有导师切换逻辑；宽屏按容器宽度显示预览并隐藏箭头，窄屏沿用箭头；通话时全部禁用。",
+      "移除重复的导师选择栏及其样式，保留照片、字幕和通话按钮布局。"
     ],
     "en": [
-      "Record the true width and height of the three existing portrait files without changing images or tutor choices.",
-      "Use a viewport-bounded white stage and centered full-ratio image; preserve photo arrows, voice selection, transcript, and call controls.",
-      "At widths below 420px, bound the language menu to viewport width minus header-control gutters, removing the -3px left overflow measured by 390px WebKit."
+      "Reuse the three existing portraits and preference endpoint in a bounded-height stage with centered selection and adjacent previews.",
+      "Map touch swipes and side-preview buttons to the existing tutor-switch logic; use container width to swap wide previews for narrow-screen arrows, and disable selection during calls.",
+      "Remove the redundant tutor-selector row and its styles while preserving captions and call actions."
     ]
   },
   "validation": {
     "zh": [
       "站点策略门禁、TypeScript、零警告 lint、全套测试、构建与中英文 WebKit 响应式检查。",
-      "发布后实测桌面及手机宽度下的照片完整性、手机语言弹窗边界与关闭，并核对精确 Project 发布记录。"
+      "发布后实测桌面和手机下照片比例、轮播与通话锁定，并核对精确 Project 发布记录。"
     ],
     "en": [
       "Site policy gates, TypeScript, zero-warning lint, full tests, build, and Chinese/English responsive WebKit checks.",
-      "After deployment, inspect complete portraits at wide and phone widths plus phone language-menu bounds and dismissal, then verify the exact Project release record."
+      "After deployment, inspect wide and phone portrait ratios, carousel selection and in-call lock, then verify the exact Project release record."
     ]
   },
   "deferred": {
