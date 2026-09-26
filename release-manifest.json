@@ -13,11 +13,13 @@
   "features": {
     "zh": [
       "1:1 页面直接显示已有的导师肖像轮播及实时语音按钮，不再有单独的文字对话启动步骤。",
-      "接通后导师只问候、自我介绍和欢迎一次，再等待学员说话；音色选择改用波形图标。"
+      "接通后导师只问候、自我介绍和欢迎一次，再等待学员说话；音色选择改用波形图标。",
+      "WebKit 页面矩阵直接检查导师肖像，不再点击已删除的文字导师按钮。"
     ],
     "en": [
       "The 1:1 page directly shows the existing tutor portrait carousel and live voice controls without a separate text-conversation start step.",
-      "Once connected, the tutor greets, introduces itself, and welcomes the learner once before listening; voice choice uses a waveform icon."
+      "Once connected, the tutor greets, introduces itself, and welcomes the learner once before listening; voice choice uses a waveform icon.",
+      "The WebKit page matrix checks the tutor portrait directly instead of clicking the removed text-tutor button."
     ]
   },
   "affected": {

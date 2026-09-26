@@ -829,11 +829,13 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
           loadPath: route,
           readySelector: route.startsWith("/classes/course_en_basic/learn")
             ? '[data-layout-fill="five-skill-workspace"][data-layout-ready="true"]'
-            : SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)
-              ? '[data-layout-ready="true"]'
-              : "[data-layout-page]",
-          actionSelector: route === "/max/tutor?language=ja" ? '[data-layout-start-tutor="true"]' : null,
-          readyAfterActionSelector: route === "/max/tutor?language=ja" ? ".max-live-tutor-photo" : null,
+            : route === "/max/tutor?language=ja"
+              ? ".max-live-tutor-photo"
+              : SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES.includes(route)
+                ? '[data-layout-ready="true"]'
+                : "[data-layout-page]",
+          actionSelector: null,
+          readyAfterActionSelector: null,
         })),
         languages: SMARTLINGO_LAYOUT_LANGUAGES,
         viewports: SMARTLINGO_VIEWPORTS,

@@ -278,6 +278,8 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(runnerSource, /session cookies are allowed only for a loopback layout fixture/);
   assert.match(runnerSource, /authenticated layout routes require --session-cookie-file backed by an ephemeral local D1 session/);
   assert.doesNotMatch(runnerSource, /argv\[index\] === "--session-cookie"/);
+  assert.match(runnerSource, /route === "\/max\/tutor\?language=ja"\s*\? "\.max-live-tutor-photo"/);
+  assert.doesNotMatch(runnerSource, /data-layout-start-tutor/);
   assert.match(runnerSource, /SMARTLINGO_AUTHENTICATED_LAYOUT_ROUTES\.includes\(route\)/);
   assert.match(runnerSource, /five-skill-workspace/);
   assert.match(swiftSource, /httpCookieStore/);
