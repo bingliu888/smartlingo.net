@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-open-tutor-20260925-r20",
+  "releaseId": "smartlingo-max-open-tutor-plan-restore-20260925-r21",
   "site": "smartlingo.net",
   "title": {
     "zh": "SmartLingo Max 开放式一对一 AI 导师",
@@ -14,12 +14,14 @@
     "zh": [
       "新增十二种目标语言的开放式导师入口，不再要求先选固定场景；保留原有角色场景练习，并让角色用已审核场景台词主动开场。",
       "导师随学生话题调整难度，只根据目标语言的实际表达给参考程度；学生可与导师讨论并修改学习计划，再主动确认保存。",
-      "复用现有按键录音、转写及浏览器语音朗读；试用期每日最多 10 分钟，付费旗舰版每日最多 30 分钟，服务端按活跃时间计量。"
+      "复用现有按键录音、转写及浏览器语音朗读；试用期每日最多 10 分钟，付费旗舰版每日最多 30 分钟，服务端按活跃时间计量。",
+      "真实线上验收发现并修复学习计划刷新后恢复默认值的问题；重新进入导师时读取已保存计划，且后续 AI 回复不会覆盖用户确认或正在编辑的选择。"
     ],
     "en": [
       "Add an open tutor entry for twelve target languages without a preset scenario; preserve scene role-play and give it an authored opening line.",
       "Adapt to learner-chosen topics and estimate practice level only from actual target-language production; discuss and revise a study plan before explicit save.",
-      "Reuse push-to-talk transcription and browser speech playback; meter visible active time server-side at 10 minutes per day during trial or 30 minutes per day on paid Max."
+      "Reuse push-to-talk transcription and browser speech playback; meter visible active time server-side at 10 minutes per day during trial or 30 minutes per day on paid Max.",
+      "Fix the plan-reset regression found in live QA: restore the saved plan when reopening the tutor and keep later AI replies from overwriting learner-confirmed or in-progress choices."
     ]
   },
   "affected": {

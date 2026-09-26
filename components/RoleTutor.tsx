@@ -7,6 +7,7 @@ import { speakLearningText, SMARTLINGO_NORMAL_SPEECH_RATE, SMARTLINGO_SLOW_SPEEC
 import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
 
 type Line = { by: "learner" | "tutor"; text: string };
+type SavedTutorPlan = { targetLanguage: string; useCase: string; dailyMinutes: number; selfReportedLevel: string };
 
 export function RoleTutor({ lang, language, scene, level, role, sceneVisual, speechLocale, initialMax, trialAvailable, mode = "scene" }: {
   lang: string; language: string; scene?: string;
@@ -27,6 +28,8 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   const [planMinutes, setPlanMinutes] = useState(10);
   const [planUseCase, setPlanUseCase] = useState("daily_life");
   const [planSaved, setPlanSaved] = useState(false);
+  const savedPlanRef = useRef<SavedTutorPlan | null>(null);
+  const planEditedRef = useRef(false);
   const [message, setMessage] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [busy, setBusy] = useState(false);
@@ -100,6 +103,14 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         setRemainingSeconds(result.remainingSeconds ?? 0);
         setDailyLimitSeconds(result.dailyLimitSeconds ?? 0);
         if (result.profile) updateProfile(result.profile);
+        try {
+          const response = await fetch("/api/learning-plan", { credentials: "same-origin" });
+          if (response.ok) {
+            const data = await response.json() as { plans?: SavedTutorPlan[] };
+            const saved = data.plans?.find(plan => plan.targetLanguage === language);
+            if (saved) applySavedPlan(saved);
+          }
+        } catch { /* An unavailable plan read must not block the tutor conversation. */ }
       }
       setLines([{ by: "tutor" as const, text: result.opening || "" }, ...(result.history || []).flatMap(exchange => [
         { by: "learner" as const, text: exchange.learner },
@@ -199,10 +210,22 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
 
   function updateProfile(value: OpenTutorProfile) {
     setProfile(value);
-    if (value.level !== "unknown") setPlanLevel(value.level);
-    setPlanMinutes(value.dailyMinutes);
-    setPlanUseCase(value.useCase);
-    setPlanSaved(false);
+    if (!savedPlanRef.current && !planEditedRef.current) {
+      if (value.level !== "unknown") setPlanLevel(value.level);
+      setPlanMinutes(value.dailyMinutes);
+      setPlanUseCase(value.useCase);
+    }
+  }
+
+  function applySavedPlan(plan: SavedTutorPlan) {
+    savedPlanRef.current = plan;
+    planEditedRef.current = false;
+    setPlanUseCase(plan.useCase);
+    setPlanMinutes(plan.dailyMinutes);
+    if (plan.selfReportedLevel === "beginner" || plan.selfReportedLevel === "intermediate" || plan.selfReportedLevel === "advanced") {
+      setPlanLevel(plan.selfReportedLevel);
+    }
+    setPlanSaved(true);
   }
 
   async function savePlan() {
@@ -215,7 +238,8 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
           dailyMinutes: planMinutes, selfReportedLevel: planLevel, entryMode: "adaptive" }),
       });
       if (!response.ok) throw new Error(zh ? "学习计划未保存，请重试。" : "The learning plan could not be saved. Try again.");
-      setPlanSaved(true);
+      const result = await response.json() as { plan?: SavedTutorPlan };
+      if (result.plan) applySavedPlan(result.plan);
     } catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); }
     finally { setBusy(false); }
   }
@@ -252,9 +276,9 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         <p>{profile.level === "unknown" ? (zh ? "导师还在了解你的程度。" : "The tutor is still learning your level.") : (zh ? `练习程度参考：${profile.level}。${profile.levelReason}` : `Practice-level estimate: ${profile.level}. ${profile.levelReason}`)}</p>
         {profile.interests ? <p>{zh ? "感兴趣的话题：" : "Interests: "}{profile.interests}</p> : null}
         {profile.planFocus ? <p>{zh ? "建议重点：" : "Suggested focus: "}{profile.planFocus}</p> : null}
-        <div className="role-tutor-plan-fields"><label>{zh ? "学习重点" : "Learning focus"}<select value={planUseCase} onChange={event => setPlanUseCase(event.target.value)}><option value="daily_life">{zh ? "日常生活" : "Daily life"}</option><option value="travel">{zh ? "旅行" : "Travel"}</option><option value="work">{zh ? "工作" : "Work"}</option><option value="study">{zh ? "学习" : "Study"}</option><option value="community">{zh ? "社交" : "Community"}</option></select></label>
-          <label>{zh ? "每天学习" : "Study per day"}<select value={planMinutes} onChange={event => setPlanMinutes(Number(event.target.value))}>{[5, 10, 15, 20].map(minutes => <option key={minutes} value={minutes}>{minutes} {zh ? "分钟" : "minutes"}</option>)}</select></label>
-          <label>{zh ? "你的自选起点" : "Your starting level"}<select value={planLevel} onChange={event => setPlanLevel(event.target.value as typeof planLevel)}><option value="beginner">{zh ? "初级" : "Beginner"}</option><option value="intermediate">{zh ? "中级" : "Intermediate"}</option><option value="advanced">{zh ? "高级" : "Advanced"}</option></select></label></div>
+        <div className="role-tutor-plan-fields"><label>{zh ? "学习重点" : "Learning focus"}<select value={planUseCase} onChange={event => { planEditedRef.current = true; setPlanSaved(false); setPlanUseCase(event.target.value); }}><option value="daily_life">{zh ? "日常生活" : "Daily life"}</option><option value="travel">{zh ? "旅行" : "Travel"}</option><option value="work">{zh ? "工作" : "Work"}</option><option value="study">{zh ? "学习" : "Study"}</option><option value="community">{zh ? "社交" : "Community"}</option></select></label>
+          <label>{zh ? "每天学习" : "Study per day"}<select value={planMinutes} onChange={event => { planEditedRef.current = true; setPlanSaved(false); setPlanMinutes(Number(event.target.value)); }}>{[5, 10, 15, 20].map(minutes => <option key={minutes} value={minutes}>{minutes} {zh ? "分钟" : "minutes"}</option>)}</select></label>
+          <label>{zh ? "你的自选起点" : "Your starting level"}<select value={planLevel} onChange={event => { planEditedRef.current = true; setPlanSaved(false); setPlanLevel(event.target.value as typeof planLevel); }}><option value="beginner">{zh ? "初级" : "Beginner"}</option><option value="intermediate">{zh ? "中级" : "Intermediate"}</option><option value="advanced">{zh ? "高级" : "Advanced"}</option></select></label></div>
         <button type="button" onClick={savePlan} disabled={busy}>{zh ? "确认并保存学习计划" : "Confirm and save plan"}</button>
         {planSaved ? <p role="status">{zh ? "已保存。你仍可继续和导师讨论并修改。" : "Saved. You can keep discussing and revise it later."}</p> : null}
       </div> : null}

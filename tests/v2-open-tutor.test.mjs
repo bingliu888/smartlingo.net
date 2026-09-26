@@ -92,6 +92,10 @@ test("open tutor route gates Max, metered chat, speech, explicit plan saving and
   assert.match(client, /document\.visibilityState === "hidden"/);
   assert.match(client, /mode === "open"/);
   assert.match(client, /"\/api\/learning-plan"/);
+  assert.match(client, /fetch\("\/api\/learning-plan", \{ credentials: "same-origin" \}\)/);
+  assert.match(client, /data\.plans\?\.find\(plan => plan\.targetLanguage === language\)/);
+  assert.match(client, /if \(saved\) applySavedPlan\(saved\)/);
+  assert.match(client, /if \(!savedPlanRef\.current && !planEditedRef\.current\)/);
   assert.match(client, /onClick=\{savePlan\}/);
   assert.match(page, /ensureSevenDayMaxTrial\(user\.id\)/);
   assert.match(worker, /DELETE FROM smartlingo_max_tutor_sessions WHERE usage_day<\?/);
