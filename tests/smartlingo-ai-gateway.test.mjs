@@ -125,7 +125,7 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
     assert.equal(gateway.SMARTAI_FEATURE_POLICIES[feature].model, "gpt-6-luna");
   }
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.model, "omni-moderation-latest");
-  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.transcription.model, "gpt-4o-mini-transcribe");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.transcription.model, "gpt-transcribe");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.image.model, "gpt-image-2");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.audio.model, "gpt-4o-mini-tts");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.model, "gpt-realtime-2.1-mini");
@@ -142,15 +142,17 @@ test("short multilingual pronunciation audio uses the audited transcription gate
       apiKey: "test-only",
       database: fakeDatabase(),
       fetch: async (url, init) => {
-        providerRequest = { url: String(url), model: init.body.get("model"), language: init.body.get("language"), file: init.body.get("file") };
+        providerRequest = { url: String(url), model: init.body.get("model"), language: init.body.get("languages[]"),
+          oldLanguage: init.body.get("language"), file: init.body.get("file") };
         return Response.json({ text: "こんにちは" });
       },
     },
   });
   assert.deepEqual(result, { value: "こんにちは", fallback: false });
   assert.equal(providerRequest.url, "https://api.openai.com/v1/audio/transcriptions");
-  assert.equal(providerRequest.model, "gpt-4o-mini-transcribe");
+  assert.equal(providerRequest.model, "gpt-transcribe");
   assert.equal(providerRequest.language, "ja");
+  assert.equal(providerRequest.oldLanguage, null);
   assert.equal(providerRequest.file.type, "audio/webm");
 });
 
@@ -618,7 +620,7 @@ test("Max live voice records the provider call before returning SDP and uses the
   assert.equal(typeof providerForm.get("session"), "string");
   const voiceSession = JSON.parse(providerForm.get("session"));
   assert.equal(voiceSession.model, "gpt-realtime-2.1-mini");
-  assert.equal(voiceSession.audio.input.transcription.model, "gpt-4o-mini-transcribe");
+  assert.equal(voiceSession.audio.input.transcription, undefined);
   assert.equal(voiceSession.max_output_tokens, 512);
   assert.equal(connected, "rtc_test123");
   assert.equal(answer.value.callId, connected);

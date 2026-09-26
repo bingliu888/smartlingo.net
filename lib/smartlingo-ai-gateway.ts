@@ -133,7 +133,7 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     failureMode: "quarantine",
   },
   transcription: {
-    model: "gpt-4o-mini-transcribe",
+    model: "gpt-transcribe",
     maxInputUnits: 750_000,
     maxOutputUnits: 200,
     windowSeconds: 60,
@@ -998,8 +998,7 @@ export async function openSmartAiLiveVoice(input: {
           instructions: input.instructions,
           max_output_tokens: input.shortAnswer ? 256 : 512,
           output_modalities: ["audio"],
-          audio: { input: { transcription: { model: "gpt-4o-mini-transcribe" },
-            turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
+          audio: { input: { turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
         }));
         return dependencies(input.deps).fetch(
           "https://api.openai.com/v1/realtime/calls",
@@ -1071,8 +1070,7 @@ export async function transcribeSmartAiSpeech(input: {
       const extension = input.audio.type.includes("mp4") ? "mp4" : input.audio.type.includes("ogg") ? "ogg" : input.audio.type.includes("wav") ? "wav" : "webm";
       form.set("file", input.audio, `pronunciation.${extension}`);
       form.set("model", model);
-      form.set("language", language);
-      form.set("response_format", "json");
+      form.set("languages[]", language);
       form.set("prompt", `A learner is saying one short word or phrase in ${language}. Transcribe only what is spoken.`);
       return dependencies(input.deps).fetch("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",

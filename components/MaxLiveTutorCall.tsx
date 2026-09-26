@@ -8,7 +8,7 @@ import { translateTutorLines } from "../lib/smartlingo-tutor-translation-client"
 
 type CallState = "idle" | "connecting" | "live" | "ending";
 type VoiceEvent = { type?: string; delta?: string; transcript?: string; item_id?: string; error?: { message?: string } };
-type CaptionLine = { id: string; by: "learner" | "tutor"; text: string; complete: boolean; supportText?: string };
+type CaptionLine = { id: string; text: string; complete: boolean; supportText?: string };
 
 function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -181,7 +181,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
           activeTutorItemRef.current = id;
           setCaptions(previous => {
             const index = previous.findIndex(line => line.id === id);
-            if (index < 0) return [...previous, { id, by: "tutor" as const, text: item.delta!.slice(0, 1_200), complete: false }].slice(-30);
+            if (index < 0) return [...previous, { id, text: item.delta!.slice(0, 1_200), complete: false }].slice(-30);
             return previous.map((line, at) => at === index ? { ...line, text: (line.text + item.delta).slice(0, 1_200) } : line);
           });
           setSpeaking(true);
@@ -191,15 +191,11 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
             const found = previous.some(line => line.id === id);
             if (found) return previous.map(line => line.id === id
               ? { ...line, text: item.transcript?.slice(0, 1_200) || line.text, complete: true } : line);
-            return item.transcript ? [...previous, { id, by: "tutor" as const,
+            return item.transcript ? [...previous, { id,
               text: item.transcript.slice(0, 1_200), complete: true }].slice(-30) : previous;
           });
           activeTutorItemRef.current = "";
           setSpeaking(false);
-        } else if (item.type === "conversation.item.input_audio_transcription.completed" && typeof item.transcript === "string") {
-          const id = item.item_id || crypto.randomUUID();
-          setCaptions(previous => [...previous.filter(line => line.id !== id),
-            { id, by: "learner" as const, text: item.transcript!.slice(0, 1_200), complete: true }].slice(-30));
         } else if (item.type === "input_audio_buffer.speech_started") {
           setSpeaking(false);
         } else if (item.type === "error") {
@@ -293,8 +289,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
         const element = event.currentTarget;
         transcriptAtBottomRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 48;
       }}>
-      {captions.map(line => <p key={line.id} className={line.by}>
-        <strong>{line.by === "tutor" ? (zh ? "AI 导师" : "AI tutor") : (zh ? "你" : "You")}</strong>
+      {captions.map(line => <p key={line.id} className="tutor">
+        <strong>{zh ? "AI 导师" : "AI tutor"}</strong>
         <span dir="auto">{line.text}</span>
         {showSupport && line.supportText ? <small lang={lang} dir="auto">{line.supportText}</small> : null}
       </p>)}

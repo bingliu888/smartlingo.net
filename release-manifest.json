@@ -7,19 +7,19 @@
     "en": "Max AI tutor concise conversation, bilingual captions and immediate reconnect"
   },
   "purpose": {
-    "zh": "让 AI 导师用当前学习语言简短开场，提供慢速、站点语言译文和简短回答开关，并修复结束语音后立即重连的限流误判。",
-    "en": "Introduce the tutor briefly in the learning language, offer pace, support-language and short-answer controls, and fix the false rate limit after ending and immediately restarting a voice call."
+    "zh": "让 AI 导师用当前学习语言简短开场，提供慢速、站点语言译文和简短回答开关，移除学生实时字幕的旧转写模型，并修复结束语音后立即重连的限流误判。",
+    "en": "Introduce the tutor briefly in the learning language, offer pace, support-language and short-answer controls, remove the legacy learner-caption transcription model, and fix the false rate limit after ending and immediately restarting a voice call."
   },
   "features": {
     "zh": [
       "文字导师以选定学习语言简短开场；对话可切换慢速朗读、显示当前站点语言译文与简短回答。",
-      "实时虚拟导师遵循同一语言与回答偏好，学生和导师的字幕显示在独立、可上下滚动的对话区。",
-      "结束语音后可以立即重连，仍保持单通话、每日 10/30 分钟以及每分钟有限次数的保护。"
+      "实时虚拟导师遵循同一语言与回答偏好；导师字幕显示在独立、可上下滚动的对话区，不启用学生实时语音转写。",
+      "结束语音后可以立即重连，仍保持单通话、每日 10/30 分钟以及每分钟有限次数的保护；短语音转写升级为 GPT Transcribe。"
     ],
     "en": [
       "The text tutor opens briefly in the selected learning language and offers slow speech, current-site-language translation, and short-answer controls.",
-      "The live avatar tutor follows the same language and answer preferences; learner and tutor captions appear in a separate scrollable transcript.",
-      "An ended voice call can reconnect immediately while one-call-at-a-time, daily 10/30-minute and bounded per-minute protections remain."
+      "The live avatar tutor follows the same language and answer preferences; tutor captions appear in a separate scrollable transcript without live learner transcription.",
+      "An ended voice call can reconnect immediately while one-call-at-a-time, daily 10/30-minute and bounded per-minute protections remain; short recorded speech uses GPT Transcribe."
     ]
   },
   "affected": {
@@ -29,13 +29,13 @@
   "changes": {
     "zh": [
       "沿用现有 Max 导师会话与统一 AI 网关，按学习语言选择开场及朗读语言，限制简短回答长度。",
-      "新增仅限已登录有效 Max 的短文本批量译文，实时字幕保留最近 30 条并可手动滚动。",
-      "将实时语音审计窗口从每分钟一次调整为最多六次，同时加入结束即重连的行为回归测试。"
+      "新增仅限已登录有效 Max 的短文本批量译文，导师实时字幕保留最近 30 条并可手动滚动；学生麦克风不做字幕转写。",
+      "将实时语音审计窗口从每分钟一次调整为最多六次，同时加入结束即重连的行为回归测试；短语音转写采用新版模型及其 languages[] 参数。"
     ],
     "en": [
       "Reuse the existing Max tutor session and unified AI gateway, selecting the opening and speech locale from the learning language and bounding short replies.",
-      "Add bounded batch translation for signed-in active Max learners and a manually scrollable recent 30-line live transcript.",
-      "Raise the audited live-connection window from one to at most six per minute and add behavior regressions for end-and-reconnect."
+      "Add bounded batch translation for signed-in active Max learners and a manually scrollable recent 30-line tutor transcript; do not transcribe learner microphone audio for captions.",
+      "Raise the audited live-connection window from one to at most six per minute and add behavior regressions for end-and-reconnect; recorded short speech uses the current transcription model and its languages[] parameter."
     ]
   },
   "validation": {
