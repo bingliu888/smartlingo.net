@@ -2,6 +2,7 @@ import { getDatabase } from "../../../../lib/auth";
 import { consumeAiDailyQuota } from "../../../../lib/ai-daily-quota";
 import { ensureSevenDayMaxTrial, hasMaxCourseAccess } from "../../../../lib/platform-entitlements";
 import { requestUser } from "../../../../lib/request-user";
+import { everydayDialogueLines } from "../../../../lib/smartlingo-everyday-dialogues";
 import {
   askSmartAi, readSmartAiJsonRequest, safeSmartAiError, smartAiRequestCountry,
 } from "../../../../lib/smartlingo-ai-gateway";
@@ -17,6 +18,15 @@ type TutorRow = {
   transcriptJson: string;
 };
 type Exchange = { learner: string; tutor: string };
+
+async function missionOpening(database: ReturnType<typeof getDatabase>, mission: NonNullable<ReturnType<typeof resolveRoleTutorMission>>) {
+  const dialogue = await everydayDialogueLines({
+    database, sceneId: mission.scene.id, language: mission.language.code, level: mission.level,
+  });
+  const opening = dialogue.lines[0]?.target;
+  if (!opening) throw new Error("Role tutor opening unavailable");
+  return opening;
+}
 
 function json(body: Record<string, unknown>, status = 200) {
   return Response.json(body, { status, headers: { "cache-control": "no-store" } });
@@ -97,9 +107,10 @@ export async function POST(request: Request) {
         || row.level !== mission.level || row.uiLanguage !== mission.uiLanguage) {
         return json({ error: localized(zh, "请先完成当前任务，稍后再切换场景。", "Finish this mission before changing scenes.") }, 409);
       }
+      const opening = await missionOpening(database, mission);
       return json({ sessionId: row.id, expiresAt: row.expiresAt, turnCount: row.turnCount,
         maxTurns: ROLE_TUTOR_MAX_TURNS, role: row.roleId, scene: mission.scene.id,
-        history: readHistory(row.transcriptJson) });
+        opening, history: readHistory(row.transcriptJson) });
     }
     if (body.action !== "turn" || typeof body.sessionId !== "string"
       || !/^[0-9a-f-]{36}$/i.test(body.sessionId) || !validRoleTutorMessage(body.message)) {
@@ -132,10 +143,11 @@ export async function POST(request: Request) {
     try {
       const message = body.message.trim();
       const history = readHistory(row.transcriptJson);
+      const opening = reserved.turnCount === 1 ? await missionOpening(database, mission) : undefined;
       const answer = await askSmartAi({
         feature: "chat_guru", subject: `user:${user.id}`, language: mission.uiLanguage,
         instructions: roleTutorInstructions(mission, reserved.turnCount),
-        content: roleTutorTurnContent(history, message),
+        content: roleTutorTurnContent(history, message, opening),
         deps: { providerPreference: user.aiProviderPreference ?? "auto", country: smartAiRequestCountry(request) },
       });
       if (answer.fallback) return json({ error: localized(zh, "导师暂时不可用，请稍后再试。", "The tutor is temporarily unavailable.") }, 503);

@@ -64,7 +64,7 @@ export default async function LanguageHubPage({ params, searchParams }: {
         <article className="learning-hub-card"><h2>{ui.everyday}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/play/everyday?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>SmartCards</h2><p>{t.flashBody}</p><Link href={`/${lang}/smartcards/starter-${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{ui.practice}</h2><p>{t.flashBody}</p><Link href={`/${lang}/play/challenge?language=${language}`}>{t.continueLearning} →</Link></article>
-        <article className="learning-hub-card"><h2>{learningPathDisplayName(lang, "max")} · AI</h2><p>{t.maxBody}</p><Link href={`/${lang}/assistant/role-tutor?language=${language}`}>{t.continueLearning} →</Link></article>
+        <article className="learning-hub-card"><h2>{learningPathDisplayName(lang, "max")} · AI</h2><p>{t.maxBody}</p><Link href={`/${lang}/max/tutor?language=${language}`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{labels.findLevel}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/classes/${basicClassId}/placement`}>{t.continueLearning} →</Link></article>
       </div>
       <section className="learning-hub-room"><h2>{labels.webinar}</h2><p>{t.webinarBody}</p>

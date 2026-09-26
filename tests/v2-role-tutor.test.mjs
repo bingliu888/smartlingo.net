@@ -15,6 +15,8 @@ test("role tutor accepts only fixed scene, language, level and scene-owned role"
   assert.match(roleTutorInstructions(cafe, 2), /guided opening/);
   assert.match(roleTutorInstructions(cafe, 5), /situational variation/);
   assert.match(roleTutorInstructions(cafe, 10), /independent transfer/);
+  assert.match(roleTutorInstructions(cafe), /tutorOpening in the first-turn context/);
+  assert.match(roleTutorInstructions(cafe), /let the learner answer for themself/);
   for (const bad of [
     { scene: "invented", language: "ja", level: "beginner", uiLanguage: "zh" },
     { scene: "cafe", language: "xx", level: "beginner", uiLanguage: "zh" },
@@ -26,6 +28,10 @@ test("role tutor accepts only fixed scene, language, level and scene-owned role"
   assert.equal(validRoleTutorMessage(" "), false);
   assert.equal(validRoleTutorMessage("x".repeat(401)), false);
   assert.deepEqual(JSON.parse(roleTutorTurnContent([], "hello")), { priorExchanges: [], learnerMessage: "hello" });
+  assert.deepEqual(JSON.parse(roleTutorTurnContent([], "A small coffee, please", "Hello. What would you like today?")), {
+    tutorOpening: "Hello. What would you like today?", priorExchanges: [], learnerMessage: "A small coffee, please",
+  });
+  assert.equal(JSON.parse(roleTutorTurnContent([{ learner: "Hi", tutor: "Hello" }], "Coffee", "Opening")).tutorOpening, undefined);
 });
 
 test("SQLite user ownership and atomic reservation reject replay, overlap, expiry and turn 13", () => {
@@ -76,6 +82,11 @@ test("role tutor uses explicit trial, speech authorization and keeps legacy live
   assert.match(client, /onClick=\{startTrial\}/);
   assert.match(client, /getUserMedia/);
   assert.match(client, /speakLearningText/);
+  assert.match(route, /everydayDialogueLines/);
+  assert.match(route, /opening, history: readHistory/);
+  assert.match(client, /role-tutor-hint/);
+  assert.match(page, /sceneVisual=\{mission\.scene\.motionMedia\[0\]\}/);
+  assert.match(client, /not live video/);
   assert.match(speech, /hasMaxCourseAccess\(user\)/);
   assert.match(speech, /WHERE id=\? AND user_id=\?/);
   assert.match(speech, /transcribeSmartAiSpeech/);

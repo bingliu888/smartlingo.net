@@ -1,53 +1,53 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-responsive-type-scale-20260925-r19",
+  "releaseId": "smartlingo-max-open-tutor-20260925-r20",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 响应式字阶与首页视觉层级",
-    "en": "SmartLingo responsive typography and homepage hierarchy"
+    "zh": "SmartLingo Max 开放式一对一 AI 导师",
+    "en": "SmartLingo Max open one-to-one AI tutor"
   },
   "purpose": {
-    "zh": "缩小平板和桌面首页过大的标题及卡片字阶，同时保持正文易读、明暗对比和移动端自然换行。",
-    "en": "Reduce oversized tablet and desktop homepage headings and card type while preserving readable body copy, contrast, and natural mobile wrapping."
+    "zh": "让旗舰版学习者从兴趣和目标出发与 AI 导师自由交流，由多轮实际表达推测练习程度，并在学生确认后保存共同制定的学习计划。",
+    "en": "Let Max learners discuss their interests and goals with an AI tutor, receive a cautious level estimate after several turns, and save a co-created study plan only after confirmation."
   },
   "features": {
     "zh": [
-      "将学习入口主标题上限从 76px 降至 52px，优化行高、字距和首屏留白。",
-      "将 Flash／Max 卡片标题上限从 60px 降至 36px，并收紧 Guru 标题和卡片间距。",
-      "保留可读正文及原有深色／浅色高对比配色；付款、会员权益和数据库不变。"
+      "新增十二种目标语言的开放式导师入口，不再要求先选固定场景；保留原有角色场景练习，并让角色用已审核场景台词主动开场。",
+      "导师随学生话题调整难度，只根据目标语言的实际表达给参考程度；学生可与导师讨论并修改学习计划，再主动确认保存。",
+      "复用现有按键录音、转写及浏览器语音朗读；试用期每日最多 10 分钟，付费旗舰版每日最多 30 分钟，服务端按活跃时间计量。"
     ],
     "en": [
-      "Cap the learning-entry headline at 52px instead of 76px, with calmer line-height, tracking, and first-screen spacing.",
-      "Cap Flash/Max card headings at 36px instead of 60px and tighten Guru headings and card spacing.",
-      "Retain readable body text and the existing high-contrast light/dark palette; commerce, entitlements, and database remain unchanged."
+      "Add an open tutor entry for twelve target languages without a preset scenario; preserve scene role-play and give it an authored opening line.",
+      "Adapt to learner-chosen topics and estimate practice level only from actual target-language production; discuss and revise a study plan before explicit save.",
+      "Reuse push-to-talk transcription and browser speech playback; meter visible active time server-side at 10 minutes per day during trial or 30 minutes per day on paid Max."
     ]
   },
   "affected": {
-    "zh": ["首页及共用学习入口字阶、WebKit 字号回归检查；不改变路径 URL、支付价格或数据库结构。"],
-    "en": ["Homepage and shared learning-entry typography plus a WebKit type-scale regression check; no route URL, price or database-schema changes."]
+    "zh": ["Max 语言页、开放式导师页面与 API、原场景角色练习、临时导师会话表及既有学习计划。"],
+    "en": ["Max language hub, open tutor page and API, existing scene role-play, short-lived tutor session table, and existing learning plans."]
   },
   "changes": {
-    "zh": ["复用既有学习路径组件与配色，只调整其 CSS 字阶和间距；在既有真实 WebKit 布局门禁加入计算后字号检查。"],
-    "en": ["Reuse existing learning-path components and colors, changing only CSS type scale and spacing; add computed-font-size checks to the existing real-WebKit layout gate."]
+    "zh": ["复用 SmartLingo 的 GPT-6 Luna AI 网关、Max 权限、七天试用、学习计划 API、语音输入和朗读；仅新增开放式对话及每日使用记录的短期数据表。"],
+    "en": ["Reuse SmartLingo's GPT-6 Luna gateway, Max entitlement, seven-day trial, learning-plan API, speech input and playback; add only a short-lived table for open conversation and daily usage."]
   },
   "validation": {
-    "zh": ["构建、零警告 lint、TypeScript、全量测试与中英首页五种屏宽的 WebKit 字阶／布局检查；发布后核验生产页面与精确提交记录。"],
-    "en": ["Build, zero-warning lint, TypeScript, full tests and WebKit type-scale/layout checks at five widths in Chinese and English; verify production and exact release commit after deployment."]
+    "zh": ["TypeScript、零警告 lint、全量测试、D1 迁移重放、构建及共享站点检查；上线后以真实浏览器验证匿名与普通测试会员路径，并核对精确发布记录。"],
+    "en": ["TypeScript, zero-warning lint, full tests, D1 migration replay, build and shared-site gates; then verify anonymous and ordinary QA member flows in a real browser and inspect the exact release record."]
   },
   "deferred": {
-    "zh": ["本次仅需匿名页面验收；不产生真实付款或改变订阅状态。"],
-    "en": ["This round requires anonymous-page acceptance only; no real payment or subscription-state change."]
+    "zh": ["不声称已实现全双工实时语音、真人视频或口型同步。场景角色练习仍有独立的每轮限制；本轮每日计时专用于开放式导师。不进行真实付款。"],
+    "en": ["This is not full-duplex realtime voice, live human video, or lip-sync. Scene role-play retains its separate per-round cap; this release's daily meter applies to the open tutor. No real payment is submitted."]
   },
   "siteAdaptations": {
-    "zh": ["保留十二种界面语言、现有 flash／max 路由与教室权限；共用字阶同时修正各语言入口。"],
-    "en": ["Preserve twelve interface languages, existing flash/max routes and classroom permissions; the shared type scale improves every locale's entry page."]
+    "zh": ["保留十二种目标语言、中文与英文界面、七天 Max 试用及付费权限；导师明确披露 AI 身份，短期上下文定时清除，计划仅经学生确认写入。"],
+    "en": ["Preserve twelve target languages, Chinese and English UI, seven-day Max trial and paid gating; disclose the AI identity, expire short-lived context, and save a plan only after learner confirmation."]
   },
   "dataMigration": {
-    "included": false,
-    "migrations": [],
+    "included": true,
+    "migrations": ["drizzle/0191_max_open_tutor.sql"],
     "rollback": {
-      "zh": "无需数据回退；若需撤销本次字阶调整，重新部署上一成功提交即可。",
-      "en": "No data rollback is required; redeploy the previous successful commit to revert this typography change."
+      "zh": "此迁移为新增表，不删除旧数据。可回退应用代码；若需移除临时导师数据，请先完成独立备份与审计后再另行处理。",
+      "en": "The additive migration does not remove existing data. Application code can be redeployed; remove temporary tutor data only in a separate backed-up and audited change."
     }
   }
 }

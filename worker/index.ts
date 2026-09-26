@@ -80,6 +80,8 @@ const worker = {
       // Purge it shortly after the ten-minute session expires (five-minute cron).
       ctx.waitUntil(env.DB.prepare("DELETE FROM smartlingo_role_tutor_sessions WHERE expires_at<=?")
         .bind(Math.floor(Date.now() / 1_000)).run());
+      ctx.waitUntil(env.DB.prepare("DELETE FROM smartlingo_max_tutor_sessions WHERE usage_day<?")
+        .bind(Math.floor(Date.now() / 86_400_000) - 1).run());
     }
   },
 };

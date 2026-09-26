@@ -32,6 +32,7 @@ export default async function MaxPage({ params }: { params: Promise<{ lang: stri
   if (!admin) await ensureSevenDayMaxTrial(user.id);
   const languages = await memberLearningLanguages(user.id);
   const t = learningExperienceCopy[lang];
+  const zh = lang === "zh";
   const ui = interfaceCopyFor(lang);
   const labels = learningUiCopy[lang];
   const subscription = await getDatabase().prepare("SELECT cadence,status,trial_ends_at AS trialEndsAt,current_period_ends_at AS endsAt,(current_period_ends_at>unixepoch()) AS unexpired FROM subscriptions WHERE user_id=? LIMIT 1")
@@ -46,7 +47,7 @@ export default async function MaxPage({ params }: { params: Promise<{ lang: stri
       <section className="learning-status-card" aria-live="polite"><div><strong>{active ? (isTrial ? t.trialStatus : labels.active) : t.trialUsed}</strong><p>{expires ? `${active ? labels.until : labels.ended} ${expires}` : t.maxBody}</p></div><Link href={`/${lang}/pricing`}>{active ? labels.extend : labels.getMax} →</Link></section>
       <LearningLanguageTiles lang={lang} path="max" initialLanguages={languages} signedIn/>
       <div className="learning-hub-grid">
-        <article className="learning-hub-card"><h2>{ui.askGuru}</h2><p>{t.maxBody}</p><Link href={`/${lang}/assistant/role-tutor`}>{t.continueLearning} →</Link></article>
+        <article className="learning-hub-card"><h2>{zh ? "一对一 AI 语言导师" : "1:1 AI language tutor"}</h2><p>{t.maxBody}</p><Link href={`/${lang}/max/tutor`}>{t.continueLearning} →</Link></article>
         <article className="learning-hub-card"><h2>{ui.everyday}</h2><p>{t.languageIntro}</p><Link href={`/${lang}/play/everyday`}>{t.continueLearning} →</Link></article>
       </div>
     </div>

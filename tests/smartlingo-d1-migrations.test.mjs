@@ -9,11 +9,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 86);
-  assert.equal(result.firstRunApplied, 86);
+  assert.equal(result.migrationCount, 87);
+  assert.equal(result.firstRunApplied, 87);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0190_private_classroom_support_and_presence");
+  assert.equal(result.newestMigration, "0191_max_open_tutor");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -74,7 +74,7 @@ test("legacy audited admin subscriber grants become the same active Max subscrip
   try {
     database.exec("PRAGMA foreign_keys = ON");
     const migrations = readMigrationManifest();
-    applyTrackedMigrations(database, migrations.slice(0, -2));
+    applyTrackedMigrations(database, migrations.slice(0, -3));
     const now = Math.floor(Date.now() / 1_000);
     const user = database.prepare("INSERT INTO users(id,email,display_name,password_hash,email_verified,created_at) VALUES(?,?,?,'test-only',0,?)");
     user.run("audited-member", "audited-member@example.invalid", "Audited", now - 86_400);
@@ -101,7 +101,7 @@ test("GPT-6 Luna migration preserves old cache rows and accepts newly generated 
   const database = new DatabaseSync(":memory:");
   try {
     const migrations = readMigrationManifest();
-    applyTrackedMigrations(database, migrations.slice(0, -3));
+    applyTrackedMigrations(database, migrations.slice(0, -4));
     database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets
       (cache_key,release_id,target_language,level,ui_language,vocabulary_ids_json,payload_json,source_type,created_at)
       VALUES(?,?,?,?,?,?,?,?,?)`).run("old-sentence", "old-release", "ja", "beginner", "en", "[]", "[]", "gpt-5.6-luna", 1);
@@ -109,7 +109,7 @@ test("GPT-6 Luna migration preserves old cache rows and accepts newly generated 
       (cache_key,release_id,target_language,level,scenario,payload_json,source_type,created_at)
       VALUES(?,?,?,?,?,?,?,?)`).run("old-dialogue", "old-release", "ja", "beginner", "cafe", "[]", "gpt-5.6-luna", 1);
 
-    applyTrackedMigrations(database, migrations.slice(0, -2));
+    applyTrackedMigrations(database, migrations.slice(0, -3));
     for (const table of ["smartlingo_adaptive_sentence_sets", "smartlingo_everyday_dialogue_sets"])
       assert.equal(database.prepare(`SELECT source_type FROM ${table} LIMIT 1`).get().source_type, "gpt-5.6-luna");
     database.prepare(`INSERT INTO smartlingo_adaptive_sentence_sets

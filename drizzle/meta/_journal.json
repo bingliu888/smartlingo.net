@@ -603,6 +603,13 @@
       "when": 1790308921000,
       "tag": "0190_private_classroom_support_and_presence",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "6",
+      "when": 1790370000000,
+      "tag": "0191_max_open_tutor",
+      "breakpoints": true
     }
   ]
 }

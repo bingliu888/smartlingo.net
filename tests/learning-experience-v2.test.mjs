@@ -24,7 +24,7 @@ test("Flash and Max keep separate language entry state without a new database ta
   assert.match(hub, /path === "max" && user/);
   assert.match(hub, /CourseClassroomTile/);
   assert.match(hub, /play\/everyday\?language=\$\{language\}/);
-  assert.match(hub, /assistant\/role-tutor\?language=\$\{language\}/);
+  assert.match(hub, /max\/tutor\?language=\$\{language\}/);
   assert.match(await source("lib/learning-language-codes.ts"), /SMARTLINGO_LANGUAGE_COMMUNITIES\.filter\(item => saved\.has\(item\.code\)\)/);
 });
 
