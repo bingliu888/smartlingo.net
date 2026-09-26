@@ -2,6 +2,7 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { runClassMaintenance, type ClassMaintenanceEnvironment } from "../lib/class-maintenance";
+import { cleanupMaxLiveTutorCalls } from "../lib/smartlingo-max-live-tutor";
 
 interface Env {
   ASSETS: Fetcher;
@@ -74,12 +75,15 @@ const worker = {
     if (env.DB) (globalThis as unknown as { __SMARTLINGO_DB__?: D1Database }).__SMARTLINGO_DB__ = env.DB;
     if (env.BUCKET) (globalThis as unknown as { __SMARTLINGO_BUCKET__?: R2Bucket }).__SMARTLINGO_BUCKET__ = env.BUCKET;
     (globalThis as typeof globalThis & { __CLASS_RUNTIME_ENV__?: Env }).__CLASS_RUNTIME_ENV__ = env;
-    ctx.waitUntil(runClassMaintenance(env as unknown as ClassMaintenanceEnvironment));
+    const now = Math.floor(Date.now() / 1_000);
+    if (Math.floor(now / 60) % 5 === 0) ctx.waitUntil(runClassMaintenance(env as unknown as ClassMaintenanceEnvironment));
     if (env.DB) {
+      ctx.waitUntil(cleanupMaxLiveTutorCalls({ database: env.DB, now,
+        credentialSource: env as unknown as Record<string, unknown> }));
       // Role-play text is session context, not a permanent learner transcript.
       // Purge it shortly after the ten-minute session expires (five-minute cron).
       ctx.waitUntil(env.DB.prepare("DELETE FROM smartlingo_role_tutor_sessions WHERE expires_at<=?")
-        .bind(Math.floor(Date.now() / 1_000)).run());
+        .bind(now).run());
       ctx.waitUntil(env.DB.prepare("DELETE FROM smartlingo_max_tutor_sessions WHERE usage_day<?")
         .bind(Math.floor(Date.now() / 86_400_000) - 1).run());
     }

@@ -78,6 +78,12 @@ export async function POST(request: Request) {
         WHERE smartlingo_max_tutor_sessions.usage_day<>excluded.usage_day
           OR smartlingo_max_tutor_sessions.target_language<>excluded.target_language`)
         .bind(crypto.randomUUID(), user.id, mission.language.code, mission.uiLanguage, day, now, opening, now, now).run();
+      // Switching the site language changes the learner's support language,
+      // without changing the selected learning language or resetting progress.
+      await database.prepare(`UPDATE smartlingo_max_tutor_sessions
+        SET ui_language=?,opening_text=?,updated_at=?
+        WHERE user_id=? AND usage_day=? AND target_language=? AND ui_language<>?`)
+        .bind(mission.uiLanguage, opening, now, user.id, day, mission.language.code, mission.uiLanguage).run();
       const row = await database.prepare(`${SELECT} WHERE user_id=? LIMIT 1`).bind(user.id).first<TutorRow>();
       if (!row || row.usageDay !== day || row.language !== mission.language.code) return json({ error: "Tutor session unavailable." }, 503);
       const charged = await accountActiveTime(database, row, now, limit);
@@ -119,7 +125,8 @@ export async function POST(request: Request) {
       const profile = readOpenTutorProfile(row.profileJson);
       const message = (body.message as string).trim();
       const answer = await askSmartAi({
-        feature: "chat_guru", subject: `user:${user.id}`, language: mission.uiLanguage,
+        feature: "chat_guru", subject: `user:${user.id}`,
+        language: mission.uiLanguage === "zh" ? "zh" : "en",
         instructions: openTutorInstructions(mission, reserved.turnCount),
         content: openTutorTurnContent(history, message, row.opening, profile),
         deps: { providerPreference: user.aiProviderPreference ?? "auto", country: smartAiRequestCountry(request) },

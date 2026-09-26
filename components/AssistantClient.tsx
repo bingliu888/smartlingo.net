@@ -109,6 +109,8 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   const busyRef = useRef(false);
   const pendingImageRef = useRef<PendingImage | null>(null);
   const speechTimer = useRef<number | null>(null);
+  const speechStartTimer = useRef<number | null>(null);
+  const activeUtterance = useRef<SpeechSynthesisUtterance | null>(null);
   const speechSession = useRef(0);
   const cameraInput = useRef<HTMLInputElement | null>(null);
   const photoInput = useRef<HTMLInputElement | null>(null);
@@ -169,6 +171,8 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
     if (instance) silenceRecognition(instance, true);
     speechSession.current += 1;
     if (speechTimer.current) window.clearInterval(speechTimer.current);
+    if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
+    activeUtterance.current = null;
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   }, []);
 
@@ -217,9 +221,13 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
 
   function stopReading() {
     speechSession.current += 1;
+    const hadActiveSpeech = Boolean(activeUtterance.current);
     if (speechTimer.current) window.clearInterval(speechTimer.current);
+    if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
     speechTimer.current = null;
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    speechStartTimer.current = null;
+    activeUtterance.current = null;
+    if (hadActiveSpeech && "speechSynthesis" in window) window.speechSynthesis.cancel();
     setSpeechMessage(null);
     setSpeechPaused(false);
     setSpeechElapsed(0);
@@ -235,7 +243,10 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
   function finishReading(session: number) {
     if (session !== speechSession.current) return;
     if (speechTimer.current) window.clearInterval(speechTimer.current);
+    if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
     speechTimer.current = null;
+    speechStartTimer.current = null;
+    activeUtterance.current = null;
     setSpeechMessage(null);
     setSpeechPaused(false);
   }
@@ -250,10 +261,8 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
     const session = ++speechSession.current;
     const preferredLocale = speechLocale || (zh ? "zh-CN" : "en-US");
     setError("");
-    setSpeechMessage(messageIndex);
     setSpeechPaused(false);
     setSpeechElapsed(0);
-    speechTimer.current = window.setInterval(() => setSpeechElapsed(value => value + 1), 1000);
     const chunks: string[] = [];
     for (const paragraph of content.split(/\n+/).map(value => value.trim()).filter(Boolean)) {
       let remaining = paragraph;
@@ -266,6 +275,7 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
       }
       if (remaining) chunks.push(remaining);
     }
+    if (synth.paused) synth.resume();
     const voices = synth.getVoices();
     let index = 0;
     const speakNext = () => {
@@ -275,10 +285,26 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
       const chunkLocale = /[\u3400-\u9fff]/.test(text) ? "zh-CN" : preferredLocale;
       const language = chunkLocale.slice(0, 2).toLowerCase();
       const utterance = new SpeechSynthesisUtterance(text);
+      // WebKit may silently drop an utterance that is not retained, and iOS
+      // requires the first speak() to run in the user's click event.
+      activeUtterance.current = utterance;
       utterance.lang = chunkLocale;
       utterance.rate = language === "zh" ? 0.92 : 1;
       utterance.voice = voices.find(candidate => candidate.lang.toLowerCase().startsWith(language)) || null;
-      utterance.onend = speakNext;
+      let started = false;
+      utterance.onstart = () => {
+        if (session !== speechSession.current) return;
+        started = true;
+        if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
+        speechStartTimer.current = null;
+        setSpeechMessage(messageIndex);
+        if (!speechTimer.current) speechTimer.current = window.setInterval(() => setSpeechElapsed(value => value + 1), 1000);
+      };
+      utterance.onend = () => {
+        if (speechStartTimer.current) window.clearTimeout(speechStartTimer.current);
+        speechStartTimer.current = null;
+        speakNext();
+      };
       utterance.onerror = event => {
         if (event.error !== "interrupted" && event.error !== "canceled") {
           setError(interfaceText(lang, "Unable to start speech. Please check this device's voice settings.", "无法启动朗读，请检查设备语音设置。"));
@@ -286,9 +312,13 @@ export function AssistantClient({ lang, targetLanguage, speechLocale, mode, part
         }
       };
       synth.speak(utterance);
-      synth.resume();
+      speechStartTimer.current = window.setTimeout(() => {
+        if (session !== speechSession.current || started) return;
+        stopReading();
+        setError(interfaceText(lang, "Speech did not start. Tap the speaker again or check this device's audio output.", "朗读未能启动。请再点一次扬声器，或检查设备的音频输出。"));
+      }, 3_000);
     };
-    window.setTimeout(speakNext, 80);
+    speakNext();
   }
 
   async function shareAnswer(content: string) {

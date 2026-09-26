@@ -1,4 +1,5 @@
 import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES } from "./smartlingo-language-communities";
+import { isInterfaceLanguage, type InterfaceLanguage } from "./interface-locale";
 import { SMARTLINGO_DAILY_MINUTES, SMARTLINGO_USE_CASES, type SmartLingoDailyMinutes, type SmartLingoUseCase } from "./smartlingo-paths";
 
 export const OPEN_TUTOR_MAX_TURNS = 180;
@@ -19,17 +20,29 @@ export type OpenTutorProfile = {
 
 export function resolveOpenTutorMission(input: { language?: unknown; uiLanguage?: unknown }) {
   if (typeof input.language !== "string" || !isSmartLingoCommunityLanguage(input.language)) return null;
-  if (input.uiLanguage !== "zh" && input.uiLanguage !== "en") return null;
+  if (typeof input.uiLanguage !== "string" || !isInterfaceLanguage(input.uiLanguage)) return null;
   return {
     language: SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === input.language)!,
-    uiLanguage: input.uiLanguage as "zh" | "en",
+    uiLanguage: input.uiLanguage as InterfaceLanguage,
   };
 }
 
-export function openTutorOpening(uiLanguage: "zh" | "en") {
-  return uiLanguage === "zh"
-    ? "你好！我是 SmartLingo AI 语言导师，不是真人。想先认识你：你想用这门语言聊什么？旅行、工作、爱好，还是别的话题？"
-    : "Hi! I’m your SmartLingo AI language tutor, not a person. What would you enjoy talking about in this language—travel, work, a hobby, or something else?";
+export function openTutorOpening(uiLanguage: InterfaceLanguage) {
+  const openings: Record<InterfaceLanguage, string> = {
+    zh: "你好！我是 SmartLingo AI 语言导师，不是真人。你想用这门语言聊什么？旅行、工作、爱好，还是别的话题？",
+    en: "Hi! I’m your SmartLingo AI language tutor, not a person. What would you enjoy talking about in this language—travel, work, a hobby, or something else?",
+    es: "¡Hola! Soy tu tutor de idiomas de IA de SmartLingo, no una persona. ¿De qué te gustaría hablar en el idioma que aprendes?",
+    ja: "こんにちは！私は人間ではなく、SmartLingo の AI 語学チューターです。学習中の言語で何について話したいですか？",
+    ko: "안녕하세요! 저는 사람이 아닌 SmartLingo AI 언어 튜터입니다. 배우는 언어로 어떤 주제를 이야기하고 싶으신가요?",
+    fr: "Bonjour ! Je suis votre tuteur de langues IA SmartLingo, pas une personne. De quoi aimeriez-vous parler dans la langue que vous apprenez ?",
+    de: "Hallo! Ich bin dein SmartLingo-KI-Sprachtutor, keine Person. Worüber möchtest du in deiner Lernsprache sprechen?",
+    ru: "Здравствуйте! Я ИИ-репетитор SmartLingo, а не человек. О чём вы хотели бы поговорить на изучаемом языке?",
+    it: "Ciao! Sono il tuo tutor linguistico IA di SmartLingo, non una persona. Di cosa vorresti parlare nella lingua che stai imparando?",
+    pt: "Olá! Sou seu tutor de idiomas com IA da SmartLingo, não uma pessoa. Sobre o que você gostaria de conversar no idioma que está aprendendo?",
+    ar: "مرحبًا! أنا معلّم لغات بالذكاء الاصطناعي من SmartLingo، ولست إنسانًا. عمّ تحب أن نتحدث باللغة التي تتعلمها؟",
+    hi: "नमस्ते! मैं SmartLingo का AI भाषा शिक्षक हूँ, इंसान नहीं। आप अपनी सीखी जा रही भाषा में किस विषय पर बात करना चाहेंगे?",
+  };
+  return openings[uiLanguage];
 }
 
 export function defaultOpenTutorProfile(): OpenTutorProfile {
@@ -70,7 +83,7 @@ export function parseOpenTutorReply(value: string, prior: OpenTutorProfile, answ
 }
 
 export function openTutorInstructions(mission: NonNullable<ReturnType<typeof resolveOpenTutorMission>>, turn: number) {
-  const interfaceLanguage = mission.uiLanguage === "zh" ? "Simplified Chinese" : "English";
+  const interfaceLanguage = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === mission.uiLanguage)?.nameEn || "English";
   return `You are a clearly disclosed AI language tutor, not a real person. Have a warm, natural one-to-one conversation with a learner of ${mission.language.nameEn} (${mission.language.nativeName}). This is OPEN conversation, not a fixed scenario. The learner chooses topics; welcome ordinary questions about interests, daily life, work, culture or other safe subjects. First get to know their motivation and interests. Over several real learner turns, estimate beginner/intermediate/advanced from their actual ${mission.language.nameEn} production, with uncertainty; never treat one short sentence or only ${interfaceLanguage} support-language text as reliable target-language evidence. If evidence is insufficient, keep level unknown. Adapt the complexity of your target-language replies to the evidence. Gently correct at most one useful error per turn, then ask one relevant follow-up. If the learner is stuck, briefly support them in ${interfaceLanguage}; otherwise practice in ${mission.language.nameEn}. Collaboratively propose a practical 5/10/15/20-minute daily learning plan based on the learner's goals, but never claim to save it until the learner confirms in the UI. Turn ${turn}; keep the conversation on the learner's chosen subject rather than forcing a lesson script. Do not claim to be human, to have a life or physical presence, to know confidential facts, or to remember beyond the provided context. High-stakes medical, legal and financial questions require qualified sources rather than professional advice. Never claim an official test score or credential. Return JSON ONLY, with keys reply (one or two short conversational sentences), level (unknown/beginner/intermediate/advanced), levelReason (short evidence or empty), interests (short summary, no sensitive details), useCase (daily_life/travel/work/study/community), dailyMinutes (5/10/15/20), planFocus (one concise actionable focus). No Markdown or extra keys.`;
 }
 

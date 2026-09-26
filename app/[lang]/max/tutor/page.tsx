@@ -6,9 +6,11 @@ import { SiteFooter } from "../../../../components/SiteFooter";
 import { SiteHeader } from "../../../../components/SiteHeader";
 import { isAdminUser } from "../../../../lib/admin-access";
 import { isInterfaceLanguage } from "../../../../lib/interface-locale";
+import { memberLearningLanguages } from "../../../../lib/learning-experience";
+import { tutorLearningLanguage } from "../../../../lib/learning-language-codes";
 import { ensureSevenDayMaxTrial, hasMaxCourseAccess, hasUsedMaxTrial } from "../../../../lib/platform-entitlements";
 import { requestUser } from "../../../../lib/request-user";
-import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES } from "../../../../lib/smartlingo-language-communities";
+import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../../../../lib/smartlingo-language-communities";
 import "../../assistant/role-tutor/role-tutor.css";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +26,17 @@ export default async function OpenTutorPage({ params, searchParams }: {
 }) {
   const { lang } = await params;
   if (!isInterfaceLanguage(lang)) notFound();
-  const user = await requestUser();
-  if (!user) redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(`/${lang}/max/tutor`)}`);
   const query = await searchParams;
-  const selected = typeof query.language === "string" && isSmartLingoCommunityLanguage(query.language)
-    ? SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === query.language) : null;
+  const user = await requestUser();
+  if (!user) {
+    const selectedLanguage = tutorLearningLanguage(query.language, []);
+    const returnTo = `/${lang}/max/tutor${selectedLanguage ? `?language=${selectedLanguage}` : ""}`;
+    redirect(`/${lang}/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+  }
+  const joined = await memberLearningLanguages(user.id);
+  const learningLanguage = tutorLearningLanguage(query.language, joined);
+  const selected = learningLanguage
+    ? SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === learningLanguage) : null;
   const zh = lang === "zh";
   if (selected && !await isAdminUser(user)) await ensureSevenDayMaxTrial(user.id);
   const max = selected ? await hasMaxCourseAccess(user) : false;

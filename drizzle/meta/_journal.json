@@ -610,6 +610,13 @@
       "when": 1790370000000,
       "tag": "0191_max_open_tutor",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "6",
+      "when": 1790401773000,
+      "tag": "0192_max_live_tutor_calls",
+      "breakpoints": true
     }
   ]
 }

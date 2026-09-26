@@ -1705,7 +1705,7 @@ function runD1Smoke(database) {
 
 export function validateD1Migrations() {
   const migrations = readMigrationManifest();
-  assert.equal(migrations.at(-1)?.tag, "0191_max_open_tutor");
+  assert.equal(migrations.at(-1)?.tag, "0192_max_live_tutor_calls");
   const marketplaceMigration = migrations.find(migration => migration.tag === "0017_smartlingo_language_marketplace");
   assert.ok(marketplaceMigration, "0017 marketplace migration must remain tracked");
   assert.doesNotMatch(
@@ -1721,6 +1721,7 @@ export function validateD1Migrations() {
     assert.equal(firstRun.applied.length, migrations.length);
     assert.deepEqual(firstRun.skipped, []);
     assertDatabaseIntegrity(database);
+    assert.ok(database.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='smartlingo_max_live_tutor_calls'").get());
     assertClerkIdentitySchema(database);
     const stateAfterFirstRun = migrationState(database);
 

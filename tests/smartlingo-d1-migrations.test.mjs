@@ -9,11 +9,11 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("tracked D1 migrations apply once, no-op on rerun, and support core reads and writes", () => {
   const result = validateD1Migrations();
 
-  assert.equal(result.migrationCount, 87);
-  assert.equal(result.firstRunApplied, 87);
+  assert.equal(result.migrationCount, 88);
+  assert.equal(result.firstRunApplied, 88);
   assert.equal(result.secondRunApplied, 0);
   assert.equal(result.foreignKeyViolations, 0);
-  assert.equal(result.newestMigration, "0191_max_open_tutor");
+  assert.equal(result.newestMigration, "0192_max_live_tutor_calls");
   assert.deepEqual(result.smoke, {
     userId: "d1-smoke-user",
     courseId: "tpl_ai_foundations_2026",
@@ -69,12 +69,37 @@ test("course V2 migration provides private recipients, unique member leases, and
   } finally { database.close(); }
 });
 
+test("live tutor migration preserves sessions and accepts a site language separate from the learning language", () => {
+  const database = new DatabaseSync(":memory:");
+  try {
+    database.exec("PRAGMA foreign_keys = ON");
+    const migrations = readMigrationManifest();
+    const liveIndex = migrations.findIndex(({ tag }) => tag === "0192_max_live_tutor_calls");
+    assert.ok(liveIndex > 0);
+    applyTrackedMigrations(database, migrations.slice(0, liveIndex));
+    database.prepare("INSERT INTO users(id,email,display_name,password_hash,email_verified,created_at) VALUES(?,?,?,'test-only',0,?)")
+      .run("tutor-member", "tutor-member@example.invalid", "Tutor member", 100);
+    database.prepare(`INSERT INTO smartlingo_max_tutor_sessions
+      (id,user_id,target_language,ui_language,usage_day,last_active_at,opening_text,created_at,updated_at)
+      VALUES('tutor-session','tutor-member','ja','en',1,100,'Hello',100,100)`).run();
+    applyTrackedMigrations(database, migrations);
+    const preserved = database.prepare("SELECT target_language AS target,ui_language AS support FROM smartlingo_max_tutor_sessions WHERE id='tutor-session'").get();
+    assert.equal(preserved.target, "ja");
+    assert.equal(preserved.support, "en");
+    database.prepare("UPDATE smartlingo_max_tutor_sessions SET ui_language='fr' WHERE id='tutor-session'").run();
+    assert.equal(database.prepare("SELECT ui_language AS support FROM smartlingo_max_tutor_sessions WHERE id='tutor-session'").get().support, "fr");
+    assert.equal(database.prepare("PRAGMA foreign_key_check").all().length, 0);
+  } finally { database.close(); }
+});
+
 test("legacy audited admin subscriber grants become the same active Max subscription used by paid members", () => {
   const database = new DatabaseSync(":memory:");
   try {
     database.exec("PRAGMA foreign_keys = ON");
     const migrations = readMigrationManifest();
-    applyTrackedMigrations(database, migrations.slice(0, -3));
+    const backfillIndex = migrations.findIndex(({ tag }) => tag === "0189_admin_max_subscription_backfill");
+    assert.ok(backfillIndex > 0);
+    applyTrackedMigrations(database, migrations.slice(0, backfillIndex));
     const now = Math.floor(Date.now() / 1_000);
     const user = database.prepare("INSERT INTO users(id,email,display_name,password_hash,email_verified,created_at) VALUES(?,?,?,'test-only',0,?)");
     user.run("audited-member", "audited-member@example.invalid", "Audited", now - 86_400);

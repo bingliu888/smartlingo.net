@@ -8,7 +8,7 @@
   "preview_urls": false,
   "keep_vars": true,
   "limits": { "cpu_ms": 1000 },
-  "triggers": { "crons": ["*/5 * * * *"] },
+  "triggers": { "crons": ["* * * * *"] },
   "routes": [
     {
       "pattern": "smartlingo.net",

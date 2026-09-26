@@ -18,11 +18,11 @@ export function rememberTargetLanguage(code: SmartLingoCommunityLanguage) {
   window.dispatchEvent(new CustomEvent(TARGET_LANGUAGE_EVENT, { detail: code }));
 }
 
-function localizedPath(pathname: string, language: Lang) {
+export function localizedPath(pathname: string, language: Lang, search = "", hash = "") {
   const segments = pathname.split("/");
   if (isInterfaceLanguage(segments[1])) segments[1] = language;
   else segments.splice(1, 0, language);
-  return segments.join("/") || `/${language}`;
+  return `${segments.join("/") || `/${language}`}${search}${hash}`;
 }
 
 export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { lang: Lang; mobile?: boolean; onNavigate?: () => void }) {
@@ -50,12 +50,12 @@ export function InterfaceLanguageMenu({ lang, mobile = false, onNavigate }: { la
     ?? SMARTLINGO_LANGUAGE_COMMUNITIES[0];
 
   function choose(code: SmartLingoCommunityLanguage) {
-    window.localStorage.setItem(INTERFACE_LANGUAGE_KEY, code);
+    try { window.localStorage.setItem(INTERFACE_LANGUAGE_KEY, code); } catch { /* Locale routing also works without persistent storage. */ }
     if (menu.current) menu.current.open = false;
     onNavigate?.();
 
-    window.localStorage.setItem("smartlingo-language", code);
-    window.location.assign(localizedPath(window.location.pathname, code));
+    try { window.localStorage.setItem("smartlingo-language", code); } catch { /* Private browsing may restrict storage. */ }
+    window.location.assign(localizedPath(window.location.pathname, code, window.location.search, window.location.hash));
   }
 
   const options = SMARTLINGO_LANGUAGE_COMMUNITIES.map(language => {

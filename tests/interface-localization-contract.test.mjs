@@ -10,7 +10,7 @@ test("every selectable interface language is a real route instead of an English 
     read("lib/home-interface-translations.generated.ts"), read("app/[lang]/page.tsx"),
   ]);
   assert.doesNotMatch(menu, /code === "zh" \? "zh" : "en"/);
-  assert.match(menu, /localizedPath\(window\.location\.pathname, code\)/);
+  assert.match(menu, /localizedPath\(window\.location\.pathname, code, window\.location\.search, window\.location\.hash\)/);
   assert.match(home, /isInterfaceLanguage\(lang\)/);
   assert.match(home, /learningExperienceCopy\[lang\]/);
   for (const code of ["ja","ko","es","fr","de","ru","it","pt","ar","hi"]) {

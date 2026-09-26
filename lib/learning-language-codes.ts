@@ -1,6 +1,10 @@
-import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "./smartlingo-language-communities";
+import { isSmartLingoCommunityLanguage } from "./smartlingo-language-communities";
 
 export function joinedLanguageCodes(values: readonly string[]) {
-  const saved = new Set(values);
-  return SMARTLINGO_LANGUAGE_COMMUNITIES.filter(item => saved.has(item.code)).map(item => item.code);
+  return [...new Set(values.filter(isSmartLingoCommunityLanguage))];
+}
+
+export function tutorLearningLanguage(query: unknown, joined: readonly string[]) {
+  if (typeof query === "string" && isSmartLingoCommunityLanguage(query)) return query;
+  return joined.find(isSmartLingoCommunityLanguage) || null;
 }

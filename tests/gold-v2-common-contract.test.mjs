@@ -115,7 +115,7 @@ test("private classroom files, recordings, and deletion use bounded durable stor
   assert.match(deletion, /deleteOneR2PrefixPage/);
 });
 
-test("Gold v2 requests and providers are bounded and maintenance runs every five minutes", async () => {
+test("Gold v2 requests and providers are bounded, with minute voice cleanup and five-minute class maintenance", async () => {
   const [bounded, external, rpc, realtime, stripe, source, sourceRoute, deploymentRoute, worker, config, assistant] = await Promise.all([
     read("lib/bounded-request-body.ts"),
     read("lib/external-request-timeout.ts"),
@@ -140,7 +140,9 @@ test("Gold v2 requests and providers are bounded and maintenance runs every five
   assert.match(deploymentRoute, /boundedJsonBody/);
   assert.match(worker, /scheduled/);
   assert.match(worker, /runClassMaintenance/);
-  assert.match(config, /"\*\/5 \* \* \* \*"/);
+  assert.match(config, /"\* \* \* \* \*"/);
+  assert.match(worker, /Math\.floor\(now \/ 60\) % 5 === 0/);
+  assert.match(worker, /cleanupMaxLiveTutorCalls/);
   assert.match(config, /"cpu_ms": 1000/);
   assert.match(config, /"REALTIMEKIT_GUEST_PRESET": "group_call_guest"/);
   assert.match(config, /"REALTIMEKIT_HOST_PRESET": "group_call_host"/);

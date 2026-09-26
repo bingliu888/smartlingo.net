@@ -19,7 +19,12 @@ test("open tutor accepts a real language, disclosed AI identity and unconstraine
   assert.match(openTutorInstructions(mission, 3), /actual Japanese production/);
   assert.match(openTutorInstructions(mission, 3), /never claim to save it until the learner confirms/);
   assert.equal(resolveOpenTutorMission({ language: "xx", uiLanguage: "zh" }), null);
-  assert.equal(resolveOpenTutorMission({ language: "ja", uiLanguage: "fr" }), null);
+  const frenchSupport = resolveOpenTutorMission({ language: "ja", uiLanguage: "fr" });
+  assert.equal(frenchSupport?.language.code, "ja");
+  assert.equal(frenchSupport?.uiLanguage, "fr");
+  assert.match(openTutorInstructions(frenchSupport, 3), /briefly support them in French/);
+  assert.match(openTutorOpening("fr"), /tuteur de langues IA/);
+  assert.equal(resolveOpenTutorMission({ language: "ja", uiLanguage: "xx" }), null);
   assert.equal(validOpenTutorMessage("I enjoy cooking"), true);
   assert.equal(validOpenTutorMessage("  "), false);
   assert.equal(validOpenTutorMessage("x".repeat(801)), false);

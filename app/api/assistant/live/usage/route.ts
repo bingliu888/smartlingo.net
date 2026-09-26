@@ -1,10 +1,13 @@
-import { hasMaxCourseAccess } from "../../../../../lib/platform-entitlements";
+import { maxTutorDailyLimit } from "../../../../../lib/smartlingo-open-tutor-entitlement";
+import { smartAiLiveVoiceConfigured } from "../../../../../lib/smartlingo-ai-gateway";
 import { requestUser } from "../../../../../lib/request-user";
 
 export async function GET() {
   const user = await requestUser();
   if (!user) return Response.json({ error: "Sign in is required." }, { status: 401 });
-  return Response.json({ available: process.env.SMARTLINGO_MAX_ROLE_TUTOR_ENABLED === "1", maxActive: await hasMaxCourseAccess(user) });
+  const dailyLimitSeconds = await maxTutorDailyLimit(user);
+  return Response.json({ available: smartAiLiveVoiceConfigured(), maxActive: dailyLimitSeconds > 0,
+    dailyLimitSeconds }, { headers: { "cache-control": "no-store" } });
 }
 
 export async function POST() {

@@ -25,7 +25,7 @@ test("Flash and Max keep separate language entry state without a new database ta
   assert.match(hub, /CourseClassroomTile/);
   assert.match(hub, /play\/everyday\?language=\$\{language\}/);
   assert.match(hub, /max\/tutor\?language=\$\{language\}/);
-  assert.match(await source("lib/learning-language-codes.ts"), /SMARTLINGO_LANGUAGE_COMMUNITIES\.filter\(item => saved\.has\(item\.code\)\)/);
+  assert.match(await source("lib/learning-language-codes.ts"), /new Set\(values\.filter\(isSmartLingoCommunityLanguage\)\)/);
 });
 
 test("public Flash and language hub render, while anonymous Max requires sign-in", async () => {
@@ -63,6 +63,10 @@ test("public Flash and language hub render, while anonymous Max requires sign-in
       assert.ok([302, 303, 307, 308].includes(response.status), `${path}: ${response.status}`);
       assert.match(response.headers.get("location") ?? "", /\/zh\/auth\/login/);
     }
+    const tutor = await load("/zh/max/tutor?language=ja");
+    assert.ok([302, 303, 307, 308].includes(tutor.status));
+    const login = new URL(tutor.headers.get("location") ?? "", "http://localhost");
+    assert.equal(login.searchParams.get("returnTo"), "/zh/max/tutor?language=ja");
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
     else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = previous;

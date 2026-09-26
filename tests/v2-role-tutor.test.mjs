@@ -66,7 +66,7 @@ test("SQLite user ownership and atomic reservation reject replay, overlap, expir
   database.close();
 });
 
-test("role tutor uses explicit trial, speech authorization and keeps legacy live SDP disabled", () => {
+test("role tutor uses explicit trial, speech authorization and Max-gated live voice", () => {
   const route = readFileSync(new URL("../app/api/assistant/role-tutor/route.ts", import.meta.url), "utf8");
   const page = readFileSync(new URL("../app/[lang]/assistant/role-tutor/page.tsx", import.meta.url), "utf8");
   const live = readFileSync(new URL("../app/api/assistant/live/route.ts", import.meta.url), "utf8");
@@ -94,7 +94,9 @@ test("role tutor uses explicit trial, speech authorization and keeps legacy live
   assert.match(route, /hasMaxCourseAccess\(user\)/);
   assert.match(route, /consumeAiDailyQuota\(user\.id, "assistant"\)/);
   assert.match(route, /origin === new URL\(request\.url\)\.origin/);
-  assert.match(live, /SMARTLINGO_MAX_ROLE_TUTOR_ENABLED !== "1"/);
+  assert.match(live, /maxTutorDailyLimit\(user\)/);
+  assert.match(live, /reserveMaxLiveTutorCall/);
+  assert.match(live, /closeMaxLiveTutorCall/);
   assert.match(worker, /DELETE FROM smartlingo_role_tutor_sessions WHERE expires_at<=\?/);
   assert.match(client, /last four exchanges are kept briefly for context and cleared/);
   assert.match(everyday, /siteLang=\{lang\}/);

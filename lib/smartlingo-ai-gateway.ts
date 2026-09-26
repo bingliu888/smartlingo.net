@@ -977,6 +977,7 @@ export async function openSmartAiLiveVoice(input: {
   paid: boolean;
   sdp: string;
   instructions: string;
+  onConnected?: (callId: string) => Promise<void>;
   deps?: SmartAiGatewayDependencies;
 }) {
   if (!input.sdp || input.sdp.length > 100_000) throw new SmartAiGatewayError("invalid_request");
@@ -994,7 +995,8 @@ export async function openSmartAiLiveVoice(input: {
           type: "realtime",
           model,
           instructions: input.instructions,
-          audio: { output: { voice: "marin" } },
+          output_modalities: ["audio"],
+          audio: { input: { turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
         })], { type: "application/json" }), "session.json");
         return dependencies(input.deps).fetch(
           "https://api.openai.com/v1/realtime/calls",
@@ -1012,7 +1014,10 @@ export async function openSmartAiLiveVoice(input: {
       read: async response => {
         const value = await response.text();
         if (!value.startsWith("v=") || value.length > 200_000) throw new SmartAiGatewayError("invalid_response");
-        return { value, outputUnits: 0 };
+        const callId = response.headers.get("location")?.split("/").pop() || "";
+        if (!/^rtc_[A-Za-z0-9_-]{6,128}$/.test(callId)) throw new SmartAiGatewayError("invalid_response");
+        await input.onConnected?.(callId);
+        return { value: { sdp: value, callId }, outputUnits: 0 };
       },
     });
   } catch (error) {
@@ -1021,6 +1026,25 @@ export async function openSmartAiLiveVoice(input: {
     }
     throw error;
   }
+}
+
+export function smartAiLiveVoiceConfigured() {
+  return Boolean(dependencies().apiKey);
+}
+
+export async function hangupSmartAiLiveVoice(callId: string, input: {
+  credentialSource?: Record<string, unknown>; fetcher?: typeof fetch;
+} = {}) {
+  if (!/^rtc_[A-Za-z0-9_-]{6,128}$/.test(callId)) return false;
+  const source = input.credentialSource;
+  const apiKey = source ? String(source.OPENAI_API_KEY || "") : dependencies().apiKey;
+  if (!apiKey) return false;
+  try {
+    const response = await (input.fetcher || fetch)(`https://api.openai.com/v1/realtime/calls/${callId}/hangup`, {
+      method: "POST", headers: { authorization: `Bearer ${apiKey}` },
+    });
+    return response.ok || response.status === 404 || response.status === 410;
+  } catch { return false; }
 }
 
 export async function transcribeSmartAiSpeech(input: {

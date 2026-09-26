@@ -584,6 +584,29 @@ test("a failed free live voice connection releases the reserved daily allowance"
   assert.deepEqual(release.values.slice(1), ["user-release:2026-08-01", "user-release", "2026-08-01"]);
 });
 
+test("Max live voice records the provider call before returning SDP and uses the gateway for hangup", async () => {
+  const gateway = await importGateway();
+  let connected = "";
+  const answer = await gateway.openSmartAiLiveVoice({
+    userId: "user-max", subject: "user:user-max", paid: true,
+    sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe",
+    onConnected: async id => { connected = id; },
+    deps: { apiKey: "test-only", database: fakeDatabase(),
+      fetch: async () => new Response("v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", {
+        status: 201, headers: { location: "/v1/realtime/calls/rtc_test123" },
+      }) },
+  });
+  assert.equal(connected, "rtc_test123");
+  assert.equal(answer.value.callId, connected);
+  let hangupMethod = "";
+  const hungUp = await gateway.hangupSmartAiLiveVoice(connected, {
+    credentialSource: { OPENAI_API_KEY: "test-only" },
+    fetcher: async (_url, init) => { hangupMethod = init.method; return new Response(null, { status: 204 }); },
+  });
+  assert.equal(hungUp, true);
+  assert.equal(hangupMethod, "POST");
+});
+
 test("assistant routes expose bounded public, authenticated polish, chat, and live capabilities", async () => {
   const route = await read("app/api/assistant/route.ts");
   assert.match(route, /readSmartAiJsonRequest/);

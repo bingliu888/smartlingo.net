@@ -1,55 +1,55 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-open-tutor-plan-restore-20260925-r21",
+  "releaseId": "smartlingo-max-live-language-audio-20260925-r22",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo Max 开放式一对一 AI 导师",
-    "en": "SmartLingo Max open one-to-one AI tutor"
+    "zh": "SmartLingo Max 实时语音导师与学习语言分离",
+    "en": "SmartLingo Max live voice tutor and independent learning language"
   },
   "purpose": {
-    "zh": "让旗舰版学习者从兴趣和目标出发与 AI 导师自由交流，由多轮实际表达推测练习程度，并在学生确认后保存共同制定的学习计划。",
-    "en": "Let Max learners discuss their interests and goals with an AI tutor, receive a cautious level estimate after several turns, and save a co-created study plan only after confirmation."
+    "zh": "让旗舰版学习者以已选目标语言直接进入一对一导师，用网站语言获得必要解释，并在每日限时内使用可打断的实时语音和动画虚拟人物；修复 Safari 朗读无声却显示播放的问题。",
+    "en": "Open the selected learning language directly in Max, use the site language for support, add interruptible time-limited live voice with an animated virtual tutor, and fix Safari's false read-aloud playback state."
   },
   "features": {
     "zh": [
-      "新增十二种目标语言的开放式导师入口，不再要求先选固定场景；保留原有角色场景练习，并让角色用已审核场景台词主动开场。",
-      "导师随学生话题调整难度，只根据目标语言的实际表达给参考程度；学生可与导师讨论并修改学习计划，再主动确认保存。",
-      "复用现有按键录音、转写及浏览器语音朗读；试用期每日最多 10 分钟，付费旗舰版每日最多 30 分钟，服务端按活跃时间计量。",
-      "真实线上验收发现并修复学习计划刷新后恢复默认值的问题；重新进入导师时读取已保存计划，且后续 AI 回复不会覆盖用户确认或正在编辑的选择。"
+      "Max 实时 WebRTC 双向语音接入现有 AI 网关，配合响应声音的动画虚拟人物；文字导师继续可用。",
+      "实时语音沿用试用每日 10 分钟、付费每日 30 分钟额度；服务器预留、挂断、过期清理及未用时长退回，并在会员到期时终止通话。",
+      "快捷版和旗舰版统一称为“我的学习语言”；切换网站语言保留学习目标和页面参数，进入一对一导师时默认使用已选语言。",
+      "Safari 朗读改为点击时直接启动、保留语音对象，只有实际开始播放才显示计时；无声启动失败会提示重试。"
     ],
     "en": [
-      "Add an open tutor entry for twelve target languages without a preset scenario; preserve scene role-play and give it an authored opening line.",
-      "Adapt to learner-chosen topics and estimate practice level only from actual target-language production; discuss and revise a study plan before explicit save.",
-      "Reuse push-to-talk transcription and browser speech playback; meter visible active time server-side at 10 minutes per day during trial or 30 minutes per day on paid Max.",
-      "Fix the plan-reset regression found in live QA: restore the saved plan when reopening the tutor and keep later AI replies from overwriting learner-confirmed or in-progress choices."
+      "Add bidirectional WebRTC voice through the existing AI gateway with a speech-reactive animated virtual tutor; keep the text tutor available.",
+      "Share the trial's 10-minute and paid Max's 30-minute daily tutor allowance with server reservation, hangup, expiry cleanup and refund of unused time.",
+      "Label Flash and Max tiles as learning languages, preserve the target across site-language switches, and open the selected language directly in the one-to-one tutor.",
+      "Start Safari read-aloud synchronously from the tap, retain the utterance, show playback only after speech actually starts, and report silent startup failures."
     ]
   },
   "affected": {
-    "zh": ["Max 语言页、开放式导师页面与 API、原场景角色练习、临时导师会话表及既有学习计划。"],
-    "en": ["Max language hub, open tutor page and API, existing scene role-play, short-lived tutor session table, and existing learning plans."]
+    "zh": ["快捷版和旗舰版语言卡片、Max 导师页面、Ask Guru 朗读、实时语音 API、定时清理及新通话数据表。"],
+    "en": ["Flash and Max language tiles, Max tutor page, Ask Guru read-aloud, live voice API, scheduled cleanup, and a new call table."]
   },
   "changes": {
-    "zh": ["复用 SmartLingo 的 GPT-6 Luna AI 网关、Max 权限、七天试用、学习计划 API、语音输入和朗读；仅新增开放式对话及每日使用记录的短期数据表。"],
-    "en": ["Reuse SmartLingo's GPT-6 Luna gateway, Max entitlement, seven-day trial, learning-plan API, speech input and playback; add only a short-lived table for open conversation and daily usage."]
+    "zh": ["沿用 SmartLingo 现有 AI 网关、Max 权限及学习计划表；保留数据重建导师会话表以支持十二种网站语言，新增带唯一活动通话约束的 D1 表和每分钟清理，课堂维护仍为每五分钟。"],
+    "en": ["Reuse the existing AI gateway, Max entitlement, and learning plans; rebuild the tutor-session table while preserving rows to allow twelve site languages, then add a D1 call table with a single-active-call constraint and minute cleanup while class maintenance remains five-minute."]
   },
   "validation": {
-    "zh": ["TypeScript、零警告 lint、全量测试、D1 迁移重放、构建及共享站点检查；上线后以真实浏览器验证匿名与普通测试会员路径，并核对精确发布记录。"],
-    "en": ["TypeScript, zero-warning lint, full tests, D1 migration replay, build and shared-site gates; then verify anonymous and ordinary QA member flows in a real browser and inspect the exact release record."]
+    "zh": ["TypeScript、零警告 lint、全量测试、D1 迁移重放、构建和共享站点检查；上线后用真实浏览器验证匿名与会员流程及精确发布记录。"],
+    "en": ["TypeScript, zero-warning lint, full tests, D1 migration replay, build and shared-site gates; then real-browser anonymous/member checks and exact release-record verification."]
   },
   "deferred": {
-    "zh": ["不声称已实现全双工实时语音、真人视频或口型同步。场景角色练习仍有独立的每轮限制；本轮每日计时专用于开放式导师。不进行真实付款。"],
-    "en": ["This is not full-duplex realtime voice, live human video, or lip-sync. Scene role-play retains its separate per-round cap; this release's daily meter applies to the open tutor. No real payment is submitted."]
+    "zh": ["虚拟人物为随音量变化的动画，并非真人摄像视频或逐音素口型同步；不保存原始音频。不会提交真实付款。"],
+    "en": ["The virtual character is a speech-reactive animation, not live human video or phoneme-accurate lip sync; raw audio is not stored. No real payment is submitted."]
   },
   "siteAdaptations": {
-    "zh": ["保留十二种目标语言、中文与英文界面、七天 Max 试用及付费权限；导师明确披露 AI 身份，短期上下文定时清除，计划仅经学生确认写入。"],
-    "en": ["Preserve twelve target languages, Chinese and English UI, seven-day Max trial and paid gating; disclose the AI identity, expire short-lived context, and save a plan only after learner confirmation."]
+    "zh": ["学习语言与十二种网站语言独立；以现有 Max 七天试用和付费权限控制语音，导师明确披露 AI 身份。"],
+    "en": ["Keep the learning target independent of all twelve site languages; gate voice by the existing seven-day trial and paid Max entitlement, and disclose AI identity."]
   },
   "dataMigration": {
     "included": true,
-    "migrations": ["drizzle/0191_max_open_tutor.sql"],
+    "migrations": ["drizzle/0192_max_live_tutor_calls.sql"],
     "rollback": {
-      "zh": "此迁移为新增表，不删除旧数据。可回退应用代码；若需移除临时导师数据，请先完成独立备份与审计后再另行处理。",
-      "en": "The additive migration does not remove existing data. Application code can be redeployed; remove temporary tutor data only in a separate backed-up and audited change."
+      "zh": "此迁移复制并保留旧导师会话数据后重建表的语言约束，同时新增实时通话表与时长结算触发器。可回退应用代码，但数据库结构不得直接逆转；如需回退结构，先备份并单独审查迁移。",
+      "en": "This migration copies and preserves existing tutor sessions while rebuilding their language constraint, and adds the live-call table and settlement trigger. Application code can be rolled back, but the schema must not be reversed directly; back up and review any future schema rollback separately."
     }
   }
 }

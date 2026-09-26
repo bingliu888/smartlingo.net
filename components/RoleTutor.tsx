@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { speakLearningText, SMARTLINGO_NORMAL_SPEECH_RATE, SMARTLINGO_SLOW_SPEECH_RATE } from "../lib/smartlingo-speech";
 import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
+import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
+import { MaxLiveTutorCall } from "./MaxLiveTutorCall";
 
 type Line = { by: "learner" | "tutor"; text: string };
 type SavedTutorPlan = { targetLanguage: string; useCase: string; dailyMinutes: number; selfReportedLevel: string };
@@ -15,6 +17,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   initialMax: boolean; trialAvailable: boolean; mode?: "scene" | "open";
 }) {
   const zh = lang === "zh";
+  const supportSpeechLocale = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === lang)?.speechLocale || "en-US";
   const [max, setMax] = useState(initialMax);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState(0);
@@ -23,6 +26,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   const [maxTurns, setMaxTurns] = useState(12);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [dailyLimitSeconds, setDailyLimitSeconds] = useState<number | null>(null);
+  const [liveBusy, setLiveBusy] = useState(false);
   const [profile, setProfile] = useState<OpenTutorProfile | null>(null);
   const [planLevel, setPlanLevel] = useState<"beginner" | "intermediate" | "advanced">("beginner");
   const [planMinutes, setPlanMinutes] = useState(10);
@@ -54,7 +58,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   }, [expiresAt]);
 
   useEffect(() => {
-    if (mode !== "open" || !sessionId || expired) return;
+    if (mode !== "open" || !sessionId || expired || liveBusy) return;
     let pending = false;
     const heartbeat = async () => {
       if (pending || document.visibilityState === "hidden") return;
@@ -62,7 +66,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
       try {
         const response = await fetch("/api/assistant/open-tutor", {
           method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "heartbeat", sessionId, uiLanguage: zh ? "zh" : "en" }),
+          body: JSON.stringify({ action: "heartbeat", sessionId, uiLanguage: lang }),
         });
         const result = await response.json() as { remainingSeconds?: number };
         if (!response.ok) { setExpired(true); return; }
@@ -76,7 +80,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     const timer = window.setInterval(() => void heartbeat(), 15_000);
     window.addEventListener("visibilitychange", heartbeat);
     return () => { window.clearInterval(timer); window.removeEventListener("visibilitychange", heartbeat); };
-  }, [mode, sessionId, expired, zh]);
+  }, [mode, sessionId, expired, lang, liveBusy]);
 
   async function call(body: Record<string, unknown>) {
     const endpoint = body.action === "start-trial" || mode === "scene"
@@ -93,7 +97,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   async function start() {
     setBusy(true); setError("");
     try {
-      const result = await call({ action: "start", ...(mode === "scene" ? { scene, level, role } : {}), language, uiLanguage: zh ? "zh" : "en" });
+      const result = await call({ action: "start", ...(mode === "scene" ? { scene, level, role } : {}), language, uiLanguage: lang });
       setSessionId(result.sessionId || null);
       setExpiresAt(result.expiresAt || 0);
       setExpired(false);
@@ -116,7 +120,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         { by: "learner" as const, text: exchange.learner },
         { by: "tutor" as const, text: exchange.tutor },
       ])].filter(line => line.text));
-      if (result.opening && !result.history?.length) speechCleanupRef.current = speakLearningText(result.opening, speechLocale);
+      if (result.opening && !result.history?.length) speechCleanupRef.current = speakLearningText(result.opening, mode === "open" ? supportSpeechLocale : speechLocale);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
     } finally { setBusy(false); }
@@ -125,7 +129,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   async function startTrial() {
     setBusy(true); setError("");
     try {
-      const result = await call({ action: "start-trial", uiLanguage: zh ? "zh" : "en" });
+      const result = await call({ action: "start-trial", uiLanguage: lang });
       if (result.active) setMax(true);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
@@ -189,7 +193,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     speechCleanupRef.current();
     setBusy(true); setError("");
     try {
-      const result = await call({ action: "turn", sessionId, message: text, uiLanguage: zh ? "zh" : "en" });
+      const result = await call({ action: "turn", sessionId, message: text, uiLanguage: lang });
       setLines(previous => [...previous, { by: "learner", text }, { by: "tutor", text: result.reply || "" }]);
       if (!preserveDraft) setMessage("");
       setTurns(result.turnCount || turns + 1);
@@ -244,7 +248,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     finally { setBusy(false); }
   }
 
-  const ended = sessionId && (turns >= maxTurns || expired || (mode === "open" && remainingSeconds !== null && remainingSeconds <= 0));
+  const ended = sessionId && (turns >= maxTurns || expired || (mode === "open" && !liveBusy && remainingSeconds !== null && remainingSeconds <= 0));
   return <section className="role-tutor-card" aria-label={zh ? "人工智能导师练习" : "AI tutor practice"}>
     <p className="role-tutor-disclosure">{zh ? "AI 模拟导师 · 可打字或按键说话 · 非真人或专业建议" : "Simulated AI tutor · type or push to talk · not a real person or professional advice"}</p>
     <div className="role-tutor-intro"><div><h2>{role}</h2>
@@ -261,11 +265,13 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         ? (zh ? `今日导师时间剩余 ${Math.floor((remainingSeconds || 0) / 60)}:${String((remainingSeconds || 0) % 60).padStart(2, "0")} ／ ${Math.floor((dailyLimitSeconds || 0) / 60)} 分钟` : `Tutor time left today ${Math.floor((remainingSeconds || 0) / 60)}:${String((remainingSeconds || 0) % 60).padStart(2, "0")} / ${Math.floor((dailyLimitSeconds || 0) / 60)} minutes`)
         : (zh ? `已用 ${turns}/${maxTurns} 次回复` : `${turns}/${maxTurns} replies used`)}
         {mode === "scene" ? <> · {turns < 3 ? (zh ? "第一步：引导练习" : "Step 1: guided practice") : turns < 8 ? (zh ? "第二步：应对变化" : "Step 2: adapt to a change") : (zh ? "第三步：独立完成" : "Step 3: independent try")}</> : null} · <button type="button" onClick={() => speechCleanupRef.current()}>{zh ? "■ 停止朗读" : "■ Stop voice"}</button></p>
+      {mode === "open" && !ended ? <MaxLiveTutorCall sessionId={sessionId} language={language} lang={lang}
+        remainingSeconds={remainingSeconds} onRemaining={setRemainingSeconds} onCallActive={setLiveBusy}/> : null}
       <ol className="role-tutor-lines" aria-live="polite">{lines.map((line, index) => <li key={index} className={line.by}>
         <strong>{line.by === "learner" ? (zh ? "你" : "You") : (zh ? "AI 教师 · " : "AI teacher · ") + (line.by === "tutor" ? role : "")}</strong><span dir="auto">{line.text}</span>
-        {line.by === "tutor" ? <span className="role-tutor-voice"><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, speechLocale, SMARTLINGO_NORMAL_SPEECH_RATE); }}>{zh ? "▶ 重听" : "▶ Replay"}</button><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, speechLocale, SMARTLINGO_SLOW_SPEECH_RATE); }}>{zh ? "🐢 慢速" : "🐢 Slow"}</button></span> : null}
+        {line.by === "tutor" ? <span className="role-tutor-voice"><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, mode === "open" && index === 0 ? supportSpeechLocale : speechLocale, SMARTLINGO_NORMAL_SPEECH_RATE); }}>{zh ? "▶ 重听" : "▶ Replay"}</button><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, mode === "open" && index === 0 ? supportSpeechLocale : speechLocale, SMARTLINGO_SLOW_SPEECH_RATE); }}>{zh ? "🐢 慢速" : "🐢 Slow"}</button></span> : null}
       </li>)}</ol>
-      {ended ? <p role="status">{mode === "open" ? (zh ? "今日导师时间或回复次数已用完。明天可继续；你仍可使用快捷版练习。" : "Today's tutor time or replies are used up. Continue tomorrow or practice in Flash.") : (zh ? "本轮练习已结束。你可以返回场景继续免费练习。" : "This round has ended. Return to the scene to keep practicing for free.")}</p> : <form onSubmit={submit}>
+      {ended ? <p role="status">{mode === "open" ? (zh ? "今日导师时间或回复次数已用完。明天可继续；你仍可使用快捷版练习。" : "Today's tutor time or replies are used up. Continue tomorrow or practice in Flash.") : (zh ? "本轮练习已结束。你可以返回场景继续免费练习。" : "This round has ended. Return to the scene to keep practicing for free.")}</p> : liveBusy ? <p role="status">{zh ? "实时对话进行中；结束通话后可继续文字聊天。" : "Live conversation in progress. End the call to continue by text."}</p> : <form onSubmit={submit}>
         <label htmlFor="role-tutor-message">{zh ? "你的回答" : "Your reply"}</label>
         <button className="role-tutor-hint" type="button" onClick={() => sendMessage(mode === "open" ? (zh ? "我们一起制定学习计划吧。请根据我的兴趣和目前程度提议每天可以做什么。" : "Let's make a learning plan together. Based on my interests and current ability, what should I do each day?") : (zh ? "我需要一点提示。请给一个简短示范，再让我自己回答。" : "I need a hint. Please give one short example, then let me answer myself."), true)} disabled={busy || recording}>{mode === "open" ? (zh ? "与导师讨论学习计划" : "Discuss a study plan") : (zh ? "需要提示？问 AI 教师（使用 1 次回复）" : "Need a hint? Ask the AI teacher (uses 1 reply)")}</button>
         <div><input id="role-tutor-message" value={message} onChange={event => setMessage(event.target.value)} maxLength={mode === "open" ? 800 : 400} autoComplete="off" placeholder={mode === "open" ? (zh ? "聊你的兴趣、目标，或任何想练习的话题…" : "Talk about an interest, goal, or any topic you want to practice…") : (zh ? "输入或录一句话…" : "Type or record one sentence…")}/><button type="button" onClick={recording ? stopRecording : startRecording} disabled={busy} aria-label={recording ? (zh ? "结束录音" : "Stop recording") : (zh ? "按键说话" : "Push to talk")}>{recording ? (zh ? "■ 结束" : "■ Stop") : (zh ? "🎙 说话" : "🎙 Speak")}</button><button disabled={busy || recording || !message.trim()}>{busy ? "…" : (zh ? "发送" : "Send")}</button></div>
