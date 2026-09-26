@@ -13,7 +13,9 @@ const {
 test("open tutor accepts a real language, disclosed AI identity and unconstrained learner topics", () => {
   const mission = resolveOpenTutorMission({ language: "ja", uiLanguage: "zh" });
   assert.equal(mission?.language.code, "ja");
-  assert.match(openTutorOpening("zh"), /AI.*不是真人/);
+  assert.match(openTutorOpening("zh"), /AI 导师/);
+  assert.match(openTutorOpening("ja"), /AIの先生/);
+  assert.ok(openTutorOpening("ja").length < 45);
   assert.match(openTutorInstructions(mission, 3), /OPEN conversation, not a fixed scenario/);
   assert.match(openTutorInstructions(mission, 3), /learner chooses topics/);
   assert.match(openTutorInstructions(mission, 3), /actual Japanese production/);
@@ -22,8 +24,11 @@ test("open tutor accepts a real language, disclosed AI identity and unconstraine
   const frenchSupport = resolveOpenTutorMission({ language: "ja", uiLanguage: "fr" });
   assert.equal(frenchSupport?.language.code, "ja");
   assert.equal(frenchSupport?.uiLanguage, "fr");
-  assert.match(openTutorInstructions(frenchSupport, 3), /briefly support them in French/);
-  assert.match(openTutorOpening("fr"), /tuteur de langues IA/);
+  assert.match(openTutorInstructions(frenchSupport, 3), /Write the reply in Japanese, not French/);
+  assert.match(openTutorInstructions(frenchSupport, 3, true), /one short sentence of at most 12 words/);
+  assert.match(openTutorOpening("fr"), /tuteur IA/);
+  const route = readFileSync(new URL("../app/api/assistant/open-tutor/route.ts", import.meta.url), "utf8");
+  assert.match(route, /openTutorOpening\(mission\.language\.code\)/);
   assert.equal(resolveOpenTutorMission({ language: "ja", uiLanguage: "xx" }), null);
   assert.equal(validOpenTutorMessage("I enjoy cooking"), true);
   assert.equal(validOpenTutorMessage("  "), false);

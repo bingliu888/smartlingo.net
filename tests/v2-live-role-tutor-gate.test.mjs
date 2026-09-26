@@ -54,6 +54,9 @@ test("Max voice reserves the same daily allowance, rejects another call, and ser
   assert.equal((await live.closeMaxLiveTutorCall({ database, id: "call-1", userId: "member-1", now: now + 26 })).ended, true);
   assert.equal(sqlite.prepare("SELECT used_seconds FROM smartlingo_max_tutor_sessions").get().used_seconds, 25,
     "the database trigger must not refund a second time");
+  const restarted = await live.reserveMaxLiveTutorCall({ database, userId: "member-1", tutorSessionId: "session-1",
+    language: "ja", limit: 600, now: now + 27, id: "call-restarted" });
+  assert.equal(restarted?.reservedSeconds, 575, "a closed call can immediately start again with the unused allowance");
   sqlite.close();
 });
 

@@ -1,5 +1,5 @@
-import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES } from "./smartlingo-language-communities";
-import { isInterfaceLanguage, type InterfaceLanguage } from "./interface-locale";
+import { isSmartLingoCommunityLanguage, SMARTLINGO_LANGUAGE_COMMUNITIES, type SmartLingoCommunityLanguage } from "./smartlingo-language-communities";
+import { interfaceLanguages, isInterfaceLanguage, type InterfaceLanguage } from "./interface-locale";
 import { SMARTLINGO_DAILY_MINUTES, SMARTLINGO_USE_CASES, type SmartLingoDailyMinutes, type SmartLingoUseCase } from "./smartlingo-paths";
 
 export const OPEN_TUTOR_MAX_TURNS = 180;
@@ -27,23 +27,22 @@ export function resolveOpenTutorMission(input: { language?: unknown; uiLanguage?
   };
 }
 
-export function openTutorOpening(uiLanguage: InterfaceLanguage) {
-  const openings: Record<InterfaceLanguage, string> = {
-    zh: "你好！我是 SmartLingo AI 语言导师，不是真人。你想用这门语言聊什么？旅行、工作、爱好，还是别的话题？",
-    "zh-tw": "你好！我是 SmartLingo AI 語言導師，不是真人。你想用這門語言聊什麼？旅行、工作、愛好，還是別的話題？",
-    en: "Hi! I’m your SmartLingo AI language tutor, not a person. What would you enjoy talking about in this language—travel, work, a hobby, or something else?",
-    es: "¡Hola! Soy tu tutor de idiomas de IA de SmartLingo, no una persona. ¿De qué te gustaría hablar en el idioma que aprendes?",
-    ja: "こんにちは！私は人間ではなく、SmartLingo の AI 語学チューターです。学習中の言語で何について話したいですか？",
-    ko: "안녕하세요! 저는 사람이 아닌 SmartLingo AI 언어 튜터입니다. 배우는 언어로 어떤 주제를 이야기하고 싶으신가요?",
-    fr: "Bonjour ! Je suis votre tuteur de langues IA SmartLingo, pas une personne. De quoi aimeriez-vous parler dans la langue que vous apprenez ?",
-    de: "Hallo! Ich bin dein SmartLingo-KI-Sprachtutor, keine Person. Worüber möchtest du in deiner Lernsprache sprechen?",
-    ru: "Здравствуйте! Я ИИ-репетитор SmartLingo, а не человек. О чём вы хотели бы поговорить на изучаемом языке?",
-    it: "Ciao! Sono il tuo tutor linguistico IA di SmartLingo, non una persona. Di cosa vorresti parlare nella lingua che stai imparando?",
-    pt: "Olá! Sou seu tutor de idiomas com IA da SmartLingo, não uma pessoa. Sobre o que você gostaria de conversar no idioma que está aprendendo?",
-    ar: "مرحبًا! أنا معلّم لغات بالذكاء الاصطناعي من SmartLingo، ولست إنسانًا. عمّ تحب أن نتحدث باللغة التي تتعلمها؟",
-    hi: "नमस्ते! मैं SmartLingo का AI भाषा शिक्षक हूँ, इंसान नहीं। आप अपनी सीखी जा रही भाषा में किस विषय पर बात करना चाहेंगे?",
+export function openTutorOpening(language: SmartLingoCommunityLanguage) {
+  const openings: Record<SmartLingoCommunityLanguage, string> = {
+    zh: "你好！我是 SmartLingo AI 导师。今天想聊什么？",
+    en: "Hi! I’m your SmartLingo AI tutor. What shall we talk about?",
+    es: "¡Hola! Soy tu tutor de IA. ¿De qué hablamos hoy?",
+    ja: "こんにちは！AIの先生です。今日は何を話しましょうか？",
+    ko: "안녕하세요! AI 선생님이에요. 오늘 무엇을 이야기할까요?",
+    fr: "Bonjour ! Je suis votre tuteur IA. De quoi parlons-nous ?",
+    de: "Hallo! Ich bin dein KI-Tutor. Worüber sprechen wir heute?",
+    ru: "Привет! Я ваш ИИ-наставник. О чём поговорим?",
+    it: "Ciao! Sono il tuo tutor IA. Di cosa parliamo oggi?",
+    pt: "Olá! Sou seu tutor de IA. Sobre o que conversamos hoje?",
+    ar: "مرحبًا! أنا معلّمك الذكي. عمّ نتحدث اليوم؟",
+    hi: "नमस्ते! मैं आपका AI शिक्षक हूँ। आज किस बारे में बात करें?",
   };
-  return openings[uiLanguage];
+  return openings[language];
 }
 
 export function defaultOpenTutorProfile(): OpenTutorProfile {
@@ -83,9 +82,10 @@ export function parseOpenTutorReply(value: string, prior: OpenTutorProfile, answ
   return { reply, profile: next };
 }
 
-export function openTutorInstructions(mission: NonNullable<ReturnType<typeof resolveOpenTutorMission>>, turn: number) {
-  const interfaceLanguage = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === mission.uiLanguage)?.nameEn || "English";
-  return `You are a clearly disclosed AI language tutor, not a real person. Have a warm, natural one-to-one conversation with a learner of ${mission.language.nameEn} (${mission.language.nativeName}). This is OPEN conversation, not a fixed scenario. The learner chooses topics; welcome ordinary questions about interests, daily life, work, culture or other safe subjects. First get to know their motivation and interests. Over several real learner turns, estimate beginner/intermediate/advanced from their actual ${mission.language.nameEn} production, with uncertainty; never treat one short sentence or only ${interfaceLanguage} support-language text as reliable target-language evidence. If evidence is insufficient, keep level unknown. Adapt the complexity of your target-language replies to the evidence. Gently correct at most one useful error per turn, then ask one relevant follow-up. If the learner is stuck, briefly support them in ${interfaceLanguage}; otherwise practice in ${mission.language.nameEn}. Collaboratively propose a practical 5/10/15/20-minute daily learning plan based on the learner's goals, but never claim to save it until the learner confirms in the UI. Turn ${turn}; keep the conversation on the learner's chosen subject rather than forcing a lesson script. Do not claim to be human, to have a life or physical presence, to know confidential facts, or to remember beyond the provided context. High-stakes medical, legal and financial questions require qualified sources rather than professional advice. Never claim an official test score or credential. Return JSON ONLY, with keys reply (one or two short conversational sentences), level (unknown/beginner/intermediate/advanced), levelReason (short evidence or empty), interests (short summary, no sensitive details), useCase (daily_life/travel/work/study/community), dailyMinutes (5/10/15/20), planFocus (one concise actionable focus). No Markdown or extra keys.`;
+export function openTutorInstructions(mission: NonNullable<ReturnType<typeof resolveOpenTutorMission>>, turn: number, shortAnswer = false) {
+  const interfaceLanguage = interfaceLanguages.find(item => item.code === mission.uiLanguage)?.nameEn || "English";
+  const answerLength = shortAnswer ? "one short sentence of at most 12 words" : "one or two short conversational sentences";
+  return `You are a clearly disclosed AI language tutor, not a real person. Have a warm, natural one-to-one conversation with a learner of ${mission.language.nameEn} (${mission.language.nativeName}). This is OPEN conversation, not a fixed scenario. The learner chooses topics; welcome ordinary questions about interests, daily life, work, culture or other safe subjects. First get to know their motivation and interests. Over several real learner turns, estimate beginner/intermediate/advanced from their actual ${mission.language.nameEn} production, with uncertainty; never treat one short sentence or only ${interfaceLanguage} support-language text as reliable target-language evidence. If evidence is insufficient, keep level unknown. Adapt the complexity of your target-language replies to the evidence. Gently correct at most one useful error per turn, then ask one relevant follow-up. Write the reply in ${mission.language.nameEn}, not ${interfaceLanguage}; only give brief ${interfaceLanguage} support if explicitly requested. Collaboratively propose a practical 5/10/15/20-minute daily learning plan based on the learner's goals, but never claim to save it until the learner confirms in the UI. Turn ${turn}; keep the conversation on the learner's chosen subject rather than forcing a lesson script. Do not claim to be human, to have a life or physical presence, to know confidential facts, or to remember beyond the provided context. High-stakes medical, legal and financial questions require qualified sources rather than professional advice. Never claim an official test score or credential. Return JSON ONLY, with keys reply (${answerLength}), level (unknown/beginner/intermediate/advanced), levelReason (short evidence or empty), interests (short summary, no sensitive details), useCase (daily_life/travel/work/study/community), dailyMinutes (5/10/15/20), planFocus (one concise actionable focus). No Markdown or extra keys.`;
 }
 
 export function openTutorTurnContent(history: { learner: string; tutor: string }[], message: string, opening: string, profile: OpenTutorProfile) {

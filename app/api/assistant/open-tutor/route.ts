@@ -9,7 +9,7 @@ import {
   parseOpenTutorReply, readOpenTutorProfile, resolveOpenTutorMission, validOpenTutorMessage,
 } from "../../../../lib/smartlingo-open-tutor";
 
-type TutorRequest = { action?: unknown; language?: unknown; uiLanguage?: unknown; sessionId?: unknown; message?: unknown };
+type TutorRequest = { action?: unknown; language?: unknown; uiLanguage?: unknown; sessionId?: unknown; message?: unknown; shortAnswer?: unknown };
 type TutorRow = {
   id: string; userId: string; language: string; uiLanguage: string; usageDay: number;
   usedSeconds: number; lastActiveAt: number; turnCount: number; opening: string;
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     if (body.action === "start") {
       const mission = resolveOpenTutorMission(body);
       if (!mission) return json({ error: zh ? "请选择有效学习语言。" : "Choose a valid learning language." }, 400);
-      const opening = openTutorOpening(mission.uiLanguage);
+      const opening = openTutorOpening(mission.language.code);
       await database.prepare(`INSERT INTO smartlingo_max_tutor_sessions
         (id,user_id,target_language,ui_language,usage_day,used_seconds,last_active_at,
          turn_count,pending_until,opening_text,transcript_json,profile_json,created_at,updated_at)
@@ -82,8 +82,8 @@ export async function POST(request: Request) {
       // without changing the selected learning language or resetting progress.
       await database.prepare(`UPDATE smartlingo_max_tutor_sessions
         SET ui_language=?,opening_text=?,updated_at=?
-        WHERE user_id=? AND usage_day=? AND target_language=? AND ui_language<>?`)
-        .bind(mission.uiLanguage, opening, now, user.id, day, mission.language.code, mission.uiLanguage).run();
+        WHERE user_id=? AND usage_day=? AND target_language=? AND (ui_language<>? OR opening_text<>?)`)
+        .bind(mission.uiLanguage, opening, now, user.id, day, mission.language.code, mission.uiLanguage, opening).run();
       const row = await database.prepare(`${SELECT} WHERE user_id=? LIMIT 1`).bind(user.id).first<TutorRow>();
       if (!row || row.usageDay !== day || row.language !== mission.language.code) return json({ error: "Tutor session unavailable." }, 503);
       const charged = await accountActiveTime(database, row, now, limit);
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
       const answer = await askSmartAi({
         feature: "chat_guru", subject: `user:${user.id}`,
         language: mission.uiLanguage === "zh" ? "zh" : "en",
-        instructions: openTutorInstructions(mission, reserved.turnCount),
+        instructions: openTutorInstructions(mission, reserved.turnCount, body.shortAnswer === true),
         content: openTutorTurnContent(history, message, row.opening, profile),
         deps: { providerPreference: user.aiProviderPreference ?? "auto", country: smartAiRequestCountry(request) },
       });

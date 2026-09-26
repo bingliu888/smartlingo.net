@@ -167,8 +167,8 @@ export const SMARTAI_FEATURE_POLICIES: Readonly<Record<SmartAiFeature, SmartAiFe
     maxInputUnits: 600,
     maxOutputUnits: 0,
     windowSeconds: 60,
-    requestsPerWindow: 1,
-    maxWindowInputUnits: 600,
+    requestsPerWindow: 6,
+    maxWindowInputUnits: 3_600,
     timeoutMs: 20_000,
     failureMode: "unavailable",
   },
@@ -977,6 +977,7 @@ export async function openSmartAiLiveVoice(input: {
   paid: boolean;
   sdp: string;
   instructions: string;
+  shortAnswer?: boolean;
   onConnected?: (callId: string) => Promise<void>;
   deps?: SmartAiGatewayDependencies;
 }) {
@@ -995,8 +996,10 @@ export async function openSmartAiLiveVoice(input: {
           type: "realtime",
           model,
           instructions: input.instructions,
+          max_output_tokens: input.shortAnswer ? 256 : 512,
           output_modalities: ["audio"],
-          audio: { input: { turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
+          audio: { input: { transcription: { model: "gpt-4o-mini-transcribe" },
+            turn_detection: { type: "semantic_vad" } }, output: { voice: "marin" } },
         }));
         return dependencies(input.deps).fetch(
           "https://api.openai.com/v1/realtime/calls",

@@ -1,63 +1,67 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-guandan-language-menu-20260926-r27",
+  "releaseId": "smartlingo-max-tutor-conversation-controls-20260926-r28",
   "site": "smartlingo.net",
   "title": {
-    "zh": "SmartLingo 语言菜单顺序与外部点按修复",
-    "en": "SmartLingo language order and outside-tap dismissal"
+    "zh": "Max AI 导师简短对话、双语字幕与即时重连",
+    "en": "Max AI tutor concise conversation, bilingual captions and immediate reconnect"
   },
   "purpose": {
-    "zh": "按 Guandan 已验证的顺序显示全部 13 种界面语言，并让桌面与触屏用户点按弹窗外即可关闭。",
-    "en": "Show all 13 interface languages in Guandan's verified order and close the popover on an outside click or tap."
+    "zh": "让 AI 导师用当前学习语言简短开场，提供慢速、站点语言译文和简短回答开关，并修复结束语音后立即重连的限流误判。",
+    "en": "Introduce the tutor briefly in the learning language, offer pace, support-language and short-answer controls, and fix the false rate limit after ending and immediately restarting a voice call."
   },
   "features": {
     "zh": [
-      "界面语言从中文（简体）、中文（繁體）开始，后续语言与 Guandan 顺序一致；桌面与汉堡菜单使用同一列表。",
-      "移除拦截触屏外部点按的透明遮罩，复用 Guandan 的文档级外部点击和 Escape 关闭交互。"
+      "文字导师以选定学习语言简短开场；对话可切换慢速朗读、显示当前站点语言译文与简短回答。",
+      "实时虚拟导师遵循同一语言与回答偏好，学生和导师的字幕显示在独立、可上下滚动的对话区。",
+      "结束语音后可以立即重连，仍保持单通话、每日 10/30 分钟以及每分钟有限次数的保护。"
     ],
     "en": [
-      "Start the shared desktop and hamburger language list with Simplified and Traditional Chinese, then follow Guandan's remaining locale order.",
-      "Remove the transparent full-page control that intercepted touch events; reuse Guandan's document-level outside-pointer and Escape dismissal."
+      "The text tutor opens briefly in the selected learning language and offers slow speech, current-site-language translation, and short-answer controls.",
+      "The live avatar tutor follows the same language and answer preferences; learner and tutor captions appear in a separate scrollable transcript.",
+      "An ended voice call can reconnect immediately while one-call-at-a-time, daily 10/30-minute and bounded per-minute protections remain."
     ]
   },
   "affected": {
-    "zh": ["所有使用共享页眉的页面、界面语言弹窗和汉堡菜单。"],
-    "en": ["All shared-header pages, the interface-language popover, and the hamburger language list."]
+    "zh": ["Max 一对一 AI 导师、实时语音通话、字幕与翻译接口；不改变订阅方案和付款。"],
+    "en": ["Max one-to-one AI tutor, live voice calls, captions and translation API; plans and checkout are unchanged."]
   },
   "changes": {
     "zh": [
-      "沿用 Guandan 的语言顺序、双列紧凑布局与文档级外部点按关闭方式，仅保留 SmartLingo 的品牌和路由适配。",
-      "新增语言顺序与外部点按行为回归测试；不修改学习语言、会员或付款数据。"
+      "沿用现有 Max 导师会话与统一 AI 网关，按学习语言选择开场及朗读语言，限制简短回答长度。",
+      "新增仅限已登录有效 Max 的短文本批量译文，实时字幕保留最近 30 条并可手动滚动。",
+      "将实时语音审计窗口从每分钟一次调整为最多六次，同时加入结束即重连的行为回归测试。"
     ],
     "en": [
-      "Reuse Guandan's locale order, compact two-column layout, and document-level outside-pointer dismissal with only SmartLingo branding and route adapters.",
-      "Add behavioral regressions for order and outside taps without changing learning, membership, or payment data."
+      "Reuse the existing Max tutor session and unified AI gateway, selecting the opening and speech locale from the learning language and bounding short replies.",
+      "Add bounded batch translation for signed-in active Max learners and a manually scrollable recent 30-line live transcript.",
+      "Raise the audited live-connection window from one to at most six per minute and add behavior regressions for end-and-reconnect."
     ]
   },
   "validation": {
     "zh": [
-      "TypeScript、零警告 lint、菜单行为回归测试、生产构建与敏感数据扫描。",
-      "WebKit 中英文多尺寸布局检查；发布后在真实浏览器点按弹窗外并核对线上 Project 发布记录。"
+      "TypeScript、零警告 lint、完整本地测试、生产构建、敏感数据扫描与共享站点门禁。",
+      "WebKit 全页面布局门禁；发布后在真实 Chrome QA 会话检查开关、字幕布局、语言与重连权限，并核对线上 Project 精确发布记录。"
     ],
     "en": [
-      "TypeScript, zero-warning lint, menu behavior regressions, production build, and sensitive-data scan.",
-      "WebKit Chinese/English viewport checks, followed by real-browser outside-tap acceptance and exact production Project record verification."
+      "TypeScript, zero-warning lint, full local tests, production build, sensitive-data scan and shared-site gates.",
+      "Complete WebKit layout gate, then real Chrome QA checks for controls, captions, language and reconnect entitlement, followed by exact production Project release verification."
     ]
   },
   "deferred": {
-    "zh": ["本次不涉及付款、实时音视频或会员数据变更。"],
-    "en": ["Payments, live media, and membership data are outside this language-menu change."]
+    "zh": ["不会执行付款、长时并发语音负载或更改会员数据；若 QA 账户已用尽当日导师额度，真实语音重连验收须待额度恢复。"],
+    "en": ["No payments, prolonged concurrent voice load or membership-data changes; if the QA member's daily tutor allowance is exhausted, live reconnect acceptance must wait for the allowance to reset."]
   },
   "siteAdaptations": {
-    "zh": ["沿用 SmartLingo 的 12 种学习语言数据与独立学习目标；本次仅调整 13 种界面语言的显示顺序和弹窗交互。"],
-    "en": ["Keep SmartLingo's 12 learning-language records and independent learning target; only the 13 interface-language display order and popover interaction change."]
+    "zh": ["继续使用 SmartLingo 独立的学习语言、站点语言、Max 日限额与虚拟人画面；译文走现有站点隔离 AI 网关。"],
+    "en": ["Keep SmartLingo's independent learning/site languages, Max daily cap and avatar UI; translations use its isolated existing AI gateway."]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "如需回退，回退本次代码发布；没有数据库迁移。",
-      "en": "Revert this code release if needed; there is no database migration."
+      "zh": "如需回退，回退本次代码发布；没有数据库迁移，原有 Max 会话和订阅仍保留。",
+      "en": "Revert this code release if required; there is no database migration and existing Max sessions and subscriptions remain."
     }
   }
 }

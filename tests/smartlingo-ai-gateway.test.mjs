@@ -21,6 +21,8 @@ async function importGateway() {
 function fakeDatabase(options = {}) {
   const queries = [];
   let allowanceReservations = 0;
+  let windowRequests = 0;
+  let windowInputUnits = 0;
   return {
     queries,
     prepare(query) {
@@ -39,7 +41,16 @@ function fakeDatabase(options = {}) {
               : null;
           }
           if (query.includes("smartlingo_ai_usage_windows")) {
-            return options.rateLimited ? null : { id: "window-1" };
+            if (options.rateLimited) return null;
+            if (options.enforceWindow) {
+              const units = entry.values[5];
+              const requestLimit = entry.values.at(-2);
+              const unitLimit = entry.values.at(-1);
+              if (windowRequests >= requestLimit || windowInputUnits + units > unitLimit) return null;
+              windowRequests += 1;
+              windowInputUnits += units;
+            }
+            return { id: "window-1" };
           }
           return null;
         },
@@ -98,6 +109,9 @@ test("one fixed policy registry owns every SmartLingo AI feature and failure mod
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.scoring.failureMode, "deny");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.moderation.failureMode, "quarantine");
   assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.maxInputUnits, 600);
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.requestsPerWindow, 6,
+    "an ended voice call can reconnect within the same minute");
+  assert.equal(gateway.SMARTAI_FEATURE_POLICIES.live_voice.maxWindowInputUnits, 3_600);
   for (const feature of [
     "public_guru",
     "message_polish",
@@ -602,7 +616,10 @@ test("Max live voice records the provider call before returning SDP and uses the
   });
   assert.equal(providerForm.get("sdp"), "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n");
   assert.equal(typeof providerForm.get("session"), "string");
-  assert.equal(JSON.parse(providerForm.get("session")).model, "gpt-realtime-2.1-mini");
+  const voiceSession = JSON.parse(providerForm.get("session"));
+  assert.equal(voiceSession.model, "gpt-realtime-2.1-mini");
+  assert.equal(voiceSession.audio.input.transcription.model, "gpt-4o-mini-transcribe");
+  assert.equal(voiceSession.max_output_tokens, 512);
   assert.equal(connected, "rtc_test123");
   assert.equal(answer.value.callId, connected);
   let hangupMethod = "";
@@ -612,6 +629,28 @@ test("Max live voice records the provider call before returning SDP and uses the
   });
   assert.equal(hungUp, true);
   assert.equal(hangupMethod, "POST");
+});
+
+test("a completed Max voice call can reconnect immediately while the bounded window still applies", async () => {
+  const gateway = await importGateway();
+  const database = fakeDatabase({ enforceWindow: true });
+  let providerCalls = 0;
+  const input = {
+    userId: "user-reconnect", subject: "user:user-reconnect", paid: true,
+    sdp: "v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", instructions: "safe",
+    deps: { apiKey: "test-only", database, fetch: async () => {
+      providerCalls += 1;
+      return new Response("v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n", {
+        status: 201, headers: { location: `/v1/realtime/calls/rtc_reconnect${providerCalls}` },
+      });
+    } },
+  };
+  for (let reconnect = 0; reconnect < 6; reconnect++) {
+    const answer = await gateway.openSmartAiLiveVoice(input);
+    assert.equal(answer.value.callId, `rtc_reconnect${reconnect + 1}`);
+  }
+  await assert.rejects(() => gateway.openSmartAiLiveVoice(input), error => error.code === "rate_limited");
+  assert.equal(providerCalls, 6, "the seventh connection never reaches the provider");
 });
 
 test("assistant routes expose bounded public, authenticated polish, chat, and live capabilities", async () => {

@@ -6,7 +6,8 @@ import {
   heartbeatMaxLiveTutorCall, reserveMaxLiveTutorCall,
 } from "../../../../lib/smartlingo-max-live-tutor";
 import { readOpenTutorProfile, resolveOpenTutorMission } from "../../../../lib/smartlingo-open-tutor";
-import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../../../../lib/smartlingo-language-communities";
+import { interfaceLanguages } from "../../../../lib/interface-locale";
+import { maxLiveTutorInstructions } from "../../../../lib/smartlingo-live-tutor-instructions";
 import { requestUser } from "../../../../lib/request-user";
 
 function json(value: Record<string, unknown>, status = 200) {
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
   if (!user) return json({ error: "Sign in is required." }, 401);
   const tutorSessionId = request.headers.get("x-tutor-session-id");
   const language = request.headers.get("x-learning-language") || "";
+  const slowSpeed = request.headers.get("x-tutor-slow-speed") === "1";
+  const shortAnswer = request.headers.get("x-tutor-short-answer") === "1";
   if (!uuid(tutorSessionId)) return json({ error: "Start a Max tutor session first." }, 400);
   const limit = await maxTutorDailyLimit(user);
   if (!limit) return json({ error: "An active Max plan is required." }, 403);
@@ -54,11 +57,13 @@ export async function POST(request: Request) {
     accessEndsAt: Number(subscription?.endsAt || 0) > now ? subscription?.endsAt : undefined });
   if (!reservation) return json({ error: "Voice time is used up, or another call is active." }, 429);
   const profile = readOpenTutorProfile(tutor.profileJson);
-  const support = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === mission.uiLanguage)?.nameEn || "English";
-  const instructions = `You are a clearly disclosed AI language tutor, not a real person. Hold a natural, interruptible one-to-one voice conversation with a learner of ${mission.language.nameEn} (${mission.language.nativeName}). The learner chooses topics, including interests, daily life, travel, study, and culture. Listen and respond to what they actually say. Ask one short follow-up at a time, adapt difficulty to their demonstrated language, and gently correct at most one useful error per reply. Use ${support} briefly only when the learner needs support. Known practice level: ${profile.level}; learning focus: ${profile.useCase}. After several turns, offer to discuss a realistic 5/10/15/20-minute study plan, but never claim it was saved: the learner confirms plans in the page's text controls. Do not claim to be human, record raw audio, grant scores or subscriptions, or give professional medical, legal, or financial advice. Do not ask for sensitive information. Keep responses concise and warm.`;
+  const support = interfaceLanguages.find(item => item.code === mission.uiLanguage)?.nameEn || "English";
+  const instructions = maxLiveTutorInstructions({ learningLanguage: mission.language.nameEn,
+    learningNativeName: mission.language.nativeName, supportLanguage: support,
+    level: profile.level, useCase: profile.useCase, slowSpeed, shortAnswer });
   try {
     const answer = await openSmartAiLiveVoice({ userId: user.id, subject: `user:${user.id}`,
-      paid: true, sdp, instructions, onConnected: async callId => {
+      paid: true, sdp, instructions, shortAnswer, onConnected: async callId => {
         if (!await activateMaxLiveTutorCall(database, id, user.id, callId)) {
           await hangupSmartAiLiveVoice(callId);
           throw new Error("Voice connection could not be recorded.");

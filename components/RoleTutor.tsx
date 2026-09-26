@@ -6,9 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { speakLearningText, SMARTLINGO_NORMAL_SPEECH_RATE, SMARTLINGO_SLOW_SPEECH_RATE } from "../lib/smartlingo-speech";
 import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
+import { interfaceLanguages } from "../lib/interface-locale";
+import { translateTutorLines } from "../lib/smartlingo-tutor-translation-client";
 import { MaxLiveTutorCall } from "./MaxLiveTutorCall";
 
-type Line = { by: "learner" | "tutor"; text: string };
+type Line = { by: "learner" | "tutor"; text: string; supportText?: string };
 type SavedTutorPlan = { targetLanguage: string; useCase: string; dailyMinutes: number; selfReportedLevel: string };
 
 export function RoleTutor({ lang, language, scene, level, role, sceneVisual, speechLocale, initialMax, trialAvailable, mode = "scene" }: {
@@ -17,7 +19,9 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   initialMax: boolean; trialAvailable: boolean; mode?: "scene" | "open";
 }) {
   const zh = lang === "zh" || lang === "zh-tw";
-  const supportSpeechLocale = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === lang)?.speechLocale || "en-US";
+  const supportName = interfaceLanguages.find(item => item.code === lang)?.nativeName || lang;
+  const learningName = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language)?.nameEn || language;
+  const supportLanguageName = interfaceLanguages.find(item => item.code === lang)?.nameEn || "English";
   const [max, setMax] = useState(initialMax);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState(0);
@@ -39,6 +43,10 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recording, setRecording] = useState(false);
+  const [slowSpeed, setSlowSpeed] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
+  const [shortAnswer, setShortAnswer] = useState(true);
+  const translationAttemptedRef = useRef<Set<number>>(new Set());
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recordTimerRef = useRef<number | null>(null);
@@ -56,6 +64,21 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     const timer = window.setTimeout(() => setExpired(true), Math.max(0, expiresAt * 1_000 - Date.now()));
     return () => window.clearTimeout(timer);
   }, [expiresAt]);
+
+  useEffect(() => {
+    if (!showSupport || !sessionId || language === lang) return;
+    const batch = lines.map((line, index) => ({ line, index }))
+      .filter(({ line, index }) => !line.supportText && line.text && !translationAttemptedRef.current.has(index))
+      .slice(0, 8);
+    if (!batch.length) return;
+    batch.forEach(({ index }) => translationAttemptedRef.current.add(index));
+    void translateTutorLines(batch.map(({ line }) => line.text.slice(0, 600)), language, lang)
+      .then(translations => setLines(current => current.map((line, index) => {
+        const position = batch.findIndex(item => item.index === index && item.line.text === line.text);
+        return position < 0 ? line : { ...line, supportText: translations[position] };
+      })))
+      .catch(() => setError(zh ? "当前语言译文暂时不可用；关闭并重新开启可重试。" : "Translation is unavailable. Turn Show off and on to retry."));
+  }, [showSupport, sessionId, language, lang, lines, zh]);
 
   useEffect(() => {
     if (mode !== "open" || !sessionId || expired || liveBusy) return;
@@ -116,11 +139,13 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
           }
         } catch { /* An unavailable plan read must not block the tutor conversation. */ }
       }
+      translationAttemptedRef.current.clear();
       setLines([{ by: "tutor" as const, text: result.opening || "" }, ...(result.history || []).flatMap(exchange => [
         { by: "learner" as const, text: exchange.learner },
         { by: "tutor" as const, text: exchange.tutor },
       ])].filter(line => line.text));
-      if (result.opening && !result.history?.length) speechCleanupRef.current = speakLearningText(result.opening, mode === "open" ? supportSpeechLocale : speechLocale);
+      if (result.opening && !result.history?.length) speechCleanupRef.current = speakLearningText(result.opening, speechLocale,
+        slowSpeed ? SMARTLINGO_SLOW_SPEECH_RATE : SMARTLINGO_NORMAL_SPEECH_RATE);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
     } finally { setBusy(false); }
@@ -193,7 +218,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     speechCleanupRef.current();
     setBusy(true); setError("");
     try {
-      const result = await call({ action: "turn", sessionId, message: text, uiLanguage: lang });
+      const result = await call({ action: "turn", sessionId, message: text, uiLanguage: lang, shortAnswer });
       setLines(previous => [...previous, { by: "learner", text }, { by: "tutor", text: result.reply || "" }]);
       if (!preserveDraft) setMessage("");
       setTurns(result.turnCount || turns + 1);
@@ -201,7 +226,8 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         if (result.profile) updateProfile(result.profile);
         if (typeof result.remainingSeconds === "number") setRemainingSeconds(result.remainingSeconds);
       }
-      if (result.reply) speechCleanupRef.current = speakLearningText(result.reply, speechLocale);
+      if (result.reply) speechCleanupRef.current = speakLearningText(result.reply, speechLocale,
+        slowSpeed ? SMARTLINGO_SLOW_SPEECH_RATE : SMARTLINGO_NORMAL_SPEECH_RATE);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
     } finally { setBusy(false); }
@@ -265,11 +291,22 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         ? (zh ? `今日导师时间剩余 ${Math.floor((remainingSeconds || 0) / 60)}:${String((remainingSeconds || 0) % 60).padStart(2, "0")} ／ ${Math.floor((dailyLimitSeconds || 0) / 60)} 分钟` : `Tutor time left today ${Math.floor((remainingSeconds || 0) / 60)}:${String((remainingSeconds || 0) % 60).padStart(2, "0")} / ${Math.floor((dailyLimitSeconds || 0) / 60)} minutes`)
         : (zh ? `已用 ${turns}/${maxTurns} 次回复` : `${turns}/${maxTurns} replies used`)}
         {mode === "scene" ? <> · {turns < 3 ? (zh ? "第一步：引导练习" : "Step 1: guided practice") : turns < 8 ? (zh ? "第二步：应对变化" : "Step 2: adapt to a change") : (zh ? "第三步：独立完成" : "Step 3: independent try")}</> : null} · <button type="button" onClick={() => speechCleanupRef.current()}>{zh ? "■ 停止朗读" : "■ Stop voice"}</button></p>
+      {mode === "open" ? <div className="role-tutor-preferences" aria-label={zh ? "导师对话设置" : "Tutor conversation settings"}>
+        <label><input type="checkbox" checked={slowSpeed} onChange={event => setSlowSpeed(event.target.checked)}/>{zh ? "慢速" : "Slow speed"}</label>
+        {language !== lang ? <label><input type="checkbox" checked={showSupport} onChange={event => {
+          if (event.target.checked) translationAttemptedRef.current.clear();
+          setShowSupport(event.target.checked);
+        }}/>{zh ? `显示 ${supportName}` : `Show ${supportName}`}</label> : null}
+        <label><input type="checkbox" checked={shortAnswer} onChange={event => setShortAnswer(event.target.checked)}/>{zh ? "简短回答" : "Short answers"}</label>
+      </div> : null}
       {mode === "open" && !ended ? <MaxLiveTutorCall sessionId={sessionId} language={language} lang={lang}
+        learningName={learningName} supportLanguageName={supportLanguageName} profile={profile}
+        slowSpeed={slowSpeed} shortAnswer={shortAnswer} showSupport={showSupport}
         remainingSeconds={remainingSeconds} onRemaining={setRemainingSeconds} onCallActive={setLiveBusy}/> : null}
       <ol className="role-tutor-lines" aria-live="polite">{lines.map((line, index) => <li key={index} className={line.by}>
         <strong>{line.by === "learner" ? (zh ? "你" : "You") : (zh ? "AI 教师 · " : "AI teacher · ") + (line.by === "tutor" ? role : "")}</strong><span dir="auto">{line.text}</span>
-        {line.by === "tutor" ? <span className="role-tutor-voice"><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, mode === "open" && index === 0 ? supportSpeechLocale : speechLocale, SMARTLINGO_NORMAL_SPEECH_RATE); }}>{zh ? "▶ 重听" : "▶ Replay"}</button><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, mode === "open" && index === 0 ? supportSpeechLocale : speechLocale, SMARTLINGO_SLOW_SPEECH_RATE); }}>{zh ? "🐢 慢速" : "🐢 Slow"}</button></span> : null}
+        {showSupport && line.supportText ? <small className="role-tutor-translation" lang={lang} dir="auto">{line.supportText}</small> : null}
+        {line.by === "tutor" ? <span className="role-tutor-voice"><button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, speechLocale, slowSpeed ? SMARTLINGO_SLOW_SPEECH_RATE : SMARTLINGO_NORMAL_SPEECH_RATE); }}>{zh ? "▶ 重听" : "▶ Replay"}</button>{mode === "scene" ? <button type="button" onClick={() => { speechCleanupRef.current = speakLearningText(line.text, speechLocale, SMARTLINGO_SLOW_SPEECH_RATE); }}>{zh ? "🐢 慢速" : "🐢 Slow"}</button> : null}</span> : null}
       </li>)}</ol>
       {ended ? <p role="status">{mode === "open" ? (zh ? "今日导师时间或回复次数已用完。明天可继续；你仍可使用快捷版练习。" : "Today's tutor time or replies are used up. Continue tomorrow or practice in Flash.") : (zh ? "本轮练习已结束。你可以返回场景继续免费练习。" : "This round has ended. Return to the scene to keep practicing for free.")}</p> : liveBusy ? <p role="status">{zh ? "实时对话进行中；结束通话后可继续文字聊天。" : "Live conversation in progress. End the call to continue by text."}</p> : <form onSubmit={submit}>
         <label htmlFor="role-tutor-message">{zh ? "你的回答" : "Your reply"}</label>

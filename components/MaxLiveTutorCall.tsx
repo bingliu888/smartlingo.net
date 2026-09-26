@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
+import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
+import { maxLiveTutorInstructions } from "../lib/smartlingo-live-tutor-instructions";
+import { translateTutorLines } from "../lib/smartlingo-tutor-translation-client";
 
 type CallState = "idle" | "connecting" | "live" | "ending";
-type VoiceEvent = { type?: string; delta?: string; transcript?: string; error?: { message?: string } };
+type VoiceEvent = { type?: string; delta?: string; transcript?: string; item_id?: string; error?: { message?: string } };
+type CaptionLine = { id: string; by: "learner" | "tutor"; text: string; complete: boolean; supportText?: string };
 
 function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -33,8 +38,11 @@ function drawVirtualTutor(canvas: HTMLCanvasElement, level: number, speaking: bo
   context.fillStyle = "#b8f3d8"; context.beginPath(); context.arc(width - 36, 36, 8, 0, Math.PI * 2); context.fill();
 }
 
-export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, onRemaining, onCallActive }: {
+export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supportLanguageName, profile,
+  slowSpeed, shortAnswer, showSupport, remainingSeconds, onRemaining, onCallActive }: {
   sessionId: string; language: string; lang: string; remainingSeconds: number | null;
+  learningName: string; supportLanguageName: string; profile: OpenTutorProfile | null;
+  slowSpeed: boolean; shortAnswer: boolean; showSupport: boolean;
   onRemaining: (seconds: number) => void; onCallActive: (active: boolean) => void;
 }) {
   const zh = lang === "zh" || lang === "zh-tw";
@@ -42,12 +50,13 @@ export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, 
   const [seconds, setSeconds] = useState(Math.max(0, remainingSeconds || 0));
   const [muted, setMuted] = useState(false);
   const [speaking, setSpeaking] = useState(false);
-  const [caption, setCaption] = useState("");
+  const [captions, setCaptions] = useState<CaptionLine[]>([]);
   const [error, setError] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const peerRef = useRef<RTCPeerConnection | null>(null);
+  const channelRef = useRef<RTCDataChannel | null>(null);
   const micRef = useRef<MediaStream | null>(null);
   const callIdRef = useRef("");
   const deadlineRef = useRef(0);
@@ -56,12 +65,52 @@ export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, 
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const endingRef = useRef(false);
+  const activeTutorItemRef = useRef("");
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const transcriptAtBottomRef = useRef(true);
+  const translationAttemptedRef = useRef<Set<string>>(new Set());
+  const learningNativeName = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language)?.nativeName || learningName;
+
+  const sendPreferences = useCallback((channel: RTCDataChannel) => {
+    if (channel.readyState !== "open") return;
+    channel.send(JSON.stringify({ type: "session.update", session: { type: "realtime",
+      instructions: maxLiveTutorInstructions({ learningLanguage: learningName, learningNativeName,
+        supportLanguage: supportLanguageName, level: profile?.level || "unknown",
+        useCase: profile?.useCase || "daily_life", slowSpeed, shortAnswer }),
+      max_output_tokens: shortAnswer ? 256 : 512,
+    } }));
+  }, [learningName, learningNativeName, supportLanguageName, profile, slowSpeed, shortAnswer]);
+
+  useEffect(() => {
+    if (state === "live" && channelRef.current) sendPreferences(channelRef.current);
+  }, [state, sendPreferences]);
+
+  useEffect(() => {
+    const container = transcriptRef.current;
+    if (container && transcriptAtBottomRef.current) container.scrollTop = container.scrollHeight;
+  }, [captions]);
+
+  useEffect(() => {
+    if (!showSupport) { translationAttemptedRef.current.clear(); return; }
+    if (language === lang) return;
+    const batch = captions.filter(line => line.complete && line.text && !line.supportText
+      && !translationAttemptedRef.current.has(line.id)).slice(0, 8);
+    if (!batch.length) return;
+    batch.forEach(line => translationAttemptedRef.current.add(line.id));
+    void translateTutorLines(batch.map(line => line.text.slice(0, 600)), language, lang)
+      .then(translations => setCaptions(current => current.map(line => {
+        const index = batch.findIndex(item => item.id === line.id && item.text === line.text);
+        return index < 0 ? line : { ...line, supportText: translations[index] };
+      })))
+      .catch(() => setError(zh ? "当前语言译文暂时不可用。" : "Translation is temporarily unavailable."));
+  }, [captions, showSupport, language, lang, zh]);
 
   function cleanupMedia() {
     if (timerRef.current !== null) window.clearInterval(timerRef.current);
     timerRef.current = null;
     if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
+    channelRef.current?.close(); channelRef.current = null;
     peerRef.current?.close(); peerRef.current = null;
     micRef.current?.getTracks().forEach(track => track.stop()); micRef.current = null;
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.srcObject = null; }
@@ -113,22 +162,44 @@ export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, 
       setError(zh ? "此浏览器不支持实时语音，请继续使用文字导师。" : "Live voice is unavailable in this browser. Continue with the text tutor.");
       return;
     }
-    setError(""); setCaption(""); setState("connecting"); onCallActive(true); endingRef.current = false;
+    setError(""); setCaptions([]); setMuted(false); setSpeaking(false); setSoundBlocked(false);
+    activeTutorItemRef.current = ""; transcriptAtBottomRef.current = true;
+    translationAttemptedRef.current.clear();
+    setState("connecting"); onCallActive(true); endingRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
       micRef.current = stream;
       const peer = new RTCPeerConnection(); peerRef.current = peer;
       stream.getTracks().forEach(track => peer.addTrack(track, stream));
-      const channel = peer.createDataChannel("oai-events");
+      const channel = peer.createDataChannel("oai-events"); channelRef.current = channel;
+      channel.addEventListener("open", () => sendPreferences(channel));
       channel.addEventListener("message", event => {
         let item: VoiceEvent;
         try { item = JSON.parse(String(event.data)) as VoiceEvent; } catch { return; }
         if (item.type === "response.output_audio_transcript.delta" && typeof item.delta === "string") {
-          setCaption(previous => (previous + item.delta).slice(-700)); setSpeaking(true);
+          const id = item.item_id || activeTutorItemRef.current || crypto.randomUUID();
+          activeTutorItemRef.current = id;
+          setCaptions(previous => {
+            const index = previous.findIndex(line => line.id === id);
+            if (index < 0) return [...previous, { id, by: "tutor" as const, text: item.delta!.slice(0, 1_200), complete: false }].slice(-30);
+            return previous.map((line, at) => at === index ? { ...line, text: (line.text + item.delta).slice(0, 1_200) } : line);
+          });
+          setSpeaking(true);
         } else if (item.type === "response.output_audio_transcript.done") {
+          const id = item.item_id || activeTutorItemRef.current || crypto.randomUUID();
+          setCaptions(previous => {
+            const found = previous.some(line => line.id === id);
+            if (found) return previous.map(line => line.id === id
+              ? { ...line, text: item.transcript?.slice(0, 1_200) || line.text, complete: true } : line);
+            return item.transcript ? [...previous, { id, by: "tutor" as const,
+              text: item.transcript.slice(0, 1_200), complete: true }].slice(-30) : previous;
+          });
+          activeTutorItemRef.current = "";
           setSpeaking(false);
         } else if (item.type === "conversation.item.input_audio_transcription.completed" && typeof item.transcript === "string") {
-          setCaption(item.transcript.slice(-700));
+          const id = item.item_id || crypto.randomUUID();
+          setCaptions(previous => [...previous.filter(line => line.id !== id),
+            { id, by: "learner" as const, text: item.transcript!.slice(0, 1_200), complete: true }].slice(-30));
         } else if (item.type === "input_audio_buffer.speech_started") {
           setSpeaking(false);
         } else if (item.type === "error") {
@@ -163,7 +234,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, 
         peer.addEventListener("icegatheringstatechange", check);
       });
       const response = await fetch("/api/assistant/live", { method: "POST", credentials: "same-origin",
-        headers: { "content-type": "application/sdp", "x-tutor-session-id": sessionId, "x-learning-language": language },
+        headers: { "content-type": "application/sdp", "x-tutor-session-id": sessionId, "x-learning-language": language,
+          "x-tutor-slow-speed": slowSpeed ? "1" : "0", "x-tutor-short-answer": shortAnswer ? "1" : "0" },
         body: peer.localDescription?.sdp || offer.sdp });
       if (!response.ok) {
         const result = await response.json().catch(() => ({})) as { error?: string };
@@ -212,8 +284,21 @@ export function MaxLiveTutorCall({ sessionId, language, lang, remainingSeconds, 
       <span className="max-live-tutor-clock" role="status">{state === "live" ? formatTime(seconds) : formatTime(Math.max(0, remainingSeconds || 0))}</span></div>
     <div className="max-live-tutor-stage"><canvas ref={canvasRef} width={640} height={360} role="img"
       aria-label={zh ? "随导师语音同步变化的虚拟人物画面" : "Animated virtual tutor reacting to speech"}/>
-      <p className="max-live-tutor-caption" aria-live="polite" dir="auto">{caption || (zh ? "开始后直接说话，导师会听你说并回应。" : "Start, then speak naturally. Your tutor listens and responds.")}</p>
+      <p className="max-live-tutor-caption" aria-live="polite" dir="auto">{state === "live"
+        ? (zh ? "直接说话；下方可上下滚动查看对话。" : "Speak naturally; scroll the conversation below.")
+        : (zh ? "开始后直接说话，导师会听你说并回应。" : "Start, then speak naturally. Your tutor listens and responds.")}</p>
       <audio ref={audioRef} autoPlay playsInline aria-label={zh ? "虚拟导师语音" : "Virtual tutor audio"}/></div>
+    {captions.length ? <div ref={transcriptRef} className="max-live-tutor-transcript" role="region" tabIndex={0} aria-live="off"
+      aria-label={zh ? "实时对话文字" : "Live conversation transcript"} onScroll={event => {
+        const element = event.currentTarget;
+        transcriptAtBottomRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 48;
+      }}>
+      {captions.map(line => <p key={line.id} className={line.by}>
+        <strong>{line.by === "tutor" ? (zh ? "AI 导师" : "AI tutor") : (zh ? "你" : "You")}</strong>
+        <span dir="auto">{line.text}</span>
+        {showSupport && line.supportText ? <small lang={lang} dir="auto">{line.supportText}</small> : null}
+      </p>)}
+    </div> : null}
     <div className="max-live-tutor-actions">
       {state === "idle" ? <button type="button" onClick={startCall} disabled={!remainingSeconds || remainingSeconds <= 0}>{zh ? "开启实时语音与虚拟人物" : "Start live voice and avatar"}</button>
         : state === "connecting" ? <button type="button" disabled>{zh ? "正在连接…" : "Connecting…"}</button>
