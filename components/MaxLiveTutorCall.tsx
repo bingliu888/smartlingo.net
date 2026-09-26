@@ -121,6 +121,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   }
 
   function stepPortrait(direction: -1 | 1) {
+    if (state !== "idle" || preferenceBusy || !preferenceLoaded) return;
     const nextIndex = (portraitIndex + direction + SMARTLINGO_TUTOR_PORTRAITS.length) % SMARTLINGO_TUTOR_PORTRAITS.length;
     const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS[nextIndex].id;
     void saveTutorChoice(nextPortrait, preferredTutorVoice(nextPortrait, voice));

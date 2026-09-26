@@ -64,6 +64,7 @@ test("the preference route is owner-scoped and the client exposes separate, acce
   assert.match(client, /const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS\[/);
   assert.match(client, /<select id="max-tutor-voice"/);
   assert.match(client, /function stepPortrait\(direction: -1 \| 1\)/);
+  assert.match(client, /function stepPortrait\(direction: -1 \| 1\) \{\s+if \(state !== "idle" \|\| preferenceBusy \|\| !preferenceLoaded\) return;/);
   assert.match(client, /saveTutorChoice\(nextPortrait, preferredTutorVoice\(nextPortrait, voice\)\)/);
 });
 

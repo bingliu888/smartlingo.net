@@ -9,7 +9,7 @@ test("live tutor responds in the learning language with bounded, switchable pace
   const base = { learningLanguage: "Japanese", learningNativeName: "日本語", supportLanguage: "English",
     level: "beginner", useCase: "travel" };
   const short = maxLiveTutorInstructions({ ...base, slowSpeed: true, shortAnswer: true });
-  assert.match(short, /Start with a very short introduction in Japanese/);
+  assert.match(short, /Wait for the learner to speak first; do not introduce yourself or play a greeting/);
   assert.match(short, /Speak in Japanese, not English/);
   assert.match(short, /at most 12 spoken words/);
   assert.match(short, /noticeably slow/);

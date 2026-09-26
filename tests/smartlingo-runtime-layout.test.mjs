@@ -283,6 +283,10 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /anonymous API control failed/);
   assert.match(releaseSource, /public-read API control failed/);
   assert.match(releaseSource, /uniqueRoutes\.slice\(index, index \+ 10\)/);
+  assert.match(releaseSource, /for \(let attempt = 1; attempt <= 3; attempt \+= 1\)/);
+  assert.match(releaseSource, /for \(let attempt = 1; attempt <= 3; attempt \+= 1\) \{\s+const port = await freePort\(\)/);
+  assert.match(releaseSource, /const transientWorkerFailure = \/Could not connect to the server/);
+  assert.match(releaseSource, /if \(!transientWorkerFailure \|\| attempt === 3\)/);
   assert.match(releaseSource, /protectedPages\.slice\(index, index \+ 4\)\.map/);
   assert.match(releaseSource, /protectedApis\.slice\(index, index \+ 4\)\.map/);
   assert.match(releaseSource, /"--harness-executable", harnessExecutable/);

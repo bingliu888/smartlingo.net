@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-tutor-controls-20260926-r36",
+  "releaseId": "smartlingo-max-tutor-controls-20260926-r37",
   "site": "smartlingo.net",
   "title": {
-    "zh": "修复导师轮播布局并简化实时导师操作",
-    "en": "Fix the tutor carousel layout and simplify live tutor controls"
+    "zh": "修复导师轮播、简化实时操作并稳定 WebKit 发布验证",
+    "en": "Fix the tutor carousel, simplify live controls, and stabilize WebKit validation"
   },
   "purpose": {
-    "zh": "修复上一轮 WebKit 检出的侧边导师预览裁切与控件重叠，同时让手机上的实时导师入口更直接。",
-    "en": "Resolve side-preview clipping and control overlap found by the prior WebKit run, while making live tutor controls more direct on phones."
+    "zh": "完成未能部署的导师轮播与操作区更新，并对 WebKit 测试 Worker 意外断连加入有界重试。",
+    "en": "Complete the previously blocked tutor carousel and controls release, with bounded recovery when a WebKit test Worker unexpectedly disconnects."
   },
   "features": {
     "zh": [
-      "导师照片保持完整比例；两侧预览在自身边界内裁切、加深遮罩，停用通话中切换。",
+      "修复网格零宽导致中央导师照片消失的问题并保持完整比例；两侧预览在自身边界内裁切、加深遮罩，停用通话中切换。",
       "照片下方按聊天、开始／结束、音色图标排列；音色只列出与导师形象相符的声音，通话中禁用。",
-      "文字导师首次介绍不自动朗读，移除顶部停止朗读按钮；说明与文字练习设置移到实时导师面板之后。"
+      "文字导师首次介绍不自动朗读，实时通话等学生先开口；移除顶部停止朗读按钮，说明与文字练习设置移到面板之后。"
     ],
     "en": [
-      "Keep the selected portrait uncropped while side previews crop within their own bounds, use stronger shading, and lock during calls.",
+      "Restore the center portrait after a zero-width grid track, keep it uncropped, and crop shaded side previews within their own bounds while locking changes during calls.",
       "Place chat, Start/End, and an icon-only voice selector below the portrait; offer only voices matching the portrait and disable changes during calls.",
-      "Do not auto-read the initial text introduction, remove the upper Stop voice button, and move detailed guidance and text settings below the live tutor panel."
+      "Do not auto-read the initial text introduction or greet before the learner speaks live; remove the upper Stop voice button and move detailed guidance and text settings below the live tutor panel."
     ]
   },
   "affected": {
@@ -33,11 +33,11 @@
   "changes": {
     "zh": [
       "服务端与界面共同校验导师形象和音色；旧会话的不匹配音色在读取和连接时采用相符默认值，数据库结构不变。",
-      "保留全部 310 组 WebKit 页面、语言及视口测量；独立访问控制改为最多四路并行，并在同一发布中复用已编译的测量程序。"
+      "保留全部 310 组 WebKit 页面、语言及视口测量；每组使用新端口，独立访问控制最多四路并行、复用测量程序，Worker 断连时只重测完整分组且最多重试两次。"
     ],
     "en": [
       "Validate portrait and voice together in client and server; normalize legacy mismatched choices when reading or connecting, without a schema change.",
-      "Keep all 310 WebKit route-language-viewport measurements; run independent access controls in bounded groups of four and reuse the compiled measurement harness within the release."
+      "Keep all 310 WebKit route-language-viewport measurements; use a fresh port per group, bound independent access checks to four at a time, reuse the compiled harness, and retry a full group at most twice after a Worker disconnect."
     ]
   },
   "validation": {

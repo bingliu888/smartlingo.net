@@ -138,8 +138,7 @@ async function main() {
   const harnessExecutable = join(work, "layout-harness");
   const token = randomBytes(32).toString("base64url");
   const sessionHash = createHash("sha256").update(token).digest("base64");
-  const port = await freePort();
-  const baseURL = `http://127.0.0.1:${port}`;
+  let baseURL = "";
   let worker = null;
   let workerDiagnostics = "";
 
@@ -247,38 +246,47 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
     // before WebKit finishes. Reopen the same isolated D1 fixture between
     // bounded route groups without skipping any route or viewport assertion.
     for (let index = 0; index < uniqueRoutes.length; index += 10) {
-      workerDiagnostics = "";
-      worker = spawn(process.execPath, [
-        wrangler, "dev", ...common, "--ip", "127.0.0.1", "--port", String(port), "--log-level", "warn",
-      ], { cwd: projectRoot, env: isolatedEnv, stdio: ["ignore", "pipe", "pipe"] });
-      worker.stdout.on("data", value => { workerDiagnostics += String(value); });
-      worker.stderr.on("data", value => { workerDiagnostics += String(value); });
-      await waitForServer(baseURL, worker, () => workerDiagnostics);
-      if (index === 0) {
-        const controlsAt = Date.now();
-        await assertControls(baseURL, token);
-        process.stderr.write(`WebKit access controls took ${Math.round((Date.now() - controlsAt) / 1_000)}s.\n`);
-      }
       const routeGroup = uniqueRoutes.slice(index, index + 10);
       const groupCount = routeGroup.length * SMARTLINGO_LAYOUT_LANGUAGES.length * SMARTLINGO_VIEWPORTS.length;
       const groupAt = Date.now();
-      let verified;
-      try {
-        verified = await run(process.execPath, [
-          verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile,
-          "--harness-executable", harnessExecutable,
-          ...routeGroup.flatMap(route => ["--route", route]),
-        ], { cwd: projectRoot, env: isolatedEnv });
-      } catch (error) {
-        throw new Error(`${error instanceof Error ? error.message : String(error)}\nWorker exit: ${worker.exitCode}; Worker diagnostics: ${workerDiagnostics.slice(-4000)}`);
-      }
-      if (!verified.stdout.includes(`WebKit runtime layout verified: ${groupCount}/${groupCount}`)) {
-        throw new Error(`Expected ${groupCount}/${groupCount} WebKit group evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        const port = await freePort();
+        baseURL = `http://127.0.0.1:${port}`;
+        workerDiagnostics = "";
+        worker = spawn(process.execPath, [
+          wrangler, "dev", ...common, "--ip", "127.0.0.1", "--port", String(port), "--log-level", "warn",
+        ], { cwd: projectRoot, env: isolatedEnv, stdio: ["ignore", "pipe", "pipe"] });
+        worker.stdout.on("data", value => { workerDiagnostics += String(value); });
+        worker.stderr.on("data", value => { workerDiagnostics += String(value); });
+        let failure = "";
+        try {
+          await waitForServer(baseURL, worker, () => workerDiagnostics);
+          if (index === 0) {
+            const controlsAt = Date.now();
+            await assertControls(baseURL, token);
+            process.stderr.write(`WebKit access controls took ${Math.round((Date.now() - controlsAt) / 1_000)}s.\n`);
+          }
+          const verified = await run(process.execPath, [
+            verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile,
+            "--harness-executable", harnessExecutable,
+            ...routeGroup.flatMap(route => ["--route", route]),
+          ], { cwd: projectRoot, env: isolatedEnv });
+          if (!verified.stdout.includes(`WebKit runtime layout verified: ${groupCount}/${groupCount}`)) {
+            throw new Error(`Expected ${groupCount}/${groupCount} WebKit group evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
+          }
+        } catch (error) { failure = error instanceof Error ? error.message : String(error); }
+        const workerExit = worker.exitCode;
+        await stopChild(worker);
+        worker = null;
+        if (!failure) break;
+        const transientWorkerFailure = /Could not connect to the server|local layout Worker (?:exited|did not become ready)/.test(failure);
+        if (!transientWorkerFailure || attempt === 3) {
+          throw new Error(`${failure}\nWorker exit: ${workerExit}; Worker diagnostics: ${workerDiagnostics.slice(-4000)}`);
+        }
+        process.stderr.write(`WebKit route group ${Math.floor(index / 10) + 1}: Worker unavailable, retrying complete group (${attempt}/2).\n`);
       }
       verifiedLayoutCount += groupCount;
       process.stderr.write(`WebKit route group ${Math.floor(index / 10) + 1}: ${groupCount}/${groupCount} verified in ${Math.round((Date.now() - groupAt) / 1_000)}s.\n`);
-      await stopChild(worker);
-      worker = null;
     }
     if (verifiedLayoutCount !== expectedLayoutCount) throw new Error(`Expected ${expectedLayoutCount} WebKit measurements, received ${verifiedLayoutCount}`);
     const evidence = `WebKit runtime layout verified: ${verifiedLayoutCount}/${expectedLayoutCount} · ${uniqueRoutes.length} routes · ${SMARTLINGO_LAYOUT_LANGUAGES.length} languages · ${SMARTLINGO_VIEWPORTS.length} viewports · ${baseURL}`;
