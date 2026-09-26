@@ -1,7 +1,7 @@
 export const SMARTLINGO_TUTOR_PORTRAITS = [
-  { id: "mei", image: "/tutors/mei.jpg", nameEn: "Mei", nameZh: "梅" },
-  { id: "leo", image: "/tutors/leo.jpg", nameEn: "Leo", nameZh: "利奥" },
-  { id: "sofia", image: "/tutors/sofia.jpg", nameEn: "Sofia", nameZh: "索菲娅" },
+  { id: "mei", image: "/tutors/mei.jpg", width: 1000, height: 914, nameEn: "Mei", nameZh: "梅" },
+  { id: "leo", image: "/tutors/leo.jpg", width: 1000, height: 838, nameEn: "Leo", nameZh: "利奥" },
+  { id: "sofia", image: "/tutors/sofia.jpg", width: 1000, height: 914, nameEn: "Sofia", nameZh: "索菲娅" },
 ] as const;
 
 export const SMARTLINGO_TUTOR_VOICES = [

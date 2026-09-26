@@ -41,3 +41,8 @@ test("the native details close state is not overridden by a redundant display ru
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.doesNotMatch(css, /header-language-menu:not\(\[open\]\)/);
 });
+
+test("the phone language menu stays within SmartLingo's narrower header gutters", () => {
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /@media\(max-width:420px\)\{\.site-header\{[^}]*\}\.site-header \.header-language-options\{width:min\(330px,calc\(100vw - 80px\)\)\}/);
+});

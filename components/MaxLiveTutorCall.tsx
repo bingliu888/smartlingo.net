@@ -296,8 +296,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
     <div className="max-live-tutor-heading"><div><small>MAX · LIVE</small><h3>{zh ? "和虚拟人导师实时对话" : "Talk live with your virtual tutor"}</h3></div>
       <span className="max-live-tutor-clock" role="status">{state === "live" ? formatTime(seconds) : formatTime(voiceRemaining)}</span></div>
     <div className={`max-live-tutor-stage${speaking ? " speaking" : ""}`}>
-      <Image className="max-live-tutor-photo" src={selectedPortrait.image} fill unoptimized
-        sizes="(max-width: 540px) 90vw, 440px"
+      <Image className="max-live-tutor-photo" src={selectedPortrait.image}
+        width={selectedPortrait.width} height={selectedPortrait.height} unoptimized
         alt={zh ? `AI 生成的${selectedPortrait.nameZh}导师肖像` : `AI-generated portrait of tutor ${selectedPortrait.nameEn}`}/>
       <button type="button" className="max-live-tutor-chat-toggle" onClick={() => setShowTranscript(value => !value)}
         aria-label={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}

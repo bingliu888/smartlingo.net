@@ -8,6 +8,7 @@ const personas = await tsImport("../lib/smartlingo-live-tutor-personas.ts", impo
 
 test("the three fictional tutor portraits and four GPT-Live voices are allowlisted and locally hosted", () => {
   assert.deepEqual(personas.SMARTLINGO_TUTOR_PORTRAITS.map(item => item.id), ["mei", "leo", "sofia"]);
+  assert.deepEqual(personas.SMARTLINGO_TUTOR_PORTRAITS.map(item => [item.width, item.height]), [[1000, 914], [1000, 838], [1000, 914]]);
   assert.deepEqual(personas.SMARTLINGO_TUTOR_VOICES.map(item => item.id),
     ["marin", "gleam", "meridian", "willow"]);
   for (const item of personas.SMARTLINGO_TUTOR_PORTRAITS)
@@ -87,5 +88,10 @@ test("portrait choices scroll horizontally and voice controls sit directly below
   assert.match(client, /aria-controls="max-live-tutor-transcript" aria-expanded=\{showTranscript\}/);
   assert.match(client, /id="max-live-tutor-transcript"[^>]*hidden=\{!showTranscript\}/);
   assert.match(css, /\.max-live-tutor-transcript\{[^}]*overflow-y:auto/);
+  assert.match(client, /width=\{selectedPortrait\.width\} height=\{selectedPortrait\.height\}/);
+  assert.doesNotMatch(client, /className="max-live-tutor-photo"[^>]* fill /);
+  assert.match(css, /\.max-live-tutor-stage\{[^}]*height:min\(45vh,440px\)[^}]*background:#fff/);
+  assert.match(css, /\.max-live-tutor-photo\{[^}]*width:auto;height:100%;max-width:100%;object-fit:contain/);
+  assert.doesNotMatch(css, /\.max-live-tutor-stage\.speaking \.max-live-tutor-photo\{[^}]*transform:/);
   assert.doesNotMatch(owner, /role-tutor-avatar/);
 });
