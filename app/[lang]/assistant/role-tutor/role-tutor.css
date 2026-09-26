@@ -12,30 +12,36 @@
 .max-live-tutor-stage{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:min(45vh,440px);border-radius:15px;overflow:hidden;background:#fff}
 .max-live-tutor-filmstrip{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px}
 .max-live-tutor-photo{display:block;width:auto;height:100%;max-width:100%;flex:none;object-fit:contain;object-position:center;touch-action:pan-y;transition:filter .7s ease}
-.role-tutor-card .max-live-tutor-preview{display:none;height:100%;min-width:0;flex:1 1 0;margin:0;padding:0;overflow:hidden;border:0;border-radius:0;background:#fff;opacity:.65;cursor:pointer}
+.role-tutor-card .max-live-tutor-preview{display:none;height:100%;min-width:0;flex:1 1 0;margin:0;padding:0;overflow:hidden;border:0;border-radius:0;background:#fff;opacity:.38;filter:saturate(.65) brightness(.84);cursor:pointer}
 .max-live-tutor-preview.previous{justify-content:flex-end}.max-live-tutor-preview.next{justify-content:flex-start}
-.max-live-tutor-preview img{display:block;width:auto;height:100%;max-width:none;object-fit:contain}
-.role-tutor-card .max-live-tutor-preview:not(:disabled):hover{opacity:.85}
+.max-live-tutor-preview img{display:block;width:100%;height:100%;object-fit:cover}
+.max-live-tutor-preview.previous img{object-position:right center}.max-live-tutor-preview.next img{object-position:left center}
+.role-tutor-card .max-live-tutor-preview:not(:disabled):hover{opacity:.68}
 .role-tutor-card .max-live-tutor-preview:focus-visible{outline:3px solid #08715e;outline-offset:-4px}
 .role-tutor-card .max-live-tutor-preview:disabled{opacity:.35;cursor:not-allowed}
 .max-live-tutor-stage.speaking .max-live-tutor-photo{filter:brightness(1.055)}
-.role-tutor-card .max-live-tutor-chat-toggle{position:absolute;z-index:2;top:12px;left:12px;width:44px;height:44px;padding:10px;display:grid;place-items:center;border:1px solid #ffffffaa;border-radius:10px;background:#102e2ab8;color:#fff}
-.role-tutor-card .max-live-tutor-chat-toggle[aria-pressed="true"]{background:#08715e;border-color:#fff}
+.role-tutor-card .max-live-tutor-chat-toggle{width:44px;height:44px;padding:10px;display:grid;place-items:center;border:1px solid #acc9bd;border-radius:10px;background:#fff;color:#075c4d}
+.role-tutor-card .max-live-tutor-chat-toggle[aria-pressed="true"]{background:#08715e;border-color:#08715e;color:#fff}
 .max-live-tutor-chat-toggle svg{width:23px;height:23px}
-.role-tutor-card .max-live-tutor-chat-toggle:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.role-tutor-card .max-live-tutor-chat-toggle:focus-visible{outline:3px solid #08715e;outline-offset:2px}
 .role-tutor-card .max-live-tutor-portrait-step{position:absolute;z-index:2;top:50%;width:44px;height:44px;padding:0;display:grid;place-items:center;transform:translateY(-50%);border:1px solid #ffffffaa;border-radius:50%;background:#102e2ab8;color:#fff;font-size:2rem;font-weight:400;line-height:1;box-shadow:0 2px 10px #102e2a33}
 .role-tutor-card .max-live-tutor-portrait-step.previous{left:12px}.role-tutor-card .max-live-tutor-portrait-step.next{right:12px}
 .role-tutor-card .max-live-tutor-portrait-step:disabled{opacity:.45;background:#56615db8;color:#e1e4e2;box-shadow:none}
 .role-tutor-card .max-live-tutor-portrait-step:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .max-live-tutor-caption{position:absolute;left:3%;right:3%;bottom:3%;margin:0;padding:8px 12px;border-radius:10px;background:#0c262bbd;color:#fff;text-align:center;font-size:clamp(.83rem,1.8vw,1.05rem);overflow-wrap:anywhere}
-.max-live-tutor-voice-choice{position:absolute;z-index:2;top:12px;right:12px;display:flex;align-items:center;gap:5px;padding:5px 7px;border-radius:10px;background:#fffffff0;color:#173c34;font-size:.78rem;font-weight:700}
-.max-live-tutor-voice-choice select{max-width:92px;min-width:0;padding:6px 5px;border:1px solid #9ebfb0;border-radius:8px;background:#fff;color:#173c34;font:inherit}
-.max-live-tutor-voice-choice:has(select:disabled){background:#d9dfdc;color:#52615b}.max-live-tutor-voice-choice select:disabled{border-color:#b4bfba;background:#e9edeb;color:#52615b;cursor:not-allowed}
-.max-live-tutor-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.role-tutor-card .max-live-tutor-actions button{padding:9px 15px}
+.max-live-tutor-voice-choice{position:relative;display:grid;place-items:center;width:44px;height:44px;border:1px solid #acc9bd;border-radius:10px;background:#fff;color:#075c4d}
+.max-live-tutor-voice-choice svg{width:23px;height:23px;pointer-events:none}
+.max-live-tutor-voice-choice select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.max-live-tutor-voice-choice:has(select:disabled){border-color:#c4ceca;background:#e9edeb;color:#75817c}.max-live-tutor-voice-choice select:disabled{cursor:not-allowed}
+.max-live-tutor-actions{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:10px;margin-top:14px}
+.max-live-tutor-call-controls{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.max-live-tutor-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.role-tutor-card .max-live-tutor-unblock{margin-top:10px}
+.role-tutor-card .max-live-tutor-actions .max-live-tutor-call-controls button{padding:9px 15px}
 .role-tutor-card .max-live-tutor-end{background:#a23d31}
 .max-live-tutor-note{font-size:.85rem;line-height:1.5;color:#49605a;margin:12px 0 0}
 @container (min-width:820px){.max-live-tutor-stage{height:min(42vh,380px)}.role-tutor-card .max-live-tutor-preview{display:flex}.role-tutor-card .max-live-tutor-portrait-step{display:none}}
 @media(max-width:540px){.max-live-tutor-stage{height:min(32vh,300px)}.max-live-tutor-caption{font-size:.78rem}.role-tutor-card .max-live-tutor-actions button{min-height:44px;flex:1 1 120px}}
 @media(prefers-reduced-motion:reduce){.max-live-tutor-photo{transition:none}}
 .role-tutor-preferences{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.role-tutor-preferences label{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #bbdacc;border-radius:999px;background:#f3faf6;font-size:.88rem;font-weight:650;cursor:pointer}.role-tutor-card .role-tutor-preferences input{width:17px;height:17px;flex:none;margin:0;padding:0;accent-color:#08715e}.role-tutor-translation{display:block;margin-top:5px;color:#516c65;font-size:.88rem;line-height:1.45}.max-live-tutor-transcript{max-height:min(32vh,280px);margin-top:12px;padding:10px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;border:1px solid #c6ded3;border-radius:12px;background:#fff;-webkit-overflow-scrolling:touch}.max-live-tutor-transcript p{display:grid;gap:3px;margin:0 0 8px;padding:9px 11px;border-radius:10px;background:#edf6f2;font-size:.91rem;line-height:1.45;overflow-wrap:anywhere}.max-live-tutor-transcript p.learner{background:#eaf1f9}.max-live-tutor-transcript p:last-child{margin-bottom:0}.max-live-tutor-transcript small{font-size:.85rem;color:#526961}
+.role-tutor-description.compact{margin-top:22px;padding-top:16px;border-top:1px solid #d9e4de;color:#49605a;font-size:.9rem;line-height:1.5}.role-tutor-description h2{color:#142a30}

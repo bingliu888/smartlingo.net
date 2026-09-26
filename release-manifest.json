@@ -1,75 +1,77 @@
 {
   "schemaVersion": 1,
-  "releaseId": "smartlingo-max-tutor-center-image-20260926-r35",
+  "releaseId": "smartlingo-max-tutor-controls-20260926-r36",
   "site": "smartlingo.net",
   "title": {
-    "zh": "修复横屏导师照片未显示并增加实时布局回归检查",
-    "en": "Restore the selected tutor portrait on wide screens and add a runtime layout regression"
+    "zh": "修复导师轮播布局并简化实时导师操作",
+    "en": "Fix the tutor carousel layout and simplify live tutor controls"
   },
   "purpose": {
-    "zh": "修复上一版轮播中间照片因网格轨道收缩为零而消失的问题，并让 WebKit 在真实打开导师面板后测量照片。",
-    "en": "Fix the previous carousel's center portrait disappearing when a grid track collapsed to zero, and make WebKit measure the portrait after opening the actual tutor panel."
+    "zh": "修复上一轮 WebKit 检出的侧边导师预览裁切与控件重叠，同时让手机上的实时导师入口更直接。",
+    "en": "Resolve side-preview clipping and control overlap found by the prior WebKit run, while making live tutor controls more direct on phones."
   },
   "features": {
     "zh": [
-      "复用已验证的中央照片尺寸，将轮播轨道改为弹性布局，照片保持完整比例与居中，两侧预览仍可切换。",
-      "WebKit 在打开真实导师面板后检查照片已加载、尺寸可用、未裁切且居中，防止类似漏检。"
+      "导师照片保持完整比例；两侧预览在自身边界内裁切、加深遮罩，停用通话中切换。",
+      "照片下方按聊天、开始／结束、音色图标排列；音色只列出与导师形象相符的声音，通话中禁用。",
+      "文字导师首次介绍不自动朗读，移除顶部停止朗读按钮；说明与文字练习设置移到实时导师面板之后。"
     ],
     "en": [
-      "Reuse the verified central portrait sizing in a flex row so the complete selected image stays centered while adjacent previews remain selectable.",
-      "Open the real tutor panel in WebKit and assert that the loaded portrait has a usable size, remains uncropped, and is centered."
+      "Keep the selected portrait uncropped while side previews crop within their own bounds, use stronger shading, and lock during calls.",
+      "Place chat, Start/End, and an icon-only voice selector below the portrait; offer only voices matching the portrait and disable changes during calls.",
+      "Do not auto-read the initial text introduction, remove the upper Stop voice button, and move detailed guidance and text settings below the live tutor panel."
     ]
   },
   "affected": {
     "zh": [
-      "旗舰版实时导师照片和响应式验证；不改通话、导师偏好、账户或付款。"
+      "旗舰版一对一导师页面、实时语音偏好 API、WebKit 发布验证；不改订阅或付款。"
     ],
     "en": [
-      "The Max live tutor portrait and responsive verification; no changes to calls, preferences, accounts, or payments."
+      "Max one-to-one tutor, live-voice preference API, and WebKit release validation; no subscription or payment change."
     ]
   },
   "changes": {
     "zh": [
-      "修正中心照片轨道，避免 CSS 网格自动轨道宽度为零；保留原有轮播与通话锁定逻辑。",
-      "为已登录 WebKit 布局页加入开启导师面板步骤，并检查真实照片的宽度、比例和中心位置。"
+      "服务端与界面共同校验导师形象和音色；旧会话的不匹配音色在读取和连接时采用相符默认值，数据库结构不变。",
+      "保留全部 310 组 WebKit 页面、语言及视口测量；独立访问控制改为最多四路并行，并在同一发布中复用已编译的测量程序。"
     ],
     "en": [
-      "Correct the center portrait track so CSS grid auto sizing cannot collapse it, while preserving carousel selection and in-call locking.",
-      "Open the authenticated tutor panel in WebKit layout checks and measure the real image size, uncropped fit, and centering."
+      "Validate portrait and voice together in client and server; normalize legacy mismatched choices when reading or connecting, without a schema change.",
+      "Keep all 310 WebKit route-language-viewport measurements; run independent access controls in bounded groups of four and reuse the compiled measurement harness within the release."
     ]
   },
   "validation": {
     "zh": [
       "站点策略门禁、TypeScript、零警告 lint、全套测试、构建与中英文 WebKit 响应式检查。",
-      "发布后实测桌面照片显示与侧边切换，核对精确 Project 发布记录。"
+      "发布后实测宽屏轮播、手机控制排列、音色筛选，核对精确 Project 发布记录。"
     ],
     "en": [
       "Site policy gates, TypeScript, zero-warning lint, full tests, build, and Chinese/English responsive WebKit checks.",
-      "After deployment, inspect the wide selected portrait and side-preview switching, then verify the exact Project release record."
+      "After deployment, inspect the wide carousel, phone control order, filtered voice selector, and exact Project release record."
     ]
   },
   "deferred": {
     "zh": [
-      "无付款、账户或实时语音行为变更。"
+      "不提交付款；自动化不录制或保存真实学员音频。"
     ],
     "en": [
-      "No payment, account, or live-voice behavior changes."
+      "No payment is submitted; automated checks do not record or store real learner audio."
     ]
   },
   "siteAdaptations": {
     "zh": [
-      "沿用 SmartLingo 的十三个界面语言、学习语言和现有导师照片。"
+      "沿用 SmartLingo 现有导师照片、GPT-Live 音色和十三种界面语言。"
     ],
     "en": [
-      "Preserve SmartLingo's thirteen interface locales, learning-language selection, and existing tutor photos."
+      "Reuse SmartLingo's existing tutor portraits, GPT-Live voices, and thirteen interface locales."
     ]
   },
   "dataMigration": {
     "included": false,
     "migrations": [],
     "rollback": {
-      "zh": "回退到上一部署提交；数据库无变更。",
-      "en": "Deploy the prior commit; no database change is involved."
+      "zh": "部署上一稳定提交；数据库结构无变更。",
+      "en": "Deploy the previous stable commit; no database schema change is involved."
     }
   }
 }

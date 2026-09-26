@@ -5,8 +5,8 @@ import Image from "next/image";
 import type { OpenTutorProfile } from "../lib/smartlingo-open-tutor";
 import { SMARTLINGO_LANGUAGE_COMMUNITIES } from "../lib/smartlingo-language-communities";
 import { maxLiveTutorInstructions } from "../lib/smartlingo-live-tutor-instructions";
-import { SMARTLINGO_TUTOR_PORTRAITS, SMARTLINGO_TUTOR_VOICES,
-  validTutorPortrait, validTutorVoice, type SmartLingoTutorPortrait,
+import { SMARTLINGO_TUTOR_PORTRAITS,
+  preferredTutorVoice, tutorVoiceOptions, validTutorPortrait, validTutorVoice, type SmartLingoTutorPortrait,
   type SmartLingoTutorVoice } from "../lib/smartlingo-live-tutor-personas";
 import { translateTutorLines } from "../lib/smartlingo-tutor-translation-client";
 
@@ -37,7 +37,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const [error, setError] = useState("");
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [portrait, setPortrait] = useState<SmartLingoTutorPortrait>("mei");
-  const [voice, setVoice] = useState<SmartLingoTutorVoice>("marin");
+  const [voice, setVoice] = useState<SmartLingoTutorVoice>("gleam");
   const [preferenceBusy, setPreferenceBusy] = useState(false);
   const [loadedSessionId, setLoadedSessionId] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -58,6 +58,7 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
   const translationAttemptedRef = useRef<Set<string>>(new Set());
   const learningNativeName = SMARTLINGO_LANGUAGE_COMMUNITIES.find(item => item.code === language)?.nativeName || learningName;
   const selectedPortrait = SMARTLINGO_TUTOR_PORTRAITS.find(item => item.id === portrait) || SMARTLINGO_TUTOR_PORTRAITS[0];
+  const availableVoices = tutorVoiceOptions(selectedPortrait.id);
   const portraitIndex = SMARTLINGO_TUTOR_PORTRAITS.findIndex(item => item.id === selectedPortrait.id);
   const previousPortrait = SMARTLINGO_TUTOR_PORTRAITS[(portraitIndex - 1 + SMARTLINGO_TUTOR_PORTRAITS.length) % SMARTLINGO_TUTOR_PORTRAITS.length];
   const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS[(portraitIndex + 1) % SMARTLINGO_TUTOR_PORTRAITS.length];
@@ -121,7 +122,8 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
 
   function stepPortrait(direction: -1 | 1) {
     const nextIndex = (portraitIndex + direction + SMARTLINGO_TUTOR_PORTRAITS.length) % SMARTLINGO_TUTOR_PORTRAITS.length;
-    void saveTutorChoice(SMARTLINGO_TUTOR_PORTRAITS[nextIndex].id, voice);
+    const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS[nextIndex].id;
+    void saveTutorChoice(nextPortrait, preferredTutorVoice(nextPortrait, voice));
   }
 
   useEffect(() => {
@@ -322,36 +324,42 @@ export function MaxLiveTutorCall({ sessionId, language, lang, learningName, supp
           <Image src={nextPortrait.image} width={nextPortrait.width} height={nextPortrait.height} unoptimized alt=""/>
         </button>
       </div>
-      <button type="button" className="max-live-tutor-chat-toggle" onClick={() => setShowTranscript(value => !value)}
-        aria-label={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}
-        aria-controls="max-live-tutor-transcript" aria-expanded={showTranscript} aria-pressed={showTranscript}
-        title={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}>
-        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 2V7a2 2 0 0 1 2-2Z"/><path d="M7 10h10M7 14h7"/></svg>
-      </button>
       <button type="button" className="max-live-tutor-portrait-step previous" onClick={() => stepPortrait(-1)}
         disabled={state !== "idle" || preferenceBusy || !preferenceLoaded}
         aria-label={zh ? "上一位导师" : "Previous tutor"}>‹</button>
       <button type="button" className="max-live-tutor-portrait-step next" onClick={() => stepPortrait(1)}
         disabled={state !== "idle" || preferenceBusy || !preferenceLoaded}
         aria-label={zh ? "下一位导师" : "Next tutor"}>›</button>
-      <label className="max-live-tutor-voice-choice" htmlFor="max-tutor-voice">
-        <span>{zh ? "音色" : "Voice"}</span>
-        <select id="max-tutor-voice" value={voice} disabled={state !== "idle" || preferenceBusy || !preferenceLoaded} onChange={event => {
-          if (validTutorVoice(event.target.value)) void saveTutorChoice(portrait, event.target.value);
-        }}>{SMARTLINGO_TUTOR_VOICES.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
-      </label>
       <p className="max-live-tutor-caption" aria-live="polite" dir="auto">{state === "live"
         ? (showTranscript ? (zh ? "直接说话；下方可滚动查看导师文字。" : "Speak naturally; scroll tutor text below.") : (zh ? "直接说话，导师会听你说并回应。" : "Speak naturally. Your tutor listens and responds."))
         : (zh ? "开始后直接说话，导师会听你说并回应。" : "Start, then speak naturally. Your tutor listens and responds.")}</p>
       <audio ref={audioRef} autoPlay playsInline aria-label={zh ? "虚拟导师语音" : "Virtual tutor audio"}/></div>
     <div className="max-live-tutor-actions">
+      <button type="button" className="max-live-tutor-chat-toggle" onClick={() => setShowTranscript(value => !value)}
+        aria-label={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}
+        aria-controls="max-live-tutor-transcript" aria-expanded={showTranscript} aria-pressed={showTranscript}
+        title={zh ? (showTranscript ? "隐藏导师文字" : "显示导师文字") : (showTranscript ? "Hide tutor text" : "Show tutor text")}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1 2 2H8l-5 2V7a2 2 0 0 1 2-2Z"/><path d="M7 10h10M7 14h7"/></svg>
+      </button>
+      <div className="max-live-tutor-call-controls">
       {state === "idle" ? <button type="button" onClick={startCall} disabled={voiceRemaining <= 0 || !preferenceLoaded || preferenceBusy}>{zh ? "开启实时语音" : "Start live voice"}</button>
         : state === "connecting" ? <button type="button" disabled>{zh ? "正在连接…" : "Connecting…"}</button>
         : <><button type="button" onClick={() => { micRef.current?.getAudioTracks().forEach(track => { track.enabled = muted; }); setMuted(!muted); }}
           aria-pressed={muted}>{muted ? (zh ? "打开麦克风" : "Unmute") : (zh ? "静音" : "Mute")}</button>
           <button type="button" className="max-live-tutor-end" onClick={() => void endCall()} disabled={state === "ending"}>{zh ? "结束通话" : "End call"}</button></>}
-      {soundBlocked ? <button type="button" onClick={() => void audioRef.current?.play().then(() => setSoundBlocked(false)).catch(() => undefined)}>{zh ? "点此播放声音" : "Tap to hear audio"}</button> : null}
+      </div>
+      <label className="max-live-tutor-voice-choice" htmlFor="max-tutor-voice">
+        <span className="max-live-tutor-sr-only">{zh ? "导师音色" : "Tutor voice"}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9h4l4-4v14l-4-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>
+        <select id="max-tutor-voice" value={preferredTutorVoice(portrait, voice)}
+          aria-label={zh ? "选择导师音色" : "Choose tutor voice"}
+          title={zh ? "选择导师音色" : "Choose tutor voice"}
+          disabled={state !== "idle" || preferenceBusy || !preferenceLoaded} onChange={event => {
+          if (validTutorVoice(event.target.value)) void saveTutorChoice(portrait, event.target.value);
+        }}>{availableVoices.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+      </label>
     </div>
+    {soundBlocked ? <button type="button" className="max-live-tutor-unblock" onClick={() => void audioRef.current?.play().then(() => setSoundBlocked(false)).catch(() => undefined)}>{zh ? "点此播放声音" : "Tap to hear audio"}</button> : null}
     <div id="max-live-tutor-transcript" ref={transcriptRef} className="max-live-tutor-transcript" role="region" tabIndex={showTranscript ? 0 : -1} hidden={!showTranscript} aria-live="off"
       aria-label={zh ? "实时对话文字" : "Live conversation transcript"} onScroll={event => {
         const element = event.currentTarget;

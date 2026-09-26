@@ -14,6 +14,26 @@ export const SMARTLINGO_TUTOR_VOICES = [
 export type SmartLingoTutorPortrait = (typeof SMARTLINGO_TUTOR_PORTRAITS)[number]["id"];
 export type SmartLingoTutorVoice = (typeof SMARTLINGO_TUTOR_VOICES)[number]["id"];
 
+// GPT-Live documents the presentation of Gleam, Willow, and Meridian. Marin
+// remains a legacy stored value, but has no documented presentation to match
+// confidently with a tutor portrait.
+export function tutorVoiceOptions(portrait: SmartLingoTutorPortrait) {
+  return SMARTLINGO_TUTOR_VOICES.filter(item => portrait === "leo"
+    ? item.id === "meridian"
+    : item.id === "gleam" || item.id === "willow");
+}
+
+export function preferredTutorVoice(portrait: SmartLingoTutorPortrait, voice: unknown): SmartLingoTutorVoice {
+  return tutorVoiceOptions(portrait).some(item => item.id === voice)
+    ? voice as SmartLingoTutorVoice
+    : portrait === "leo" ? "meridian" : "gleam";
+}
+
+export function tutorVoiceMatchesPortrait(portrait: unknown, voice: unknown): boolean {
+  return validTutorPortrait(portrait) && validTutorVoice(voice)
+    && tutorVoiceOptions(portrait).some(item => item.id === voice);
+}
+
 export function validTutorPortrait(value: unknown): value is SmartLingoTutorPortrait {
   return typeof value === "string" && SMARTLINGO_TUTOR_PORTRAITS.some(item => item.id === value);
 }

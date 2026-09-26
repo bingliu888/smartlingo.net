@@ -88,28 +88,28 @@ async function waitForServer(baseURL, process, diagnostics = () => "") {
 }
 
 async function assertControls(baseURL, token) {
-  for (const path of protectedPages) {
+  // The controls are independent reads. Four bounded requests at a time avoid
+  // serial Worker cold-path waits without weakening any authenticated check.
+  for (let index = 0; index < protectedPages.length; index += 4) await Promise.all(protectedPages.slice(index, index + 4).map(async path => {
     const signedIn = await fetch(`${baseURL}${path}`, {
-      headers: { cookie: `smartlingo_session=${token}` },
-      redirect: "manual",
+      headers: { cookie: `smartlingo_session=${token}` }, redirect: "manual",
     });
     if (signedIn.status !== 200) throw new Error(`authenticated page control failed: ${path} returned ${signedIn.status} ${signedIn.headers.get("location") || ""}`.trim());
     const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
     if (![302, 307, 308].includes(anonymous.status)) throw new Error(`anonymous page control failed: ${path} returned ${anonymous.status}`);
-  }
-  for (const path of protectedApis) {
+  }));
+  for (let index = 0; index < protectedApis.length; index += 4) await Promise.all(protectedApis.slice(index, index + 4).map(async path => {
     const signedIn = await fetch(`${baseURL}${path}`, {
-      headers: { cookie: `smartlingo_session=${token}` },
-      redirect: "manual",
+      headers: { cookie: `smartlingo_session=${token}` }, redirect: "manual",
     });
     if (signedIn.status !== 200) throw new Error(`authenticated API control failed: ${path} returned ${signedIn.status}`);
     const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
     if (anonymous.status !== 401) throw new Error(`anonymous API control failed: ${path} returned ${anonymous.status}`);
-  }
-  for (const path of publicReadApis) {
+  }));
+  await Promise.all(publicReadApis.map(async path => {
     const anonymous = await fetch(`${baseURL}${path}`, { redirect: "manual" });
     if (anonymous.status !== 200) throw new Error(`public-read API control failed: ${path} returned ${anonymous.status}`);
-  }
+  }));
   process.stdout.write(`Authenticated layout controls verified: ${protectedPages.length} pages + ${protectedApis.length} protected APIs; ${publicReadApis.length} Community read APIs remain public.\n`);
 }
 
@@ -124,6 +124,7 @@ async function stopChild(child) {
 }
 
 async function main() {
+  const startedAt = Date.now();
   await Promise.all([
     access(join(projectRoot, "dist", "server", "index.js")),
     access(join(projectRoot, "dist", "client")),
@@ -134,6 +135,7 @@ async function main() {
   const config = join(work, "wrangler.jsonc");
   const fixture = join(work, "fixture.sql");
   const sessionCookieFile = join(work, "session-cookie");
+  const harnessExecutable = join(work, "layout-harness");
   const token = randomBytes(32).toString("base64url");
   const sessionHash = createHash("sha256").update(token).digest("base64");
   const port = await freePort();
@@ -232,6 +234,7 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
     const common = ["--local", "--persist-to", state, "--config", config];
     await run(process.execPath, [wrangler, "d1", "migrations", "apply", "DB", ...common], { cwd: projectRoot, env: isolatedEnv });
     await run(process.execPath, [wrangler, "d1", "execute", "DB", ...common, "--file", fixture, "-y"], { cwd: projectRoot, env: isolatedEnv });
+    process.stderr.write(`WebKit fixture ready after ${Math.round((Date.now() - startedAt) / 1_000)}s.\n`);
 
     const selectedRoutes = process.argv.slice(2).flatMap((value, index, args) => value === "--route" ? [args[index + 1]] : []);
     const uniqueRoutes = selectedRoutes.length ? [...new Set(selectedRoutes)] : SMARTLINGO_LAYOUT_ROUTES;
@@ -251,13 +254,19 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
       worker.stdout.on("data", value => { workerDiagnostics += String(value); });
       worker.stderr.on("data", value => { workerDiagnostics += String(value); });
       await waitForServer(baseURL, worker, () => workerDiagnostics);
-      if (index === 0) await assertControls(baseURL, token);
+      if (index === 0) {
+        const controlsAt = Date.now();
+        await assertControls(baseURL, token);
+        process.stderr.write(`WebKit access controls took ${Math.round((Date.now() - controlsAt) / 1_000)}s.\n`);
+      }
       const routeGroup = uniqueRoutes.slice(index, index + 10);
       const groupCount = routeGroup.length * SMARTLINGO_LAYOUT_LANGUAGES.length * SMARTLINGO_VIEWPORTS.length;
+      const groupAt = Date.now();
       let verified;
       try {
         verified = await run(process.execPath, [
           verifier, "--base-url", baseURL, "--session-cookie-file", sessionCookieFile,
+          "--harness-executable", harnessExecutable,
           ...routeGroup.flatMap(route => ["--route", route]),
         ], { cwd: projectRoot, env: isolatedEnv });
       } catch (error) {
@@ -267,7 +276,7 @@ INSERT INTO messages (id,thread_id,sender_id,body,created_at,deleted_at) VALUES
         throw new Error(`Expected ${groupCount}/${groupCount} WebKit group evidence was not emitted: ${verified.stderr.trim() || verified.stdout.trim() || "no verifier output"}`);
       }
       verifiedLayoutCount += groupCount;
-      process.stderr.write(`WebKit route group ${Math.floor(index / 10) + 1}: ${groupCount}/${groupCount} verified.\n`);
+      process.stderr.write(`WebKit route group ${Math.floor(index / 10) + 1}: ${groupCount}/${groupCount} verified in ${Math.round((Date.now() - groupAt) / 1_000)}s.\n`);
       await stopChild(worker);
       worker = null;
     }

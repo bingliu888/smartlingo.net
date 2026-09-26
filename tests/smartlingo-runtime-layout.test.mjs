@@ -283,6 +283,11 @@ test("authenticated surfaces require a loopback D1-backed session and their own 
   assert.match(releaseSource, /anonymous API control failed/);
   assert.match(releaseSource, /public-read API control failed/);
   assert.match(releaseSource, /uniqueRoutes\.slice\(index, index \+ 10\)/);
+  assert.match(releaseSource, /protectedPages\.slice\(index, index \+ 4\)\.map/);
+  assert.match(releaseSource, /protectedApis\.slice\(index, index \+ 4\)\.map/);
+  assert.match(releaseSource, /"--harness-executable", harnessExecutable/);
+  assert.match(runnerSource, /options\.harnessExecutable \|\| join\(work, "smartlingo-runtime-layout-webkit"\)/);
+  assert.match(runnerSource, /if \(!alreadyCompiled\)/);
   assert.match(releaseSource, /await stopChild\(worker\);\s*worker = null/);
   assert.match(releaseSource, /verifiedLayoutCount !== expectedLayoutCount/);
   assert.match(releaseSource, /Worker diagnostics:/);

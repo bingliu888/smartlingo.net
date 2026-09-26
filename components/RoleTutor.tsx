@@ -144,7 +144,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         { by: "learner" as const, text: exchange.learner },
         { by: "tutor" as const, text: exchange.tutor },
       ])].filter(line => line.text));
-      if (result.opening && !result.history?.length) speechCleanupRef.current = speakLearningText(result.opening, speechLocale,
+      if (mode === "scene" && result.opening && !result.history?.length) speechCleanupRef.current = speakLearningText(result.opening, speechLocale,
         slowSpeed ? SMARTLINGO_SLOW_SPEECH_RATE : SMARTLINGO_NORMAL_SPEECH_RATE);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
@@ -275,7 +275,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
   }
 
   const ended = sessionId && (turns >= maxTurns || expired || (mode === "open" && !liveBusy && remainingSeconds !== null && remainingSeconds <= 0));
-  return <section className="role-tutor-card" aria-label={zh ? "人工智能导师练习" : "AI tutor practice"}>
+  const tutorDescription = <div className={mode === "open" ? "role-tutor-description compact" : "role-tutor-description"}>
     <p className="role-tutor-disclosure">{zh ? "AI 模拟导师 · 可打字或按键说话 · 非真人或专业建议" : "Simulated AI tutor · type or push to talk · not a real person or professional advice"}</p>
     <div className={sceneVisual ? "role-tutor-intro" : undefined}><div><h2>{role}</h2>
     <p>{mode === "open"
@@ -285,11 +285,18 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
     <p>{mode === "open"
       ? (zh ? "聊天可自由换题；最近八组问答仅为今天的对话上下文，过期后清除。程度判断仅供练习参考，学习计划经你确认才保存。请勿输入敏感资料。" : "Change topics freely. The latest eight exchanges are short-lived conversation context and are cleared after today. Level estimates are practice guidance, and a plan is saved only with your confirmation. Do not enter sensitive information.")
       : (zh ? "为保持对话连贯，最近四组问答会临时保留，并在练习结束后定时清除。请勿输入敏感资料。" : "The last four exchanges are kept briefly for context and cleared after the session ends. Do not enter sensitive information.")}</p>
+  </div>;
+  return <section className="role-tutor-card" aria-label={zh ? "人工智能导师练习" : "AI tutor practice"}>
+    {mode === "scene" ? tutorDescription : null}
     {!max ? <div className="role-tutor-upgrade"><p>{trialAvailable ? (zh ? "需要有效旗舰版方案。试用不会自动开启；首次使用可主动开启一次七天试用。" : "An active Max plan is required. The trial never starts automatically; you can explicitly start one seven-day trial.") : (zh ? "七天试用已结束。订阅旗舰版后可以继续练习。" : "Your seven-day trial has ended. Subscribe to Max to continue.")}</p>{trialAvailable ? <button type="button" onClick={startTrial} disabled={busy}>{zh ? "开启七天旗舰版试用" : "Start seven-day Max trial"}</button> : null} <Link href={`/${lang}/pricing`}>{zh ? "查看旗舰版" : "Explore Max"}</Link></div> : !sessionId ? <button type="button" onClick={start} disabled={busy} data-layout-start-tutor={mode === "open" ? "true" : undefined}>{busy ? (zh ? "正在准备…" : "Preparing…") : mode === "open" ? (zh ? "开始自由对话" : "Start open conversation") : (zh ? "开始一对一角色练习" : "Start 1:1 role-play")}</button> : <>
+      {mode === "open" ? <MaxLiveTutorCall sessionId={sessionId} language={language} lang={lang}
+        learningName={learningName} supportLanguageName={supportLanguageName} profile={profile}
+        slowSpeed={slowSpeed} shortAnswer={shortAnswer} showSupport={showSupport}
+        onCallActive={setLiveBusy}/> : null}
       <p className="role-tutor-progress">{mode === "open"
         ? (zh ? `今日导师时间剩余 ${Math.floor((remainingSeconds || 0) / 60)}:${String((remainingSeconds || 0) % 60).padStart(2, "0")} ／ ${Math.floor((dailyLimitSeconds || 0) / 60)} 分钟` : `Tutor time left today ${Math.floor((remainingSeconds || 0) / 60)}:${String((remainingSeconds || 0) % 60).padStart(2, "0")} / ${Math.floor((dailyLimitSeconds || 0) / 60)} minutes`)
         : (zh ? `已用 ${turns}/${maxTurns} 次回复` : `${turns}/${maxTurns} replies used`)}
-        {mode === "scene" ? <> · {turns < 3 ? (zh ? "第一步：引导练习" : "Step 1: guided practice") : turns < 8 ? (zh ? "第二步：应对变化" : "Step 2: adapt to a change") : (zh ? "第三步：独立完成" : "Step 3: independent try")}</> : null} · <button type="button" onClick={() => speechCleanupRef.current()}>{zh ? "■ 停止朗读" : "■ Stop voice"}</button></p>
+        {mode === "scene" ? <> · {turns < 3 ? (zh ? "第一步：引导练习" : "Step 1: guided practice") : turns < 8 ? (zh ? "第二步：应对变化" : "Step 2: adapt to a change") : (zh ? "第三步：独立完成" : "Step 3: independent try")}</> : null}</p>
       {mode === "open" ? <div className="role-tutor-preferences" aria-label={zh ? "导师对话设置" : "Tutor conversation settings"}>
         <label><input type="checkbox" checked={slowSpeed} onChange={event => setSlowSpeed(event.target.checked)}/>{zh ? "慢速" : "Slow speed"}</label>
         {language !== lang ? <label><input type="checkbox" checked={showSupport} onChange={event => {
@@ -298,10 +305,6 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         }}/>{zh ? `显示 ${supportName}` : `Show ${supportName}`}</label> : null}
         <label><input type="checkbox" checked={shortAnswer} onChange={event => setShortAnswer(event.target.checked)}/>{zh ? "简短回答" : "Short answers"}</label>
       </div> : null}
-      {mode === "open" ? <MaxLiveTutorCall sessionId={sessionId} language={language} lang={lang}
-        learningName={learningName} supportLanguageName={supportLanguageName} profile={profile}
-        slowSpeed={slowSpeed} shortAnswer={shortAnswer} showSupport={showSupport}
-        onCallActive={setLiveBusy}/> : null}
       <ol className="role-tutor-lines" aria-live="polite">{lines.map((line, index) => <li key={index} className={line.by}>
         <strong>{line.by === "learner" ? (zh ? "你" : "You") : (zh ? "AI 教师 · " : "AI teacher · ") + (line.by === "tutor" ? role : "")}</strong><span dir="auto">{line.text}</span>
         {showSupport && line.supportText ? <small className="role-tutor-translation" lang={lang} dir="auto">{line.supportText}</small> : null}
@@ -325,6 +328,7 @@ export function RoleTutor({ lang, language, scene, level, role, sceneVisual, spe
         {planSaved ? <p role="status">{zh ? "已保存。你仍可继续和导师讨论并修改。" : "Saved. You can keep discussing and revise it later."}</p> : null}
       </div> : null}
     </>}
+    {mode === "open" ? tutorDescription : null}
     {error ? <p className="role-tutor-error" role="alert">{error}</p> : null}
     <Link href={mode === "open" ? `/${lang}/programs/${language}?path=max` : `/${lang}/play/everyday?language=${language}&scene=${scene}&level=${level}`}>{mode === "open" ? (zh ? "← 返回语言主页" : "← Back to language") : (zh ? "← 返回场景" : "← Back to scene")}</Link>
   </section>;

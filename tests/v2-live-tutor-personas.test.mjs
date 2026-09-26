@@ -57,12 +57,24 @@ test("the preference route is owner-scoped and the client exposes separate, acce
   assert.match(route, /request\.headers\.get\("origin"\)/);
   assert.match(route, /validTutorPortrait\(body\.portrait\)/);
   assert.match(route, /validTutorVoice\(body\.voice\)/);
+  assert.match(route, /tutorVoiceMatchesPortrait\(body\.portrait, body\.voice\)/);
+  assert.match(route, /preferredTutorVoice\(portrait, row\.voice\)/);
   assert.match(route, /WHERE id=\? AND user_id=\?/);
   assert.match(client, /const previousPortrait = SMARTLINGO_TUTOR_PORTRAITS\[/);
   assert.match(client, /const nextPortrait = SMARTLINGO_TUTOR_PORTRAITS\[/);
   assert.match(client, /<select id="max-tutor-voice"/);
   assert.match(client, /function stepPortrait\(direction: -1 \| 1\)/);
-  assert.match(client, /saveTutorChoice\(SMARTLINGO_TUTOR_PORTRAITS\[nextIndex\]\.id, voice\)/);
+  assert.match(client, /saveTutorChoice\(nextPortrait, preferredTutorVoice\(nextPortrait, voice\)\)/);
+});
+
+test("tutor voices match the selected portrait", () => {
+  assert.deepEqual(personas.tutorVoiceOptions("leo").map(item => item.id), ["meridian"]);
+  for (const portrait of ["mei", "sofia"])
+    assert.deepEqual(personas.tutorVoiceOptions(portrait).map(item => item.id), ["gleam", "willow"]);
+  assert.equal(personas.preferredTutorVoice("leo", "gleam"), "meridian");
+  assert.equal(personas.preferredTutorVoice("mei", "meridian"), "gleam");
+  assert.equal(personas.tutorVoiceMatchesPortrait("leo", "willow"), false);
+  assert.equal(personas.tutorVoiceMatchesPortrait("sofia", "willow"), true);
 });
 
 test("portrait carousel preserves the selected tutor's full ratio, supports touch swipes, and leaves no duplicate tutor row", () => {
@@ -76,7 +88,7 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   const image = client.indexOf('className={`max-live-tutor-stage');
   const voice = client.indexOf('className="max-live-tutor-voice-choice"');
   const actions = client.indexOf('className="max-live-tutor-actions"');
-  assert.ok(image >= 0 && image < voice && voice < actions);
+  assert.ok(image >= 0 && image < actions && actions < voice);
   assert.doesNotMatch(client, /max-live-tutor-choices|max-live-tutor-portrait-options/);
   assert.match(client, /onTouchStart=\{event =>/);
   assert.match(client, /onTouchEnd=\{event =>/);
@@ -84,9 +96,14 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   assert.match(client, /className="max-live-tutor-preview previous" onClick=\{\(\) => stepPortrait\(-1\)\}/);
   assert.match(client, /className="max-live-tutor-preview next" onClick=\{\(\) => stepPortrait\(1\)\}/);
   assert.match(client, /className="max-live-tutor-preview previous" onClick=\{\(\) => stepPortrait\(-1\)\}\s+disabled=\{state !== "idle"/);
-  assert.match(css, /\.max-live-tutor-voice-choice\{[^}]*position:absolute/);
-  assert.match(client, /id="max-tutor-voice" value=\{voice\} disabled=\{state !== "idle"/);
-  assert.match(css, /\.max-live-tutor-voice-choice:has\(select:disabled\)\{[^}]*background:#d9dfdc/);
+  assert.match(css, /\.max-live-tutor-voice-choice\{[^}]*position:relative/);
+  assert.match(client, /id="max-tutor-voice" value=\{preferredTutorVoice\(portrait, voice\)\}/);
+  assert.match(client, /disabled=\{state !== "idle" \|\| preferenceBusy \|\| !preferenceLoaded\}/);
+  assert.match(css, /\.max-live-tutor-voice-choice:has\(select:disabled\)\{[^}]*background:#e9edeb/);
+  assert.match(client, /className="max-live-tutor-actions"[\s\S]*className="max-live-tutor-chat-toggle"[\s\S]*className="max-live-tutor-call-controls"[\s\S]*className="max-live-tutor-voice-choice"/);
+  assert.match(css, /\.max-live-tutor-actions\{[^}]*grid-template-columns:44px minmax\(0,1fr\) 44px/);
+  assert.match(css, /\.role-tutor-card \.max-live-tutor-preview\{[^}]*opacity:\.38/);
+  assert.match(css, /\.max-live-tutor-preview img\{[^}]*width:100%;height:100%;object-fit:cover/);
   assert.match(client, /className="max-live-tutor-portrait-step previous"[^>]*onClick=\{\(\) => stepPortrait\(-1\)\}/);
   assert.match(client, /className="max-live-tutor-portrait-step next"[^>]*onClick=\{\(\) => stepPortrait\(1\)\}/);
   assert.match(client, /aria-label=\{zh \? "上一位导师" : "Previous tutor"\}/);
@@ -103,4 +120,6 @@ test("portrait carousel preserves the selected tutor's full ratio, supports touc
   assert.match(css, /\.max-live-tutor-photo\{[^}]*width:auto;height:100%;max-width:100%;flex:none;object-fit:contain/);
   assert.doesNotMatch(css, /\.max-live-tutor-stage\.speaking \.max-live-tutor-photo\{[^}]*transform:/);
   assert.doesNotMatch(owner, /role-tutor-avatar/);
+  assert.match(owner, /if \(mode === "scene" && result\.opening/);
+  assert.match(owner, /mode === "open" \? <MaxLiveTutorCall[\s\S]*<p className="role-tutor-progress"/);
 });

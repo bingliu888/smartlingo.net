@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -713,12 +713,13 @@ function fail(message) {
 }
 
 function parseArgs(argv) {
-  const options = { baseURL: "http://127.0.0.1:4173", routes: [], sessionCookie: null, sessionCookieFile: null };
+  const options = { baseURL: "http://127.0.0.1:4173", routes: [], sessionCookie: null, sessionCookieFile: null, harnessExecutable: null };
   for (let index = 0; index < argv.length; index += 1) {
     if (!argv[index + 1]) fail("usage: verify-runtime-layout-webkit --base-url <url> [--route <path>] [--session-cookie-file <0600-local-fixture-file>]");
     if (argv[index] === "--base-url") options.baseURL = argv[index + 1];
     else if (argv[index] === "--route") options.routes.push(argv[index + 1]);
     else if (argv[index] === "--session-cookie-file") options.sessionCookieFile = argv[index + 1];
+    else if (argv[index] === "--harness-executable") options.harnessExecutable = argv[index + 1];
     else fail("usage: verify-runtime-layout-webkit --base-url <url> [--route <path>] [--session-cookie-file <0600-local-fixture-file>]");
     index += 1;
   }
@@ -779,7 +780,7 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
   const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const work = await mkdtemp(join(tmpdir(), "smartlingo-runtime-layout-"));
   try {
-    const executable = join(work, "smartlingo-runtime-layout-webkit");
+    const executable = options.harnessExecutable || join(work, "smartlingo-runtime-layout-webkit");
     const configPath = join(work, "matrix.json");
     const infoPlistPath = join(work, "Info.plist");
     const swiftSource = join(projectRoot, "scripts", "measure-runtime-layout.swift");
@@ -787,10 +788,15 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
     const sdk = process.env.SMARTLINGO_SWIFT_SDK?.trim();
     const compileArgs = ["swiftc"];
     if (sdk) compileArgs.push("-sdk", sdk);
-    await writeFile(infoPlistPath, `<?xml version="1.0" encoding="UTF-8"?>
+    let alreadyCompiled = false;
+    if (options.harnessExecutable) {
+      try { await access(executable); alreadyCompiled = true; } catch { /* Compile the shared harness once. */ }
+    }
+    if (!alreadyCompiled) {
+      await writeFile(infoPlistPath, `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict><key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/><key>NSAllowsArbitraryLoadsInWebContent</key><true/></dict></dict></plist>\n`);
-    compileArgs.push(
+      compileArgs.push(
       swiftSource,
       "-Xlinker", "-sectcreate",
       "-Xlinker", "__TEXT",
@@ -798,13 +804,14 @@ export async function verifySmartLingoRuntimeLayout(argv = process.argv.slice(2)
       "-Xlinker", infoPlistPath,
       "-o", executable,
     );
-    await run("xcrun", compileArgs, {
-      env: {
-        ...process.env,
-        CLANG_MODULE_CACHE_PATH: cache,
-        SWIFT_MODULECACHE_PATH: cache,
-      },
-    });
+      await run("xcrun", compileArgs, {
+        env: {
+          ...process.env,
+          CLANG_MODULE_CACHE_PATH: cache,
+          SWIFT_MODULECACHE_PATH: cache,
+        },
+      });
+    }
     // A fresh WebKit process per bounded route batch avoids the native
     // resource exhaustion observed after many consecutive navigations while
     // still compiling the measurement harness only once. Reports are merged

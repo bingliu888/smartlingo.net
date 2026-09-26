@@ -2,7 +2,7 @@ import { getDatabase } from "../../../../../lib/auth";
 import { requestUser } from "../../../../../lib/request-user";
 import { maxLiveTutorDailyLimit } from "../../../../../lib/smartlingo-open-tutor-entitlement";
 import { readSmartAiJsonRequest, safeSmartAiError } from "../../../../../lib/smartlingo-ai-gateway";
-import { validTutorPortrait, validTutorVoice } from "../../../../../lib/smartlingo-live-tutor-personas";
+import { preferredTutorVoice, tutorVoiceMatchesPortrait, validTutorPortrait, validTutorVoice } from "../../../../../lib/smartlingo-live-tutor-personas";
 
 function json(value: Record<string, unknown>, status = 200) {
   return Response.json(value, { status, headers: { "cache-control": "no-store" } });
@@ -21,7 +21,8 @@ export async function GET(request: Request) {
     FROM smartlingo_max_tutor_sessions WHERE id=? AND user_id=? LIMIT 1`)
     .bind(sessionId, user.id).first<{ portrait: string; voice: string }>();
   if (!row) return json({ error: "Tutor session not found." }, 404);
-  return json({ portrait: row.portrait, voice: row.voice });
+  const portrait = validTutorPortrait(row.portrait) ? row.portrait : "mei";
+  return json({ portrait, voice: preferredTutorVoice(portrait, row.voice) });
 }
 
 export async function PATCH(request: Request) {
@@ -32,7 +33,8 @@ export async function PATCH(request: Request) {
   let body: { sessionId?: unknown; portrait?: unknown; voice?: unknown };
   try { body = await readSmartAiJsonRequest(request, 500); }
   catch (error) { const safe = safeSmartAiError(error, "en", "live"); return json({ error: safe.message }, safe.status); }
-  if (typeof body.sessionId !== "string" || !uuid(body.sessionId) || !validTutorPortrait(body.portrait) || !validTutorVoice(body.voice))
+  if (typeof body.sessionId !== "string" || !uuid(body.sessionId) || !validTutorPortrait(body.portrait) || !validTutorVoice(body.voice)
+    || !tutorVoiceMatchesPortrait(body.portrait, body.voice))
     return json({ error: "Choose a valid tutor portrait and voice." }, 400);
   const row = await getDatabase().prepare(`UPDATE smartlingo_max_tutor_sessions
     SET portrait_key=?,voice_key=?,updated_at=?
